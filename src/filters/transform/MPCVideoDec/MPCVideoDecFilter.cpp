@@ -33,6 +33,7 @@
 #include "VideoDecOutputPin.h"
 #include "CpuId.h"
 
+#include "ffImgfmt.h"
 extern "C"
 {
 #include "FfmpegContext.h"
@@ -527,6 +528,26 @@ const AMOVIESETUP_MEDIATYPE CMPCVideoDecFilter::sudPinTypesOut[] = {
 	{&MEDIATYPE_Video, &MEDIASUBTYPE_NV24}
 };
 const int CMPCVideoDecFilter::sudPinTypesOutCount = countof(CMPCVideoDecFilter::sudPinTypesOut);
+
+PixelFormat	GetPixelFormatFromCsp(int csp)
+{
+    switch (csp & FF_CSPS_MASK) {
+        case FF_CSP_420P :
+            return PIX_FMT_YUV420P;
+        case FF_CSP_422P :
+            return PIX_FMT_YUV422P;
+        case FF_CSP_444P :
+            return PIX_FMT_YUV444P;
+        case FF_CSP_411P :
+            return PIX_FMT_YUV411P;
+        case FF_CSP_YUY2 :
+            return PIX_FMT_UYVY422;		// TODO : check this...
+        case FF_CSP_UYVY :
+            return PIX_FMT_UYVY422;
+		default :
+			ASSERT(FALSE);
+    }
+}
 
 
 BOOL CALLBACK EnumFindProcessWnd (HWND hwnd, LPARAM lParam)
@@ -1099,7 +1120,7 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 			m_pAVCtx->skip_loop_filter		= (AVDiscard)m_nDiscardMode;
 			m_pAVCtx->dsp_mask				= AV_CPU_FLAG_FORCE | m_pCpuId->GetFeatures();
 
-			m_pAVCtx->postgain				= 1.0f;
+//			m_pAVCtx->postgain				= 1.0f;
 			m_pAVCtx->debug_mv				= 0;
 #ifdef _DEBUG
 			//m_pAVCtx->debug					= FF_DEBUG_PICT_INFO | FF_DEBUG_STARTCODE | FF_DEBUG_PTS;
@@ -1432,42 +1453,20 @@ int CMPCVideoDecFilter::GetCspFromMediaType(GUID& subtype)
 void CMPCVideoDecFilter::InitSwscale()
 {
 	if (m_pSwsContext == NULL) {
-		TYCbCr2RGB_coeffs	coeffs(ffYCbCr_RGB_coeff_ITUR_BT601,0, 235, 16, 255.0, 0.0);
-		int32_t				swscaleTable[7];
-		SwsParams			params;
-
-		memset(&params,0,sizeof(params));
-		if (m_pAVCtx->dsp_mask & CCpuId::MPC_MM_MMX)	{
-			params.cpu |= SWS_CPU_CAPS_MMX|SWS_CPU_CAPS_MMX2;
-		}
-		if (m_pAVCtx->dsp_mask & CCpuId::MPC_MM_3DNOW)	{
-			params.cpu |= SWS_CPU_CAPS_3DNOW;
-		}
-
-		params.methodLuma.method=params.methodChroma.method=SWS_POINT;
-
-		swscaleTable[0] = int32_t(coeffs.vr_mul * 65536 + 0.5);
-		swscaleTable[1] = int32_t(coeffs.ub_mul * 65536 + 0.5);
-		swscaleTable[2] = int32_t(coeffs.ug_mul * 65536 + 0.5);
-		swscaleTable[3] = int32_t(coeffs.vg_mul * 65536 + 0.5);
-		swscaleTable[4] = int32_t(coeffs.y_mul  * 65536 + 0.5);
-		swscaleTable[5] = int32_t(coeffs.Ysub * 65536);
-		swscaleTable[6] = coeffs.RGB_add1;
-
 		BITMAPINFOHEADER bihOut;
 		ExtractBIH(&m_pOutput->CurrentMediaType(), &bihOut);
 
 		m_nOutCsp	  = GetCspFromMediaType(m_pOutput->CurrentMediaType().subtype);
 		m_pSwsContext = sws_getContext(m_pAVCtx->width,
 									   m_pAVCtx->height,
-									   csp_ffdshow2mplayer(csp_lavc2ffdshow(m_pAVCtx->pix_fmt)),
+									   m_pAVCtx->pix_fmt,
 									   m_pAVCtx->width,
 									   m_pAVCtx->height,
-									   csp_ffdshow2mplayer(m_nOutCsp),
-									   &params,
+									   GetPixelFormatFromCsp(m_nOutCsp),
+									   SWS_LANCZOS,
 									   NULL,
 									   NULL,
-									   swscaleTable);
+									   NULL);
 
 		m_pOutSize.cx	= bihOut.biWidth;
 		m_pOutSize.cy	= abs(bihOut.biHeight);
@@ -1547,8 +1546,8 @@ HRESULT CMPCVideoDecFilter::SoftwareDecode(IMediaSample* pIn, BYTE* pDataIn, int
 
 		else if (m_pSwsContext != NULL) {
 			uint8_t*	dst[4];
-			stride_t	srcStride[4];
-			stride_t	dstStride[4];
+			int			srcStride[4];
+			int			dstStride[4];
 
 			const TcspInfo *outcspInfo=csp_getInfo(m_nOutCsp);
 			for (int i=0; i<4; i++) {
@@ -1563,16 +1562,16 @@ HRESULT CMPCVideoDecFilter::SoftwareDecode(IMediaSample* pIn, BYTE* pDataIn, int
 
 			int nTempCsp = m_nOutCsp;
 			if(outcspInfo->id==FF_CSP_420P) {
-				csp_yuv_adj_to_plane(nTempCsp,outcspInfo,odd2even(m_pOutSize.cy),(unsigned char**)dst,dstStride);
+				csp_yuv_adj_to_plane(nTempCsp,outcspInfo,odd2even(m_pOutSize.cy),(unsigned char**)dst,(stride_t*)dstStride);
 			} else {
-				csp_yuv_adj_to_plane(nTempCsp,outcspInfo,m_pAVCtx->height,(unsigned char**)dst,dstStride);
+				csp_yuv_adj_to_plane(nTempCsp,outcspInfo,m_pAVCtx->height,(unsigned char**)dst,(stride_t*)dstStride);
 			}
 
 			// We crash inside this function
 			// In swscale.c: Function 'simpleCopy'
 			// Line: 1961 - Buffer Overrun
 			// This might be ffmpeg fault or more likely mpchc is not reinitializing ffmpeg correctly during display change (moving mpchc window from display A to display B)
-			sws_scale_ordered (m_pSwsContext, m_pFrame->data, srcStride, 0, m_pAVCtx->height, dst, dstStride);
+			sws_scale (m_pSwsContext, m_pFrame->data, srcStride, 0, m_pAVCtx->height, dst, dstStride);
 		}
 #endif /* HAS_FFMPEG_VIDEO_DECODERS */
 

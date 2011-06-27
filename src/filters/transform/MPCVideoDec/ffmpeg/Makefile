@@ -21,7 +21,7 @@ TARGET_LIB     = $(TARGET_LIB_DIR)/libavcodec.lib
 
 
 # Compiler and yasm flags
-CFLAGS    = -I. -I.. -Ilibavcodec -Ilibavcore -Ilibavutil -Ilibswscale -I../../../../thirdparty/zlib \
+CFLAGS    = -I. -I.. -Ilibavcodec -Ilibavutil -Ilibswscale -I../../../../thirdparty/zlib \
             -DHAVE_AV_CONFIG_H -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 \
             -std=gnu99 -mdll -mthreads -pipe
 
@@ -55,10 +55,10 @@ OBJ_DIRS = $(OBJ_DIR) \
     $(OBJ_DIR)libavcodec \
     $(OBJ_DIR)libavcodec/amr_float \
     $(OBJ_DIR)libavcodec/x86 \
-    $(OBJ_DIR)libavcore \
     $(OBJ_DIR)libavutil \
     $(OBJ_DIR)libavutil/x86 \
     $(OBJ_DIR)libswscale \
+	$(OBJ_DIR)libswscale/x86 \
     $(TARGET_LIB_DIR)
 
 
@@ -82,6 +82,7 @@ SRCS_C=\
     libavcodec/ac3_parser.c \
     libavcodec/ac3dec.c \
     libavcodec/ac3dec_data.c \
+	libavcodec/ac3dsp.c \
     libavcodec/ac3tab.c \
     libavcodec/adpcm.c \
     libavcodec/allcodecs.c \
@@ -90,6 +91,10 @@ SRCS_C=\
     libavcodec/bitstream.c \
     libavcodec/cabac.c \
     libavcodec/CompilerVersion.c \
+	libavcodec/dct.c \
+	libavcodec/dct32.c \
+    libavcodec/dct32_fixed.c \
+    libavcodec/dct32_float.c \
     libavcodec/dsputil.c \
     libavcodec/eac3dec.c \
     libavcodec/eac3dec_data.c \
@@ -98,6 +103,7 @@ SRCS_C=\
     libavcodec/faanidct.c \
     libavcodec/fft.c \
     libavcodec/flvdec.c \
+    libavcodec/fmtconvert.c \
     libavcodec/golomb.c \
     libavcodec/h263.c \
     libavcodec/h263_parser.c \
@@ -123,6 +129,7 @@ SRCS_C=\
     libavcodec/jpegls.c \
     libavcodec/jpeglsdec.c \
     libavcodec/jrevdct.c \
+    libavcodec/kbdwin.c \
     libavcodec/libamr.c \
     libavcodec/mdct.c \
     libavcodec/mjpeg.c \
@@ -144,6 +151,7 @@ SRCS_C=\
     libavcodec/nellymoserdec.c \
     libavcodec/options.c \
     libavcodec/parser.c \
+    libavcodec/rdft.c \
     libavcodec/rv10.c \
     libavcodec/rv30.c \
     libavcodec/rv30dsp.c \
@@ -151,6 +159,7 @@ SRCS_C=\
     libavcodec/rv40.c \
     libavcodec/rv40dsp.c \
     libavcodec/simple_idct.c \
+    libavcodec/sinewin.c \
     libavcodec/sp5xdec.c \
     libavcodec/svq1.c \
     libavcodec/svq1dec.c \
@@ -179,28 +188,32 @@ SRCS_C=\
     libavcodec/amr_float/interf_dec.c \
     libavcodec/amr_float/sp_dec.c \
 \
+    libavcodec/x86/ac3dsp_mmx.c \
     libavcodec/x86/dsputil_mmx.c \
     libavcodec/x86/fdct_mmx.c \
     libavcodec/x86/fft.c \
     libavcodec/x86/fft_3dn.c \
     libavcodec/x86/fft_3dn2.c \
     libavcodec/x86/fft_sse.c \
+    libavcodec/x86/fmtconvert_mmx.c \
     libavcodec/x86/h264_intrapred_init.c \
     libavcodec/x86/h264dsp_mmx.c \
     libavcodec/x86/idct_mmx.c \
     libavcodec/x86/idct_mmx_xvid.c \
     libavcodec/x86/idct_sse2_xvid.c \
     libavcodec/x86/mlpdsp.c \
+    libavcodec/x86/motion_est_mmx.c \
+    libavcodec/x86/mpegaudiodec_mmx.c \
     libavcodec/x86/mpegvideo_mmx.c \
     libavcodec/x86/simple_idct_mmx.c \
     libavcodec/x86/vc1dsp_mmx.c \
     libavcodec/x86/vp56dsp_init.c \
     libavcodec/x86/vp8dsp-init.c \
 \
-    libavcore/audioconvert.c \
-    libavcore/avcore_utils.c \
-    libavcore/imgutils.c \
-    libavcore/samplefmt.c \
+    libavutil/dict.c \
+    libavutil/audioconvert.c \
+    libavutil/imgutils.c \
+    libavutil/samplefmt.c \
 \
     libavutil/avstring.c \
     libavutil/cpu.c \
@@ -213,27 +226,43 @@ SRCS_C=\
     libavutil/mathematics.c \
     libavutil/md5.c \
     libavutil/mem.c \
+    libavutil/opt.c \
     libavutil/pixdesc.c \
     libavutil/random_seed.c \
     libavutil/rational.c \
+    libavutil/utils.c \
 \
     libavutil/x86/cpu.c \
 \
     libswscale/rgb2rgb.c \
+	libswscale/options.c \
     libswscale/swscale.c \
-    libswscale/sww32thread.c \
-    libswscale/yuv2rgb.c
+	libswscale/swscale_unscaled.c \
+	libswscale/utils.c \
+    libswscale/yuv2rgb.c \
+	libswscale/x86/rgb2rgb.c \
+	libswscale/x86/swscale_mmx.c \
+	libswscale/x86/yuv2rgb_mmx.c
+
 
 
 # Yasm objects
 SRCS_YASM=\
+    libavcodec/x86/ac3dsp.asm \
+    libavcodec/x86/dct32_sse.asm \
     libavcodec/x86/dsputil_yasm.asm \
     libavcodec/x86/fft_mmx.asm \
+    libavcodec/x86/fmtconvert.asm \
     libavcodec/x86/h264_chromamc.asm \
+    libavcodec/x86/h264_chromamc_10bit.asm \
     libavcodec/x86/h264_deblock.asm \
+    libavcodec/x86/h264_deblock_10bit.asm \
     libavcodec/x86/h264_idct.asm \
+    libavcodec/x86/h264_idct_10bit.asm \
     libavcodec/x86/h264_intrapred.asm \
+    libavcodec/x86/h264_intrapred_10bit.asm \
     libavcodec/x86/h264_weight.asm \
+    libavcodec/x86/h264_weight_10bit.asm \
     libavcodec/x86/vc1dsp_yasm.asm \
     libavcodec/x86/vp3dsp.asm \
     libavcodec/x86/vp56dsp.asm \

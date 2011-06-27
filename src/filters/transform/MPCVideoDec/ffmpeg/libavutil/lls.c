@@ -21,7 +21,7 @@
  */
 
 /**
- * @file
+ * @file libavutil/lls.c
  * linear least squares model
  */
 

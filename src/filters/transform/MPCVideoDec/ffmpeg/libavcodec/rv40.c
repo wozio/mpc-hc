@@ -2,20 +2,20 @@
  * RV40 decoder
  * Copyright (c) 2007 Konstantin Shishkov
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -24,7 +24,7 @@
  * RV40 decoder
  */
 
-#include "libavcore/imgutils.h"
+#include "libavutil/imgutils.h"
 
 #include "avcodec.h"
 #include "dsputil.h"
@@ -253,7 +253,7 @@ static int rv40_decode_mb_info(RV34DecContext *r)
             prev_type = i;
         }
     }
-    if(s->pict_type == FF_P_TYPE){
+    if(s->pict_type == AV_PICTURE_TYPE_P){
         prev_type = block_num_to_ptype_vlc_num[prev_type];
         q = get_vlc2(gb, ptype_vlc[prev_type].table, PTYPE_VLC_BITS, 1);
         if(q < PBTYPE_ESCAPE)
@@ -668,19 +668,17 @@ static av_cold int rv40_decode_init(AVCodecContext *avctx)
     return 0;
 }
 
-AVCodec rv40_decoder = {
+AVCodec ff_rv40_decoder = {
     "rv40",
     AVMEDIA_TYPE_VIDEO,
     CODEC_ID_RV40,
     sizeof(RV34DecContext),
-    /*.init = */rv40_decode_init,
-    /*.encode = */NULL,
-    /*.decode = */ff_rv34_decode_end,
-    /*.close = */ff_rv34_decode_frame,
-    /*.capabilities = */CODEC_CAP_DR1 | CODEC_CAP_DELAY,
-    /*.next = */NULL,
-    /*.flush = */ff_mpeg_flush,
-    /*.supported_framerates = */NULL,
-    /*.pix_fmts = */NULL,
-    /*.long_name = */NULL_IF_CONFIG_SMALL("RealVideo 4.0"),
+    rv40_decode_init,
+    NULL,
+    ff_rv34_decode_end,
+    ff_rv34_decode_frame,
+    CODEC_CAP_DR1 | CODEC_CAP_DELAY,
+    .flush = ff_mpeg_flush,
+    .long_name = NULL_IF_CONFIG_SMALL("RealVideo 4.0"),
+    .pix_fmts= ff_pixfmt_list_420,
 };

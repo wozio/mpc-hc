@@ -13,17 +13,8 @@
     <Filter Include="libavcodec\amr_float">
       <UniqueIdentifier>{dcef6bb8-4262-415c-935a-c8dd0f056c4c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libavcore">
-      <UniqueIdentifier>{bb994511-43fc-42df-8ba2-b6186af844b2}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libswscale\asmalign.h">
-      <Filter>libswscale</Filter>
-    </ClInclude>
-    <ClInclude Include="libswscale\config.h">
-      <Filter>libswscale</Filter>
-    </ClInclude>
     <ClInclude Include="libswscale\rgb2rgb.h">
       <Filter>libswscale</Filter>
     </ClInclude>
@@ -430,29 +421,77 @@
     <ClInclude Include="libavcodec\AVPaletteControl.h">
       <Filter>libavcodec</Filter>
     </ClInclude>
-    <ClInclude Include="libavcore\avcore.h">
-      <Filter>libavcore</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcore\imgutils.h">
-      <Filter>libavcore</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcore\samplefmt.h">
-      <Filter>libavcore</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcore\audioconvert.h">
-      <Filter>libavcore</Filter>
-    </ClInclude>
     <ClInclude Include="libavutil\avassert.h">
       <Filter>libavutil</Filter>
     </ClInclude>
-    <ClInclude Include="libavcore\internal.h">
-      <Filter>libavcore</Filter>
+    <ClInclude Include="libavcodec\dct32.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\ac3dsp.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\dct.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\high_bit_depth.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\fft-internal.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\fmtconvert.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\xvmc_internal.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\kbdwin.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\mpegaudiodsp.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\rdft.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\sinewin.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\sinewin_tablegen.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\thread.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\vc1dsp.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\vdpau_internal.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\version.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\vp8.h">
+      <Filter>libavcodec</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\samplefmt.h">
+      <Filter>libavutil</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\audioconvert.h">
+      <Filter>libavutil</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\dict.h">
+      <Filter>libavutil</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\imgutils.h">
+      <Filter>libavutil</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\opt.h">
+      <Filter>libavutil</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="libswscale\isP4HT.c">
-      <Filter>libswscale</Filter>
-    </ClCompile>
     <ClCompile Include="libswscale\rgb2rgb.c">
       <Filter>libswscale</Filter>
     </ClCompile>
@@ -465,13 +504,7 @@
     <ClCompile Include="libswscale\swscale_template.c">
       <Filter>libswscale</Filter>
     </ClCompile>
-    <ClCompile Include="libswscale\sww32thread.c">
-      <Filter>libswscale</Filter>
-    </ClCompile>
     <ClCompile Include="libswscale\yuv2rgb.c">
-      <Filter>libswscale</Filter>
-    </ClCompile>
-    <ClCompile Include="libswscale\yuv2rgb_template.c">
       <Filter>libswscale</Filter>
     </ClCompile>
     <ClCompile Include="libavutil\avstring.c">
@@ -825,23 +858,83 @@
     <ClCompile Include="libavcodec\avpacket.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
-    <ClCompile Include="libavcore\imgutils.c">
-      <Filter>libavcore</Filter>
-    </ClCompile>
-    <ClCompile Include="libavcore\avcore_utils.c">
-      <Filter>libavcore</Filter>
-    </ClCompile>
-    <ClCompile Include="libavcore\audioconvert.c">
-      <Filter>libavcore</Filter>
-    </ClCompile>
     <ClCompile Include="libavcodec\vp56rac.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
     <ClCompile Include="libavcodec\h261.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
-    <ClCompile Include="libavcore\samplefmt.c">
-      <Filter>libavcore</Filter>
+    <ClCompile Include="libswscale\utils.c">
+      <Filter>libswscale</Filter>
+    </ClCompile>
+    <ClCompile Include="libswscale\swscale_unscaled.c">
+      <Filter>libswscale</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\dct32_fixed.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\dct32_float.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\ac3dsp.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\dct.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\dct32.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\h264pred_template.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\dsputil_template.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\fmtconvert.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\h264dsp_template.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\h264idct_template.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\kbdwin.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\mpegaudiodsp.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\rdft.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\sinewin.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
+    <ClCompile Include="libavutil\samplefmt.c">
+      <Filter>libavutil</Filter>
+    </ClCompile>
+    <ClCompile Include="libavutil\utils.c">
+      <Filter>libavutil</Filter>
+    </ClCompile>
+    <ClCompile Include="libavutil\audioconvert.c">
+      <Filter>libavutil</Filter>
+    </ClCompile>
+    <ClCompile Include="libavutil\dict.c">
+      <Filter>libavutil</Filter>
+    </ClCompile>
+    <ClCompile Include="libavutil\imgutils.c">
+      <Filter>libavutil</Filter>
+    </ClCompile>
+    <ClCompile Include="libavutil\opt.c">
+      <Filter>libavutil</Filter>
+    </ClCompile>
+    <ClCompile Include="libswscale\options.c">
+      <Filter>libswscale</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\h264_recov.c">
+      <Filter>libavcodec</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

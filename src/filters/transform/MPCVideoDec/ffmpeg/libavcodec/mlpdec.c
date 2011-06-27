@@ -41,7 +41,7 @@
 
 static const char* sample_message =
     "Please file a bug report following the instructions at "
-    "http://ffmpeg.org/bugreports.html and include "
+    "http://libav.org/bugreports.html and include "
     "a sample of this file.";
 
 typedef struct SubStream {
@@ -132,6 +132,9 @@ typedef struct MLPDecodeContext {
 
     //! Index of the last substream to decode - further substreams are skipped.
     uint8_t     max_decoded_substream;
+
+    //! Stream needs channel reordering to comply with FFmpeg's channel order
+    uint8_t     needs_reordering;
 
     //! number of PCM samples contained in each frame
     int         access_unit_size;
@@ -326,6 +329,26 @@ static int read_major_sync(MLPDecodeContext *m, GetBitContext *gb)
     for (substr = 0; substr < MAX_SUBSTREAMS; substr++)
         m->substream[substr].restart_seen = 0;
 
+    if (mh.stream_type == 0xbb) {
+        /* MLP stream */
+        m->avctx->channel_layout = ff_mlp_layout[mh.channels_mlp];
+    } else { /* mh.stream_type == 0xba */
+        /* TrueHD stream */
+        if (mh.channels_thd_stream2) {
+            m->avctx->channel_layout = ff_truehd_layout(mh.channels_thd_stream2);
+        } else {
+            m->avctx->channel_layout = ff_truehd_layout(mh.channels_thd_stream1);
+        }
+        if (m->avctx->channels &&
+            !m->avctx->request_channels && !m->avctx->request_channel_layout &&
+            av_get_channel_layout_nb_channels(m->avctx->channel_layout) != m->avctx->channels) {
+            m->avctx->channel_layout = 0;
+            av_log_ask_for_sample(m->avctx, "Unknown channel layout.");
+        }
+    }
+
+    m->needs_reordering = mh.channels_mlp >= 18 && mh.channels_mlp <= 20;
+
     return 0;
 }
 
@@ -434,6 +457,24 @@ static int read_restart_header(MLPDecodeContext *m, GetBitContext *gbp,
             return -1;
         }
         s->ch_assign[ch_assign] = ch;
+    }
+
+    if (m->avctx->codec_id == CODEC_ID_MLP && m->needs_reordering) {
+        if (m->avctx->channel_layout == (AV_CH_LAYOUT_QUAD|AV_CH_LOW_FREQUENCY) ||
+            m->avctx->channel_layout == AV_CH_LAYOUT_5POINT0_BACK) {
+            int i = s->ch_assign[4];
+            s->ch_assign[4] = s->ch_assign[3];
+            s->ch_assign[3] = s->ch_assign[2];
+            s->ch_assign[2] = i;
+        } else if (m->avctx->channel_layout == AV_CH_LAYOUT_5POINT1_BACK) {
+            FFSWAP(int, s->ch_assign[2], s->ch_assign[4]);
+            FFSWAP(int, s->ch_assign[3], s->ch_assign[5]);
+        }
+    }
+    if (m->avctx->codec_id == CODEC_ID_TRUEHD &&
+        m->avctx->channel_layout == AV_CH_LAYOUT_7POINT1) {
+        FFSWAP(int, s->ch_assign[4], s->ch_assign[6]);
+        FFSWAP(int, s->ch_assign[5], s->ch_assign[7]);
     }
 
     checksum = ff_mlp_restart_checksum(buf, get_bits_count(gbp) - start_count);
@@ -1139,38 +1180,28 @@ error:
     return -1;
 }
 
-AVCodec mlp_decoder = {
+AVCodec ff_mlp_decoder = {
     "mlp",
     AVMEDIA_TYPE_AUDIO,
     CODEC_ID_MLP,
     sizeof(MLPDecodeContext),
-    /*.init = */mlp_decode_init,
-    /*.encode = */NULL,
-    /*.close = */NULL,
-    /*.decode = */read_access_unit,
-    /*.capabilities = */0,
-    /*.next = */NULL,
-    /*.flush = */NULL,
-    /*.supported_framerates = */NULL,
-    /*.pix_fmts = */NULL,
-    /*.long_name = */NULL_IF_CONFIG_SMALL("MLP (Meridian Lossless Packing)"),
+    mlp_decode_init,
+    NULL,
+    NULL,
+    read_access_unit,
+    .long_name = NULL_IF_CONFIG_SMALL("MLP (Meridian Lossless Packing)"),
 };
 
 #if CONFIG_TRUEHD_DECODER
-AVCodec truehd_decoder = {
+AVCodec ff_truehd_decoder = {
     "truehd",
     AVMEDIA_TYPE_AUDIO,
     CODEC_ID_TRUEHD,
     sizeof(MLPDecodeContext),
-    /*.init = */mlp_decode_init,
-    /*.encode = */NULL,
-    /*.close = */NULL,
-    /*.decode = */read_access_unit,
-    /*.capabilities = */0,
-    /*.next = */NULL,
-    /*.flush = */NULL,
-    /*.supported_framerates = */NULL,
-    /*.pix_fmts = */NULL,
-    /*.long_name = */NULL_IF_CONFIG_SMALL("TrueHD"),
+    mlp_decode_init,
+    NULL,
+    NULL,
+    read_access_unit,
+    .long_name = NULL_IF_CONFIG_SMALL("TrueHD"),
 };
 #endif /* CONFIG_TRUEHD_DECODER */

@@ -23,6 +23,7 @@
 #include <uuids.h>
 #include <moreuuids.h>
 #include "char_t.h"
+#include "ffImgfmt.h"
 
 const TcspInfo cspInfos[]= {
     {
@@ -203,15 +204,6 @@ const TcspInfo cspInfos[]= {
         BI_RGB, FOURCC_RGB6, &MEDIASUBTYPE_RGB565
     },
 
-    {
-        FF_CSP_PAL8,_l("pal8"),
-        1,8, //Bpp
-        1, //numplanes
-        {0,0,0,0}, //shiftX
-        {0,0,0,0}, //shiftY
-        {0,0,0,0}, //black
-        BI_RGB, 0, &MEDIASUBTYPE_RGB8
-    },
     {
         FF_CSP_CLJR,_l("cljr"),
         1,16, //Bpp
@@ -802,30 +794,7 @@ int csp_bestMatch(int inCSP,int wantedCSPS,int *rank)
             bestcsps=best;
             break;
         }
-        case FF_CSP_PAL8: {
-            static const int best[FF_CSPS_NUM]= {
-                FF_CSP_RGB32,
-                FF_CSP_BGR32,
-                FF_CSP_RGB24,
-                FF_CSP_BGR24,
-                FF_CSP_RGB15,
-                FF_CSP_BGR15,
-                FF_CSP_RGB16,
-                FF_CSP_BGR16,
-                FF_CSP_420P ,
-                FF_CSP_422P ,
-                FF_CSP_444P ,
-                FF_CSP_411P ,
-                FF_CSP_410P ,
-                FF_CSP_YUY2 ,
-                FF_CSP_UYVY ,
-                FF_CSP_YVYU ,
-                FF_CSP_VYUY ,
-                FF_CSP_NULL
-            };
-            bestcsps=best;
-            break;
-        }
+
         case FF_CSP_CLJR: {
             static const int best[FF_CSPS_NUM]= {
                 FF_CSP_420P ,
