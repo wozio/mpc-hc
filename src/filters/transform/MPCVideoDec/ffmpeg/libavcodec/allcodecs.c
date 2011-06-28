@@ -120,7 +120,8 @@ void avcodec_register_all(void)
 
     /* audio codecs */
     //REGISTER_DECODER (AAC, aac);
-    REGISTER_DECODER  (AC3, ac3);
+    //REGISTER_DECODER (AAC_LATM, aac_latm);
+    REGISTER_DECODER (AC3, ac3);
     //REGISTER_DECODER (ATRAC3, atrac3);
     //REGISTER_DECODER (COOK, cook);
     //REGISTER_DECODER (DCA, dca);

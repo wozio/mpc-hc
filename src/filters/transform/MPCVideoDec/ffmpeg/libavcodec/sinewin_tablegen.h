@@ -1,7 +1,7 @@
 /*
  * Header file for hardcoded sine windows
  *
- * Copyright (c) 2009 Reimar Döffinger <Reimar.Doeffinger@gmx.de>
+ * Copyright (c) 2009 Reimar DÃ¶ffinger <Reimar.Doeffinger@gmx.de>
  *
  * This file is part of Libav.
  *
