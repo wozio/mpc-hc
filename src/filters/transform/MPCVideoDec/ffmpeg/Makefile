@@ -22,8 +22,7 @@ TARGET_LIB     = $(TARGET_LIB_DIR)/libavcodec.lib
 
 # Compiler and yasm flags
 CFLAGS    = -I. -I.. -Ilibavcodec -Ilibavutil -Ilibswscale -I../../../../thirdparty/zlib \
-            -DHAVE_AV_CONFIG_H -D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112 \
-            -std=gnu99 -mdll -mthreads -pipe
+            -DHAVE_AV_CONFIG_H -D_ISOC99_SOURCE -std=gnu99 -mdll -mthreads -pipe
 
 OPTFLAGS  = -fno-common -fno-tree-vectorize
 YASMFLAGS = -Pconfig.asm
@@ -58,7 +57,7 @@ OBJ_DIRS = $(OBJ_DIR) \
     $(OBJ_DIR)libavutil \
     $(OBJ_DIR)libavutil/x86 \
     $(OBJ_DIR)libswscale \
-	$(OBJ_DIR)libswscale/x86 \
+    $(OBJ_DIR)libswscale/x86 \
     $(TARGET_LIB_DIR)
 
 
@@ -82,7 +81,7 @@ SRCS_C=\
     libavcodec/ac3_parser.c \
     libavcodec/ac3dec.c \
     libavcodec/ac3dec_data.c \
-	libavcodec/ac3dsp.c \
+    libavcodec/ac3dsp.c \
     libavcodec/ac3tab.c \
     libavcodec/adpcm.c \
     libavcodec/allcodecs.c \
@@ -91,8 +90,8 @@ SRCS_C=\
     libavcodec/bitstream.c \
     libavcodec/cabac.c \
     libavcodec/CompilerVersion.c \
-	libavcodec/dct.c \
-	libavcodec/dct32.c \
+    libavcodec/dct.c \
+    libavcodec/dct32.c \
     libavcodec/dct32_fixed.c \
     libavcodec/dct32_float.c \
     libavcodec/dsputil.c \
@@ -210,15 +209,13 @@ SRCS_C=\
     libavcodec/x86/vp56dsp_init.c \
     libavcodec/x86/vp8dsp-init.c \
 \
-    libavutil/dict.c \
     libavutil/audioconvert.c \
-    libavutil/imgutils.c \
-    libavutil/samplefmt.c \
-\
     libavutil/avstring.c \
     libavutil/cpu.c \
     libavutil/crc.c \
+    libavutil/dict.c \
     libavutil/eval.c \
+    libavutil/imgutils.c \
     libavutil/intfloat_readwrite.c \
     libavutil/inverse.c \
     libavutil/log.c \
@@ -230,19 +227,20 @@ SRCS_C=\
     libavutil/pixdesc.c \
     libavutil/random_seed.c \
     libavutil/rational.c \
+    libavutil/samplefmt.c \
     libavutil/utils.c \
 \
     libavutil/x86/cpu.c \
 \
     libswscale/rgb2rgb.c \
-	libswscale/options.c \
+    libswscale/options.c \
     libswscale/swscale.c \
-	libswscale/swscale_unscaled.c \
-	libswscale/utils.c \
+    libswscale/swscale_unscaled.c \
+    libswscale/utils.c \
     libswscale/yuv2rgb.c \
-	libswscale/x86/rgb2rgb.c \
-	libswscale/x86/swscale_mmx.c \
-	libswscale/x86/yuv2rgb_mmx.c
+    libswscale/x86/rgb2rgb.c \
+    libswscale/x86/swscale_mmx.c \
+    libswscale/x86/yuv2rgb_mmx.c
 
 
 
