@@ -13,22 +13,30 @@ EXIT /B
 
 :VarOk
 SET PATH=%MSYS%\bin;%MINGW32%\bin;%PATH%
+SET "make_args=-j4"
+IF /I "%~2" == "Debug" SET "make_args=DEBUG=yes %make_args%"
 
 IF "%~1" == "" (
   SET "BUILDTYPE=build"
 ) ELSE (
-  IF /I "%~1" == "Build"     SET "BUILDTYPE=build"   & CALL :SubMake & EXIT /B
-  IF /I "%~1" == "/Build"    SET "BUILDTYPE=build"   & CALL :SubMake & EXIT /B
-  IF /I "%~1" == "-Build"    SET "BUILDTYPE=build"   & CALL :SubMake & EXIT /B
-  IF /I "%~1" == "--Build"   SET "BUILDTYPE=build"   & CALL :SubMake & EXIT /B
-  IF /I "%~1" == "Clean"     SET "BUILDTYPE=clean"   & CALL :SubMake clean & EXIT /B
-  IF /I "%~1" == "/Clean"    SET "BUILDTYPE=clean"   & CALL :SubMake clean & EXIT /B
-  IF /I "%~1" == "-Clean"    SET "BUILDTYPE=clean"   & CALL :SubMake clean & EXIT /B
-  IF /I "%~1" == "--Clean"   SET "BUILDTYPE=clean"   & CALL :SubMake clean & EXIT /B
-  IF /I "%~1" == "Rebuild"   SET "BUILDTYPE=rebuild" & CALL :SubMake clean & CALL :SubMake & EXIT /B
-  IF /I "%~1" == "/Rebuild"  SET "BUILDTYPE=rebuild" & CALL :SubMake clean & CALL :SubMake & EXIT /B
-  IF /I "%~1" == "-Rebuild"  SET "BUILDTYPE=rebuild" & CALL :SubMake clean & CALL :SubMake & EXIT /B
-  IF /I "%~1" == "--Rebuild" SET "BUILDTYPE=rebuild" & CALL :SubMake clean & CALL :SubMake & EXIT /B
+  IF /I "%~1" == "Build" (
+    SET "BUILDTYPE=build"
+    CALL :SubMake %make_args%
+    EXIT /B
+  )
+
+  IF /I "%~1" == "Clean" (
+    SET "BUILDTYPE=clean"
+    CALL :SubMake clean -j1
+    EXIT /B
+  )
+
+  IF /I "%~1" == "Rebuild" (
+    SET "BUILDTYPE=rebuild"
+    CALL :SubMake clean -j1
+    CALL :SubMake %make_args%
+    EXIT /B
+  )
 
   ECHO.
   ECHO Unsupported commandline switch!
@@ -38,22 +46,18 @@ IF "%~1" == "" (
 
 
 :SubMake
-SET "make_args=-j4"
-IF /I "%BUILDTYPE%"=="clean" SET "make_args="
-
-TITLE "make.exe %make_args% %*"
-ECHO make.exe %make_args% %*
-make.exe %make_args% %*
+TITLE "make.exe %*"
+ECHO make.exe %*
+make.exe %*
 EXIT /B
 
 
 :SHOWHELP
 TITLE "%~nx0 %1"
 ECHO. & ECHO.
-ECHO Usage:   %~nx0 [Clean^|Build^|Rebuild]
+ECHO Usage:   %~nx0 [Clean^|Build^|Rebuild] [Debug]
 ECHO.
-ECHO Notes:   You can also prefix the commands with "-", "--" or "/".
-ECHO          The arguments are case insesitive.
+ECHO Notes:   The arguments are not case sensitive.
 ECHO. & ECHO.
 ECHO Executing "%~nx0" will use the defaults: "%~nx0 build"
 ECHO.
