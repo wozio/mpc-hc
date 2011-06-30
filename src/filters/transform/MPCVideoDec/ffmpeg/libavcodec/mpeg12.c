@@ -39,6 +39,11 @@
 #include "xvmc_internal.h"
 #include "thread.h"
 
+// ==> Start patch MPC
+#include <windows.h>
+#include <dxva.h>
+// <== End patch MPC
+
 //#undef NDEBUG
 //#include <assert.h>
 
@@ -1135,6 +1140,10 @@ typedef struct Mpeg1Context {
     int save_width, save_height, save_progressive_seq;
     AVRational frame_rate_ext;       ///< MPEG-2 specific framerate modificator
     int sync;                        ///< Did we reach a sync point like a GOP/SEQ/KEYFrame?
+	// ==> Start patch MPC
+	DXVA_SliceInfo* pSliceInfo;
+	uint8_t* prev_slice;
+	// <== End patch MPC
 } Mpeg1Context;
 
 static av_cold int mpeg_decode_init(AVCodecContext *avctx)
@@ -1670,7 +1679,13 @@ static int mpeg_decode_slice(Mpeg1Context *s1, int mb_y,
     ff_mpeg1_clean_buffers(s);
     s->interlaced_dct = 0;
 
-    s->qscale = get_qscale(s);
+	// ==> Start patch MPC
+	// DXVA need raw syntax element
+	if (s->avctx->codec->capabilities&CODEC_CAP_HWACCEL_VDPAU)
+		s->qscale = get_bits(&s->gb, 5);
+	else
+		s->qscale = get_qscale(s);
+	// <== End patch MPC
 
     if(s->qscale == 0){
         av_log(s->avctx, AV_LOG_ERROR, "qscale == 0\n");
@@ -1681,6 +1696,31 @@ static int mpeg_decode_slice(Mpeg1Context *s1, int mb_y,
     while (get_bits1(&s->gb) != 0) {
         skip_bits(&s->gb, 8);
     }
+
+	// ==> Start patch MPC
+	if (s->avctx->codec->capabilities&CODEC_CAP_HWACCEL_VDPAU)
+	{
+		// Fill DXVA structure and return
+		// s1->pSliceInfo[s1->slice_count].wHorizontalPosition =						// TODO : horizontal ?
+		s1->pSliceInfo[s1->slice_count].wVerticalPosition	= s1->slice_count;		
+		s1->pSliceInfo[s1->slice_count].wMBbitOffset		= s->gb.index + 32;		// Current pos + Slice Start Code 
+		s1->pSliceInfo[s1->slice_count].wNumberMBsInSlice	= s->mb_width;
+		s1->pSliceInfo[s1->slice_count].wQuantizerScaleCode	= s->qscale;// >> 1;
+		s1->pSliceInfo[s1->slice_count].dwSliceBitsInBuffer	= (buf_size*8)+32;
+
+		if (s1->slice_count>0)
+		{
+			s1->pSliceInfo[s1->slice_count-1].dwSliceBitsInBuffer = (*buf - s1->prev_slice)*8;
+			s1->pSliceInfo[s1->slice_count].dwSliceDataLocation   = s1->pSliceInfo[s1->slice_count-1].dwSliceDataLocation +
+																	s1->pSliceInfo[s1->slice_count-1].dwSliceBitsInBuffer/8;
+		}
+
+		s1->prev_slice = (uint8_t*)*buf;
+		s1->slice_count++;
+
+		return 0;
+	}
+	// <== End patch MPC
 
     s->mb_x=0;
 
@@ -1913,7 +1953,10 @@ static int slice_end(AVCodecContext *avctx, AVFrame *pict)
 
         s->current_picture_ptr->qscale_type= FF_QSCALE_TYPE_MPEG2;
 
-        ff_er_frame_end(s);
+		// ==> Start patch MPC
+		if (!s->avctx->codec->capabilities&CODEC_CAP_HWACCEL_VDPAU)
+			ff_er_frame_end(s);
+		// <== End patch MPC
 
         MPV_frame_end(s);
 
@@ -2452,7 +2495,10 @@ static int decode_chunks(AVCodecContext *avctx,
                     if(ret < 0){
                         if(s2->resync_mb_x>=0 && s2->resync_mb_y>=0)
                             ff_er_add_slice(s2, s2->resync_mb_x, s2->resync_mb_y, s2->mb_x, s2->mb_y, AC_ERROR|DC_ERROR|MV_ERROR);
-                    }else{
+					// ==> Start patch MPC
+					else if (!s2->avctx->codec->capabilities&CODEC_CAP_HWACCEL_VDPAU)
+					//}else{
+					// <== End patch MPC
                         ff_er_add_slice(s2, s2->resync_mb_x, s2->resync_mb_y, s2->mb_x-1, s2->mb_y, AC_END|DC_END|MV_END);
                     }
                 }
@@ -2517,7 +2563,7 @@ AVCodec ff_mpeg2video_decoder = {
     NULL,
     mpeg_decode_end,
     mpeg_decode_frame,
-    CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_DR1 | CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY | CODEC_CAP_SLICE_THREADS,
+    CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_DR1 | CODEC_CAP_TRUNCATED | CODEC_CAP_DELAY | CODEC_CAP_HWACCEL_VDPAU,
     .flush= flush,
     .max_lowres= 3,
     .long_name= NULL_IF_CONFIG_SMALL("MPEG-2 video"),
