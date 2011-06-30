@@ -18,6 +18,8 @@ IF /I "%~2" == "Debug" SET "make_args=DEBUG=yes %make_args%"
 
 IF "%~1" == "" (
   SET "BUILDTYPE=build"
+  CALL :SubMake %make_args%
+  EXIT /B
 ) ELSE (
   IF /I "%~1" == "Build" (
     SET "BUILDTYPE=build"
