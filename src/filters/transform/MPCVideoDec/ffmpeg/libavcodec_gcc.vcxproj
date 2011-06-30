@@ -102,8 +102,8 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="gccbuild.bat" />
-    <None Include="gccbuild64.bat" />
+    <None Include="gccbuild64_2010.bat" />
+    <None Include="gccbuild_2010.bat" />
     <None Include="libavcodec\x86\ac3dsp.asm" />
     <None Include="libavcodec\x86\config.asm" />
     <None Include="libavcodec\x86\dct32_sse.asm" />
@@ -126,6 +126,7 @@
     <None Include="libavcodec\x86\vp8dsp.asm" />
     <None Include="libavcodec\x86\x86inc.asm" />
     <None Include="libavcodec\x86\x86util.asm" />
+    <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="libavcodec\aac_ac3_parser.c" />

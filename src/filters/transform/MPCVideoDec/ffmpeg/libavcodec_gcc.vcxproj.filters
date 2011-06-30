@@ -90,8 +90,9 @@
     <None Include="libavcodec\x86\x86util.asm">
       <Filter>libavcodec\x86</Filter>
     </None>
-    <None Include="gccbuild.bat" />
-    <None Include="gccbuild64.bat" />
+    <None Include="gccbuild_2010.bat" />
+    <None Include="gccbuild64_2010.bat" />
+    <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="libswscale\options.c">
