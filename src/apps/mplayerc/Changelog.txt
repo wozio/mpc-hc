@@ -29,6 +29,8 @@ next version - not yet released
  CHANGED: Updated SoundTouch to v1.5.1pre r104
  CHANGED: Updated Little CMS to v2.2
  CHANGED: Updated libdca to SVN r90
+ FIXED  : Ticket #23, [H264 FFMPEG] AVCHD (MTS files) software-based playback shows
+          only black screen
  FIXED  : Ticket #285, Ambarella AVC not correctly splitted by MPC-HC's internal
           MP4/MOV source filter
  FIXED  : Ticket #384, disable Relative drive
