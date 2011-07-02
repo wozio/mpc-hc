@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2001-2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -52,9 +52,6 @@
 #endif
 #ifndef FF_API_SWS_CPU_CAPS
 #define FF_API_SWS_CPU_CAPS    (LIBSWSCALE_VERSION_MAJOR < 3)
-#endif
-#ifndef FF_API_SWS_FORMAT_NAME
-#define FF_API_SWS_FORMAT_NAME  (LIBSWSCALE_VERSION_MAJOR < 3)
 #endif
 
 /**
@@ -236,15 +233,6 @@ struct SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat
 int sws_scale(struct SwsContext *context, const uint8_t* const srcSlice[], const int srcStride[],
               int srcSliceY, int srcSliceH, uint8_t* const dst[], const int dstStride[]);
 
-#if LIBSWSCALE_VERSION_MAJOR < 1
-/**
- * @deprecated Use sws_scale() instead.
- */
-int sws_scale_ordered(struct SwsContext *context, const uint8_t* const src[],
-                      int srcStride[], int srcSliceY, int srcSliceH,
-                      uint8_t* dst[], int dstStride[]) attribute_deprecated;
-#endif
-
 /**
  * @param inv_table the yuv2rgb coefficients, normally ff_yuv2rgb_coeffs[x]
  * @param fullRange if 1 then the luma range is 0..255 if 0 it is 16..235
@@ -303,13 +291,6 @@ void sws_shiftVec(SwsVector *a, int shift);
  * with the same coefficients as a.
  */
 SwsVector *sws_cloneVec(SwsVector *a);
-
-#if LIBSWSCALE_VERSION_MAJOR < 1
-/**
- * @deprecated Use sws_printVec2() instead.
- */
-attribute_deprecated void sws_printVec(SwsVector *a);
-#endif
 
 /**
  * Prints with av_log() a textual representation of the vector a
