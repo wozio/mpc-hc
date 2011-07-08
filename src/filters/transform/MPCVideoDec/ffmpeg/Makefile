@@ -150,6 +150,7 @@ SRCS_C=\
     libavcodec/nellymoserdec.c \
     libavcodec/options.c \
     libavcodec/parser.c \
+	libavcodec/pthread.c \
     libavcodec/rdft.c \
     libavcodec/rv10.c \
     libavcodec/rv30.c \
@@ -179,7 +180,6 @@ SRCS_C=\
     libavcodec/vp6dsp.c \
     libavcodec/vp8.c \
     libavcodec/vp8dsp.c \
-    libavcodec/w32thread.c \
     libavcodec/wmv2.c \
     libavcodec/wmv2dec.c \
     libavcodec/xiph.c \

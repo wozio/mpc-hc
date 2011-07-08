@@ -93,6 +93,7 @@
     <None Include="gccbuild_2010.bat" />
     <None Include="gccbuild64_2010.bat" />
     <None Include="Makefile" />
+    <None Include="custom_code.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="libswscale\options.c">
@@ -1120,5 +1121,14 @@
     <ClInclude Include="libavcodec\x86\vp56_arith.h">
       <Filter>libavcodec\x86</Filter>
     </ClInclude>
+    <ClInclude Include="unistd.h" />
+    <ClInclude Include="array_allocator.h" />
+    <ClInclude Include="char_t.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="cpudetect.h" />
+    <ClInclude Include="ffcodecs.h" />
+    <ClInclude Include="ffImgfmt.h" />
+    <ClInclude Include="mp_msg.h" />
+    <ClInclude Include="PODtypes.h" />
   </ItemGroup>
 </Project>
