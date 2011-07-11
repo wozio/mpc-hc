@@ -214,6 +214,7 @@
     <ClCompile Include="libavcodec\nellymoserdec.c" />
     <ClCompile Include="libavcodec\options.c" />
     <ClCompile Include="libavcodec\parser.c" />
+    <ClCompile Include="libavcodec\pthread.c" />
     <ClCompile Include="libavcodec\rdft.c" />
     <ClCompile Include="libavcodec\rv10.c" />
     <ClCompile Include="libavcodec\rv30.c" />

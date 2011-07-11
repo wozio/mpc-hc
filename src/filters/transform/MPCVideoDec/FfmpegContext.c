@@ -757,15 +757,15 @@ int FFIsInterlaced(struct AVCodecContext* pAVCtx, int nHeight)
 
 void FFSetThreadNumber(struct AVCodecContext* pAVCtx, int nThreadCount)
 {
-	if (pAVCtx->thread_count > 1) {
-		ff_thread_free (pAVCtx);
+//	if (pAVCtx->thread_count > 1) {
+//		ff_thread_free (pAVCtx);
 //		pAVCtx->thread_count = 1;
-	}
-
-	if (nThreadCount > 1) {
+//	}
+//
+//	if (nThreadCount > 1) {
 //		pAVCtx->thread_count = nThreadCount;
-		ff_thread_init(pAVCtx);
-	}
+//		ff_thread_init(pAVCtx);
+//	}
 }
 
 BOOL FFSoftwareCheckCompatibility(struct AVCodecContext* pAVCtx)

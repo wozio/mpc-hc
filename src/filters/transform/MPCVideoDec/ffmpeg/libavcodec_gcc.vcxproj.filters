@@ -627,6 +627,9 @@
     <ClCompile Include="libavcodec\x86\vp56dsp_init.c">
       <Filter>libavcodec\x86</Filter>
     </ClCompile>
+    <ClCompile Include="libavcodec\pthread.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libswscale\rgb2rgb.h">

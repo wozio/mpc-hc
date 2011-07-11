@@ -24,6 +24,7 @@
 		#define ARCH_X86_32 1
 		#define ARCH_X86_64 0
 		#define HAVE_FAST_64BIT 0
+
 	#endif
 
 	#define PTW32_STATIC_LIB 1
