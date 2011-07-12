@@ -755,17 +755,18 @@ int FFIsInterlaced(struct AVCodecContext* pAVCtx, int nHeight)
 	return 0;
 }
 
+
+int FFGetThreadType(int nCodecId, int nThreadCount)
+{
+	return (nThreadCount>1) ? (nCodecId == CODEC_ID_H264 ? FF_THREAD_FRAME : FF_THREAD_SLICE) : 0;
+}
+
 void FFSetThreadNumber(struct AVCodecContext* pAVCtx, int nThreadCount)
 {
-//	if (pAVCtx->thread_count > 1) {
-//		ff_thread_free (pAVCtx);
-//		pAVCtx->thread_count = 1;
-//	}
-//
-//	if (nThreadCount > 1) {
-//		pAVCtx->thread_count = nThreadCount;
-//		ff_thread_init(pAVCtx);
-//	}
+	pAVCtx->thread_count = nThreadCount;
+	pAVCtx->thread_type  = FFGetThreadType (pAVCtx->codec_id, nThreadCount);
+	ff_thread_init(pAVCtx);
+
 }
 
 BOOL FFSoftwareCheckCompatibility(struct AVCodecContext* pAVCtx)
