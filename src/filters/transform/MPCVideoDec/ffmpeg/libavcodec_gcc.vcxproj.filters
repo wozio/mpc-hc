@@ -24,13 +24,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <None Include="gccbuild_2010.bat" />
+    <None Include="gccbuild64_2010.bat" />
+    <None Include="custom_code.txt" />
     <None Include="libavcodec\x86\ac3dsp.asm">
       <Filter>libavcodec\x86</Filter>
     </None>
     <None Include="libavcodec\x86\config.asm">
-      <Filter>libavcodec\x86</Filter>
-    </None>
-    <None Include="libavcodec\x86\dct32_sse.asm">
       <Filter>libavcodec\x86</Filter>
     </None>
     <None Include="libavcodec\x86\dsputil_yasm.asm">
@@ -66,6 +66,9 @@
     <None Include="libavcodec\x86\h264_intrapred_10bit.asm">
       <Filter>libavcodec\x86</Filter>
     </None>
+    <None Include="libavcodec\x86\h264_qpel_10bit.asm">
+      <Filter>libavcodec\x86</Filter>
+    </None>
     <None Include="libavcodec\x86\h264_weight.asm">
       <Filter>libavcodec\x86</Filter>
     </None>
@@ -90,9 +93,6 @@
     <None Include="libavcodec\x86\x86util.asm">
       <Filter>libavcodec\x86</Filter>
     </None>
-    <None Include="gccbuild_2010.bat" />
-    <None Include="gccbuild64_2010.bat" />
-    <None Include="Makefile" />
     <None Include="custom_code.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -125,6 +125,15 @@
     </ClCompile>
     <ClCompile Include="libswscale\x86\yuv2rgb_mmx.c">
       <Filter>libswscale\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="libavutil\x86\cpu.c">
+      <Filter>libavutil\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\amr_float\interf_dec.c">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClCompile>
+    <ClCompile Include="libavcodec\amr_float\sp_dec.c">
+      <Filter>libavcodec\amr_float</Filter>
     </ClCompile>
     <ClCompile Include="libavutil\audioconvert.c">
       <Filter>libavutil</Filter>
@@ -192,9 +201,6 @@
     <ClCompile Include="libavutil\utils.c">
       <Filter>libavutil</Filter>
     </ClCompile>
-    <ClCompile Include="libavutil\x86\cpu.c">
-      <Filter>libavutil\x86</Filter>
-    </ClCompile>
     <ClCompile Include="libavcodec\aac_ac3_parser.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
@@ -228,6 +234,9 @@
     <ClCompile Include="libavcodec\avpacket.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
+    <ClCompile Include="libavcodec\bit_depth_template.c">
+      <Filter>libavcodec</Filter>
+    </ClCompile>
     <ClCompile Include="libavcodec\bitstream.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
@@ -235,18 +244,6 @@
       <Filter>libavcodec</Filter>
     </ClCompile>
     <ClCompile Include="libavcodec\CompilerVersion.c">
-      <Filter>libavcodec</Filter>
-    </ClCompile>
-    <ClCompile Include="libavcodec\dct.c">
-      <Filter>libavcodec</Filter>
-    </ClCompile>
-    <ClCompile Include="libavcodec\dct32.c">
-      <Filter>libavcodec</Filter>
-    </ClCompile>
-    <ClCompile Include="libavcodec\dct32_fixed.c">
-      <Filter>libavcodec</Filter>
-    </ClCompile>
-    <ClCompile Include="libavcodec\dct32_float.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
     <ClCompile Include="libavcodec\dsputil.c">
@@ -543,12 +540,6 @@
     <ClCompile Include="libavcodec\xiph.c">
       <Filter>libavcodec</Filter>
     </ClCompile>
-    <ClCompile Include="libavcodec\amr_float\interf_dec.c">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClCompile>
-    <ClCompile Include="libavcodec\amr_float\sp_dec.c">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClCompile>
     <ClCompile Include="libavcodec\x86\ac3dsp_mmx.c">
       <Filter>libavcodec\x86</Filter>
     </ClCompile>
@@ -641,6 +632,47 @@
     <ClInclude Include="libswscale\swscale_internal.h">
       <Filter>libswscale</Filter>
     </ClInclude>
+    <ClInclude Include="libavutil\x86\bswap.h">
+      <Filter>libavutil\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\x86\intmath.h">
+      <Filter>libavutil\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\x86\intreadwrite.h">
+      <Filter>libavutil\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="libavutil\x86\timer.h">
+      <Filter>libavutil\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\amr_float\interf_dec.h">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\amr_float\interf_enc.h">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\amr_float\interf_rom.h">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\amr_float\rom_dec.h">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\amr_float\sp_dec.h">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\amr_float\sp_enc.h">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClInclude>
+    <ClInclude Include="libavcodec\amr_float\typedef.h">
+      <Filter>libavcodec\amr_float</Filter>
+    </ClInclude>
+    <ClInclude Include="array_allocator.h" />
+    <ClInclude Include="char_t.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="cpudetect.h" />
+    <ClInclude Include="ffcodecs.h" />
+    <ClInclude Include="ffImgfmt.h" />
+    <ClInclude Include="mp_msg.h" />
+    <ClInclude Include="PODtypes.h" />
     <ClInclude Include="libavutil\attributes.h">
       <Filter>libavutil</Filter>
     </ClInclude>
@@ -746,18 +778,6 @@
     <ClInclude Include="libavutil\x86_cpu.h">
       <Filter>libavutil</Filter>
     </ClInclude>
-    <ClInclude Include="libavutil\x86\bswap.h">
-      <Filter>libavutil\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="libavutil\x86\intmath.h">
-      <Filter>libavutil\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="libavutil\x86\intreadwrite.h">
-      <Filter>libavutil\x86</Filter>
-    </ClInclude>
-    <ClInclude Include="libavutil\x86\timer.h">
-      <Filter>libavutil\x86</Filter>
-    </ClInclude>
     <ClInclude Include="libavcodec\aac_ac3_parser.h">
       <Filter>libavcodec</Filter>
     </ClInclude>
@@ -798,9 +818,6 @@
       <Filter>libavcodec</Filter>
     </ClInclude>
     <ClInclude Include="libavcodec\dct.h">
-      <Filter>libavcodec</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\dct32.h">
       <Filter>libavcodec</Filter>
     </ClInclude>
     <ClInclude Include="libavcodec\dsputil.h">
@@ -867,9 +884,6 @@
       <Filter>libavcodec</Filter>
     </ClInclude>
     <ClInclude Include="libavcodec\h264pred.h">
-      <Filter>libavcodec</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\high_bit_depth.h">
       <Filter>libavcodec</Filter>
     </ClInclude>
     <ClInclude Include="libavcodec\huffman.h">
@@ -1082,27 +1096,6 @@
     <ClInclude Include="libavcodec\xvmc_internal.h">
       <Filter>libavcodec</Filter>
     </ClInclude>
-    <ClInclude Include="libavcodec\amr_float\interf_dec.h">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\amr_float\interf_enc.h">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\amr_float\interf_rom.h">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\amr_float\rom_dec.h">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\amr_float\sp_dec.h">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\amr_float\sp_enc.h">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClInclude>
-    <ClInclude Include="libavcodec\amr_float\typedef.h">
-      <Filter>libavcodec\amr_float</Filter>
-    </ClInclude>
     <ClInclude Include="libavcodec\x86\cabac.h">
       <Filter>libavcodec\x86</Filter>
     </ClInclude>
@@ -1124,7 +1117,6 @@
     <ClInclude Include="libavcodec\x86\vp56_arith.h">
       <Filter>libavcodec\x86</Filter>
     </ClInclude>
-    <ClInclude Include="unistd.h" />
     <ClInclude Include="array_allocator.h" />
     <ClInclude Include="char_t.h" />
     <ClInclude Include="config.h" />

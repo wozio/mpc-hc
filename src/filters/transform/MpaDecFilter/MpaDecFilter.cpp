@@ -2719,7 +2719,7 @@ HRESULT CMpaDecFilter::DeliverFFmpeg(int nCodecId, BYTE* p, int buffsize, int& s
 
 			// Decode frame
 			if (nParserLength > 0) {
-				nRet = avcodec_decode_audio2(m_pAVCtx, (int16_t*)m_pPCMData, &nPCMLength, (const uint8_t*)pParserData, nParserLength);
+				nRet = avcodec_decode_audio3(m_pAVCtx, (int16_t*)m_pPCMData, &nPCMLength, (const uint8_t*)pParserData, nParserLength);
 				if (nRet<0 || (nRet==0 &&nPCMLength==0)) {
 					continue;
 				}
@@ -2728,7 +2728,7 @@ HRESULT CMpaDecFilter::DeliverFFmpeg(int nCodecId, BYTE* p, int buffsize, int& s
 			}
 		} else {
 			// No parsing for MLP : decode only
-			nRet = avcodec_decode_audio2(m_pAVCtx, (int16_t*)m_pPCMData, &nPCMLength, (const uint8_t*)p, buffsize);
+			nRet = avcodec_decode_audio3(m_pAVCtx, (int16_t*)m_pPCMData, &nPCMLength, (const uint8_t*)p, buffsize);
 			if (nRet<0 || (nRet==0 && nParserLength==0)) {
 				return S_OK;
 			}
@@ -2925,7 +2925,7 @@ bool CMpaDecFilter::InitFFmpeg(int nCodecId)
 			wfein->nSamplesPerSec = 8000;
 		}
 
-		m_pAVCtx						= avcodec_alloc_context();
+		m_pAVCtx						= avcodec_alloc_context3(m_pAVCodec);
 		m_pAVCtx->sample_rate			= wfein->nSamplesPerSec;
 		m_pAVCtx->channels				= wfein->nChannels;
 		m_pAVCtx->bit_rate				= wfein->nAvgBytesPerSec*8;
@@ -2936,7 +2936,7 @@ bool CMpaDecFilter::InitFFmpeg(int nCodecId)
 		m_pAVCtx->codec_id		= (CodecID)nCodecId;
 		m_pParser				= av_parser_init(nCodecId);
 
-		if (avcodec_open(m_pAVCtx,m_pAVCodec)>=0) {
+		if (avcodec_open2(m_pAVCtx,m_pAVCodec, &m_pOptions)>=0) {
 			m_pPCMData	= (BYTE*)FF_aligned_malloc (AVCODEC_MAX_AUDIO_FRAME_SIZE+FF_INPUT_BUFFER_PADDING_SIZE, 64);
 			bRet		= true;
 		}

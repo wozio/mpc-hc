@@ -385,7 +385,7 @@ void FFH264SetCurrentPicture (int nIndex, DXVA_PicParams_H264* pDXVAPicParams, s
 	pDXVAPicParams->CurrPic.Index7Bits	= nIndex;
 
 	if (h->s.current_picture_ptr) {
-		h->s.current_picture_ptr->opaque = (void*)nIndex;
+		h->s.current_picture_ptr->f.opaque = (void*)nIndex;
 	}
 }
 
@@ -430,7 +430,7 @@ void FFH264UpdateRefFramesList (DXVA_PicParams_H264* pDXVAPicParams, struct AVCo
 			}
 
 			pDXVAPicParams->RefFrameList[i].AssociatedFlag	= AssociatedFlag;
-			pDXVAPicParams->RefFrameList[i].Index7Bits		= (UCHAR)pic->opaque;
+			pDXVAPicParams->RefFrameList[i].Index7Bits		= (UCHAR)pic->f.opaque;
 		} else {
 			pDXVAPicParams->FrameNumList[i]					= 0;
 			pDXVAPicParams->FieldOrderCntList[i][0]			= 0;
@@ -449,13 +449,13 @@ BOOL FFH264IsRefFrameInUse (int nFrameNum, struct AVCodecContext* pAVCtx)
 	int				i;
 
 	for (i=0; i<h->short_ref_count; i++) {
-		if ((int)h->short_ref[i]->opaque == nFrameNum) {
+		if ((int)h->short_ref[i]->f.opaque == nFrameNum) {
 			return TRUE;
 		}
 	}
 
 	for (i=0; i<h->long_ref_count; i++) {
-		if ((int)h->long_ref[i]->opaque == nFrameNum) {
+		if ((int)h->long_ref[i]->f.opaque == nFrameNum) {
 			return TRUE;
 		}
 	}
@@ -667,8 +667,8 @@ HRESULT FFMpeg2DecodeFrame (DXVA_PictureParameters* pPicParams, DXVA_QmatrixData
 
 	pPicParams->bPicStructure					= s->picture_structure;
 	//pPicParams->bSecondField;
-	pPicParams->bPicIntra						= (s->current_picture.pict_type == FF_I_TYPE);
-	pPicParams->bPicBackwardPrediction			= (s->current_picture.pict_type == FF_B_TYPE);
+	pPicParams->bPicIntra						= (s->current_picture.f.pict_type == FF_I_TYPE);
+	pPicParams->bPicBackwardPrediction			= (s->current_picture.f.pict_type == FF_B_TYPE);
 
 	pPicParams->bBidirectionalAveragingMode		= 0;	// The value “0” indicates MPEG-1 and MPEG-2 rounded averaging (//2),
 	//pPicParams->bMVprecisionAndChromaRelation	= 0;	// Indicates that luminance motion vectors have half-sample precision and that chrominance motion vectors are derived from luminance motion vectors according to the rules in MPEG-2
@@ -784,7 +784,7 @@ int FFGetCodedPicture(struct AVCodecContext* pAVCtx)
 {
 	MpegEncContext*		s = GetMpegEncContext(pAVCtx);
 
-	return (s != NULL) ? s->current_picture.coded_picture_number : 0;
+	return (s != NULL) ? s->current_picture.f.coded_picture_number : 0;
 }
 
 

@@ -42,7 +42,7 @@ endif
 
 ifeq ($(DEBUG),yes)
     CFLAGS       += -DDEBUG -D_DEBUG -g
-	OPTFLAGS     += -fomit-frame-pointer
+    OPTFLAGS     += -fomit-frame-pointer
     YASMFLAGS    += -g cv8
 else
     CFLAGS       += -DNDEBUG -UDEBUG
@@ -91,10 +91,6 @@ SRCS_C=\
     libavcodec/bitstream.c \
     libavcodec/cabac.c \
     libavcodec/CompilerVersion.c \
-    libavcodec/dct.c \
-    libavcodec/dct32.c \
-    libavcodec/dct32_fixed.c \
-    libavcodec/dct32_float.c \
     libavcodec/dsputil.c \
     libavcodec/eac3dec.c \
     libavcodec/eac3dec_data.c \
@@ -151,7 +147,7 @@ SRCS_C=\
     libavcodec/nellymoserdec.c \
     libavcodec/options.c \
     libavcodec/parser.c \
-	libavcodec/pthread.c \
+    libavcodec/pthread.c \
     libavcodec/rdft.c \
     libavcodec/rv10.c \
     libavcodec/rv30.c \
@@ -248,7 +244,6 @@ SRCS_C=\
 # Yasm objects
 SRCS_YASM=\
     libavcodec/x86/ac3dsp.asm \
-    libavcodec/x86/dct32_sse.asm \
     libavcodec/x86/dsputil_yasm.asm \
     libavcodec/x86/fft_mmx.asm \
     libavcodec/x86/fmtconvert.asm \

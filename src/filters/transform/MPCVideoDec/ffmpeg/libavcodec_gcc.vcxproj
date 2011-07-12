@@ -107,7 +107,6 @@
     <None Include="gccbuild_2010.bat" />
     <None Include="libavcodec\x86\ac3dsp.asm" />
     <None Include="libavcodec\x86\config.asm" />
-    <None Include="libavcodec\x86\dct32_sse.asm" />
     <None Include="libavcodec\x86\dsputil_yasm.asm" />
     <None Include="libavcodec\x86\fft_mmx.asm" />
     <None Include="libavcodec\x86\fmtconvert.asm" />
@@ -119,6 +118,7 @@
     <None Include="libavcodec\x86\h264_idct_10bit.asm" />
     <None Include="libavcodec\x86\h264_intrapred.asm" />
     <None Include="libavcodec\x86\h264_intrapred_10bit.asm" />
+    <None Include="libavcodec\x86\h264_qpel_10bit.asm" />
     <None Include="libavcodec\x86\h264_weight.asm" />
     <None Include="libavcodec\x86\h264_weight_10bit.asm" />
     <None Include="libavcodec\x86\vc1dsp_yasm.asm" />
@@ -127,7 +127,6 @@
     <None Include="libavcodec\x86\vp8dsp.asm" />
     <None Include="libavcodec\x86\x86inc.asm" />
     <None Include="libavcodec\x86\x86util.asm" />
-    <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="libavcodec\aac_ac3_parser.c" />
@@ -144,12 +143,9 @@
     <ClCompile Include="libavcodec\avfft.c" />
     <ClCompile Include="libavcodec\avpacket.c" />
     <ClCompile Include="libavcodec\bitstream.c" />
+    <ClCompile Include="libavcodec\bit_depth_template.c" />
     <ClCompile Include="libavcodec\cabac.c" />
     <ClCompile Include="libavcodec\CompilerVersion.c" />
-    <ClCompile Include="libavcodec\dct.c" />
-    <ClCompile Include="libavcodec\dct32.c" />
-    <ClCompile Include="libavcodec\dct32_fixed.c" />
-    <ClCompile Include="libavcodec\dct32_float.c" />
     <ClCompile Include="libavcodec\dsputil.c" />
     <ClCompile Include="libavcodec\dsputil_template.c" />
     <ClCompile Include="libavcodec\eac3dec.c" />
@@ -337,7 +333,6 @@
     <ClInclude Include="libavcodec\bytestream.h" />
     <ClInclude Include="libavcodec\cabac.h" />
     <ClInclude Include="libavcodec\dct.h" />
-    <ClInclude Include="libavcodec\dct32.h" />
     <ClInclude Include="libavcodec\dsputil.h" />
     <ClInclude Include="libavcodec\dxva.h" />
     <ClInclude Include="libavcodec\eac3dec_data.h" />
@@ -360,7 +355,6 @@
     <ClInclude Include="libavcodec\h264pred.h" />
     <ClInclude Include="libavcodec\h264_mvpred.h" />
     <ClInclude Include="libavcodec\h264_parser.h" />
-    <ClInclude Include="libavcodec\high_bit_depth.h" />
     <ClInclude Include="libavcodec\huffman.h" />
     <ClInclude Include="libavcodec\imgconvert.h" />
     <ClInclude Include="libavcodec\internal.h" />
@@ -482,7 +476,6 @@
     <ClInclude Include="libswscale\swscale_internal.h" />
     <ClInclude Include="mp_msg.h" />
     <ClInclude Include="PODtypes.h" />
-    <ClInclude Include="unistd.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
