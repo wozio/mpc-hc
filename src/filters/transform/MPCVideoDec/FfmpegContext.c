@@ -27,6 +27,7 @@
 #include <windows.h>
 #include <winnt.h>
 #include <vfwmsgs.h>
+#include <sys/timeb.h>
 #include "FfmpegContext.h"
 #include "dsputil.h"
 #include "avcodec.h"
@@ -797,11 +798,13 @@ BOOL FFGetAlternateScan(struct AVCodecContext* pAVCtx)
 
 #ifdef _WIN64
 
-// Stupid : MSVC "forgot" to link toupper (referenced in ffmpeg and compile with Gcc) in x64
+// Stupid : MSVC "forgot" to link toupper and ftime (referenced in ffmpeg and compile with Gcc) in x64
 //			for standalone decoder without this dummy function !
 void DummyX64Link ()
 {
+	struct timeb t;
 	toupper('X');
+	ftime(&t);
 }
 
 #endif

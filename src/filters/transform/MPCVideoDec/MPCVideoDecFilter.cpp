@@ -24,7 +24,6 @@
 #include <math.h>
 #include <atlbase.h>
 #include <mmreg.h>
-#include <sys/timeb.h>
 
 #include "PODtypes.h"
 #include "avcodec.h"
@@ -687,12 +686,6 @@ CMPCVideoDecFilter::CMPCVideoDecFilter(LPUNKNOWN lpunk, HRESULT* phr)
 
 	EnumWindows(EnumFindProcessWnd, (LPARAM)&hWnd);
 	DetectVideoCard(hWnd);
-
-#if _WIN64
-	// Workaround : prevent linker error (unresolved external for __imp__ftime64)
-	timeb t;
-	ftime(&t);
-#endif
 
 #ifdef _DEBUG
 	// Check codec definition table
