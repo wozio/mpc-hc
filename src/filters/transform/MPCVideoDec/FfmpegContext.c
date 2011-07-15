@@ -762,12 +762,10 @@ int FFGetThreadType(int nCodecId, int nThreadCount)
 	return (nThreadCount>1) ? (nCodecId == CODEC_ID_H264 ? FF_THREAD_FRAME : FF_THREAD_SLICE) : 0;
 }
 
-void FFSetThreadNumber(struct AVCodecContext* pAVCtx, int nThreadCount)
+void FFSetThreadNumber(struct AVCodecContext* pAVCtx, int nCodecId, int nThreadCount)
 {
-	pAVCtx->thread_count = nThreadCount;
-	pAVCtx->thread_type  = FFGetThreadType (pAVCtx->codec_id, nThreadCount);
-	//ff_thread_init(pAVCtx);
-
+	pAVCtx->thread_count		= nThreadCount;
+	pAVCtx->thread_type			= FFGetThreadType (nCodecId, nThreadCount);
 }
 
 BOOL FFSoftwareCheckCompatibility(struct AVCodecContext* pAVCtx)
