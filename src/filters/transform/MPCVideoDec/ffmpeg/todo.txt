@@ -1,0 +1,12 @@
+1) Multithreading does not work
+   Sample:  http://xhmikosr.1f0.de/samples/2160p/ParkJoy/ParkJoy_1080p50.x264.CRF23.mkv
+2) Use the new libav API "avcodec_open2" instead of "avcodec_open" and "avcodec_alloc_context3" instead of "avcodec_alloc_context" in MPCVideoDecFIlter
+3) There's a macroblocking problem when seeking with some 1080p h264 videos
+   http://www.mediafire.com/?w984256zcsvmu
+4) Fix src\filters\transform\mpcvideodec\mpcvideodecfilter.cpp(550): warning C4715: 'GetPixelFormatFromCsp' : not all control paths return a value
+5) Debug Win32 builds compile but I get this with h264 videos and the internal software decoder:
+Assertion failed!
+File: libavcodec/mpegvideo.c
+Line: 1017
+Expression: s->last_picture_ptr==NULL || s->out_format != FMT_H264 || s->codec_id == CODEC_ID_SVQ3
+6) Fix gcc build batch files for debug builds
