@@ -5,8 +5,10 @@
    http://www.mediafire.com/?w984256zcsvmu
 4) Fix src\filters\transform\mpcvideodec\mpcvideodecfilter.cpp(550): warning C4715: 'GetPixelFormatFromCsp' : not all control paths return a value
 5) Debug Win32 builds compile but I get this with h264 videos and the internal software decoder:
-Assertion failed!
-File: libavcodec/mpegvideo.c
-Line: 1017
-Expression: s->last_picture_ptr==NULL || s->out_format != FMT_H264 || s->codec_id == CODEC_ID_SVQ3
+   Assertion failed!
+   File: libavcodec/mpegvideo.c
+   Line: 1017
+   Expression: s->last_picture_ptr==NULL || s->out_format != FMT_H264 || s->codec_id == CODEC_ID_SVQ3
 6) Fix gcc build batch files for debug builds
+7) Filters Debug x64 error:
+   Error 40 error LNK2019: unresolved external symbol mingw_app_type referenced in function _wassert H:\progs\Compiling\mpc-hc_ffmpegupdate\src\filters\transform\MpaDecFilter\libmingwex.a(lib64_libmingwex_a-wassert.o) MpaDecFilter

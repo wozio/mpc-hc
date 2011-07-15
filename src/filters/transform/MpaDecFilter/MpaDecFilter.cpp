@@ -25,6 +25,7 @@
 #include <math.h>
 #include <atlbase.h>
 #include <mmreg.h>
+#include <sys/timeb.h>
 #include "MpaDecFilter.h"
 
 #include "../../../DSUtil/DSUtil.h"
@@ -2976,5 +2977,13 @@ void CMpaDecFilter::ffmpeg_stream_finish()
 }
 
 #pragma endregion
+
+#ifdef _WIN64
+void DummyX64Link ()
+{
+		struct timeb t;
+		ftime(&t);
+}
+#endif
 
 #endif /* HAS_FFMPEG_AUDIO_DECODERS */
