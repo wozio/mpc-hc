@@ -766,7 +766,7 @@ void FFSetThreadNumber(struct AVCodecContext* pAVCtx, int nThreadCount)
 {
 	pAVCtx->thread_count = nThreadCount;
 	pAVCtx->thread_type  = FFGetThreadType (pAVCtx->codec_id, nThreadCount);
-	ff_thread_init(pAVCtx);
+	//ff_thread_init(pAVCtx);
 
 }
 
