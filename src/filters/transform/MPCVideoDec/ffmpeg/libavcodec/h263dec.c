@@ -694,8 +694,10 @@ intrax8_decoded:
 
     MPV_frame_end(s);
 
+// mpc custom code start
 assert(s->current_picture.f.pict_type == s->current_picture_ptr->f.pict_type);
 assert(s->current_picture.f.pict_type == s->pict_type);
+// mpc custom code end
     if (s->pict_type == AV_PICTURE_TYPE_B || s->low_delay) {
         *pict= *(AVFrame*)s->current_picture_ptr;
     } else if (s->last_picture_ptr != NULL) {
