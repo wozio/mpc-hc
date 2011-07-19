@@ -18,7 +18,13 @@
 
 #include <stdio.h>
 
-static char g_Gcc_Compiler[25];
+static char g_Gcc_Compiler[30];
+
+#if defined(DEBUG)
+	#define COMPILER " Debug"
+#else
+	#define COMPILER ""
+#endif
 
 #if defined(__SSE2__)
 	#define COMPILER_SSE " (SSE2)"
@@ -30,6 +36,6 @@ static char g_Gcc_Compiler[25];
 
 char* GetFFmpegCompiler()
 {
-	sprintf (g_Gcc_Compiler, "MinGW GCC %d.%d.%d%s", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__, COMPILER_SSE);
+	sprintf (g_Gcc_Compiler, "MinGW GCC %d.%d.%d%s%s", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__, COMPILER, COMPILER_SSE);
 	return g_Gcc_Compiler;
 }
