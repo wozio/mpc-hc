@@ -6,6 +6,7 @@ The following files have MPC-specific custom code (compared to ffdshow):
 * libavcodec/allcodecs.c
 * libavcodec/bitstream.c
 * libavcodec/CompilatorVersion.c
+* libavcodec/h263dec.c
 * libavcodec/h264_recov.c
 * libavcodec/mpc_helper.c
 * libavcodec/mpeg12.c

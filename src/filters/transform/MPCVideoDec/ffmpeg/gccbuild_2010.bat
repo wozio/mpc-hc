@@ -1,4 +1,5 @@
 @ECHO OFF
+SETLOCAL
 
 rem Check for the help switches
 IF /I "%~1"=="help"   GOTO SHOWHELP
@@ -9,48 +10,54 @@ IF /I "%~1"=="/?"     GOTO SHOWHELP
 
 IF DEFINED MINGW32 GOTO VarOk
 ECHO ERROR: Please define MINGW32 (and/or MSYS) environment variable(s)
+ENDLOCAL
 EXIT /B
 
 :VarOk
 SET PATH=%MSYS%\bin;%MINGW32%\bin;%PATH%
-SET "make_args=-j4"
-IF /I "%~2" == "Debug" SET "make_args=DEBUG=yes %make_args%"
+
+IF /I "%~2" == "Debug" SET "DEBUG=DEBUG=yes"
 
 IF "%~1" == "" (
   SET "BUILDTYPE=build"
-  CALL :SubMake %make_args%
+  CALL :SubMake
   EXIT /B
 ) ELSE (
   IF /I "%~1" == "Build" (
     SET "BUILDTYPE=build"
-    CALL :SubMake %make_args%
+    CALL :SubMake
     EXIT /B
   )
 
   IF /I "%~1" == "Clean" (
     SET "BUILDTYPE=clean"
-    CALL :SubMake clean -j1
+    CALL :SubMake clean
     EXIT /B
   )
 
   IF /I "%~1" == "Rebuild" (
     SET "BUILDTYPE=rebuild"
-    CALL :SubMake clean -j1
-    CALL :SubMake %make_args%
+    CALL :SubMake clean
+    CALL :SubMake
     EXIT /B
   )
 
   ECHO.
   ECHO Unsupported commandline switch!
   ECHO Run "%~nx0 help" for details about the commandline switches.
+  ENDLOCAL
   EXIT /B
 )
 
 
 :SubMake
-TITLE "make.exe %*"
-ECHO make.exe %*
-make.exe %*
+IF /I "%1" == "Clean" (SET "JOBS=-j1") ELSE (SET "JOBS=-j4")
+
+TITLE "make %JOBS% %DEBUG% %*"
+ECHO make %JOBS% %DEBUG% %*
+make.exe %JOBS% %DEBUG% %*
+
+ENDLOCAL
 EXIT /B
 
 
