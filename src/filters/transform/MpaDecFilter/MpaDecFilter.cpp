@@ -119,6 +119,10 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 
 #ifdef REGISTER_FILTER
 
+#if _DEBUG
+extern "C" int mingw_app_type = 1;	/* 0:console, 1:windows.  */
+#endif
+
 const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 	{&MEDIATYPE_Audio, &MEDIASUBTYPE_PCM},
 };
