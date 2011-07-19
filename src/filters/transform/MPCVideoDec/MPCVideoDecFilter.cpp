@@ -547,6 +547,8 @@ PixelFormat	GetPixelFormatFromCsp(int csp)
 		default :
 			ASSERT(FALSE);
     }
+
+	return PIX_FMT_NONE;
 }
 
 
@@ -593,6 +595,7 @@ CMPCVideoDecFilter::CMPCVideoDecFilter(LPUNKNOWN lpunk, HRESULT* phr)
 	m_pCpuId				= DNew CCpuId();
 	m_pAVCodec				= NULL;
 	m_pAVCtx				= NULL;
+	m_pAVOptions			= NULL;
 	m_pFrame				= NULL;
 	m_nCodecNb				= -1;
 	m_rtAvrTimePerFrame		= 0;
@@ -1071,11 +1074,11 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 			m_pAVCodec			= avcodec_find_decoder(ffCodecs[nNewCodec].nFFCodec);
 			CheckPointer (m_pAVCodec, VFW_E_UNSUPPORTED_VIDEO);
 
-			m_pAVCtx	= avcodec_alloc_context();
+			m_pAVCtx	= avcodec_alloc_context3(m_pAVCodec);
 			CheckPointer (m_pAVCtx,	  E_POINTER);
 
 			if ((m_nThreadNumber > 1) && IsMultiThreadSupported (ffCodecs[m_nCodecNb].nFFCodec)) {
-				FFSetThreadNumber(m_pAVCtx, ffCodecs[m_nCodecNb].nFFCodec, m_nThreadNumber);
+				FFSetThreadNumber(m_pAVCtx, ffCodecs[m_nCodecNb].nFFCodec, IsDXVASupported() ? 1 : m_nThreadNumber);
 			}
 			m_pFrame = avcodec_alloc_frame();
 			CheckPointer (m_pFrame,	  E_POINTER);
@@ -1134,7 +1137,7 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 			ConnectTo (m_pAVCtx);
 			CalcAvgTimePerFrame();
 
-			if (avcodec_open(m_pAVCtx, m_pAVCodec)<0) {
+			if (avcodec_open2(m_pAVCtx, m_pAVCodec, &m_pAVOptions)<0) {
 				return VFW_E_INVALIDMEDIATYPE;
 			}
 
@@ -1176,11 +1179,6 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 					m_bDXVACompatible = MPEG2CheckCompatibility(m_pAVCtx, m_pFrame);
 
 					break;
-			}
-
-			// Force single thread for DXVA !
-			if (IsDXVASupported()) {
-				FFSetThreadNumber(m_pAVCtx, ffCodecs[m_nCodecNb].nFFCodec, 1);
 			}
 
 			BuildDXVAOutputFormat();

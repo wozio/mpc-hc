@@ -2919,7 +2919,7 @@ int avcodec_get_context_defaults3(AVCodecContext *s, AVCodec *codec);
  * @deprecated use avcodec_alloc_context3()
  */
 attribute_deprecated
-FF_EXPORT AVCodecContext *avcodec_alloc_context(void);
+AVCodecContext *avcodec_alloc_context(void);
 
 /** THIS FUNCTION IS NOT YET PART OF THE PUBLIC API!
  *  we WILL change its arguments and name a few times! */
@@ -3031,7 +3031,7 @@ void avcodec_get_encoder_info(AVCodecContext *avctx,int *xvid_build,int *divx_ve
  * @deprecated use avcodec_open2
  */
 attribute_deprecated
-FF_EXPORT int avcodec_open(AVCodecContext *avctx, AVCodec *codec);
+int avcodec_open(AVCodecContext *avctx, AVCodec *codec);
 #endif
 
 /**

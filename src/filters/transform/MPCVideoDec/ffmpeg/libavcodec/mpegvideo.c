@@ -1024,7 +1024,9 @@ int MPV_frame_start(MpegEncContext *s, AVCodecContext *avctx)
     Picture *pic;
     s->mb_skipped = 0;
 
-    assert(s->last_picture_ptr==NULL || s->out_format != FMT_H264 || s->codec_id == CODEC_ID_SVQ3);
+	// ==> Start patch MPC
+//    assert(s->last_picture_ptr==NULL || s->out_format != FMT_H264 || s->codec_id == CODEC_ID_SVQ3);
+	// <== End patch MPC
 
     /* mark&release old frames */
     if (s->pict_type != AV_PICTURE_TYPE_B && s->last_picture_ptr && s->last_picture_ptr != s->next_picture_ptr && s->last_picture_ptr->f.data[0]) {
@@ -1126,7 +1128,9 @@ int MPV_frame_start(MpegEncContext *s, AVCodecContext *avctx)
     if(s->last_picture_ptr) ff_copy_picture(&s->last_picture, s->last_picture_ptr);
     if(s->next_picture_ptr) ff_copy_picture(&s->next_picture, s->next_picture_ptr);
 
-    assert(s->pict_type == AV_PICTURE_TYPE_I || (s->last_picture_ptr && s->last_picture_ptr->f.data[0]));
+	// ==> Start patch MPC
+    //assert(s->pict_type == AV_PICTURE_TYPE_I || (s->last_picture_ptr && s->last_picture_ptr->f.data[0]));
+	// <== End patch MPC
 
     if(s->picture_structure!=PICT_FRAME && s->out_format != FMT_H264){
         int i;
