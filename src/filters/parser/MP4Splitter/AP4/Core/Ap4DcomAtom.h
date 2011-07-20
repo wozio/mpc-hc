@@ -41,6 +41,14 @@
 class AP4_DcomAtom : public AP4_Atom
 {
 public:
+    AP4_IMPLEMENT_DYNAMIC_CAST_D(AP4_DcomAtom, AP4_Atom)
+
+    // class methods
+    static AP4_DcomAtom* Create(AP4_UI32        size, 
+                                    AP4_ByteStream& stream) {
+        return new AP4_DcomAtom(size, stream);
+    }
+
 	AP4_DcomAtom(AP4_Size         size,
                  AP4_ByteStream&  stream);
 

@@ -42,6 +42,8 @@
 class AP4_FtabAtom : public AP4_Atom
 {
 public:
+	AP4_IMPLEMENT_DYNAMIC_CAST_D(AP4_FtabAtom, AP4_Atom)
+
 	AP4_FtabAtom(AP4_Size         size,
                  AP4_ByteStream&  stream);
 

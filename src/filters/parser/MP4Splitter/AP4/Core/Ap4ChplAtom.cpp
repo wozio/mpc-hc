@@ -33,14 +33,25 @@
 #include "Ap4ChplAtom.h"
 
 /*----------------------------------------------------------------------
+|   dynamic cast support
++---------------------------------------------------------------------*/
+AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_ChplAtom)
+
+/*----------------------------------------------------------------------
 |       AP4_ChplAtom::AP4_ChplAtom
 +---------------------------------------------------------------------*/
 
 AP4_ChplAtom::AP4_ChplAtom(AP4_Size         size,
                            AP4_ByteStream&  stream)
-	: AP4_Atom(AP4_ATOM_TYPE_CHPL, size, true, stream)
+	: AP4_Atom(AP4_ATOM_TYPE_CHPL, size, true)
 {
 	size -= AP4_FULL_ATOM_HEADER_SIZE;
+
+    // if this is a full atom, read the version and flags
+    AP4_UI32 header;
+    stream.ReadUI32(header);
+    m_Version = (header>>24)&0xFF;
+    m_Flags   = (header&0xFFFFFF);
 
 	stream.ReadUI32(m_Reserved);
 

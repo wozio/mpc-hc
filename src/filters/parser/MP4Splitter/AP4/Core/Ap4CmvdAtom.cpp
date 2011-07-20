@@ -37,10 +37,10 @@
 /*----------------------------------------------------------------------
 |       AP4_CmvdAtom::AP4_CmvdAtom
 +---------------------------------------------------------------------*/
-AP4_CmvdAtom::AP4_CmvdAtom(AP4_Size         size,
+AP4_CmvdAtom::AP4_CmvdAtom(AP4_UI64         size,
                            AP4_ByteStream&  stream,
                            AP4_AtomFactory& atom_factory) :
-    AP4_ContainerAtom(AP4_ATOM_TYPE_CMVD, size, false, stream)
+    AP4_ContainerAtom(AP4_ATOM_TYPE_CMVD, size, false, stream, atom_factory)
 {
 	size -= AP4_ATOM_HEADER_SIZE;
 

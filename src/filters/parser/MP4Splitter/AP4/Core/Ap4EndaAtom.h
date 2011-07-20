@@ -19,6 +19,8 @@
 class AP4_EndaAtom : public AP4_Atom
 {
 public:
+	AP4_IMPLEMENT_DYNAMIC_CAST_D(AP4_ChplAtom, AP4_Atom)
+
 	AP4_EndaAtom(AP4_Size         size,
                  AP4_ByteStream&  stream);
 

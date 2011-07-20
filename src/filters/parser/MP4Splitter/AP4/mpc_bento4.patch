@@ -1,0 +1,1091 @@
+Index: Source/C++/Core/Ap4Atom.h
+===================================================================
+--- Source/C++/Core/Ap4Atom.h	(revision 410)
++++ Source/C++/Core/Ap4Atom.h	(working copy)
+@@ -431,6 +431,69 @@
+ const AP4_Atom::Type AP4_ATOM_TYPE_TFRA = AP4_ATOM_TYPE('t','f','r','a');
+ const AP4_Atom::Type AP4_ATOM_TYPE_MFRO = AP4_ATOM_TYPE('m','f','r','o');
+ 
++// ==> Start patch MPC
++const AP4_Atom::Type AP4_ATOM_TYPE_TEXT = AP4_ATOM_TYPE('t','e','x','t');
++const AP4_Atom::Type AP4_ATOM_TYPE_TX3G = AP4_ATOM_TYPE('t','x','3','g');
++const AP4_Atom::Type AP4_ATOM_TYPE_FTAB = AP4_ATOM_TYPE('f','t','a','b');
++const AP4_Atom::Type AP4_ATOM_TYPE_CVID = AP4_ATOM_TYPE('c','v','i','d');
++const AP4_Atom::Type AP4_ATOM_TYPE_SVQ1 = AP4_ATOM_TYPE('S','V','Q','1');
++const AP4_Atom::Type AP4_ATOM_TYPE_SVQ2 = AP4_ATOM_TYPE('S','V','Q','2');
++const AP4_Atom::Type AP4_ATOM_TYPE_SVQ3 = AP4_ATOM_TYPE('S','V','Q','3');
++const AP4_Atom::Type AP4_ATOM_TYPE_H261 = AP4_ATOM_TYPE('h','2','6','1');
++const AP4_Atom::Type AP4_ATOM_TYPE_H263 = AP4_ATOM_TYPE('h','2','6','3');
++const AP4_Atom::Type AP4_ATOM_TYPE_S263 = AP4_ATOM_TYPE('s','2','6','3');
++const AP4_Atom::Type AP4_ATOM_TYPE_SAMR = AP4_ATOM_TYPE('s','a','m','r');
++const AP4_Atom::Type AP4_ATOM_TYPE__MP3 = AP4_ATOM_TYPE('.','m','p','3');
++const AP4_Atom::Type AP4_ATOM_TYPE_IMA4 = AP4_ATOM_TYPE('i','m','a','4');
++const AP4_Atom::Type AP4_ATOM_TYPE_QDMC = AP4_ATOM_TYPE('Q','D','M','C');
++const AP4_Atom::Type AP4_ATOM_TYPE_QDM2 = AP4_ATOM_TYPE('Q','D','M','2');
++const AP4_Atom::Type AP4_ATOM_TYPE_NONE = AP4_ATOM_TYPE('N','O','N','E');
++const AP4_Atom::Type AP4_ATOM_TYPE_TWOS = AP4_ATOM_TYPE('t','w','o','s');
++const AP4_Atom::Type AP4_ATOM_TYPE_SOWT = AP4_ATOM_TYPE('s','o','w','t');
++const AP4_Atom::Type AP4_ATOM_TYPE_IN24 = AP4_ATOM_TYPE('i','n','2','4');
++const AP4_Atom::Type AP4_ATOM_TYPE_IN32 = AP4_ATOM_TYPE('i','n','3','2');
++const AP4_Atom::Type AP4_ATOM_TYPE_FL32 = AP4_ATOM_TYPE('f','l','3','2');
++const AP4_Atom::Type AP4_ATOM_TYPE_FL64 = AP4_ATOM_TYPE('f','l','6','4');
++const AP4_Atom::Type AP4_ATOM_TYPE_CHPL = AP4_ATOM_TYPE('c','h','p','l');
++const AP4_Atom::Type AP4_ATOM_TYPE_NAM  = AP4_ATOM_TYPE(169,'n','a','m');
++const AP4_Atom::Type AP4_ATOM_TYPE_ART  = AP4_ATOM_TYPE(169,'A','R','T');
++const AP4_Atom::Type AP4_ATOM_TYPE_WRT  = AP4_ATOM_TYPE(169,'w','r','t');
++const AP4_Atom::Type AP4_ATOM_TYPE_ALB  = AP4_ATOM_TYPE(169,'a','l','b');
++const AP4_Atom::Type AP4_ATOM_TYPE_DAY  = AP4_ATOM_TYPE(169,'d','a','y');
++const AP4_Atom::Type AP4_ATOM_TYPE_TOO  = AP4_ATOM_TYPE(169,'t','o','o');
++const AP4_Atom::Type AP4_ATOM_TYPE_CMT  = AP4_ATOM_TYPE(169,'c','m','t');
++const AP4_Atom::Type AP4_ATOM_TYPE_GEN  = AP4_ATOM_TYPE(169,'g','e','n');
++const AP4_Atom::Type AP4_ATOM_TYPE_ENDA = AP4_ATOM_TYPE('e','n','d','a');
++const AP4_Atom::Type AP4_ATOM_TYPE_CMOV = AP4_ATOM_TYPE('c','m','o','v');
++const AP4_Atom::Type AP4_ATOM_TYPE_DCOM = AP4_ATOM_TYPE('d','c','o','m');
++const AP4_Atom::Type AP4_ATOM_TYPE_CMVD = AP4_ATOM_TYPE('c','m','v','d');
++const AP4_Atom::Type AP4_ATOM_TYPE_SAC3 = AP4_ATOM_TYPE('s','a','c','3');
++const AP4_Atom::Type AP4_ATOM_TYPE_DTSC = AP4_ATOM_TYPE('d','t','s','c');
++const AP4_Atom::Type AP4_ATOM_TYPE_DTSH = AP4_ATOM_TYPE('d','t','s','h');
++const AP4_Atom::Type AP4_ATOM_TYPE_DTSL = AP4_ATOM_TYPE('d','t','s','l');
++const AP4_Atom::Type AP4_ATOM_TYPE_RAW  = AP4_ATOM_TYPE('r','a','w',' ');
++const AP4_Atom::Type AP4_ATOM_TYPE_JPEG = AP4_ATOM_TYPE('j','p','e','g');
++const AP4_Atom::Type AP4_ATOM_TYPE_PNG  = AP4_ATOM_TYPE('p','n','g',' ');
++const AP4_Atom::Type AP4_ATOM_TYPE_ALAW = AP4_ATOM_TYPE('a','l','a','w');
++const AP4_Atom::Type AP4_ATOM_TYPE_ULAW = AP4_ATOM_TYPE('u','l','a','w');
++const AP4_Atom::Type AP4_ATOM_TYPE_RLE  = AP4_ATOM_TYPE('r','l','e',' ');
++const AP4_Atom::Type AP4_ATOM_TYPE_MJPA = AP4_ATOM_TYPE('m','j','p','a');
++const AP4_Atom::Type AP4_ATOM_TYPE_MJPB = AP4_ATOM_TYPE('m','j','p','b');
++const AP4_Atom::Type AP4_ATOM_TYPE_MJPG = AP4_ATOM_TYPE('M','J','P','G');
++const AP4_Atom::Type AP4_ATOM_TYPE_DMB1 = AP4_ATOM_TYPE('d','m','b','1');
++const AP4_Atom::Type AP4_ATOM_TYPE_RPZA = AP4_ATOM_TYPE('r','p','z','a');
++const AP4_Atom::Type AP4_ATOM_TYPE_DVC  = AP4_ATOM_TYPE('d','v','c',' ');
++const AP4_Atom::Type AP4_ATOM_TYPE_DIV3 = AP4_ATOM_TYPE('D','I','V','3');
++const AP4_Atom::Type AP4_ATOM_TYPE_DIVX = AP4_ATOM_TYPE('d','i','v','x');
++const AP4_Atom::Type AP4_ATOM_TYPE_8BPS = AP4_ATOM_TYPE('8','B','P','S');
++const AP4_Atom::Type AP4_ATOM_TYPE_3IV1 = AP4_ATOM_TYPE('3','I','V','1');
++const AP4_Atom::Type AP4_ATOM_TYPE_3IV2 = AP4_ATOM_TYPE('3','I','V','2');
++const AP4_Atom::Type AP4_ATOM_TYPE_IV32 = AP4_ATOM_TYPE('I','V','3','2');
++const AP4_Atom::Type AP4_ATOM_TYPE_VP31 = AP4_ATOM_TYPE('V','P','3','1');
++const AP4_Atom::Type AP4_ATOM_TYPE_YV12 = AP4_ATOM_TYPE('y','v','1','2');
++const AP4_Atom::Type AP4_ATOM_TYPE_PASP = AP4_ATOM_TYPE('p','a','s','p');
++// <== End patch MPC
++
+ /*----------------------------------------------------------------------
+ |   AP4_AtomListInspector
+ +---------------------------------------------------------------------*/
+Index: Source/C++/Core/Ap4AtomFactory.cpp
+===================================================================
+--- Source/C++/Core/Ap4AtomFactory.cpp	(revision 410)
++++ Source/C++/Core/Ap4AtomFactory.cpp	(working copy)
+@@ -88,6 +88,15 @@
+ #include "Ap4TfraAtom.h"
+ #include "Ap4MfroAtom.h"
+ 
++// ==> Start patch MPC
++#include "Ap4ChplAtom.h"
++#include "Ap4FtabAtom.h"
++#include "Ap4DcomAtom.h"
++#include "AP4CmvdAtom.h"
++#include "Ap4EndaAtom.h"
++#include "Ap4PaspAtom.h"
++// <== End patch MPC
++
+ /*----------------------------------------------------------------------
+ |   AP4_AtomFactory::~AP4_AtomFactory
+ +---------------------------------------------------------------------*/
+@@ -289,6 +298,47 @@
+             atom = new AP4_AudioSampleEntry(type, size_32, stream, *this);
+             break;
+ 
++		  // ==> Start patch MPC
++		  case AP4_ATOM_TYPE_TEXT:
++			atom = new AP4_TextSampleEntry((unsigned long)size_32, stream, *this);
++			break;
++
++		  case AP4_ATOM_TYPE_TX3G:
++			atom = new AP4_Tx3gSampleEntry((unsigned long)size_32, stream, *this);
++			break;
++
++		  case AP4_ATOM_TYPE_FTAB:
++			atom = new AP4_FtabAtom((unsigned long)size_32, stream);
++			break;
++
++		  case AP4_ATOM_TYPE_CHPL:
++			atom = new AP4_ChplAtom((unsigned long)size_32, stream);
++			break;
++
++		  case AP4_ATOM_TYPE_CVID:
++		  case AP4_ATOM_TYPE_SVQ1:
++		  case AP4_ATOM_TYPE_SVQ2:
++		  case AP4_ATOM_TYPE_SVQ3:
++		  case AP4_ATOM_TYPE_H263:
++		  case AP4_ATOM_TYPE_S263:
++			atom = new AP4_VisualSampleEntry(type, (unsigned long)size_32, stream, *this);
++			break;
++
++		  case AP4_ATOM_TYPE_SAMR:
++		  case AP4_ATOM_TYPE__MP3:
++		  case AP4_ATOM_TYPE_IMA4:
++		  case AP4_ATOM_TYPE_QDMC:
++		  case AP4_ATOM_TYPE_QDM2:
++		  case AP4_ATOM_TYPE_TWOS:
++		  case AP4_ATOM_TYPE_SOWT:
++			atom = new AP4_AudioSampleEntry(type, (unsigned long)size_32, stream, *this);
++			break;
++
++		  case AP4_ATOM_TYPE_SAC3: // AC3-in-MP4 from Nero Stuff >.<
++			atom = new AP4_AC3SampleEntry(type, (unsigned long)size_32, stream, *this);
++			break;
++		  // <== End patch MPC
++			
+           case AP4_ATOM_TYPE_RTP_:
+             atom = new AP4_RtpHintSampleEntry(size_32, stream, *this);
+             break;
+@@ -602,6 +652,18 @@
+           case AP4_ATOM_TYPE_EDTS: 
+           case AP4_ATOM_TYPE_MDRI:
+           case AP4_ATOM_TYPE_WAVE:
++		  
++		  // ==> Start patch MPC
++		  case AP4_ATOM_TYPE_ART:
++		  case AP4_ATOM_TYPE_WRT:
++		  case AP4_ATOM_TYPE_ALB:
++		  case AP4_ATOM_TYPE_DAY:
++		  case AP4_ATOM_TYPE_TOO:
++	      case AP4_ATOM_TYPE_CMT:
++		  case AP4_ATOM_TYPE_GEN:
++		  case AP4_ATOM_TYPE_CMOV:
++		  // <== End patch MPC
++		  
+             if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
+             atom = AP4_ContainerAtom::Create(type, size_64, false, force_64, stream, *this);
+             break;
+@@ -619,6 +681,23 @@
+             // generic atoms
+             break;
+             
++		  // ==> Start patch MPC
++		  case AP4_ATOM_TYPE_DCOM:
++			atom = AP4_DcomAtom::Create(size_32, stream);
++			break;
++		  case AP4_ATOM_TYPE_CMVD:
++			  atom = AP4_CmvdAtom::Create(type, size_64, true, force_64, stream, *this);
++			  break;
++		  case AP4_ATOM_TYPE_ENDA:
++			atom = new AP4_EndaAtom(size_32, stream);
++			break;
++
++		  case AP4_ATOM_TYPE_PASP:
++			atom = new AP4_PaspAtom(size_32, stream);
++			break;
++
++		  // <== End patch MPC
++			
+           default: {
+             // try all the external type handlers
+             AP4_List<TypeHandler>::Item* handler_item = m_TypeHandlers.FirstItem();
+Index: Source/C++/Core/Ap4AtomSampleTable.cpp
+===================================================================
+--- Source/C++/Core/Ap4AtomSampleTable.cpp	(revision 410)
++++ Source/C++/Core/Ap4AtomSampleTable.cpp	(working copy)
+@@ -42,6 +42,10 @@
+ #include "Ap4Sample.h"
+ #include "Ap4Atom.h"
+ 
++// ==> Start patch MPC
++#include "Ap4SampleEntry.h"
++// <== End patch MPC
++
+ /*----------------------------------------------------------------------
+ |   AP4_AtomSampleTable Dynamic Cast Anchor
+ +---------------------------------------------------------------------*/
+@@ -65,7 +69,46 @@
+     m_Co64Atom = AP4_DYNAMIC_CAST(AP4_Co64Atom, stbl->GetChild(AP4_ATOM_TYPE_CO64));
+ 
+     // keep a reference to the sample stream
+-    m_SampleStream.AddReference();
++	m_SampleStream.AddReference();
++    	
++	// ==> Start patch MPC
++	if(m_StsdAtom && m_StszAtom && m_StscAtom && m_SttsAtom 
++	&& m_StszAtom->m_SampleSize == 1)
++	{
++		// fix mov files
++		for(AP4_List<AP4_Atom>::Item* item = m_StsdAtom->GetChildren().FirstItem(); 
++			item; 
++			item = item->GetNext())
++		{
++			AP4_Atom* atom = item->GetData();
++
++			if(AP4_AudioSampleEntry* ase = dynamic_cast<AP4_AudioSampleEntry*>(atom))
++			{
++				AP4_UI32 SamplesPerPacket = ase->GetSamplesPerPacket();
++				AP4_UI32 BytesPerFrame = ase->GetBytesPerFrame();
++
++				if(SamplesPerPacket > 0 && BytesPerFrame > 0)
++				{
++					for(int i = 0, j = m_StscAtom->m_Entries.ItemCount(); i < j; i++)
++					{
++						AP4_StscTableEntry& e = m_StscAtom->m_Entries[i];
++						AP4_ASSERT(e.m_SamplesPerChunk % SamplesPerPacket == 0);
++						e.m_SamplesPerChunk = e.m_SamplesPerChunk / SamplesPerPacket;
++						e.m_FirstSample = (e.m_FirstSample-1) / SamplesPerPacket + 1;
++					}
++
++					AP4_ASSERT(m_StszAtom->m_SampleCount % SamplesPerPacket == 0);
++					m_StszAtom->m_SampleCount = m_StszAtom->m_SampleCount / SamplesPerPacket;
++					m_StszAtom->m_SampleSize = BytesPerFrame;
++
++					AP4_ASSERT(m_SttsAtom->m_Entries.ItemCount() == 1);
++					m_SttsAtom->m_Entries[0].m_SampleCount = m_StszAtom->m_SampleCount;
++					m_SttsAtom->m_Entries[0].m_SampleDuration = SamplesPerPacket;
++				}
++			}
++		}
++	}
++	// <== End patch MPC	
+ }
+ 
+ /*----------------------------------------------------------------------
+Index: Source/C++/Core/Ap4HdlrAtom.h
+===================================================================
+--- Source/C++/Core/Ap4HdlrAtom.h	(revision 410)
++++ Source/C++/Core/Ap4HdlrAtom.h	(working copy)
+@@ -52,6 +52,9 @@
+ const AP4_UI32 AP4_HANDLER_TYPE_JPEG = AP4_ATOM_TYPE('j','p','e','g');
+ const AP4_UI32 AP4_HANDLER_TYPE_ODSM = AP4_ATOM_TYPE('o','d','s','m');
+ const AP4_UI32 AP4_HANDLER_TYPE_SDSM = AP4_ATOM_TYPE('s','d','s','m');
++// ==> Start patch MPC
++const AP4_UI32 AP4_HANDLER_TYPE_SUBP = AP4_ATOM_TYPE('s','u','b','p');
++// <== End patch MPC
+ 
+ /*----------------------------------------------------------------------
+ |   AP4_HdlrAtom
+Index: Source/C++/Core/Ap4MoovAtom.cpp
+===================================================================
+--- Source/C++/Core/Ap4MoovAtom.cpp	(revision 410)
++++ Source/C++/Core/Ap4MoovAtom.cpp	(working copy)
+@@ -33,6 +33,12 @@
+ #include "Ap4TrakAtom.h"
+ #include "Ap4AtomFactory.h"
+ 
++// ==> Start patch MPC
++#include "AP4DcomAtom.h"
++#include "AP4CmvdAtom.h"
++#include "../../../../../thirdparty/zlib/zlib.h"
++// <== End patch MPC
++
+ /*----------------------------------------------------------------------
+ |   dynamic cast support
+ +---------------------------------------------------------------------*/
+@@ -79,6 +85,84 @@
+     AP4_ContainerAtom(AP4_ATOM_TYPE_MOOV, size, false, stream, atom_factory),
+     m_TimeScale(0)
+ {
++	// ==> Start patch MPC
++	if(AP4_ContainerAtom* cmov = dynamic_cast<AP4_ContainerAtom*>(GetChild(AP4_ATOM_TYPE_CMOV)))
++	{
++		AP4_DcomAtom* dcom = dynamic_cast<AP4_DcomAtom*>(cmov->GetChild(AP4_ATOM_TYPE_DCOM));
++		AP4_CmvdAtom* cmvd = dynamic_cast<AP4_CmvdAtom*>(cmov->GetChild(AP4_ATOM_TYPE_CMVD));
++		if(dcom && dcom->GetCompressorSubType() == AP4_ATOM_TYPE('z','l','i','b') && cmvd)
++		{
++			const AP4_DataBuffer& data = cmvd->GetDataBuffer();
++
++			z_stream d_stream;
++			d_stream.zalloc = (alloc_func)0;
++			d_stream.zfree = (free_func)0;
++			d_stream.opaque = (voidpf)0;
++
++			int res;
++
++			if(Z_OK == (res = inflateInit(&d_stream)))
++			{
++				d_stream.next_in = (Bytef*)data.GetData();
++				d_stream.avail_in = data.GetDataSize();
++
++				unsigned char* dst = NULL;
++				int n = 0;
++				
++				do
++				{
++					dst = (unsigned char*)realloc(dst, ++n*1000);
++					d_stream.next_out = &dst[(n-1)*1000];
++					d_stream.avail_out = 1000;
++
++					if(Z_OK != (res = inflate(&d_stream, Z_NO_FLUSH)) && Z_STREAM_END != res)
++					{
++						free(dst);
++						dst = NULL;
++						break;
++					}
++				}
++				while(0 == d_stream.avail_out && 0 != d_stream.avail_in && Z_STREAM_END != res);
++
++				inflateEnd(&d_stream);
++
++				if(dst)
++				{
++					AP4_ByteStream* s = new AP4_MemoryByteStream(dst, d_stream.total_out);
++					ReadChildren(atom_factory, *s, d_stream.total_out);
++					s->Release();
++					free(dst);
++				}
++
++				if(AP4_MoovAtom* moov = dynamic_cast<AP4_MoovAtom*>(GetChild(AP4_ATOM_TYPE_MOOV)))
++				{
++					AP4_List<AP4_Atom> Children;
++
++					for(AP4_List<AP4_Atom>::Item* item = moov->GetChildren().FirstItem(); 
++						item; 
++						item = item->GetNext())
++					{
++						Children.Add(item->GetData());
++					}
++
++					for(AP4_List<AP4_Atom>::Item* item = Children.FirstItem(); 
++						item; 
++						item = item->GetNext())
++					{
++						AP4_Atom* atom = item->GetData();
++						atom->Detach();
++						atom->SetParent(this);
++						m_Children.Add(atom);
++					}
++
++					moov->Detach();
++					delete moov;
++				}
++			}
++		}
++	}
++	// <== End patch MPC
++	
+     // collect all trak atoms
+     m_Children.Apply(AP4_TrakAtomCollector(&m_TrakAtoms));    
+ }
+Index: Source/C++/Core/Ap4SampleDescription.h
+===================================================================
+--- Source/C++/Core/Ap4SampleDescription.h	(revision 410)
++++ Source/C++/Core/Ap4SampleDescription.h	(working copy)
+@@ -509,5 +509,9 @@
+ const AP4_UI08 AP4_MPEG4_AUDIO_OBJECT_TYPE_SMR_SIMPLE            = 40; /**< SMR Simple                                   */
+ const AP4_UI08 AP4_MPEG4_AUDIO_OBJECT_TYPE_SMR_MAIN              = 41; /**< SMR Main                                     */
+ 
++// ==> Start patch MPC
++const AP4_MpegSampleDescription::OTI AP4_NERO_VOBSUB             = 0xE0;
++// <== End patch MPC
++
+ #endif // _AP4_SAMPLE_DESCRIPTION_H_
+ 
+Index: Source/C++/Core/Ap4SampleEntry.cpp
+===================================================================
+--- Source/C++/Core/Ap4SampleEntry.cpp	(revision 410)
++++ Source/C++/Core/Ap4SampleEntry.cpp	(working copy)
+@@ -35,6 +35,10 @@
+ #include "Ap4TimsAtom.h"
+ #include "Ap4SampleDescription.h"
+ #include "Ap4AvccAtom.h"
++// ==> Start patch MPC
++#include "Ap4FtabAtom.h"
++#include "Ap4EndaAtom.h"
++// <== End patch MPC
+ 
+ /*----------------------------------------------------------------------
+ |   dynamic cast support
+@@ -379,6 +383,54 @@
+     AP4_SampleEntry(format, size)
+ {
+     Read(stream, atom_factory);
++
++	// ==> Start patch MPC
++	/////////////////////////////////////////////////////////////////////////////////////////////////
++	//hack to support the formats using more than 16 bits per sample
++	//in the future will have to be moved to MP4Splitter.cpp
++	if(m_QtVersion == 1 && m_SampleSize == 16){
++		//QuickTime File Format Specification->Sound Sample Description (Version 1)->Bytes per packet
++		m_SampleSize = m_QtV1BytesPerPacket * 8;
++	}
++	//
++	//hack to get the correct WAVEFORMATEX in MP4Splitter.cpp
++	//need more information about audio formats used in older movs (QuickTime 2.x).
++	if(m_QtVersion == 0)
++	{
++		switch( format )
++		{
++		case AP4_ATOM_TYPE_NONE:
++		case AP4_ATOM_TYPE_RAW:
++		case AP4_ATOM_TYPE_TWOS:
++		case AP4_ATOM_TYPE_SOWT:
++			m_QtV1SamplesPerPacket = 1;
++			m_QtV1BytesPerPacket = m_SampleSize / 8;
++			m_QtV1BytesPerFrame = m_ChannelCount * m_QtV1BytesPerPacket;
++			m_QtV1BytesPerSample = m_SampleSize/8;
++			break;
++		case AP4_ATOM_TYPE_IMA4:
++			m_QtV1SamplesPerPacket = 64;
++			m_QtV1BytesPerPacket = 34;
++			m_QtV1BytesPerFrame = m_ChannelCount * m_QtV1BytesPerPacket;
++			m_QtV1BytesPerSample = m_SampleSize/8;
++			break;
++		}
++	}
++	/////////////////////////////////////////////////////////////////////////////////////////////////
++
++	// must be called after m_QtVersion was already set
++    AP4_Size fields_size = GetFieldsSize();
++
++    // read children atoms (ex: esds and maybe others)
++    ReadChildren(atom_factory, stream, size-AP4_ATOM_HEADER_SIZE-fields_size);
++
++	// read AP4_ATOM_TYPE_ENDA
++	m_QtV1LittleEndian = 0xffff;
++	if(AP4_Atom* child = GetChild(AP4_ATOM_TYPE_WAVE))
++		if(AP4_ContainerAtom* wave = dynamic_cast<AP4_ContainerAtom*>(child))
++			if (AP4_EndaAtom* endian = dynamic_cast<AP4_EndaAtom*>(wave->GetChild(AP4_ATOM_TYPE_ENDA)))
++				m_QtV1LittleEndian = endian->IsLittleEndian();
++	// <== End patch MPC
+ }
+     
+ /*----------------------------------------------------------------------
+@@ -1059,3 +1111,321 @@
+     
+     return AP4_SUCCESS;
+ }
++
++// ==> Start patch MPC
++/*----------------------------------------------------------------------
++|       AP4_TextSampleEntry::AP4_TextSampleEntry
+++---------------------------------------------------------------------*/
++AP4_TextSampleEntry::AP4_TextSampleEntry(AP4_Size         size,
++                                         AP4_ByteStream&  stream,
++                                         AP4_AtomFactory& atom_factory): 
++    AP4_SampleEntry(AP4_ATOM_TYPE_TEXT, size)
++{
++    // read fields
++    ReadFields(stream);
++}
++
++/*----------------------------------------------------------------------
++|       AP4_TextSampleEntry::~AP4_TextSampleEntry
+++---------------------------------------------------------------------*/
++AP4_TextSampleEntry::~AP4_TextSampleEntry() 
++{
++}
++
++/*----------------------------------------------------------------------
++|       AP4_TextSampleEntry::ReadFields
+++---------------------------------------------------------------------*/
++AP4_Result
++AP4_TextSampleEntry::ReadFields(AP4_ByteStream& stream)
++{
++    // sample entry
++    AP4_Result result = AP4_SampleEntry::ReadFields(stream);
++    if (result < 0) return result;
++
++    // data
++    result = stream.ReadUI32(m_Description.DisplayFlags);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI32(m_Description.TextJustification);
++    if (AP4_FAILED(result)) return result;
++    result = stream.Read(&m_Description.BackgroundColor, 4);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Top);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Left);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Bottom);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Right);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.Style.StartChar);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.Style.EndChar);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.Style.Ascent);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.Style.Font.Id);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI08(m_Description.Style.Font.Face);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI08(m_Description.Style.Font.Size);
++    if (AP4_FAILED(result)) return result;
++    result = stream.Read(&m_Description.Style.Font.Color, 4);
++    if (AP4_FAILED(result)) return result;
++
++    // TODO: stream.ReadString(); -> m_Description.DefaultFontName
++
++    return AP4_SUCCESS;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_TextSampleEntry::WriteFields
+++---------------------------------------------------------------------*/
++AP4_Result
++AP4_TextSampleEntry::WriteFields(AP4_ByteStream& stream)
++{
++    // sample entry
++    AP4_Result result = AP4_SampleEntry::WriteFields(stream);
++    if (AP4_FAILED(result)) return result;
++    
++    // TODO: data
++
++    return result;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_TextSampleEntry::InspectFields
+++---------------------------------------------------------------------*/
++AP4_Result
++AP4_TextSampleEntry::InspectFields(AP4_AtomInspector& inspector)
++{
++    // sample entry
++    AP4_SampleEntry::InspectFields(inspector);
++    
++    // TODO: fields
++    
++    return AP4_SUCCESS;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry::AP4_Tx3gSampleEntry
+++---------------------------------------------------------------------*/
++AP4_Tx3gSampleEntry::AP4_Tx3gSampleEntry(AP4_Size         size,
++                                         AP4_ByteStream&  stream,
++                                         AP4_AtomFactory& atom_factory): 
++    AP4_SampleEntry(AP4_ATOM_TYPE_TX3G, size)
++{
++    // read fields
++    AP4_Size fields_size = GetFieldsSize();
++    ReadFields(stream);
++
++    // read children atoms (fdat? blnk?)
++    ReadChildren(atom_factory, stream, size-AP4_ATOM_HEADER_SIZE-fields_size);
++}
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry::~AP4_Tx3gSampleEntry
+++---------------------------------------------------------------------*/
++AP4_Tx3gSampleEntry::~AP4_Tx3gSampleEntry() 
++{
++}
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry::GetFieldsSize
+++---------------------------------------------------------------------*/
++AP4_Size
++AP4_Tx3gSampleEntry::GetFieldsSize()
++{
++    return AP4_SampleEntry::GetFieldsSize()+4+1+1+4+2+2+2+2+2+2+2+1+1+4;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry::ReadFields
+++---------------------------------------------------------------------*/
++AP4_Result
++AP4_Tx3gSampleEntry::ReadFields(AP4_ByteStream& stream)
++{
++    // sample entry
++    AP4_Result result = AP4_SampleEntry::ReadFields(stream);
++    if (result < 0) return result;
++
++    // data
++    result = stream.ReadUI32(m_Description.DisplayFlags);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI08(m_Description.HorizontalJustification);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI08(m_Description.VerticalJustification);
++    if (AP4_FAILED(result)) return result;
++    result = stream.Read(&m_Description.BackgroundColor, 4);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Top);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Left);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Bottom);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.TextBox.Right);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.Style.StartChar);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.Style.EndChar);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI16(m_Description.Style.Font.Id);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI08(m_Description.Style.Font.Face);
++    if (AP4_FAILED(result)) return result;
++    result = stream.ReadUI08(m_Description.Style.Font.Size);
++    if (AP4_FAILED(result)) return result;
++    result = stream.Read(&m_Description.Style.Font.Color, 4);
++    if (AP4_FAILED(result)) return result;
++
++    return AP4_SUCCESS;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry::WriteFields
+++---------------------------------------------------------------------*/
++AP4_Result
++AP4_Tx3gSampleEntry::WriteFields(AP4_ByteStream& stream)
++{
++    // sample entry
++    AP4_Result result = AP4_SampleEntry::WriteFields(stream);
++    if (AP4_FAILED(result)) return result;
++    
++    // TODO: data
++
++    return result;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry::InspectFields
+++---------------------------------------------------------------------*/
++AP4_Result
++AP4_Tx3gSampleEntry::InspectFields(AP4_AtomInspector& inspector)
++{
++    // sample entry
++    AP4_SampleEntry::InspectFields(inspector);
++    
++    // TODO: fields
++    
++    return AP4_SUCCESS;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry::GetFontNameById
+++---------------------------------------------------------------------*/
++
++AP4_Result 
++AP4_Tx3gSampleEntry::GetFontNameById(AP4_Ordinal Id, AP4_String& Name)
++{
++	if(AP4_FtabAtom* ftab = dynamic_cast<AP4_FtabAtom*>(GetChild(AP4_ATOM_TYPE_FTAB)))
++	{
++		AP4_Array<AP4_FtabAtom::AP4_Tx3gFontRecord> FontRecords = ftab->GetFontRecords();
++
++		for(int i = 0, j = FontRecords.ItemCount(); i < j; i++)
++		{
++			if(Id == FontRecords[i].Id)
++			{
++				Name = FontRecords[i].Name;
++				return AP4_SUCCESS;
++			}
++		}
++	}
++
++	return AP4_FAILURE;
++}
++
++
++
++
++/*----------------------------------------------------------------------
++|       AP4_AC3SampleEntry::AP4_AC3SampleEntry
+++---------------------------------------------------------------------*/
++AP4_AC3SampleEntry::AP4_AC3SampleEntry(AP4_Atom::Type   format,
++									   AP4_UI32         sample_rate,
++									   AP4_UI16         sample_size,
++									   AP4_UI16         channel_count) :
++    AP4_AudioSampleEntry(format, sample_rate, sample_size, channel_count)
++{
++}
++
++AP4_AC3SampleEntry::AP4_AC3SampleEntry(AP4_Atom::Type   format,
++									   AP4_Size         size,
++									   AP4_ByteStream&  stream,
++									   AP4_AtomFactory& atom_factory) :
++	AP4_AudioSampleEntry(format, size, stream, atom_factory)
++{
++}
++
++
++/*----------------------------------------------------------------------
++|       AP4_AC3SampleEntry::ReadFields
+++---------------------------------------------------------------------*/
++AP4_Result
++AP4_AC3SampleEntry::ReadFields(AP4_ByteStream& stream)
++{
++
++	AP4_AudioSampleEntry::ReadFields(stream);
++
++	// SampleSize field from AudioSampleEntry shall be ignored
++	m_SampleSize = 0;
++
++	// AC3SpecificBox
++
++	// BoxHeader.Size, BoxHeader.Type
++	char junk[8];
++	stream.Read(junk, 8);
++
++	AP4_UI32 data;
++	stream.ReadUI24(data);
++
++	// fscod
++	switch ((data>>22) & 0x3) {
++	case 0:
++		m_SampleRate = 48000;
++		break;
++	case 1:
++		m_SampleRate = 44100;
++		break;
++	case 2:
++		m_SampleRate = 32000;
++		break;
++	}
++
++	m_SampleRate <<= 16;
++
++	// acmod
++	switch ((data>>11) & 0x7) {
++	case 1:
++		m_ChannelCount = 1;
++		break;
++	case 0:
++	case 2:
++		m_ChannelCount = 2;
++		break;
++	case 3:
++	case 4:
++		m_ChannelCount = 3;
++		break;
++	case 5:
++	case 6:
++		m_ChannelCount = 4;
++		break;
++	case 7:
++		m_ChannelCount = 5;
++		break;
++	}
++
++	// lfeon
++	if (((data>>10) & 0x1) == 1)
++		m_ChannelCount++;
++
++	return AP4_SUCCESS;
++
++}
++
++AP4_Size
++AP4_AC3SampleEntry::GetFieldsSize()
++{
++	return AP4_AudioSampleEntry::GetFieldsSize() + 11;
++}
++// <== End patch MPC
+\ No newline at end of file
+Index: Source/C++/Core/Ap4SampleEntry.h
+===================================================================
+--- Source/C++/Core/Ap4SampleEntry.h	(revision 410)
++++ Source/C++/Core/Ap4SampleEntry.h	(working copy)
+@@ -130,6 +130,13 @@
+     AP4_UI32 GetSampleRate();
+     AP4_UI16 GetSampleSize() { return m_SampleSize; }
+     AP4_UI16 GetChannelCount();
++	// ==> Start patch MPC
++	AP4_UI32 GetBytesPerFrame() { return m_QtV1BytesPerFrame; };
++	AP4_UI32 GetSamplesPerPacket(){ return m_QtV1SamplesPerPacket; }
++	AP4_UI32 GetBytesPerPacket(){ return m_QtV1BytesPerPacket; }
++	AP4_UI32 GetBytesPerSample(){ return m_QtV1BytesPerSample; }
++	AP4_UI16 IsLittleEndian() { return m_QtV1LittleEndian; }
++	// <== End patch MPC
+ 
+     // methods
+     AP4_SampleDescription* ToSampleDescription();
+@@ -155,6 +162,9 @@
+     AP4_UI32 m_QtV1BytesPerPacket;
+     AP4_UI32 m_QtV1BytesPerFrame;
+     AP4_UI32 m_QtV1BytesPerSample;
++	// ==> Start patch MPC
++	AP4_UI16 m_QtV1LittleEndian;
++	// <== End patch MPC
+  
+     AP4_UI32 m_QtV2StructSize;
+     double   m_QtV2SampleRate64;
+@@ -373,6 +383,104 @@
+     AP4_UI16 m_HintTrackVersion;
+     AP4_UI16 m_HighestCompatibleVersion;
+     AP4_UI32 m_MaxPacketSize;
++
+ };
+ 
++// ==> Start patch MPC
++/*----------------------------------------------------------------------
++|       AP4_TextSampleEntry
+++---------------------------------------------------------------------*/
++class AP4_TextSampleEntry : public AP4_SampleEntry
++{
++public:
++    // methods
++    AP4_TextSampleEntry(AP4_Size         size,
++                           AP4_ByteStream&  stream,
++                           AP4_AtomFactory& atom_factory);
++    virtual ~AP4_TextSampleEntry();
++    
++	struct AP4_TextDescription
++	{
++		AP4_UI32 DisplayFlags;
++		AP4_UI32 TextJustification;
++		AP4_UI32 BackgroundColor;
++		struct {AP4_UI16 Top, Left, Bottom, Right;} TextBox;
++		struct {AP4_UI16 StartChar, EndChar, Ascent; struct {AP4_UI16 Id; AP4_UI08 Face, Size; AP4_UI32 Color;} Font;} Style;
++		AP4_String DefaultFontName;
++	};
++
++	const AP4_TextDescription& GetDescription() const { return m_Description; };
++
++protected:
++    // methods
++    virtual AP4_Result ReadFields(AP4_ByteStream& stream);
++    virtual AP4_Result WriteFields(AP4_ByteStream& stream);
++    virtual AP4_Result InspectFields(AP4_AtomInspector& inspector);
++
++    // members
++	AP4_TextDescription m_Description;
++};
++
++/*----------------------------------------------------------------------
++|       AP4_Tx3gSampleEntry
+++---------------------------------------------------------------------*/
++class AP4_Tx3gSampleEntry : public AP4_SampleEntry
++{
++public:
++    // methods
++    AP4_Tx3gSampleEntry(AP4_Size         size,
++                           AP4_ByteStream&  stream,
++                           AP4_AtomFactory& atom_factory);
++    virtual ~AP4_Tx3gSampleEntry();
++    
++	struct AP4_Tx3gDescription
++	{
++	    AP4_UI32 DisplayFlags;
++		AP4_UI08 HorizontalJustification;
++		AP4_UI08 VerticalJustification;
++		AP4_UI32 BackgroundColor;
++		struct {AP4_UI16 Top, Left, Bottom, Right;} TextBox;
++		struct {AP4_UI16 StartChar, EndChar; struct {AP4_UI16 Id; AP4_UI08 Face, Size; AP4_UI32 Color;} Font;} Style;
++	};
++
++	const AP4_Tx3gDescription& GetDescription() const { return m_Description; };
++
++	AP4_Result GetFontNameById(AP4_Ordinal Id, AP4_String& Name);
++
++protected:
++    // methods
++    virtual AP4_Size   GetFieldsSize();
++    virtual AP4_Result ReadFields(AP4_ByteStream& stream);
++    virtual AP4_Result WriteFields(AP4_ByteStream& stream);
++    virtual AP4_Result InspectFields(AP4_AtomInspector& inspector);
++
++    // members
++	AP4_Tx3gDescription m_Description;
++};
++
++
++
++/*----------------------------------------------------------------------
++|       AP4_AC3SampleEntry
+++---------------------------------------------------------------------*/
++class AP4_AC3SampleEntry : public AP4_AudioSampleEntry
++{
++ public:
++    // constructors
++    AP4_AC3SampleEntry(AP4_Atom::Type   format,
++					   AP4_UI32         sample_rate,
++                       AP4_UI16         sample_size,
++                       AP4_UI16         channel_count);
++
++    AP4_AC3SampleEntry(AP4_Atom::Type   format,
++					   AP4_Size         size,
++                       AP4_ByteStream&  stream,
++                       AP4_AtomFactory& atom_factory);
++
++protected:
++	virtual AP4_Size   GetFieldsSize();
++    virtual AP4_Result ReadFields(AP4_ByteStream& stream);
++};
++// <== End patch MPC
++
+ #endif // _AP4_SAMPLE_ENTRY_H_
+Index: Source/C++/Core/Ap4StscAtom.h
+===================================================================
+--- Source/C++/Core/Ap4StscAtom.h	(revision 410)
++++ Source/C++/Core/Ap4StscAtom.h	(working copy)
+@@ -96,6 +96,11 @@
+                                 AP4_Ordinal  sample_description_index);
+     virtual AP4_Result WriteFields(AP4_ByteStream& stream);
+ 
++	// ==> Start patch MPC
++	// FIXME
++	friend class AP4_AtomSampleTable;
++	// <== End patch MPC
++	
+ private:
+     // methods
+     AP4_StscAtom(AP4_UI32        size, 
+Index: Source/C++/Core/Ap4StsdAtom.cpp
+===================================================================
+--- Source/C++/Core/Ap4StsdAtom.cpp	(revision 410)
++++ Source/C++/Core/Ap4StsdAtom.cpp	(working copy)
+@@ -98,15 +98,22 @@
+ 
+     // read all entries
+     AP4_LargeSize bytes_available = size-AP4_FULL_ATOM_HEADER_SIZE-4;
+-    for (unsigned int i=0; i<entry_count; i++) {
++
++	// ==> Start patch MPC
++	m_Data.SetDataSize(bytes_available);
++	stream.Read(m_Data.UseData(), m_Data.GetDataSize());
++	AP4_ByteStream* s = new AP4_MemoryByteStream(m_Data.UseData(), m_Data.GetDataSize());
++	for (unsigned int i=0; i<entry_count; i++) {
+         AP4_Atom* atom;
+-        if (AP4_SUCCEEDED(atom_factory.CreateAtomFromStream(stream, 
++        if (AP4_SUCCEEDED(atom_factory.CreateAtomFromStream(*s, 
+                                                             bytes_available,
+                                                             atom))) {
+             atom->SetParent(this);
+             m_Children.Add(atom);
+         }
+     }
++	s->Release();
++	// <== End patch MPC
+ 
+     // restore the saved context
+     atom_factory.PopContext();
+Index: Source/C++/Core/Ap4StsdAtom.h
+===================================================================
+--- Source/C++/Core/Ap4StsdAtom.h	(revision 410)
++++ Source/C++/Core/Ap4StsdAtom.h	(working copy)
+@@ -68,6 +68,10 @@
+     // AP4_AtomParent methods
+     void OnChildChanged(AP4_Atom* child);
+ 
++	// ==> Start patch MPC
++	const AP4_DataBuffer& GetDataBuffer() { return m_Data; }
++	// <== End patch MPC
++
+ private:
+     // methods
+     AP4_StsdAtom(AP4_UI32         size,
+@@ -78,6 +82,10 @@
+ 
+     // members
+     AP4_Array<AP4_SampleDescription*> m_SampleDescriptions;
++
++	// ==> Start patch MPC
++	AP4_DataBuffer m_Data;
++	// <== End patch MPC
+ };
+ 
+ #endif // _AP4_STSD_ATOM_H_
+Index: Source/C++/Core/Ap4StszAtom.h
+===================================================================
+--- Source/C++/Core/Ap4StszAtom.h	(revision 410)
++++ Source/C++/Core/Ap4StszAtom.h	(working copy)
+@@ -67,6 +67,11 @@
+                                      AP4_Size    sample_size);
+     virtual AP4_Result AddEntry(AP4_UI32 size);
+ 
++	// ==> Start patch MPC
++	// FIXME
++	friend class AP4_AtomSampleTable;
++	// <== End patch MPC
++	
+ private:
+     // methods
+     AP4_StszAtom(AP4_UI32        size, 
+Index: Source/C++/Core/Ap4SttsAtom.h
+===================================================================
+--- Source/C++/Core/Ap4SttsAtom.h	(revision 410)
++++ Source/C++/Core/Ap4SttsAtom.h	(working copy)
+@@ -72,6 +72,11 @@
+                                                   AP4_Ordinal&  sample_index);
+     virtual AP4_Result WriteFields(AP4_ByteStream& stream);
+ 
++	// ==> Start patch MPC
++	// FIXME
++	friend class AP4_AtomSampleTable;
++	// <== End patch MPC
++	
+ private:
+     // methods
+     AP4_SttsAtom(AP4_UI32        size, 
+Index: Source/C++/Core/Ap4Track.cpp
+===================================================================
+--- Source/C++/Core/Ap4Track.cpp	(revision 410)
++++ Source/C++/Core/Ap4Track.cpp	(working copy)
+@@ -148,6 +148,10 @@
+                 m_Type = TYPE_TEXT;
+             } else if (type == AP4_HANDLER_TYPE_JPEG) {
+                 m_Type = TYPE_JPEG;
++			// ==> Start patch MPC
++			} else if (type == AP4_HANDLER_TYPE_SUBP) {
++				m_Type = TYPE_SUBP;
++			// <== End patch MPC
+             }
+         }
+     }
+@@ -465,3 +469,31 @@
+     }
+     return NULL;
+ }
++
++// ==> Start patch MPC
++
++/*----------------------------------------------------------------------
++|   AP4_Track::GetTrackName
+++---------------------------------------------------------------------*/
++AP4_String
++AP4_Track::GetMpcTrackName()
++{
++    if (AP4_HdlrAtom* hdlr = AP4_DYNAMIC_CAST(AP4_HdlrAtom, m_TrakAtom->FindChild("mdia/hdlr"))) {
++        return hdlr->GetHandlerName();
++    }
++    return NULL;
++}
++
++/*----------------------------------------------------------------------
++|   AP4_Track::GetTrackLanguage
+++---------------------------------------------------------------------*/
++AP4_String
++AP4_Track::GetMpcTrackLanguage()
++{
++    if (AP4_MdhdAtom* mdhd = AP4_DYNAMIC_CAST(AP4_MdhdAtom, m_TrakAtom->FindChild("mdia/mdhd"))) {
++        return mdhd->GetLanguage();
++    }
++    return NULL;
++}
++
++// <== End patch MPC
+Index: Source/C++/Core/Ap4Track.h
+===================================================================
+--- Source/C++/Core/Ap4Track.h	(revision 410)
++++ Source/C++/Core/Ap4Track.h	(working copy)
+@@ -35,6 +35,10 @@
+ #include "Ap4Types.h"
+ #include "Ap4Array.h"
+ 
++// ==> Start patch MPC
++#include "Ap4String.h"
++// <== End patch MPC
++
+ /*----------------------------------------------------------------------
+ |   forward declarations
+ +---------------------------------------------------------------------*/
+@@ -63,6 +67,9 @@
+  public:
+     // types
+     typedef enum {
++		// ==> Start patch MPC
++		TYPE_SUBP	 = 255,
++		// <== End patch MPC
+         TYPE_UNKNOWN = 0,
+         TYPE_AUDIO   = 1,
+         TYPE_VIDEO   = 2,
+@@ -125,6 +132,11 @@
+     const char*   GetTrackLanguage();
+     AP4_Result    Attach(AP4_MoovAtom* moov);
+ 
++	// ==> Start patch MPC
++    AP4_String	  GetMpcTrackName();
++    AP4_String    GetMpcTrackLanguage();
++	// <== End patch MPC
++
+  protected:
+     // members
+     AP4_TrakAtom*    m_TrakAtom;

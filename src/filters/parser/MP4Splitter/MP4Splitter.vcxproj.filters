@@ -28,6 +28,9 @@
     <Filter Include="AP4\Crypto">
       <UniqueIdentifier>{fc6a61aa-f447-4176-827e-48c743e37fce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AP4\MetaData">
+      <UniqueIdentifier>{23f335cb-f046-4cbd-9e18-aaa9a3e32333}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ap4AsyncReaderStream.cpp">
@@ -70,9 +73,6 @@
       <Filter>AP4\Core</Filter>
     </ClCompile>
     <ClCompile Include="AP4\Core\Ap4CttsAtom.cpp">
-      <Filter>AP4\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="AP4\Core\Ap4DataAtom.cpp">
       <Filter>AP4\Core</Filter>
     </ClCompile>
     <ClCompile Include="AP4\Core\Ap4PaspAtom.cpp">
@@ -228,9 +228,6 @@
     <ClCompile Include="AP4\Core\Ap4TrefTypeAtom.cpp">
       <Filter>AP4\Core</Filter>
     </ClCompile>
-    <ClCompile Include="AP4\Core\Ap4UnknownDescriptor.cpp">
-      <Filter>AP4\Core</Filter>
-    </ClCompile>
     <ClCompile Include="AP4\Core\Ap4UrlAtom.cpp">
       <Filter>AP4\Core</Filter>
     </ClCompile>
@@ -254,6 +251,123 @@
     </ClCompile>
     <ClCompile Include="..\..\..\thirdparty\mfc\winmdi.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\MetaData\Ap4MetaData.cpp">
+      <Filter>AP4\MetaData</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4ObjectDescriptor.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Command.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4CommandFactory.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4ElstAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Expandable.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4FileCopier.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4FragmentSampleTable.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4GrpiAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4IodsAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Ipmp.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4IproAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4IsltAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4LinearReader.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Marlin.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4MehdAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4MfhdAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4MfroAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4MovieFragment.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Mpeg2Ts.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4OdafAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4OddaAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4OdheAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4OhdrAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4OmaDcf.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Piff.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Protection.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4Results.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4SampleSource.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4String.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4TfhdAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4TfraAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4TrexAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4TrunAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap4UuidAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Core\Ap48bdlAtom.cpp">
+      <Filter>AP4\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Crypto\Ap4Hmac.cpp">
+      <Filter>AP4\Crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="AP4\Crypto\Ap4KeyWrap.cpp">
+      <Filter>AP4\Crypto</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -309,9 +423,6 @@
       <Filter>AP4\Core</Filter>
     </ClInclude>
     <ClInclude Include="AP4\Core\Ap4CttsAtom.h">
-      <Filter>AP4\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="AP4\Core\Ap4DataAtom.h">
       <Filter>AP4\Core</Filter>
     </ClInclude>
     <ClInclude Include="AP4\Core\Ap4PaspAtom.h">
@@ -482,9 +593,6 @@
     <ClInclude Include="AP4\Core\Ap4Types.h">
       <Filter>AP4\Core</Filter>
     </ClInclude>
-    <ClInclude Include="AP4\Core\Ap4UnknownDescriptor.h">
-      <Filter>AP4\Core</Filter>
-    </ClInclude>
     <ClInclude Include="AP4\Core\Ap4UrlAtom.h">
       <Filter>AP4\Core</Filter>
     </ClInclude>
@@ -500,10 +608,130 @@
     <ClInclude Include="AP4\Crypto\Ap4StreamCipher.h">
       <Filter>AP4\Crypto</Filter>
     </ClInclude>
+    <ClInclude Include="AP4\MetaData\Ap4MetaData.h">
+      <Filter>AP4\MetaData</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Command.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4CommandFactory.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4DynamicCast.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4ElstAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Expandable.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4FileCopier.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4FragmentSampleTable.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4GrpiAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4IodsAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Ipmp.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4IproAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4IsltAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4LinearReader.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Marlin.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4MehdAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4MfhdAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4MfroAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4MovieFragment.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Mpeg2Ts.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap48bdlAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4ObjectDescriptor.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4OdafAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4OddaAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4OdheAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4OhdrAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4OmaDcf.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Piff.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Protection.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4SampleSource.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4String.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4TfhdAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4TfraAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4TrexAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4TrunAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4UuidAtom.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Core\Ap4Version.h">
+      <Filter>AP4\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Crypto\Ap4KeyWrap.h">
+      <Filter>AP4\Crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="AP4\Crypto\Ap4Hmac.h">
+      <Filter>AP4\Crypto</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="MP4Splitter.def">
       <Filter>Source Files</Filter>
+    </None>
+    <None Include="AP4\mpc_bento4.patch">
+      <Filter>AP4</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

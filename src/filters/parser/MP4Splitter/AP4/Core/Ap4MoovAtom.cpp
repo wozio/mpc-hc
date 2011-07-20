@@ -2,7 +2,7 @@
 |
 |    AP4 - moov Atoms 
 |
-|    Copyright 2002 Gilles Boccon-Gibod
+|    Copyright 2002-2008 Axiomatic Systems, LLC
 |
 |
 |    This file is part of Bento4/AP4 (MP4 Atom Processing Library).
@@ -27,18 +27,25 @@
  ****************************************************************/
 
 /*----------------------------------------------------------------------
-|       includes
+|   includes
 +---------------------------------------------------------------------*/
-#include "Ap4.h"
 #include "Ap4MoovAtom.h"
 #include "Ap4TrakAtom.h"
 #include "Ap4AtomFactory.h"
-#include "Ap4DcomAtom.h"
-#include "Ap4CmvdAtom.h"
+
+// ==> Start patch MPC
+#include "AP4DcomAtom.h"
+#include "AP4CmvdAtom.h"
 #include "../../../../../thirdparty/zlib/zlib.h"
+// <== End patch MPC
 
 /*----------------------------------------------------------------------
-|       AP4_TrakAtomCollector
+|   dynamic cast support
++---------------------------------------------------------------------*/
+AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_MoovAtom)
+
+/*----------------------------------------------------------------------
+|   AP4_TrakAtomCollector
 +---------------------------------------------------------------------*/
 class AP4_TrakAtomCollector : public AP4_List<AP4_Atom>::Item::Operator
 {
@@ -48,7 +55,7 @@ public:
 
     AP4_Result Action(AP4_Atom* atom) const {
         if (atom->GetType() == AP4_ATOM_TYPE_TRAK) {
-            AP4_TrakAtom* trak = dynamic_cast<AP4_TrakAtom*>(atom);
+            AP4_TrakAtom* trak = AP4_DYNAMIC_CAST(AP4_TrakAtom, atom);
             if (trak) {
                 m_TrakAtoms->Add(trak);
             }
@@ -61,7 +68,7 @@ private:
 };
 
 /*----------------------------------------------------------------------
-|       AP4_MoovAtom::AP4_MoovAtom
+|   AP4_MoovAtom::AP4_MoovAtom
 +---------------------------------------------------------------------*/
 AP4_MoovAtom::AP4_MoovAtom() :
     AP4_ContainerAtom(AP4_ATOM_TYPE_MOOV),
@@ -70,19 +77,19 @@ AP4_MoovAtom::AP4_MoovAtom() :
 }
 
 /*----------------------------------------------------------------------
-|       AP4_MoovAtom::AP4_MoovAtom
+|   AP4_MoovAtom::AP4_MoovAtom
 +---------------------------------------------------------------------*/
-AP4_MoovAtom::AP4_MoovAtom(AP4_Size         size,
+AP4_MoovAtom::AP4_MoovAtom(AP4_UI32         size,
                            AP4_ByteStream&  stream,
                            AP4_AtomFactory& atom_factory) :
     AP4_ContainerAtom(AP4_ATOM_TYPE_MOOV, size, false, stream, atom_factory),
     m_TimeScale(0)
 {
+	// ==> Start patch MPC
 	if(AP4_ContainerAtom* cmov = dynamic_cast<AP4_ContainerAtom*>(GetChild(AP4_ATOM_TYPE_CMOV)))
 	{
 		AP4_DcomAtom* dcom = dynamic_cast<AP4_DcomAtom*>(cmov->GetChild(AP4_ATOM_TYPE_DCOM));
 		AP4_CmvdAtom* cmvd = dynamic_cast<AP4_CmvdAtom*>(cmov->GetChild(AP4_ATOM_TYPE_CMVD));
-
 		if(dcom && dcom->GetCompressorSubType() == AP4_ATOM_TYPE('z','l','i','b') && cmvd)
 		{
 			const AP4_DataBuffer& data = cmvd->GetDataBuffer();
@@ -121,7 +128,7 @@ AP4_MoovAtom::AP4_MoovAtom(AP4_Size         size,
 
 				if(dst)
 				{
-					AP4_ByteStream* s = DNew AP4_MemoryByteStream(dst, d_stream.total_out);
+					AP4_ByteStream* s = new AP4_MemoryByteStream(dst, d_stream.total_out);
 					ReadChildren(atom_factory, *s, d_stream.total_out);
 					s->Release();
 					free(dst);
@@ -154,20 +161,37 @@ AP4_MoovAtom::AP4_MoovAtom(AP4_Size         size,
 			}
 		}
 	}
-
+	// <== End patch MPC
+	
     // collect all trak atoms
     m_Children.Apply(AP4_TrakAtomCollector(&m_TrakAtoms));    
 }
 
 /*----------------------------------------------------------------------
-|       AP4_MoovAtom::OnChildAdded
+|   AP4_MoovAtom::AdjustChunkOffsets
++---------------------------------------------------------------------*/
+AP4_Result 
+AP4_MoovAtom::AdjustChunkOffsets(AP4_SI64 offset)
+{
+    for (AP4_List<AP4_TrakAtom>::Item* item = m_TrakAtoms.FirstItem();
+         item;
+         item = item->GetNext()) {
+        AP4_TrakAtom* trak = item->GetData();
+        trak->AdjustChunkOffsets(offset);
+    }
+
+    return AP4_SUCCESS;
+}
+
+/*----------------------------------------------------------------------
+|   AP4_MoovAtom::OnChildAdded
 +---------------------------------------------------------------------*/
 void
 AP4_MoovAtom::OnChildAdded(AP4_Atom* atom)
 {
     // keep the atom in the list of trak atoms
     if (atom->GetType() == AP4_ATOM_TYPE_TRAK) {
-        AP4_TrakAtom* trak = dynamic_cast<AP4_TrakAtom*>(atom);
+        AP4_TrakAtom* trak = AP4_DYNAMIC_CAST(AP4_TrakAtom, atom);
         if (trak) {
             m_TrakAtoms.Add(trak);
         }
@@ -178,14 +202,14 @@ AP4_MoovAtom::OnChildAdded(AP4_Atom* atom)
 }
 
 /*----------------------------------------------------------------------
-|       AP4_MoovAtom::OnChildRemoved
+|   AP4_MoovAtom::OnChildRemoved
 +---------------------------------------------------------------------*/
 void
 AP4_MoovAtom::OnChildRemoved(AP4_Atom* atom)
 {
     // remove the atom from the list of trak atoms
     if (atom->GetType() == AP4_ATOM_TYPE_TRAK) {
-        AP4_TrakAtom* trak = dynamic_cast<AP4_TrakAtom*>(atom);
+        AP4_TrakAtom* trak = AP4_DYNAMIC_CAST(AP4_TrakAtom, atom);
         if (trak) {
             m_TrakAtoms.Remove(trak);
         }

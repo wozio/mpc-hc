@@ -47,7 +47,7 @@ class AP4_CmvdAtom : public AP4_ContainerAtom
 {
 public:
     // methods
-    AP4_CmvdAtom(AP4_Size         size,
+    AP4_CmvdAtom(AP4_UI64         size,
                  AP4_ByteStream&  stream,
                  AP4_AtomFactory& atom_factory);
 
