@@ -92,11 +92,25 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
  /*----------------------------------------------------------------------
  |   AP4_AtomFactory::~AP4_AtomFactory
  +---------------------------------------------------------------------*/
-@@ -295,6 +304,47 @@
-             atom = new AP4_AudioSampleEntry(type, size_32, stream, *this);
+@@ -289,12 +298,81 @@
+             atom = new AP4_Avc1SampleEntry(size_32, stream, *this);
              break;
  
 +		  // ==> Start patch MPC
+           case AP4_ATOM_TYPE_ALAC:
+-          case AP4_ATOM_TYPE_AC_3:
+-          case AP4_ATOM_TYPE_EC_3:
+             atom = new AP4_AudioSampleEntry(type, size_32, stream, *this);
+             break;
+ 
++		  case AP4_ATOM_TYPE_AC_3: // AC3-in-MP4 from ISO Standard
++		  case AP4_ATOM_TYPE_SAC3: // AC3-in-MP4 from Nero Stuff >.<
++			atom = new AP4_AC3SampleEntry(size_32, stream, *this);
++			break;
++		  case AP4_ATOM_TYPE_EC_3:
++			atom = new AP4_EAC3SampleEntry(size_32, stream, *this);
++			break;
++
 +		  case AP4_ATOM_TYPE_TEXT:
 +			atom = new AP4_TextSampleEntry((unsigned long)size_32, stream, *this);
 +			break;
@@ -117,8 +131,26 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
 +		  case AP4_ATOM_TYPE_SVQ1:
 +		  case AP4_ATOM_TYPE_SVQ2:
 +		  case AP4_ATOM_TYPE_SVQ3:
++		  case AP4_ATOM_TYPE_H261:
 +		  case AP4_ATOM_TYPE_H263:
 +		  case AP4_ATOM_TYPE_S263:
++		  case AP4_ATOM_TYPE_JPEG:
++		  case AP4_ATOM_TYPE_PNG:
++		  case AP4_ATOM_TYPE_RLE:
++		  case AP4_ATOM_TYPE_MJPA:
++		  case AP4_ATOM_TYPE_MJPB:
++		  case AP4_ATOM_TYPE_MJPG:
++		  case AP4_ATOM_TYPE_DMB1:
++		  case AP4_ATOM_TYPE_RPZA:
++		  case AP4_ATOM_TYPE_DVC:
++		  case AP4_ATOM_TYPE_DIV3:
++		  case AP4_ATOM_TYPE_DIVX:
++		  case AP4_ATOM_TYPE_8BPS:
++		  case AP4_ATOM_TYPE_3IV1:
++		  case AP4_ATOM_TYPE_3IV2:
++		  case AP4_ATOM_TYPE_IV32:
++		  case AP4_ATOM_TYPE_VP31:
++		  case AP4_ATOM_TYPE_YV12:
 +			atom = new AP4_VisualSampleEntry(type, (unsigned long)size_32, stream, *this);
 +			break;
 +
@@ -127,20 +159,24 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
 +		  case AP4_ATOM_TYPE_IMA4:
 +		  case AP4_ATOM_TYPE_QDMC:
 +		  case AP4_ATOM_TYPE_QDM2:
++		  case AP4_ATOM_TYPE_NONE:
++		  case AP4_ATOM_TYPE_RAW:
 +		  case AP4_ATOM_TYPE_TWOS:
 +		  case AP4_ATOM_TYPE_SOWT:
++		  case AP4_ATOM_TYPE_IN24:
++		  case AP4_ATOM_TYPE_IN32:
++		  case AP4_ATOM_TYPE_FL32:
++		  case AP4_ATOM_TYPE_FL64:
++		  case AP4_ATOM_TYPE_ALAW:
++		  case AP4_ATOM_TYPE_ULAW:
 +			atom = new AP4_AudioSampleEntry(type, (unsigned long)size_32, stream, *this);
-+			break;
-+
-+		  case AP4_ATOM_TYPE_SAC3: // AC3-in-MP4 from Nero Stuff >.<
-+			atom = new AP4_AC3SampleEntry(type, (unsigned long)size_32, stream, *this);
 +			break;
 +		  // <== End patch MPC
 +			
            case AP4_ATOM_TYPE_RTP_:
              atom = new AP4_RtpHintSampleEntry(size_32, stream, *this);
              break;
-@@ -638,6 +688,18 @@
+@@ -638,6 +716,19 @@
            case AP4_ATOM_TYPE_EDTS: 
            case AP4_ATOM_TYPE_MDRI:
            case AP4_ATOM_TYPE_WAVE:
@@ -154,12 +190,13 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
 +	      case AP4_ATOM_TYPE_CMT:
 +		  case AP4_ATOM_TYPE_GEN:
 +		  case AP4_ATOM_TYPE_CMOV:
++		  case AP4_ATOM_TYPE_NAM:
 +		  // <== End patch MPC
 +		  
              if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
              atom = AP4_ContainerAtom::Create(type, size_64, false, force_64, stream, *this);
              break;
-@@ -655,6 +717,23 @@
+@@ -655,6 +746,23 @@
              // generic atoms
              break;
              
@@ -250,12 +287,13 @@ Index: Source/C++/Core/Ap4HdlrAtom.h
 ===================================================================
 --- Source/C++/Core/Ap4HdlrAtom.h	(revision 422)
 +++ Source/C++/Core/Ap4HdlrAtom.h	(working copy)
-@@ -52,6 +52,9 @@
+@@ -52,6 +52,10 @@
  const AP4_UI32 AP4_HANDLER_TYPE_JPEG = AP4_ATOM_TYPE('j','p','e','g');
  const AP4_UI32 AP4_HANDLER_TYPE_ODSM = AP4_ATOM_TYPE('o','d','s','m');
  const AP4_UI32 AP4_HANDLER_TYPE_SDSM = AP4_ATOM_TYPE('s','d','s','m');
 +// ==> Start patch MPC
 +const AP4_UI32 AP4_HANDLER_TYPE_SUBP = AP4_ATOM_TYPE('s','u','b','p');
++const AP4_UI32 AP4_HANDLER_TYPE_SBTL = AP4_ATOM_TYPE('s','b','t','l');
 +// <== End patch MPC
  
  /*----------------------------------------------------------------------
@@ -446,7 +484,7 @@ Index: Source/C++/Core/Ap4SampleEntry.cpp
  }
      
  /*----------------------------------------------------------------------
-@@ -1059,3 +1111,321 @@
+@@ -1059,3 +1111,294 @@
      
      return AP4_SUCCESS;
  }
@@ -673,28 +711,26 @@ Index: Source/C++/Core/Ap4SampleEntry.cpp
 +	return AP4_FAILURE;
 +}
 +
-+
-+
++static int freq[] = {48000, 44100, 32000, 0};
++static int channels[] = {2, 1, 2, 3, 3, 4, 4, 5};
 +
 +/*----------------------------------------------------------------------
 +|       AP4_AC3SampleEntry::AP4_AC3SampleEntry
 ++---------------------------------------------------------------------*/
-+AP4_AC3SampleEntry::AP4_AC3SampleEntry(AP4_Atom::Type   format,
-+									   AP4_UI32         sample_rate,
-+									   AP4_UI16         sample_size,
-+									   AP4_UI16         channel_count) :
-+    AP4_AudioSampleEntry(format, sample_rate, sample_size, channel_count)
++AP4_AC3SampleEntry::AP4_AC3SampleEntry(AP4_Size         size,
++                                         AP4_ByteStream&  stream,
++                                         AP4_AtomFactory& atom_factory) :
++    AP4_AudioSampleEntry(AP4_ATOM_TYPE_AC_3, size, stream, atom_factory)
 +{
-+}
 +
-+AP4_AC3SampleEntry::AP4_AC3SampleEntry(AP4_Atom::Type   format,
-+									   AP4_Size         size,
-+									   AP4_ByteStream&  stream,
-+									   AP4_AtomFactory& atom_factory) :
-+	AP4_AudioSampleEntry(format, size, stream, atom_factory)
-+{
-+}
++	// read fields
++    ReadFields(stream);
 +
++    AP4_Size fields_size = GetFieldsSize();
++
++    // read children atoms (ex: esds and maybe others)
++    ReadChildren(atom_factory, stream, size-AP4_ATOM_HEADER_SIZE-fields_size);
++}
 +
 +/*----------------------------------------------------------------------
 +|       AP4_AC3SampleEntry::ReadFields
@@ -718,54 +754,29 @@ Index: Source/C++/Core/Ap4SampleEntry.cpp
 +	stream.ReadUI24(data);
 +
 +	// fscod
-+	switch ((data>>22) & 0x3) {
-+	case 0:
-+		m_SampleRate = 48000;
-+		break;
-+	case 1:
-+		m_SampleRate = 44100;
-+		break;
-+	case 2:
-+		m_SampleRate = 32000;
-+		break;
-+	}
-+
++	m_SampleRate = freq[(data>>22) & 0x3];
 +	m_SampleRate <<= 16;
 +
 +	// acmod
-+	switch ((data>>11) & 0x7) {
-+	case 1:
-+		m_ChannelCount = 1;
-+		break;
-+	case 0:
-+	case 2:
-+		m_ChannelCount = 2;
-+		break;
-+	case 3:
-+	case 4:
-+		m_ChannelCount = 3;
-+		break;
-+	case 5:
-+	case 6:
-+		m_ChannelCount = 4;
-+		break;
-+	case 7:
-+		m_ChannelCount = 5;
-+		break;
-+	}
-+
-+	// lfeon
-+	if (((data>>10) & 0x1) == 1)
-+		m_ChannelCount++;
++	m_ChannelCount = channels[(data>>11) & 0x7] + ((data>>10) & 0x1);
 +
 +	return AP4_SUCCESS;
-+
 +}
 +
 +AP4_Size
 +AP4_AC3SampleEntry::GetFieldsSize()
 +{
 +	return AP4_AudioSampleEntry::GetFieldsSize() + 11;
++}
++
++/*----------------------------------------------------------------------
++|       AP4_EAC3SampleEntry::AP4_EAC3SampleEntry
+++---------------------------------------------------------------------*/
++AP4_EAC3SampleEntry::AP4_EAC3SampleEntry(AP4_Size         size,
++                                         AP4_ByteStream&  stream,
++                                         AP4_AtomFactory& atom_factory) :
++    AP4_AudioSampleEntry(AP4_ATOM_TYPE_EC_3, size, stream, atom_factory)
++{
 +}
 +// <== End patch MPC
 \ No newline at end of file
@@ -797,7 +808,7 @@ Index: Source/C++/Core/Ap4SampleEntry.h
   
      AP4_UI32 m_QtV2StructSize;
      double   m_QtV2SampleRate64;
-@@ -373,6 +383,104 @@
+@@ -373,6 +383,109 @@
      AP4_UI16 m_HintTrackVersion;
      AP4_UI16 m_HighestCompatibleVersion;
      AP4_UI32 m_MaxPacketSize;
@@ -885,19 +896,24 @@ Index: Source/C++/Core/Ap4SampleEntry.h
 +{
 + public:
 +    // constructors
-+    AP4_AC3SampleEntry(AP4_Atom::Type   format,
-+					   AP4_UI32         sample_rate,
-+                       AP4_UI16         sample_size,
-+                       AP4_UI16         channel_count);
++    AP4_AC3SampleEntry(AP4_Size         size,
++                        AP4_ByteStream&  stream,
++                        AP4_AtomFactory& atom_factory);
 +
-+    AP4_AC3SampleEntry(AP4_Atom::Type   format,
-+					   AP4_Size         size,
-+                       AP4_ByteStream&  stream,
-+                       AP4_AtomFactory& atom_factory);
++	AP4_Result ReadFields(AP4_ByteStream& stream);
++	AP4_Size   GetFieldsSize();
++};
 +
-+protected:
-+	virtual AP4_Size   GetFieldsSize();
-+    virtual AP4_Result ReadFields(AP4_ByteStream& stream);
++/*----------------------------------------------------------------------
++|       AP4_EAC3SampleEntry
+++---------------------------------------------------------------------*/
++class AP4_EAC3SampleEntry : public AP4_AudioSampleEntry
++{
++ public:
++    // constructors
++    AP4_EAC3SampleEntry(AP4_Size         size,
++                        AP4_ByteStream&  stream,
++                        AP4_AtomFactory& atom_factory);
 +};
 +// <== End patch MPC
 +
@@ -1009,7 +1025,14 @@ Index: Source/C++/Core/Ap4Track.cpp
 ===================================================================
 --- Source/C++/Core/Ap4Track.cpp	(revision 422)
 +++ Source/C++/Core/Ap4Track.cpp	(working copy)
-@@ -148,6 +148,10 @@
+@@ -144,10 +144,17 @@
+                        type == AP4_HANDLER_TYPE_SDSM) {
+                 m_Type = TYPE_SYSTEM;
+             } else if (type == AP4_HANDLER_TYPE_TEXT ||
++// ==> Start patch MPC
++					   type == AP4_HANDLER_TYPE_SBTL ||
++// <== End patch MPC
+                        type == AP4_HANDLER_TYPE_TX3G) {
                  m_Type = TYPE_TEXT;
              } else if (type == AP4_HANDLER_TYPE_JPEG) {
                  m_Type = TYPE_JPEG;
@@ -1020,7 +1043,7 @@ Index: Source/C++/Core/Ap4Track.cpp
              }
          }
      }
-@@ -465,3 +469,31 @@
+@@ -465,3 +472,31 @@
      }
      return NULL;
  }

@@ -144,6 +144,9 @@ AP4_Track::AP4_Track(AP4_TrakAtom&   atom,
                        type == AP4_HANDLER_TYPE_SDSM) {
                 m_Type = TYPE_SYSTEM;
             } else if (type == AP4_HANDLER_TYPE_TEXT ||
+// ==> Start patch MPC
+					   type == AP4_HANDLER_TYPE_SBTL ||
+// <== End patch MPC
                        type == AP4_HANDLER_TYPE_TX3G) {
                 m_Type = TYPE_TEXT;
             } else if (type == AP4_HANDLER_TYPE_JPEG) {

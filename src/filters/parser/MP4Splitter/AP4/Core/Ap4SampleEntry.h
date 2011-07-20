@@ -467,19 +467,24 @@ class AP4_AC3SampleEntry : public AP4_AudioSampleEntry
 {
  public:
     // constructors
-    AP4_AC3SampleEntry(AP4_Atom::Type   format,
-					   AP4_UI32         sample_rate,
-                       AP4_UI16         sample_size,
-                       AP4_UI16         channel_count);
+    AP4_AC3SampleEntry(AP4_Size         size,
+                        AP4_ByteStream&  stream,
+                        AP4_AtomFactory& atom_factory);
 
-    AP4_AC3SampleEntry(AP4_Atom::Type   format,
-					   AP4_Size         size,
-                       AP4_ByteStream&  stream,
-                       AP4_AtomFactory& atom_factory);
+	AP4_Result ReadFields(AP4_ByteStream& stream);
+	AP4_Size   GetFieldsSize();
+};
 
-protected:
-	virtual AP4_Size   GetFieldsSize();
-    virtual AP4_Result ReadFields(AP4_ByteStream& stream);
+/*----------------------------------------------------------------------
+|       AP4_EAC3SampleEntry
++---------------------------------------------------------------------*/
+class AP4_EAC3SampleEntry : public AP4_AudioSampleEntry
+{
+ public:
+    // constructors
+    AP4_EAC3SampleEntry(AP4_Size         size,
+                        AP4_ByteStream&  stream,
+                        AP4_AtomFactory& atom_factory);
 };
 // <== End patch MPC
 
