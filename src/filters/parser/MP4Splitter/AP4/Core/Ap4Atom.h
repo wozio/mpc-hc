@@ -348,6 +348,7 @@ const AP4_Atom::Type AP4_ATOM_TYPE_TFHD = AP4_ATOM_TYPE('t','f','h','d');
 const AP4_Atom::Type AP4_ATOM_TYPE_TRUN = AP4_ATOM_TYPE('t','r','u','n');
 const AP4_Atom::Type AP4_ATOM_TYPE_STTS = AP4_ATOM_TYPE('s','t','t','s');
 const AP4_Atom::Type AP4_ATOM_TYPE_STSZ = AP4_ATOM_TYPE('s','t','s','z');
+const AP4_Atom::Type AP4_ATOM_TYPE_STZ2 = AP4_ATOM_TYPE('s','t','z','2');
 const AP4_Atom::Type AP4_ATOM_TYPE_STSS = AP4_ATOM_TYPE('s','t','s','s');
 const AP4_Atom::Type AP4_ATOM_TYPE_STSD = AP4_ATOM_TYPE('s','t','s','d');
 const AP4_Atom::Type AP4_ATOM_TYPE_STSC = AP4_ATOM_TYPE('s','t','s','c');
@@ -430,6 +431,11 @@ const AP4_Atom::Type AP4_ATOM_TYPE_EC_3 = AP4_ATOM_TYPE('e','c','-','3');
 const AP4_Atom::Type AP4_ATOM_TYPE_MFRA = AP4_ATOM_TYPE('m','f','r','a');
 const AP4_Atom::Type AP4_ATOM_TYPE_TFRA = AP4_ATOM_TYPE('t','f','r','a');
 const AP4_Atom::Type AP4_ATOM_TYPE_MFRO = AP4_ATOM_TYPE('m','f','r','o');
+const AP4_Atom::Type AP4_ATOM_TYPE_TFDT = AP4_ATOM_TYPE('t','f','d','t');
+const AP4_Atom::Type AP4_ATOM_TYPE_TENC = AP4_ATOM_TYPE('t','e','n','c');
+const AP4_Atom::Type AP4_ATOM_TYPE_SENC = AP4_ATOM_TYPE('s','e','n','c');
+const AP4_Atom::Type AP4_ATOM_TYPE_SAIO = AP4_ATOM_TYPE('s','a','i','o');
+const AP4_Atom::Type AP4_ATOM_TYPE_SAIZ = AP4_ATOM_TYPE('s','a','i','z');
 
 // ==> Start patch MPC
 const AP4_Atom::Type AP4_ATOM_TYPE_TEXT = AP4_ATOM_TYPE('t','e','x','t');

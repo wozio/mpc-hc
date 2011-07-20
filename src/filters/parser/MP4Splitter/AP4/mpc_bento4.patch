@@ -1,10 +1,10 @@
 Index: Source/C++/Core/Ap4Atom.h
 ===================================================================
---- Source/C++/Core/Ap4Atom.h	(revision 410)
+--- Source/C++/Core/Ap4Atom.h	(revision 422)
 +++ Source/C++/Core/Ap4Atom.h	(working copy)
-@@ -431,6 +431,69 @@
- const AP4_Atom::Type AP4_ATOM_TYPE_TFRA = AP4_ATOM_TYPE('t','f','r','a');
- const AP4_Atom::Type AP4_ATOM_TYPE_MFRO = AP4_ATOM_TYPE('m','f','r','o');
+@@ -437,6 +437,69 @@
+ const AP4_Atom::Type AP4_ATOM_TYPE_SAIO = AP4_ATOM_TYPE('s','a','i','o');
+ const AP4_Atom::Type AP4_ATOM_TYPE_SAIZ = AP4_ATOM_TYPE('s','a','i','z');
  
 +// ==> Start patch MPC
 +const AP4_Atom::Type AP4_ATOM_TYPE_TEXT = AP4_ATOM_TYPE('t','e','x','t');
@@ -74,11 +74,11 @@ Index: Source/C++/Core/Ap4Atom.h
  +---------------------------------------------------------------------*/
 Index: Source/C++/Core/Ap4AtomFactory.cpp
 ===================================================================
---- Source/C++/Core/Ap4AtomFactory.cpp	(revision 410)
+--- Source/C++/Core/Ap4AtomFactory.cpp	(revision 422)
 +++ Source/C++/Core/Ap4AtomFactory.cpp	(working copy)
-@@ -88,6 +88,15 @@
- #include "Ap4TfraAtom.h"
- #include "Ap4MfroAtom.h"
+@@ -94,6 +94,15 @@
+ #include "Ap4SaioAtom.h"
+ #include "Ap4SaizAtom.h"
  
 +// ==> Start patch MPC
 +#include "Ap4ChplAtom.h"
@@ -92,7 +92,7 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
  /*----------------------------------------------------------------------
  |   AP4_AtomFactory::~AP4_AtomFactory
  +---------------------------------------------------------------------*/
-@@ -289,6 +298,47 @@
+@@ -295,6 +304,47 @@
              atom = new AP4_AudioSampleEntry(type, size_32, stream, *this);
              break;
  
@@ -140,7 +140,7 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
            case AP4_ATOM_TYPE_RTP_:
              atom = new AP4_RtpHintSampleEntry(size_32, stream, *this);
              break;
-@@ -602,6 +652,18 @@
+@@ -638,6 +688,18 @@
            case AP4_ATOM_TYPE_EDTS: 
            case AP4_ATOM_TYPE_MDRI:
            case AP4_ATOM_TYPE_WAVE:
@@ -159,7 +159,7 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
              if (atom_is_large) return AP4_ERROR_INVALID_FORMAT;
              atom = AP4_ContainerAtom::Create(type, size_64, false, force_64, stream, *this);
              break;
-@@ -619,6 +681,23 @@
+@@ -655,6 +717,23 @@
              // generic atoms
              break;
              
@@ -185,9 +185,9 @@ Index: Source/C++/Core/Ap4AtomFactory.cpp
              AP4_List<TypeHandler>::Item* handler_item = m_TypeHandlers.FirstItem();
 Index: Source/C++/Core/Ap4AtomSampleTable.cpp
 ===================================================================
---- Source/C++/Core/Ap4AtomSampleTable.cpp	(revision 410)
+--- Source/C++/Core/Ap4AtomSampleTable.cpp	(revision 422)
 +++ Source/C++/Core/Ap4AtomSampleTable.cpp	(working copy)
-@@ -42,6 +42,10 @@
+@@ -43,6 +43,10 @@
  #include "Ap4Sample.h"
  #include "Ap4Atom.h"
  
@@ -198,7 +198,7 @@ Index: Source/C++/Core/Ap4AtomSampleTable.cpp
  /*----------------------------------------------------------------------
  |   AP4_AtomSampleTable Dynamic Cast Anchor
  +---------------------------------------------------------------------*/
-@@ -65,7 +69,46 @@
+@@ -67,7 +71,46 @@
      m_Co64Atom = AP4_DYNAMIC_CAST(AP4_Co64Atom, stbl->GetChild(AP4_ATOM_TYPE_CO64));
  
      // keep a reference to the sample stream
@@ -248,7 +248,7 @@ Index: Source/C++/Core/Ap4AtomSampleTable.cpp
  /*----------------------------------------------------------------------
 Index: Source/C++/Core/Ap4HdlrAtom.h
 ===================================================================
---- Source/C++/Core/Ap4HdlrAtom.h	(revision 410)
+--- Source/C++/Core/Ap4HdlrAtom.h	(revision 422)
 +++ Source/C++/Core/Ap4HdlrAtom.h	(working copy)
 @@ -52,6 +52,9 @@
  const AP4_UI32 AP4_HANDLER_TYPE_JPEG = AP4_ATOM_TYPE('j','p','e','g');
@@ -262,7 +262,7 @@ Index: Source/C++/Core/Ap4HdlrAtom.h
  |   AP4_HdlrAtom
 Index: Source/C++/Core/Ap4MoovAtom.cpp
 ===================================================================
---- Source/C++/Core/Ap4MoovAtom.cpp	(revision 410)
+--- Source/C++/Core/Ap4MoovAtom.cpp	(revision 422)
 +++ Source/C++/Core/Ap4MoovAtom.cpp	(working copy)
 @@ -33,6 +33,12 @@
  #include "Ap4TrakAtom.h"
@@ -364,7 +364,7 @@ Index: Source/C++/Core/Ap4MoovAtom.cpp
  }
 Index: Source/C++/Core/Ap4SampleDescription.h
 ===================================================================
---- Source/C++/Core/Ap4SampleDescription.h	(revision 410)
+--- Source/C++/Core/Ap4SampleDescription.h	(revision 422)
 +++ Source/C++/Core/Ap4SampleDescription.h	(working copy)
 @@ -509,5 +509,9 @@
  const AP4_UI08 AP4_MPEG4_AUDIO_OBJECT_TYPE_SMR_SIMPLE            = 40; /**< SMR Simple                                   */
@@ -378,7 +378,7 @@ Index: Source/C++/Core/Ap4SampleDescription.h
  
 Index: Source/C++/Core/Ap4SampleEntry.cpp
 ===================================================================
---- Source/C++/Core/Ap4SampleEntry.cpp	(revision 410)
+--- Source/C++/Core/Ap4SampleEntry.cpp	(revision 422)
 +++ Source/C++/Core/Ap4SampleEntry.cpp	(working copy)
 @@ -35,6 +35,10 @@
  #include "Ap4TimsAtom.h"
@@ -771,7 +771,7 @@ Index: Source/C++/Core/Ap4SampleEntry.cpp
 \ No newline at end of file
 Index: Source/C++/Core/Ap4SampleEntry.h
 ===================================================================
---- Source/C++/Core/Ap4SampleEntry.h	(revision 410)
+--- Source/C++/Core/Ap4SampleEntry.h	(revision 422)
 +++ Source/C++/Core/Ap4SampleEntry.h	(working copy)
 @@ -130,6 +130,13 @@
      AP4_UI32 GetSampleRate();
@@ -904,7 +904,7 @@ Index: Source/C++/Core/Ap4SampleEntry.h
  #endif // _AP4_SAMPLE_ENTRY_H_
 Index: Source/C++/Core/Ap4StscAtom.h
 ===================================================================
---- Source/C++/Core/Ap4StscAtom.h	(revision 410)
+--- Source/C++/Core/Ap4StscAtom.h	(revision 422)
 +++ Source/C++/Core/Ap4StscAtom.h	(working copy)
 @@ -96,6 +96,11 @@
                                  AP4_Ordinal  sample_description_index);
@@ -920,7 +920,7 @@ Index: Source/C++/Core/Ap4StscAtom.h
      AP4_StscAtom(AP4_UI32        size, 
 Index: Source/C++/Core/Ap4StsdAtom.cpp
 ===================================================================
---- Source/C++/Core/Ap4StsdAtom.cpp	(revision 410)
+--- Source/C++/Core/Ap4StsdAtom.cpp	(revision 422)
 +++ Source/C++/Core/Ap4StsdAtom.cpp	(working copy)
 @@ -98,15 +98,22 @@
  
@@ -949,7 +949,7 @@ Index: Source/C++/Core/Ap4StsdAtom.cpp
      atom_factory.PopContext();
 Index: Source/C++/Core/Ap4StsdAtom.h
 ===================================================================
---- Source/C++/Core/Ap4StsdAtom.h	(revision 410)
+--- Source/C++/Core/Ap4StsdAtom.h	(revision 422)
 +++ Source/C++/Core/Ap4StsdAtom.h	(working copy)
 @@ -68,6 +68,10 @@
      // AP4_AtomParent methods
@@ -975,7 +975,7 @@ Index: Source/C++/Core/Ap4StsdAtom.h
  #endif // _AP4_STSD_ATOM_H_
 Index: Source/C++/Core/Ap4StszAtom.h
 ===================================================================
---- Source/C++/Core/Ap4StszAtom.h	(revision 410)
+--- Source/C++/Core/Ap4StszAtom.h	(revision 422)
 +++ Source/C++/Core/Ap4StszAtom.h	(working copy)
 @@ -67,6 +67,11 @@
                                       AP4_Size    sample_size);
@@ -991,7 +991,7 @@ Index: Source/C++/Core/Ap4StszAtom.h
      AP4_StszAtom(AP4_UI32        size, 
 Index: Source/C++/Core/Ap4SttsAtom.h
 ===================================================================
---- Source/C++/Core/Ap4SttsAtom.h	(revision 410)
+--- Source/C++/Core/Ap4SttsAtom.h	(revision 422)
 +++ Source/C++/Core/Ap4SttsAtom.h	(working copy)
 @@ -72,6 +72,11 @@
                                                    AP4_Ordinal&  sample_index);
@@ -1007,7 +1007,7 @@ Index: Source/C++/Core/Ap4SttsAtom.h
      AP4_SttsAtom(AP4_UI32        size, 
 Index: Source/C++/Core/Ap4Track.cpp
 ===================================================================
---- Source/C++/Core/Ap4Track.cpp	(revision 410)
+--- Source/C++/Core/Ap4Track.cpp	(revision 422)
 +++ Source/C++/Core/Ap4Track.cpp	(working copy)
 @@ -148,6 +148,10 @@
                  m_Type = TYPE_TEXT;
@@ -1054,7 +1054,7 @@ Index: Source/C++/Core/Ap4Track.cpp
 +// <== End patch MPC
 Index: Source/C++/Core/Ap4Track.h
 ===================================================================
---- Source/C++/Core/Ap4Track.h	(revision 410)
+--- Source/C++/Core/Ap4Track.h	(revision 422)
 +++ Source/C++/Core/Ap4Track.h	(working copy)
 @@ -35,6 +35,10 @@
  #include "Ap4Types.h"
