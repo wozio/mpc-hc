@@ -389,13 +389,16 @@ HRESULT CMP4SplitterFilter::CreateOutputs(IAsyncReader* pAsyncReader)
 					int num = 1;
 					int den = 1;
 
-// >>>>>>> TODO : find AP4_PaspAtom ...
-					//if(AP4_PaspAtom* pasp = dynamic_cast<AP4_PaspAtom*>(avc1->GetChild(AP4_ATOM_TYPE_PASP))) {
-					//	num = pasp->GetNum();
-					//	den = pasp->GetDen();
-					//}
-					if(!num) num = 1;
-					if(!den) den = 1;
+					AP4_Avc1SampleEntry* avc1 = dynamic_cast<AP4_Avc1SampleEntry*>(track->GetTrakAtom()->FindChild("mdia/minf/stbl/stsd/avc1"));
+
+					if (avc1 != NULL) {
+						if(AP4_PaspAtom* pasp = dynamic_cast<AP4_PaspAtom*>(avc1->GetChild(AP4_ATOM_TYPE_PASP, 0))) {
+							num = pasp->GetNum();
+							den = pasp->GetDen();
+						}
+						if(!num) num = 1;
+						if(!den) den = 1;
+					}
 
 					const AP4_Byte* data = di.GetData();
 					AP4_Size size = di.GetDataSize();
