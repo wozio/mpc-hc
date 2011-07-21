@@ -511,6 +511,26 @@ const AP4_UI08 AP4_MPEG4_AUDIO_OBJECT_TYPE_SMR_MAIN              = 41; /**< SMR 
 
 // ==> Start patch MPC
 const AP4_MpegSampleDescription::OTI AP4_NERO_VOBSUB             = 0xE0;
+
+/*----------------------------------------------------------------------
+|       AP4_SubtitlegSampleDescription
++---------------------------------------------------------------------*/
+
+class AP4_SubtitlegSampleDescription : public AP4_SampleDescription
+{
+ public:
+	AP4_IMPLEMENT_DYNAMIC_CAST_D(AP4_SubtitlegSampleDescription, AP4_SampleDescription)
+
+    // methods
+    AP4_SubtitlegSampleDescription(AP4_SampleEntry* sample_entry);
+    ~AP4_SubtitlegSampleDescription();
+    AP4_SampleEntry* GetSampleEntry() { return m_SampleEntry; }
+//    AP4_Atom* ToAtom() const;
+
+ protected:
+    AP4_SampleEntry* m_SampleEntry;
+};
+
 // <== End patch MPC
 
 #endif // _AP4_SAMPLE_DESCRIPTION_H_

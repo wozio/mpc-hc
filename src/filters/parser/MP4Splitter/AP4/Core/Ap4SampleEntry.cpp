@@ -1334,6 +1334,12 @@ AP4_Tx3gSampleEntry::GetFontNameById(AP4_Ordinal Id, AP4_String& Name)
 	return AP4_FAILURE;
 }
 
+AP4_SampleDescription* 
+AP4_Tx3gSampleEntry::ToSampleDescription()
+{
+	return new AP4_SubtitlegSampleDescription(this);
+}
+
 static int freq[] = {48000, 44100, 32000, 0};
 static int channels[] = {2, 1, 2, 3, 3, 4, 4, 5};
 

@@ -445,6 +445,7 @@ public:
 
 	const AP4_Tx3gDescription& GetDescription() const { return m_Description; };
 
+	virtual AP4_SampleDescription* ToSampleDescription();
 	AP4_Result GetFontNameById(AP4_Ordinal Id, AP4_String& Name);
 
 protected:

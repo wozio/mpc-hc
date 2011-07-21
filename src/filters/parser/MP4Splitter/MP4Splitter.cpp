@@ -351,10 +351,10 @@ HRESULT CMP4SplitterFilter::CreateOutputs(IAsyncReader* pAsyncReader)
 					if(mt.subtype == GUID_NULL) {
 						TRACE(_T("Unknown audio OBI: %02x\n"), system_desc->GetObjectTypeId());
 					}
-				} else if(AP4_UnknownSampleDescription* unknown_desc =
-							  dynamic_cast<AP4_UnknownSampleDescription*>(desc)) { // TEMP
-// >>>>>>> TODO : check GetAtom() is working...
-					AP4_Atom* sample_entry = (AP4_Atom*)unknown_desc->GetAtom();
+				} else if(AP4_SubtitlegSampleDescription* tx3gDesc =
+							  dynamic_cast<AP4_SubtitlegSampleDescription*>(desc)) {
+					
+					AP4_SampleEntry* sample_entry = tx3gDesc->GetSampleEntry();
 
 					if(dynamic_cast<AP4_TextSampleEntry*>(sample_entry)
 							|| dynamic_cast<AP4_Tx3gSampleEntry*>(sample_entry)) {
@@ -1243,10 +1243,8 @@ bool CMP4SplitterFilter::DemuxLoop()
 								translation.SetPoint((int)x, (int)y);
 							}
 
-							if(AP4_UnknownSampleDescription* unknown_desc = dynamic_cast<AP4_UnknownSampleDescription*>(desc)) { // TEMP
-//								AP4_SampleEntry* sample_entry = unknown_desc->GetSampleEntry();
-// >>>>>>> TODO : check GetAtom() is working...
-								AP4_Atom* sample_entry = (AP4_Atom*)unknown_desc->GetAtom();
+							if(AP4_SubtitlegSampleDescription* unknown_desc = dynamic_cast<AP4_SubtitlegSampleDescription*>(desc)) {
+								AP4_SampleEntry* sample_entry = unknown_desc->GetSampleEntry();
 
 								if(AP4_TextSampleEntry* text = dynamic_cast<AP4_TextSampleEntry*>(sample_entry)) {
 									const AP4_TextSampleEntry::AP4_TextDescription& d = text->GetDescription();

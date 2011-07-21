@@ -49,6 +49,9 @@ AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_MpegAudioSampleDescription)
 AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_MpegVideoSampleDescription)
 AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_MpegSystemSampleDescription)
 AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_AvcSampleDescription)
+// ==> Start patch MPC
+AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_SubtitlegSampleDescription)
+// <== End patch MPC
 
 /*----------------------------------------------------------------------
 |  AP4_GetFormatName
@@ -617,3 +620,24 @@ AP4_MpegAudioSampleDescription::GetMpeg4AudioObjectTypeString(Mpeg4AudioObjectTy
         default:                                                  return "UNKNOWN";
     }
 }
+
+
+// ==> Start patch MPC
+
+/*----------------------------------------------------------------------
+|       AP4_SubtitlegSampleDescription::AP4_SubtitlegSampleDescription
++---------------------------------------------------------------------*/
+AP4_SubtitlegSampleDescription::AP4_SubtitlegSampleDescription(AP4_SampleEntry* entry) :
+    AP4_SampleDescription(AP4_SampleDescription::TYPE_UNKNOWN, 0, NULL),
+    m_SampleEntry(entry)
+{
+}
+
+/*----------------------------------------------------------------------
+|       AP4_SubtitlegSampleDescription::~AP4_SubtitlegSampleDescription
++---------------------------------------------------------------------*/
+AP4_SubtitlegSampleDescription::~AP4_SubtitlegSampleDescription()
+{
+}
+
+// <== End patch MPC

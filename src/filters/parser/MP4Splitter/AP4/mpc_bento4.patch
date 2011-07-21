@@ -400,16 +400,76 @@ Index: Source/C++/Core/Ap4MoovAtom.cpp
      // collect all trak atoms
      m_Children.Apply(AP4_TrakAtomCollector(&m_TrakAtoms));    
  }
+Index: Source/C++/Core/Ap4SampleDescription.cpp
+===================================================================
+--- Source/C++/Core/Ap4SampleDescription.cpp	(revision 422)
++++ Source/C++/Core/Ap4SampleDescription.cpp	(working copy)
+@@ -49,6 +49,9 @@
+ AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_MpegVideoSampleDescription)
+ AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_MpegSystemSampleDescription)
+ AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_AvcSampleDescription)
++// ==> Start patch MPC
++AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_SubtitlegSampleDescription)
++// <== End patch MPC
+ 
+ /*----------------------------------------------------------------------
+ |  AP4_GetFormatName
+@@ -617,3 +620,24 @@
+         default:                                                  return "UNKNOWN";
+     }
+ }
++
++
++// ==> Start patch MPC
++
++/*----------------------------------------------------------------------
++|       AP4_SubtitlegSampleDescription::AP4_SubtitlegSampleDescription
+++---------------------------------------------------------------------*/
++AP4_SubtitlegSampleDescription::AP4_SubtitlegSampleDescription(AP4_SampleEntry* entry) :
++    AP4_SampleDescription(AP4_SampleDescription::TYPE_UNKNOWN, 0, NULL),
++    m_SampleEntry(entry)
++{
++}
++
++/*----------------------------------------------------------------------
++|       AP4_SubtitlegSampleDescription::~AP4_SubtitlegSampleDescription
+++---------------------------------------------------------------------*/
++AP4_SubtitlegSampleDescription::~AP4_SubtitlegSampleDescription()
++{
++}
++
++// <== End patch MPC
+\ No newline at end of file
 Index: Source/C++/Core/Ap4SampleDescription.h
 ===================================================================
 --- Source/C++/Core/Ap4SampleDescription.h	(revision 422)
 +++ Source/C++/Core/Ap4SampleDescription.h	(working copy)
-@@ -509,5 +509,9 @@
+@@ -509,5 +509,29 @@
  const AP4_UI08 AP4_MPEG4_AUDIO_OBJECT_TYPE_SMR_SIMPLE            = 40; /**< SMR Simple                                   */
  const AP4_UI08 AP4_MPEG4_AUDIO_OBJECT_TYPE_SMR_MAIN              = 41; /**< SMR Main                                     */
  
 +// ==> Start patch MPC
 +const AP4_MpegSampleDescription::OTI AP4_NERO_VOBSUB             = 0xE0;
++
++/*----------------------------------------------------------------------
++|       AP4_SubtitlegSampleDescription
+++---------------------------------------------------------------------*/
++
++class AP4_SubtitlegSampleDescription : public AP4_SampleDescription
++{
++ public:
++	AP4_IMPLEMENT_DYNAMIC_CAST_D(AP4_SubtitlegSampleDescription, AP4_SampleDescription)
++
++    // methods
++    AP4_SubtitlegSampleDescription(AP4_SampleEntry* sample_entry);
++    ~AP4_SubtitlegSampleDescription();
++    AP4_SampleEntry* GetSampleEntry() { return m_SampleEntry; }
++//    AP4_Atom* ToAtom() const;
++
++ protected:
++    AP4_SampleEntry* m_SampleEntry;
++};
++
 +// <== End patch MPC
 +
  #endif // _AP4_SAMPLE_DESCRIPTION_H_
@@ -484,7 +544,7 @@ Index: Source/C++/Core/Ap4SampleEntry.cpp
  }
      
  /*----------------------------------------------------------------------
-@@ -1059,3 +1111,294 @@
+@@ -1059,3 +1111,300 @@
      
      return AP4_SUCCESS;
  }
@@ -711,6 +771,12 @@ Index: Source/C++/Core/Ap4SampleEntry.cpp
 +	return AP4_FAILURE;
 +}
 +
++AP4_SampleDescription* 
++AP4_Tx3gSampleEntry::ToSampleDescription()
++{
++	return new AP4_SubtitlegSampleDescription(this);
++}
++
 +static int freq[] = {48000, 44100, 32000, 0};
 +static int channels[] = {2, 1, 2, 3, 3, 4, 4, 5};
 +
@@ -808,7 +874,7 @@ Index: Source/C++/Core/Ap4SampleEntry.h
   
      AP4_UI32 m_QtV2StructSize;
      double   m_QtV2SampleRate64;
-@@ -373,6 +383,109 @@
+@@ -373,6 +383,110 @@
      AP4_UI16 m_HintTrackVersion;
      AP4_UI16 m_HighestCompatibleVersion;
      AP4_UI32 m_MaxPacketSize;
@@ -874,6 +940,7 @@ Index: Source/C++/Core/Ap4SampleEntry.h
 +
 +	const AP4_Tx3gDescription& GetDescription() const { return m_Description; };
 +
++	virtual AP4_SampleDescription* ToSampleDescription();
 +	AP4_Result GetFontNameById(AP4_Ordinal Id, AP4_String& Name);
 +
 +protected:
