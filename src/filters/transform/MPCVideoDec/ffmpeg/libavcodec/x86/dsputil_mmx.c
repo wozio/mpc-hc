@@ -2444,7 +2444,7 @@ void ff_vector_clip_int32_sse41   (int32_t *dst, const int32_t *src, int32_t min
 void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
 {
     int mm_flags = av_get_cpu_flags();
-    const int high_bit_depth = avctx->codec_id == CODEC_ID_H264 && avctx->bits_per_raw_sample > 8;
+    const int high_bit_depth = avctx->bits_per_raw_sample > 8;
     const int bit_depth = avctx->bits_per_raw_sample;
 
     if (avctx->dsp_mask) {
@@ -2472,7 +2472,7 @@ void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx)
     if (mm_flags & AV_CPU_FLAG_MMX) {
         const int idct_algo= avctx->idct_algo;
 
-        if(avctx->lowres==0){
+        if (avctx->lowres == 0 && avctx->bits_per_raw_sample <= 8) {
             if(idct_algo==FF_IDCT_AUTO || idct_algo==FF_IDCT_SIMPLEMMX){
                 c->idct_put= ff_simple_idct_put_mmx;
                 c->idct_add= ff_simple_idct_add_mmx;

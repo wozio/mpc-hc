@@ -10,6 +10,8 @@ The following files have MPC-specific custom code (compared to ffdshow):
 * libavcodec/h264_recov.c
 * libavcodec/mpc_helper.c
 * libavcodec/mpeg12.c
+* libavcodec/mpegvideo.c
+* libavcodec/thread.h
 * libavcodec/vp3.c
 * libavutil/log.h
 * libswscale (vanilla from libav)

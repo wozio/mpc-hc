@@ -48,8 +48,8 @@ extern "C"
 #include "../../../apps/mplayerc/FilterEnum.h"
 
 
-#define MAX_SUPPORTED_MODE			5
-#define MPCVD_CAPTION				_T("MPC Video decoder")
+#define MAX_SUPPORTED_MODE	5
+#define MPCVD_CAPTION		_T("MPC Video decoder")
 
 #define ROUND_FRAMERATE(var,FrameRate)	if (labs ((long)(var - FrameRate)) < FrameRate*1/100) var = FrameRate;
 
@@ -531,22 +531,22 @@ const int CMPCVideoDecFilter::sudPinTypesOutCount = countof(CMPCVideoDecFilter::
 
 PixelFormat	GetPixelFormatFromCsp(int csp)
 {
-    switch (csp & FF_CSPS_MASK) {
-        case FF_CSP_420P :
-            return PIX_FMT_YUV420P;
-        case FF_CSP_422P :
-            return PIX_FMT_YUV422P;
-        case FF_CSP_444P :
-            return PIX_FMT_YUV444P;
-        case FF_CSP_411P :
-            return PIX_FMT_YUV411P;
-        case FF_CSP_YUY2 :
-            return PIX_FMT_UYVY422;		// TODO : check this...
-        case FF_CSP_UYVY :
-            return PIX_FMT_UYVY422;
+	switch (csp & FF_CSPS_MASK) {
+		case FF_CSP_420P :
+			return PIX_FMT_YUV420P;
+		case FF_CSP_422P :
+			return PIX_FMT_YUV422P;
+		case FF_CSP_444P :
+			return PIX_FMT_YUV444P;
+		case FF_CSP_411P :
+			return PIX_FMT_YUV411P;
+		case FF_CSP_YUY2 :
+			return PIX_FMT_UYVY422;		// TODO : check this...
+		case FF_CSP_UYVY :
+			return PIX_FMT_UYVY422;
 		default :
 			ASSERT(FALSE);
-    }
+	}
 
 	return PIX_FMT_NONE;
 }
@@ -2076,8 +2076,9 @@ HRESULT CMPCVideoDecFilter::ConfigureDXVA2(IPin *pPin)
 			}
 
 			// Patch for the Sandy Bridge (prevent crash on Mode_E, fixme later)
-			if (m_nPCIVendor == PCIV_Intel && pDecoderGuids[iGuid] == DXVA2_ModeH264_E)
+			if (m_nPCIVendor == PCIV_Intel && pDecoderGuids[iGuid] == DXVA2_ModeH264_E) {
 				continue;
+			}
 
 			if (bFoundDXVA2Configuration) {
 				// Found a good configuration. Save the GUID.
@@ -2348,44 +2349,52 @@ STDMETHODIMP CMPCVideoDecFilter::SetThreadNumber(int nValue)
 	m_nThreadNumber = nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(int) CMPCVideoDecFilter::GetThreadNumber()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return m_nThreadNumber;
 }
+
 STDMETHODIMP CMPCVideoDecFilter::SetDiscardMode(int nValue)
 {
 	CAutoLock cAutoLock(&m_csProps);
 	m_nDiscardMode = nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(int) CMPCVideoDecFilter::GetDiscardMode()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return m_nDiscardMode;
 }
+
 STDMETHODIMP CMPCVideoDecFilter::SetErrorRecognition(int nValue)
 {
 	CAutoLock cAutoLock(&m_csProps);
 	m_nErrorRecognition = nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(int) CMPCVideoDecFilter::GetErrorRecognition()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return m_nErrorRecognition;
 }
+
 STDMETHODIMP CMPCVideoDecFilter::SetIDCTAlgo(int nValue)
 {
 	CAutoLock cAutoLock(&m_csProps);
 	m_nIDCTAlgo = nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(int) CMPCVideoDecFilter::GetIDCTAlgo()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return m_nIDCTAlgo;
 }
+
 STDMETHODIMP_(GUID*) CMPCVideoDecFilter::GetDXVADecoderGuid()
 {
 	if (m_pGraph == NULL) {
@@ -2394,50 +2403,59 @@ STDMETHODIMP_(GUID*) CMPCVideoDecFilter::GetDXVADecoderGuid()
 		return &m_DXVADecoderGUID;
 	}
 }
+
 STDMETHODIMP CMPCVideoDecFilter::SetActiveCodecs(MPC_VIDEO_CODEC nValue)
 {
 	CAutoLock cAutoLock(&m_csProps);
 	m_nActiveCodecs = (int)nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(MPC_VIDEO_CODEC) CMPCVideoDecFilter::GetActiveCodecs()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return (MPC_VIDEO_CODEC)m_nActiveCodecs;
 }
+
 STDMETHODIMP_(LPCTSTR) CMPCVideoDecFilter::GetVideoCardDescription()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return m_strDeviceDescription;
 }
+
 STDMETHODIMP CMPCVideoDecFilter::SetARMode(int nValue)
 {
 	CAutoLock cAutoLock(&m_csProps);
 	m_nARMode = nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(int) CMPCVideoDecFilter::GetARMode()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return m_nARMode;
 }
+
 STDMETHODIMP CMPCVideoDecFilter::SetDXVACheckCompatibility(int nValue)
 {
 	CAutoLock cAutoLock(&m_csProps);
 	m_nDXVACheckCompatibility = nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(int) CMPCVideoDecFilter::GetDXVACheckCompatibility()
 {
 	CAutoLock cAutoLock(&m_csProps);
 	return m_nDXVACheckCompatibility;
 }
+
 STDMETHODIMP CMPCVideoDecFilter::SetDXVA_SD(int nValue)
 {
 	CAutoLock cAutoLock(&m_csProps);
 	m_nDXVA_SD = nValue;
 	return S_OK;
 }
+
 STDMETHODIMP_(int) CMPCVideoDecFilter::GetDXVA_SD()
 {
 	CAutoLock cAutoLock(&m_csProps);

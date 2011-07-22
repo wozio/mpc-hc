@@ -92,8 +92,8 @@ SRCS_C=\
     libavcodec/cabac.c \
     libavcodec/CompilerVersion.c \
     libavcodec/dsputil.c \
+    libavcodec/eac3_data.c \
     libavcodec/eac3dec.c \
-    libavcodec/eac3dec_data.c \
     libavcodec/error_resilience.c \
     libavcodec/faandct.c \
     libavcodec/faanidct.c \
