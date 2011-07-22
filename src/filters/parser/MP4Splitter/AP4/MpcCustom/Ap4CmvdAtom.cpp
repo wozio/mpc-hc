@@ -1,8 +1,8 @@
 /*****************************************************************
 |
-|    AP4 - data Atom
+|    AP4 - cmvd Atoms 
 |
-|    Copyright 2002 Gilles Boccon-Gibod & Julien Boeuf
+|    Copyright 2002 Gilles Boccon-Gibod
 |
 |
 |    This file is part of Bento4/AP4 (MP4 Atom Processing Library).
@@ -26,34 +26,47 @@
 |
  ****************************************************************/
 
-#ifndef _AP4_DATA_ATOM_H_
-#define _AP4_DATA_ATOM_H_
-
 /*----------------------------------------------------------------------
 |       includes
 +---------------------------------------------------------------------*/
-#include "Ap4Atom.h"
-#include "Ap4Types.h"
-#include "Ap4Array.h"
-#include "Ap4DataBuffer.h"
+#include "Ap4.h"
+#include "Ap4CmvdAtom.h"
+#include "Ap4AtomFactory.h"
+#include "Ap4ContainerAtom.h"
 
 /*----------------------------------------------------------------------
-|       AP4_DataAtom
+|   dynamic cast support
 +---------------------------------------------------------------------*/
-class AP4_DataAtom : public AP4_Atom
+AP4_DEFINE_DYNAMIC_CAST_ANCHOR(AP4_CmvdAtom)
+
+/*----------------------------------------------------------------------
+|       AP4_CmvdAtom::AP4_CmvdAtom
++---------------------------------------------------------------------*/
+AP4_CmvdAtom::AP4_CmvdAtom(AP4_UI64         size,
+                           AP4_ByteStream&  stream,
+                           AP4_AtomFactory& atom_factory) :
+    AP4_ContainerAtom(AP4_ATOM_TYPE_CMVD, size, false, stream, atom_factory)
 {
-public:
-	AP4_DataAtom(AP4_Size         size,
-                 AP4_ByteStream&  stream);
+	size -= AP4_ATOM_HEADER_SIZE;
 
-    AP4_Result WriteFields(AP4_ByteStream& stream) { return AP4_FAILURE; }
+    stream.ReadUI32(m_MovieResourceSize);
 
-    const AP4_DataBuffer* GetData() const { return &m_Data; }
+	size -= 4;
 
-private:
-	AP4_UI32 m_Reserved1;
-	AP4_UI32 m_Reserved2;
-	AP4_DataBuffer m_Data;
-};
+	m_Data.SetDataSize(size);
+	stream.Read(m_Data.UseData(), size);
 
-#endif // _AP4_DATA_ATOM_H_
+/*
+    // read children
+    AP4_Size bytes_available = size-AP4_FULL_ATOM_HEADER_SIZE-4;
+    while (entry_count--) {
+        AP4_Atom* atom; 
+        while (AP4_SUCCEEDED(atom_factory.CreateAtomFromStream(stream, 
+                                                               bytes_available,
+                                                               atom,
+															   this))) {
+            m_Children.Add(atom);
+        }
+    }
+*/
+}

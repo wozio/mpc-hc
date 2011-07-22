@@ -457,137 +457,138 @@ HRESULT CMP4SplitterFilter::CreateOutputs(IAsyncReader* pAsyncReader)
 					mt.subtype = FOURCCMap(vih->hdr.bmiHeader.biCompression = '1CVA');
 					mts.Add(mt);
 				}
-			} else if(AP4_StsdAtom* stsd = dynamic_cast<AP4_StsdAtom*>(
-											   track->GetTrakAtom()->FindChild("mdia/minf/stbl/stsd"))) {
-				const AP4_DataBuffer& db = stsd->GetDataBuffer();
+				else if(AP4_StsdAtom* stsd = dynamic_cast<AP4_StsdAtom*>(
+												   track->GetTrakAtom()->FindChild("mdia/minf/stbl/stsd"))) {
+					const AP4_DataBuffer& db = stsd->GetDataBuffer();
 
-				for(AP4_List<AP4_Atom>::Item* item = stsd->GetChildren().FirstItem();
-						item;
-						item = item->GetNext()) {
-					AP4_Atom* atom = item->GetData();
+					for(AP4_List<AP4_Atom>::Item* item = stsd->GetChildren().FirstItem();
+							item;
+							item = item->GetNext()) {
+						AP4_Atom* atom = item->GetData();
 
-					AP4_Atom::Type type = atom->GetType();
-					DWORD fourcc;
+						AP4_Atom::Type type = atom->GetType();
+						DWORD fourcc;
 
-					if((type & 0xffff0000) == AP4_ATOM_TYPE('m', 's', 0, 0)) {
-						fourcc = type & 0xffff;
-					} else if(type == AP4_ATOM_TYPE__MP3) {
-						fourcc = 0x0055;
-					} else if((type == AP4_ATOM_TYPE_AC_3) || (type == AP4_ATOM_TYPE_SAC3) || (type == AP4_ATOM_TYPE_EC_3)) {
-						fourcc = 0x2000;
-					} else {
-						fourcc =
-							((type >> 24) & 0x000000ff) |
-							((type >>  8) & 0x0000ff00) |
-							((type <<  8) & 0x00ff0000) |
-							((type << 24) & 0xff000000);
-					}
-
-					if(AP4_VisualSampleEntry* vse = dynamic_cast<AP4_VisualSampleEntry*>(atom)) {
-						mt.majortype = MEDIATYPE_Video;
-						mt.subtype = FOURCCMap(fourcc);
-						mt.formattype = FORMAT_VideoInfo;
-						vih = (VIDEOINFOHEADER*)mt.AllocFormatBuffer(sizeof(VIDEOINFOHEADER)+db.GetDataSize());
-						memset(vih, 0, mt.FormatLength());
-						vih->bmiHeader.biSize = sizeof(vih->bmiHeader);
-						vih->bmiHeader.biWidth = (LONG)vse->GetWidth();
-						vih->bmiHeader.biHeight = (LONG)vse->GetHeight();
-						vih->bmiHeader.biCompression = fourcc;
-						vih->bmiHeader.biBitCount = (LONG)vse->GetDepth();
-						memcpy(vih+1, db.GetData(), db.GetDataSize());
-						mts.Add(mt);
-
-						char buff[5];
-						memcpy(buff, &fourcc, 4);
-						buff[4] = 0;
-
-						strlwr((char*)&buff);
-						AP4_Atom::Type typelwr = *(AP4_Atom::Type*)buff;
-
-						if(typelwr != fourcc) {
-							mt.subtype = FOURCCMap(vih->bmiHeader.biCompression = typelwr);
-							mts.Add(mt);
+						if((type & 0xffff0000) == AP4_ATOM_TYPE('m', 's', 0, 0)) {
+							fourcc = type & 0xffff;
+						} else if(type == AP4_ATOM_TYPE__MP3) {
+							fourcc = 0x0055;
+						} else if((type == AP4_ATOM_TYPE_AC_3) || (type == AP4_ATOM_TYPE_SAC3) || (type == AP4_ATOM_TYPE_EC_3)) {
+							fourcc = 0x2000;
+						} else {
+							fourcc =
+								((type >> 24) & 0x000000ff) |
+								((type >>  8) & 0x0000ff00) |
+								((type <<  8) & 0x00ff0000) |
+								((type << 24) & 0xff000000);
 						}
 
-						strupr((char*)&buff);
-						AP4_Atom::Type typeupr = *(AP4_Atom::Type*)buff;
-
-						if(typeupr != fourcc) {
-							mt.subtype = FOURCCMap(vih->bmiHeader.biCompression = typeupr);
+						if(AP4_VisualSampleEntry* vse = dynamic_cast<AP4_VisualSampleEntry*>(atom)) {
+							mt.majortype = MEDIATYPE_Video;
+							mt.subtype = FOURCCMap(fourcc);
+							mt.formattype = FORMAT_VideoInfo;
+							vih = (VIDEOINFOHEADER*)mt.AllocFormatBuffer(sizeof(VIDEOINFOHEADER)+db.GetDataSize());
+							memset(vih, 0, mt.FormatLength());
+							vih->bmiHeader.biSize = sizeof(vih->bmiHeader);
+							vih->bmiHeader.biWidth = (LONG)vse->GetWidth();
+							vih->bmiHeader.biHeight = (LONG)vse->GetHeight();
+							vih->bmiHeader.biCompression = fourcc;
+							vih->bmiHeader.biBitCount = (LONG)vse->GetDepth();
+							memcpy(vih+1, db.GetData(), db.GetDataSize());
 							mts.Add(mt);
-						}
 
-						break;
-					} else if(AP4_AudioSampleEntry* ase = dynamic_cast<AP4_AudioSampleEntry*>(atom)) {
-						if (ase->IsLittleEndian()==1) {
-							if (type==AP4_ATOM_TYPE_IN24 || type==AP4_ATOM_TYPE_IN32 ||
-									type==AP4_ATOM_TYPE_FL32 || type==AP4_ATOM_TYPE_FL64) {
-								fourcc = type;    //reverse fourcc
+							char buff[5];
+							memcpy(buff, &fourcc, 4);
+							buff[4] = 0;
+
+							strlwr((char*)&buff);
+							AP4_Atom::Type typelwr = *(AP4_Atom::Type*)buff;
+
+							if(typelwr != fourcc) {
+								mt.subtype = FOURCCMap(vih->bmiHeader.biCompression = typelwr);
+								mts.Add(mt);
 							}
-						}
+
+							strupr((char*)&buff);
+							AP4_Atom::Type typeupr = *(AP4_Atom::Type*)buff;
+
+							if(typeupr != fourcc) {
+								mt.subtype = FOURCCMap(vih->bmiHeader.biCompression = typeupr);
+								mts.Add(mt);
+							}
+
+							break;
+						} else if(AP4_AudioSampleEntry* ase = dynamic_cast<AP4_AudioSampleEntry*>(atom)) {
+							if (ase->IsLittleEndian()==1) {
+								if (type==AP4_ATOM_TYPE_IN24 || type==AP4_ATOM_TYPE_IN32 ||
+										type==AP4_ATOM_TYPE_FL32 || type==AP4_ATOM_TYPE_FL64) {
+									fourcc = type;    //reverse fourcc
+								}
+							}
 						
-						DWORD nSampleRate = ase->GetSampleRate();
-						WORD nChannels = ase->GetChannelCount();
-						DWORD nAvgBytesPerSec = 0;
-						if(type == AP4_ATOM_TYPE_EC_3) {
+							DWORD nSampleRate = ase->GetSampleRate();
+							WORD nChannels = ase->GetChannelCount();
+							DWORD nAvgBytesPerSec = 0;
+							if(type == AP4_ATOM_TYPE_EC_3) {
 
-							AP4_Sample sample;
-							AP4_DataBuffer sample_data;
+								AP4_Sample sample;
+								AP4_DataBuffer sample_data;
 
-							AP4_Cardinal SampleCount = track->GetSampleCount();
-							if(SampleCount) {
-								track->ReadSample(1, sample, sample_data);
-								const AP4_Byte* data = sample_data.GetData();
-								AP4_Size size = sample_data.GetDataSize();
+								AP4_Cardinal SampleCount = track->GetSampleCount();
+								if(SampleCount) {
+									track->ReadSample(1, sample, sample_data);
+									const AP4_Byte* data = sample_data.GetData();
+									AP4_Size size = sample_data.GetDataSize();
 
-								CGolombBuffer gb((BYTE *)data, size);
-								for(; size >= 7 && gb.BitRead(16, true) != 0x0b77; size--) {
-									gb.BitRead(8);
-								}
-								WORD sync = (WORD)gb.BitRead(16);
-								if((size >= 7) && (sync == 0x0b77)) {
-									static int freq[] = {48000, 44100, 32000, 0};
-									BYTE num_blocks;
-									gb.BitRead(2);
-									gb.BitRead(3);
-									WORD frame_size = (gb.BitRead(11) + 1) << 1;
-									BYTE sr_code = gb.BitRead(2);
-									if(sr_code == 3) {
-										BYTE sr_code2 = gb.BitRead(2);
-										nSampleRate = freq[sr_code2] / 2;
-									} else {
-										static int eac3_blocks[4] = {1, 2, 3, 6};
-										num_blocks = eac3_blocks[gb.BitRead(2)];
-										nSampleRate = freq[sr_code];
+									CGolombBuffer gb((BYTE *)data, size);
+									for(; size >= 7 && gb.BitRead(16, true) != 0x0b77; size--) {
+										gb.BitRead(8);
 									}
-									BYTE acmod = gb.BitRead(3);
-									BYTE lfeon = gb.BitRead(1);
-									static int channels[] = {2, 1, 2, 3, 3, 4, 4, 5};
-									nChannels = channels[acmod] + lfeon;
-									nAvgBytesPerSec = frame_size * nSampleRate / (num_blocks * 256);
+									WORD sync = (WORD)gb.BitRead(16);
+									if((size >= 7) && (sync == 0x0b77)) {
+										static int freq[] = {48000, 44100, 32000, 0};
+										BYTE num_blocks;
+										gb.BitRead(2);
+										gb.BitRead(3);
+										WORD frame_size = (gb.BitRead(11) + 1) << 1;
+										BYTE sr_code = gb.BitRead(2);
+										if(sr_code == 3) {
+											BYTE sr_code2 = gb.BitRead(2);
+											nSampleRate = freq[sr_code2] / 2;
+										} else {
+											static int eac3_blocks[4] = {1, 2, 3, 6};
+											num_blocks = eac3_blocks[gb.BitRead(2)];
+											nSampleRate = freq[sr_code];
+										}
+										BYTE acmod = gb.BitRead(3);
+										BYTE lfeon = gb.BitRead(1);
+										static int channels[] = {2, 1, 2, 3, 3, 4, 4, 5};
+										nChannels = channels[acmod] + lfeon;
+										nAvgBytesPerSec = frame_size * nSampleRate / (num_blocks * 256);
+									}
 								}
 							}
-						}
 
-						mt.majortype = MEDIATYPE_Audio;
-						mt.subtype = FOURCCMap(fourcc);
-						mt.formattype = FORMAT_WaveFormatEx;
-						wfe = (WAVEFORMATEX*)mt.AllocFormatBuffer(sizeof(WAVEFORMATEX) + db.GetDataSize());
-						memset(wfe, 0, mt.FormatLength());
-						if(!(fourcc & 0xffff0000)) {
-							wfe->wFormatTag = (WORD)fourcc;
+							mt.majortype = MEDIATYPE_Audio;
+							mt.subtype = FOURCCMap(fourcc);
+							mt.formattype = FORMAT_WaveFormatEx;
+							wfe = (WAVEFORMATEX*)mt.AllocFormatBuffer(sizeof(WAVEFORMATEX) + db.GetDataSize());
+							memset(wfe, 0, mt.FormatLength());
+							if(!(fourcc & 0xffff0000)) {
+								wfe->wFormatTag = (WORD)fourcc;
+							}
+							wfe->nSamplesPerSec = nSampleRate;
+							wfe->nChannels = nChannels;
+							wfe->wBitsPerSample = ase->GetSampleSize();
+							wfe->nBlockAlign = ase->GetBytesPerFrame();
+							wfe->nAvgBytesPerSec = nAvgBytesPerSec ? nAvgBytesPerSec : wfe->nSamplesPerSec * wfe->nChannels * wfe->wBitsPerSample / 8;
+							wfe->cbSize = db.GetDataSize();
+							memcpy(wfe+1, db.GetData(), db.GetDataSize());
+							mts.Add(mt);
+							break;
+						} else {
+							TRACE(_T("Unknow MP4 Steam %x") , fourcc);
 						}
-						wfe->nSamplesPerSec = nSampleRate;
-						wfe->nChannels = nChannels;
-						wfe->wBitsPerSample = ase->GetSampleSize();
-						wfe->nBlockAlign = ase->GetBytesPerFrame();
-						wfe->nAvgBytesPerSec = nAvgBytesPerSec ? nAvgBytesPerSec : wfe->nSamplesPerSec * wfe->nChannels * wfe->wBitsPerSample / 8;
-						wfe->cbSize = db.GetDataSize();
-						memcpy(wfe+1, db.GetData(), db.GetDataSize());
-						mts.Add(mt);
-						break;
-					} else {
-						TRACE(_T("Unknow MP4 Steam %x") , fourcc);
 					}
 				}
 			}

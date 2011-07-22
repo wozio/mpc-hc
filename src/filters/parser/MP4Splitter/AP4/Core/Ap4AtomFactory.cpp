@@ -751,7 +751,7 @@ AP4_AtomFactory::CreateAtomFromStream(AP4_ByteStream& stream,
 			atom = AP4_DcomAtom::Create(size_32, stream);
 			break;
 		  case AP4_ATOM_TYPE_CMVD:
-			  atom = AP4_CmvdAtom::Create(type, size_64, true, force_64, stream, *this);
+			  atom = AP4_CmvdAtom::Create(size_64, stream, *this);
 			  break;
 		  case AP4_ATOM_TYPE_ENDA:
 			atom = new AP4_EndaAtom(size_32, stream);

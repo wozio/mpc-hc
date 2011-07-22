@@ -40,12 +40,22 @@
 #include "Ap4ContainerAtom.h"
 #include "Ap4DataBuffer.h"
 
+
 /*----------------------------------------------------------------------
 |       AP4_CmvdAtom
 +---------------------------------------------------------------------*/
 class AP4_CmvdAtom : public AP4_ContainerAtom
 {
 public:
+	AP4_IMPLEMENT_DYNAMIC_CAST_D2(AP4_ContainerAtom, AP4_Atom, AP4_AtomParent)
+
+    // class methods
+    static AP4_CmvdAtom* Create(AP4_UI64         size,
+                            AP4_ByteStream&  stream,
+                            AP4_AtomFactory& atom_factory) {
+        return new AP4_CmvdAtom(size, stream, atom_factory);
+    }
+
     // methods
     AP4_CmvdAtom(AP4_UI64         size,
                  AP4_ByteStream&  stream,

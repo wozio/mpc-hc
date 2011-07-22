@@ -129,7 +129,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__i386__;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -142,7 +142,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__x86_64__;_WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -153,7 +153,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__i386__;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -167,7 +167,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__x86_64__;_WIN64;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -179,7 +179,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Filter|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__i386__;REGISTER_FILTER;WIN32;_DEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -199,7 +199,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__x86_64__;REGISTER_FILTER;WIN32;_DEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -217,7 +217,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Filter|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__i386__;REGISTER_FILTER;WIN32;NDEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -237,7 +237,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\AP4\Core;.\AP4\Crypto;.\AP4\MetaData;.\AP4\MpcCustom;.\AP4\MetaData;..\..\..\..\include;..\..\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__x86_64__;REGISTER_FILTER;WIN32;NDEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <DisableSpecificWarnings>4812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -274,8 +274,6 @@
     <ClCompile Include="AP4\Core\Ap4AtomSampleTable.cpp" />
     <ClCompile Include="AP4\Core\Ap4AvcCAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4ByteStream.cpp" />
-    <ClCompile Include="AP4\Core\Ap4ChplAtom.cpp" />
-    <ClCompile Include="AP4\Core\Ap4CmvdAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4Co64Atom.cpp" />
     <ClCompile Include="AP4\Core\Ap4Command.cpp" />
     <ClCompile Include="AP4\Core\Ap4CommandFactory.cpp" />
@@ -304,22 +302,18 @@
     <ClCompile Include="AP4\Core\Ap4OdheAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4OhdrAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4OmaDcf.cpp" />
-    <ClCompile Include="AP4\Core\Ap4PaspAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4DataBuffer.cpp" />
-    <ClCompile Include="AP4\Core\Ap4DcomAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4Debug.cpp" />
     <ClCompile Include="AP4\Core\Ap4DecoderConfigDescriptor.cpp" />
     <ClCompile Include="AP4\Core\Ap4DecoderSpecificInfoDescriptor.cpp" />
     <ClCompile Include="AP4\Core\Ap4Descriptor.cpp" />
     <ClCompile Include="AP4\Core\Ap4DescriptorFactory.cpp" />
     <ClCompile Include="AP4\Core\Ap4DrefAtom.cpp" />
-    <ClCompile Include="AP4\Core\Ap4EndaAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4EsDescriptor.cpp" />
     <ClCompile Include="AP4\Core\Ap4EsdsAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4File.cpp" />
     <ClCompile Include="AP4\Core\Ap4FileWriter.cpp" />
     <ClCompile Include="AP4\Core\Ap4FrmaAtom.cpp" />
-    <ClCompile Include="AP4\Core\Ap4FtabAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4FtypAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4HdlrAtom.cpp" />
     <ClCompile Include="AP4\Core\Ap4HintTrackReader.cpp" />
@@ -379,6 +373,12 @@
     <ClCompile Include="AP4\Crypto\Ap4KeyWrap.cpp" />
     <ClCompile Include="AP4\Crypto\Ap4StreamCipher.cpp" />
     <ClCompile Include="AP4\MetaData\Ap4MetaData.cpp" />
+    <ClCompile Include="AP4\MpcCustom\Ap4ChplAtom.cpp" />
+    <ClCompile Include="AP4\MpcCustom\Ap4CmvdAtom.cpp" />
+    <ClCompile Include="AP4\MpcCustom\Ap4DcomAtom.cpp" />
+    <ClCompile Include="AP4\MpcCustom\Ap4EndaAtom.cpp" />
+    <ClCompile Include="AP4\MpcCustom\Ap4FtabAtom.cpp" />
+    <ClCompile Include="AP4\MpcCustom\Ap4PaspAtom.cpp" />
     <ClCompile Include="MP4Splitter.cpp">
       <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug Filter|Win32'">false</PreprocessToFile>
       <PreprocessSuppressLineNumbers Condition="'$(Configuration)|$(Platform)'=='Debug Filter|Win32'">false</PreprocessSuppressLineNumbers>
@@ -407,8 +407,6 @@
     <ClInclude Include="AP4\Core\Ap4AtomSampleTable.h" />
     <ClInclude Include="AP4\Core\Ap4AvcCAtom.h" />
     <ClInclude Include="AP4\Core\Ap4ByteStream.h" />
-    <ClInclude Include="AP4\Core\Ap4ChplAtom.h" />
-    <ClInclude Include="AP4\Core\Ap4CmvdAtom.h" />
     <ClInclude Include="AP4\Core\Ap4Co64Atom.h" />
     <ClInclude Include="AP4\Core\Ap4Command.h" />
     <ClInclude Include="AP4\Core\Ap4CommandFactory.h" />
@@ -440,23 +438,19 @@
     <ClInclude Include="AP4\Core\Ap4OdheAtom.h" />
     <ClInclude Include="AP4\Core\Ap4OhdrAtom.h" />
     <ClInclude Include="AP4\Core\Ap4OmaDcf.h" />
-    <ClInclude Include="AP4\Core\Ap4PaspAtom.h" />
     <ClInclude Include="AP4\Core\Ap4DataBuffer.h" />
-    <ClInclude Include="AP4\Core\Ap4DcomAtom.h" />
     <ClInclude Include="AP4\Core\Ap4Debug.h" />
     <ClInclude Include="AP4\Core\Ap4DecoderConfigDescriptor.h" />
     <ClInclude Include="AP4\Core\Ap4DecoderSpecificInfoDescriptor.h" />
     <ClInclude Include="AP4\Core\Ap4Descriptor.h" />
     <ClInclude Include="AP4\Core\Ap4DescriptorFactory.h" />
     <ClInclude Include="AP4\Core\Ap4DrefAtom.h" />
-    <ClInclude Include="AP4\Core\Ap4EndaAtom.h" />
     <ClInclude Include="AP4\Core\Ap4EsDescriptor.h" />
     <ClInclude Include="AP4\Core\Ap4EsdsAtom.h" />
     <ClInclude Include="AP4\Core\Ap4File.h" />
     <ClInclude Include="AP4\Core\Ap4FileByteStream.h" />
     <ClInclude Include="AP4\Core\Ap4FileWriter.h" />
     <ClInclude Include="AP4\Core\Ap4FrmaAtom.h" />
-    <ClInclude Include="AP4\Core\Ap4FtabAtom.h" />
     <ClInclude Include="AP4\Core\Ap4FtypAtom.h" />
     <ClInclude Include="AP4\Core\Ap4HdlrAtom.h" />
     <ClInclude Include="AP4\Core\Ap4HintTrackReader.h" />
@@ -520,6 +514,12 @@
     <ClInclude Include="AP4\Crypto\Ap4KeyWrap.h" />
     <ClInclude Include="AP4\Crypto\Ap4StreamCipher.h" />
     <ClInclude Include="AP4\MetaData\Ap4MetaData.h" />
+    <ClInclude Include="AP4\MpcCustom\Ap4ChplAtom.h" />
+    <ClInclude Include="AP4\MpcCustom\Ap4CmvdAtom.h" />
+    <ClInclude Include="AP4\MpcCustom\Ap4DcomAtom.h" />
+    <ClInclude Include="AP4\MpcCustom\Ap4EndaAtom.h" />
+    <ClInclude Include="AP4\MpcCustom\Ap4FtabAtom.h" />
+    <ClInclude Include="AP4\MpcCustom\Ap4PaspAtom.h" />
     <ClInclude Include="MP4Splitter.h" />
     <ClInclude Include="MP4SplitterFile.h" />
     <CustomBuildStep Include="resource.h">
