@@ -1124,7 +1124,6 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 			m_pAVCtx->skip_loop_filter		= (AVDiscard)m_nDiscardMode;
 			m_pAVCtx->dsp_mask				= AV_CPU_FLAG_FORCE | m_pCpuId->GetFeatures();
 
-//			m_pAVCtx->postgain				= 1.0f;
 			m_pAVCtx->debug_mv				= 0;
 #ifdef _DEBUG
 			//m_pAVCtx->debug					= FF_DEBUG_PICT_INFO | FF_DEBUG_STARTCODE | FF_DEBUG_PTS;
@@ -1179,6 +1178,14 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 					m_bDXVACompatible = MPEG2CheckCompatibility(m_pAVCtx, m_pFrame);
 
 					break;
+			}
+
+			if (!m_bDXVACompatible) {
+				avcodec_close (m_pAVCtx);
+				FFSetThreadNumber(m_pAVCtx, ffCodecs[m_nCodecNb].nFFCodec, m_nThreadNumber);
+				if (avcodec_open2(m_pAVCtx, m_pAVCodec, &m_pAVOptions)<0) {
+					return VFW_E_INVALIDMEDIATYPE;
+				}
 			}
 
 			BuildDXVAOutputFormat();
