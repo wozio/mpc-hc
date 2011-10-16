@@ -595,7 +595,6 @@ CMPCVideoDecFilter::CMPCVideoDecFilter(LPUNKNOWN lpunk, HRESULT* phr)
 	m_pCpuId				= DNew CCpuId();
 	m_pAVCodec				= NULL;
 	m_pAVCtx				= NULL;
-	m_pAVOptions			= NULL;
 	m_pFrame				= NULL;
 	m_nCodecNb				= -1;
 	m_rtAvrTimePerFrame		= 0;
@@ -1136,7 +1135,7 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 			ConnectTo (m_pAVCtx);
 			CalcAvgTimePerFrame();
 
-			if (avcodec_open2(m_pAVCtx, m_pAVCodec, &m_pAVOptions)<0) {
+			if (avcodec_open2(m_pAVCtx, m_pAVCodec, NULL)<0) {
 				return VFW_E_INVALIDMEDIATYPE;
 			}
 
@@ -1183,7 +1182,7 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 			if (!m_bDXVACompatible) {
 				avcodec_close (m_pAVCtx);
 				FFSetThreadNumber(m_pAVCtx, ffCodecs[m_nCodecNb].nFFCodec, m_nThreadNumber);
-				if (avcodec_open2(m_pAVCtx, m_pAVCodec, &m_pAVOptions)<0) {
+				if (avcodec_open2(m_pAVCtx, m_pAVCodec, NULL)<0) {
 					return VFW_E_INVALIDMEDIATYPE;
 				}
 			}

@@ -36,8 +36,9 @@ IF "%~1" == "" (
   )
 
   IF /I "%~1" == "Rebuild" (
-    SET "BUILDTYPE=rebuild"
+    SET "BUILDTYPE=clean"
     CALL :SubMake clean
+    SET "BUILDTYPE=build"
     CALL :SubMake
     EXIT /B
   )
@@ -51,7 +52,18 @@ IF "%~1" == "" (
 
 
 :SubMake
-IF /I "%1" == "Clean" (SET "JOBS=-j1") ELSE (SET "JOBS=-j4")
+IF "%BUILDTYPE%" == "clean" (
+  SET JOBS=1
+) ELSE (
+  IF DEFINED NUMBER_OF_PROCESSORS (
+    SET JOBS=%NUMBER_OF_PROCESSORS%
+  ) ELSE (
+    REM Default number of jobs
+    SET JOBS=4
+  )
+)
+
+SET "JOBS=-j%JOBS%"
 
 TITLE "make %JOBS% %DEBUG% %*"
 ECHO make %JOBS% %DEBUG% %*

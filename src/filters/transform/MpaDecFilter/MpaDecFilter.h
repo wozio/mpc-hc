@@ -90,7 +90,6 @@ struct AVCodec;
 struct AVCodecContext;
 struct AVFrame;
 struct AVCodecParserContext;
-struct AVDictionary;
 #endif
 
 
@@ -130,7 +129,6 @@ protected:
 	// === FFMpeg variables
 	AVCodec*				m_pAVCodec;
 	AVCodecContext*			m_pAVCtx;
-	AVDictionary*			m_pOptions;
 	AVCodecParserContext*	m_pParser;
 	BYTE*					m_pPCMData;
 #endif

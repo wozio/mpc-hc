@@ -2941,7 +2941,7 @@ bool CMpaDecFilter::InitFFmpeg(int nCodecId)
 		m_pAVCtx->codec_id		= (CodecID)nCodecId;
 		m_pParser				= av_parser_init(nCodecId);
 
-		if (avcodec_open2(m_pAVCtx,m_pAVCodec, &m_pOptions)>=0) {
+		if (avcodec_open2(m_pAVCtx, m_pAVCodec, NULL)>=0) {
 			m_pPCMData	= (BYTE*)FF_aligned_malloc (AVCODEC_MAX_AUDIO_FRAME_SIZE+FF_INPUT_BUFFER_PADDING_SIZE, 64);
 			bRet		= true;
 		}

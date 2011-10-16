@@ -6,20 +6,20 @@
  * Written by Nick Kurshev.
  * palette & YUV & runtime CPU stuff by Michael (michaelni@gmx.at)
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <inttypes.h>
@@ -122,6 +122,34 @@ void sws_rgb2rgb_init(void)
     if (HAVE_MMX)
         rgb2rgb_init_x86();
 }
+
+#if LIBSWSCALE_VERSION_MAJOR < 1
+void palette8topacked32(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+{
+    sws_convertPalette8ToPacked32(src, dst, num_pixels, palette);
+}
+
+void palette8topacked24(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+{
+    sws_convertPalette8ToPacked24(src, dst, num_pixels, palette);
+}
+
+/**
+ * Palette is assumed to contain BGR16, see rgb32to16 to convert the palette.
+ */
+void palette8torgb16(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+{
+    long i;
+    for (i=0; i<num_pixels; i++)
+        ((uint16_t *)dst)[i] = ((const uint16_t *)palette)[src[i]];
+}
+void palette8tobgr16(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette)
+{
+    long i;
+    for (i=0; i<num_pixels; i++)
+        ((uint16_t *)dst)[i] = av_bswap16(((const uint16_t *)palette)[src[i]]);
+}
+#endif
 
 void rgb32to24(const uint8_t *src, uint8_t *dst, int src_size)
 {

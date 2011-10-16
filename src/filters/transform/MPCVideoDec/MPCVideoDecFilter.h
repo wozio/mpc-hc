@@ -37,7 +37,6 @@
 struct AVCodec;
 struct AVCodecContext;
 struct AVFrame;
-struct AVDictionary;
 struct SwsContext;
 
 class CCpuId;
@@ -96,7 +95,6 @@ protected:
 	AVCodec*								m_pAVCodec;
 	AVCodecContext*							m_pAVCtx;
 	AVFrame*								m_pFrame;
-	AVDictionary*							m_pAVOptions;
 	int										m_nCodecNb;
 	int										m_nWorkaroundBug;
 	int										m_nErrorConcealment;

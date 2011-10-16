@@ -1,23 +1,25 @@
 /*
  * Copyright (C) 2001-2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#define _SVID_SOURCE //needed for MAP_ANONYMOUS
+#define _DARWIN_C_SOURCE // needed for MAP_ANON
 #include <inttypes.h>
 #include <string.h>
 #include <math.h>
@@ -50,16 +52,16 @@ unsigned swscale_version(void)
     return LIBSWSCALE_VERSION_INT;
 }
 
-const char *swscale_configuration(void)
-{
-    return LIBAV_CONFIGURATION;
-}
-
-const char *swscale_license(void)
-{
-#define LICENSE_PREFIX "libswscale license: "
-    return LICENSE_PREFIX LIBAV_LICENSE + sizeof(LICENSE_PREFIX) - 1;
-}
+//const char *swscale_configuration(void)
+//{
+//    return FFMPEG_CONFIGURATION;
+//}
+//
+//const char *swscale_license(void)
+//{
+//#define LICENSE_PREFIX "libswscale license: "
+//    return LICENSE_PREFIX FFMPEG_LICENSE + sizeof(LICENSE_PREFIX) - 1;
+//}
 
 #define RET 0xC3 //near return opcode for x86
 
@@ -87,7 +89,7 @@ const char *swscale_license(void)
         || (x)==PIX_FMT_RGB555LE    \
         || (x)==PIX_FMT_RGB555BE    \
         || (x)==PIX_FMT_GRAY8       \
-        || (x)==PIX_FMT_Y400A       \
+        || (x)==PIX_FMT_GRAY8A      \
         || (x)==PIX_FMT_YUV410P     \
         || (x)==PIX_FMT_YUV440P     \
         || (x)==PIX_FMT_NV12        \
@@ -125,6 +127,7 @@ const char *swscale_license(void)
         || (x)==PIX_FMT_YUV420P16BE   \
         || (x)==PIX_FMT_YUV422P16BE   \
         || (x)==PIX_FMT_YUV444P16BE   \
+        || (x)==PIX_FMT_YUV422P10     \
     )
 
 int sws_isSupportedInput(enum PixelFormat pix_fmt)
@@ -146,18 +149,12 @@ int sws_isSupportedInput(enum PixelFormat pix_fmt)
         || (x)==PIX_FMT_YUVJ444P    \
         || isRGBinBytes(x)          \
         || isBGRinBytes(x)          \
-        || (x)==PIX_FMT_RGB565LE    \
-        || (x)==PIX_FMT_RGB565BE    \
-        || (x)==PIX_FMT_RGB555LE    \
-        || (x)==PIX_FMT_RGB555BE    \
-        || (x)==PIX_FMT_RGB444LE    \
-        || (x)==PIX_FMT_RGB444BE    \
-        || (x)==PIX_FMT_BGR565LE    \
-        || (x)==PIX_FMT_BGR565BE    \
-        || (x)==PIX_FMT_BGR555LE    \
-        || (x)==PIX_FMT_BGR555BE    \
-        || (x)==PIX_FMT_BGR444LE    \
-        || (x)==PIX_FMT_BGR444BE    \
+        || (x)==PIX_FMT_RGB565      \
+        || (x)==PIX_FMT_RGB555      \
+        || (x)==PIX_FMT_RGB444      \
+        || (x)==PIX_FMT_BGR565      \
+        || (x)==PIX_FMT_BGR555      \
+        || (x)==PIX_FMT_BGR444      \
         || (x)==PIX_FMT_RGB8        \
         || (x)==PIX_FMT_BGR8        \
         || (x)==PIX_FMT_RGB4_BYTE   \
@@ -173,15 +170,14 @@ int sws_isSupportedInput(enum PixelFormat pix_fmt)
         || (x)==PIX_FMT_GRAY8       \
         || (x)==PIX_FMT_YUV410P     \
         || (x)==PIX_FMT_YUV440P     \
+        || (x)==PIX_FMT_YUV422P10   \
         || (x)==PIX_FMT_YUV420P9LE    \
         || (x)==PIX_FMT_YUV420P10LE   \
         || (x)==PIX_FMT_YUV420P16LE   \
-        || (x)==PIX_FMT_YUV422P10LE   \
         || (x)==PIX_FMT_YUV422P16LE   \
         || (x)==PIX_FMT_YUV444P16LE   \
         || (x)==PIX_FMT_YUV420P9BE    \
         || (x)==PIX_FMT_YUV420P10BE   \
-        || (x)==PIX_FMT_YUV422P10BE   \
         || (x)==PIX_FMT_YUV420P16BE   \
         || (x)==PIX_FMT_YUV422P16BE   \
         || (x)==PIX_FMT_YUV444P16BE   \
@@ -194,13 +190,12 @@ int sws_isSupportedOutput(enum PixelFormat pix_fmt)
 
 extern const int32_t ff_yuv2rgb_coeffs[8][4];
 
+#if FF_API_SWS_FORMAT_NAME
 const char *sws_format_name(enum PixelFormat format)
 {
-    if ((unsigned)format < PIX_FMT_NB && av_pix_fmt_descriptors[format].name)
-        return av_pix_fmt_descriptors[format].name;
-    else
-        return "Unknown format";
+    return av_get_pix_fmt_name(format);
 }
+#endif
 
 static double getSplineCoeff(double a, double b, double c, double d, double dist)
 {
@@ -713,9 +708,7 @@ static void getSubSampleFactors(int *h, int *v, enum PixelFormat format)
     *v = av_pix_fmt_descriptors[format].log2_chroma_h;
 }
 
-int sws_setColorspaceDetails(struct SwsContext *c, const int inv_table[4],
-                             int srcRange, const int table[4], int dstRange,
-                             int brightness, int contrast, int saturation)
+int sws_setColorspaceDetails(SwsContext *c, const int inv_table[4], int srcRange, const int table[4], int dstRange, int brightness, int contrast, int saturation)
 {
     memcpy(c->srcColorspaceTable, inv_table, sizeof(int)*4);
     memcpy(c->dstColorspaceTable,     table, sizeof(int)*4);
@@ -738,11 +731,9 @@ int sws_setColorspaceDetails(struct SwsContext *c, const int inv_table[4],
     return 0;
 }
 
-int sws_getColorspaceDetails(struct SwsContext *c, int **inv_table,
-                             int *srcRange, int **table, int *dstRange,
-                             int *brightness, int *contrast, int *saturation)
+int sws_getColorspaceDetails(SwsContext *c, int **inv_table, int *srcRange, int **table, int *dstRange, int *brightness, int *contrast, int *saturation)
 {
-    if (isYUV(c->dstFormat) || isGray(c->dstFormat)) return -1;
+    if (!c || isYUV(c->dstFormat) || isGray(c->dstFormat)) return -1;
 
     *inv_table = c->srcColorspaceTable;
     *table     = c->dstColorspaceTable;
@@ -786,7 +777,7 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
     int srcH= c->srcH;
     int dstW= c->dstW;
     int dstH= c->dstH;
-    int dst_stride = FFALIGN(dstW * sizeof(int16_t) + 16, 16), dst_stride_px = dst_stride >> 1;
+    int dst_stride = FFALIGN(dstW * sizeof(int16_t)+66, 16), dst_stride_px = dst_stride >> 1;
     int flags, cpu_flags;
     enum PixelFormat srcFormat= c->srcFormat;
     enum PixelFormat dstFormat= c->dstFormat;
@@ -799,11 +790,11 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
     unscaled = (srcW == dstW && srcH == dstH);
 
     if (!isSupportedIn(srcFormat)) {
-        av_log(c, AV_LOG_ERROR, "%s is not supported as input pixel format\n", sws_format_name(srcFormat));
+        av_log(c, AV_LOG_ERROR, "%s is not supported as input pixel format\n", av_get_pix_fmt_name(srcFormat));
         return AVERROR(EINVAL);
     }
     if (!isSupportedOut(dstFormat)) {
-        av_log(c, AV_LOG_ERROR, "%s is not supported as output pixel format\n", sws_format_name(dstFormat));
+        av_log(c, AV_LOG_ERROR, "%s is not supported as output pixel format\n", av_get_pix_fmt_name(dstFormat));
         return AVERROR(EINVAL);
     }
 
@@ -851,19 +842,6 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
     getSubSampleFactors(&c->chrDstHSubSample, &c->chrDstVSubSample, dstFormat);
 
     // reuse chroma for 2 pixels RGB/BGR unless user wants full chroma interpolation
-    if (flags & SWS_FULL_CHR_H_INT &&
-        dstFormat != PIX_FMT_RGBA &&
-        dstFormat != PIX_FMT_ARGB &&
-        dstFormat != PIX_FMT_BGRA &&
-        dstFormat != PIX_FMT_ABGR &&
-        dstFormat != PIX_FMT_RGB24 &&
-        dstFormat != PIX_FMT_BGR24) {
-        av_log(c, AV_LOG_ERROR,
-               "full chroma interpolation for destination format '%s' not yet implemented\n",
-               sws_format_name(dstFormat));
-        flags &= ~SWS_FULL_CHR_H_INT;
-        c->flags = flags;
-    }
     if (isAnyRGB(dstFormat) && !(flags&SWS_FULL_CHR_H_INT)) c->chrDstHSubSample=1;
 
     // drop some chroma lines if the user wants it
@@ -891,23 +869,19 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
         if (c->swScale) {
             if (flags&SWS_PRINT_INFO)
                 av_log(c, AV_LOG_INFO, "using unscaled %s -> %s special converter\n",
-                       sws_format_name(srcFormat), sws_format_name(dstFormat));
+                       av_get_pix_fmt_name(srcFormat), av_get_pix_fmt_name(dstFormat));
             return 0;
         }
     }
 
-    c->scalingBpp = FFMAX(av_pix_fmt_descriptors[srcFormat].comp[0].depth_minus1,
-                          av_pix_fmt_descriptors[dstFormat].comp[0].depth_minus1) >= 8 ? 16 : 8;
-    if (c->scalingBpp == 16)
-        dst_stride <<= 1;
-    FF_ALLOC_OR_GOTO(c, c->formatConvBuffer, FFALIGN(srcW, 16) * 2 * c->scalingBpp >> 3, fail);
-    if (HAVE_MMX2 && cpu_flags & AV_CPU_FLAG_MMX2 && c->scalingBpp == 8) {
+    FF_ALLOC_OR_GOTO(c, c->formatConvBuffer, FFALIGN(srcW*2+78, 16) * 2, fail);
+    if (HAVE_MMX2 && cpu_flags & AV_CPU_FLAG_MMX2) {
         c->canMMX2BeUsed= (dstW >=srcW && (dstW&31)==0 && (srcW&15)==0) ? 1 : 0;
         if (!c->canMMX2BeUsed && dstW >=srcW && (srcW&15)==0 && (flags&SWS_FAST_BILINEAR)) {
             if (flags&SWS_PRINT_INFO)
                 av_log(c, AV_LOG_INFO, "output width is not a multiple of 32 -> no MMX2 scaler\n");
         }
-        if (usesHFilter) c->canMMX2BeUsed=0;
+        if (usesHFilter || isNBPS(c->srcFormat) || is16BPS(c->srcFormat) || isAnyRGB(c->srcFormat)) c->canMMX2BeUsed=0;
     }
     else
         c->canMMX2BeUsed=0;
@@ -952,7 +926,11 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
             c->chrMmx2FilterCode = av_malloc(c->chrMmx2FilterCodeSize);
 #endif
 
+#ifdef MAP_ANONYMOUS
+            if (c->lumMmx2FilterCode == MAP_FAILED || c->chrMmx2FilterCode == MAP_FAILED)
+#else
             if (!c->lumMmx2FilterCode || !c->chrMmx2FilterCode)
+#endif
                 return AVERROR(ENOMEM);
             FF_ALLOCZ_OR_GOTO(c, c->hLumFilter   , (dstW        /8+8)*sizeof(int16_t), fail);
             FF_ALLOCZ_OR_GOTO(c, c->hChrFilter   , (c->chrDstW  /4+8)*sizeof(int16_t), fail);
@@ -1029,7 +1007,7 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
     c->vLumBufSize= c->vLumFilterSize;
     c->vChrBufSize= c->vChrFilterSize;
     for (i=0; i<dstH; i++) {
-        int chrI= i*c->chrDstH / dstH;
+        int chrI= (int64_t)i*c->chrDstH / dstH;
         int nextSlice= FFMAX(c->vLumFilterPos[i   ] + c->vLumFilterSize - 1,
                            ((c->vChrFilterPos[chrI] + c->vChrFilterSize - 1)<<c->chrSrcVSubSample));
 
@@ -1051,20 +1029,19 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
     //Note we need at least one pixel more at the end because of the MMX code (just in case someone wanna replace the 4000/8000)
     /* align at 16 bytes for AltiVec */
     for (i=0; i<c->vLumBufSize; i++) {
-        FF_ALLOCZ_OR_GOTO(c, c->lumPixBuf[i+c->vLumBufSize], dst_stride+16, fail);
+        FF_ALLOCZ_OR_GOTO(c, c->lumPixBuf[i+c->vLumBufSize], dst_stride+1, fail);
         c->lumPixBuf[i] = c->lumPixBuf[i+c->vLumBufSize];
     }
-    // 64 / c->scalingBpp is the same as 16 / sizeof(scaling_intermediate)
-    c->uv_off_px   = dst_stride_px + 64 / c->scalingBpp;
-    c->uv_off_byte = dst_stride + 16;
+    c->uv_off = dst_stride_px;
+    c->uv_offx2 = dst_stride;
     for (i=0; i<c->vChrBufSize; i++) {
-        FF_ALLOC_OR_GOTO(c, c->chrUPixBuf[i+c->vChrBufSize], dst_stride*2+32, fail);
+        FF_ALLOC_OR_GOTO(c, c->chrUPixBuf[i+c->vChrBufSize], dst_stride*2+1, fail);
         c->chrUPixBuf[i] = c->chrUPixBuf[i+c->vChrBufSize];
-        c->chrVPixBuf[i] = c->chrVPixBuf[i+c->vChrBufSize] = c->chrUPixBuf[i] + (dst_stride >> 1) + 8;
+        c->chrVPixBuf[i] = c->chrVPixBuf[i+c->vChrBufSize] = c->chrUPixBuf[i] + dst_stride_px;
     }
     if (CONFIG_SWSCALE_ALPHA && c->alpPixBuf)
         for (i=0; i<c->vLumBufSize; i++) {
-            FF_ALLOCZ_OR_GOTO(c, c->alpPixBuf[i+c->vLumBufSize], dst_stride+16, fail);
+            FF_ALLOCZ_OR_GOTO(c, c->alpPixBuf[i+c->vLumBufSize], dst_stride+1, fail);
             c->alpPixBuf[i] = c->alpPixBuf[i+c->vLumBufSize];
         }
 
@@ -1089,7 +1066,7 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
         else                              av_log(c, AV_LOG_INFO, "ehh flags invalid?! ");
 
         av_log(c, AV_LOG_INFO, "from %s to %s%s ",
-               sws_format_name(srcFormat),
+               av_get_pix_fmt_name(srcFormat),
 #ifdef DITHER1XBPP
                dstFormat == PIX_FMT_BGR555 || dstFormat == PIX_FMT_BGR565 ||
                dstFormat == PIX_FMT_RGB444BE || dstFormat == PIX_FMT_RGB444LE ||
@@ -1097,7 +1074,7 @@ int sws_init_context(SwsContext *c, SwsFilter *srcFilter, SwsFilter *dstFilter)
 #else
                "",
 #endif
-               sws_format_name(dstFormat));
+               av_get_pix_fmt_name(dstFormat));
 
         if      (HAVE_MMX2     && cpu_flags & AV_CPU_FLAG_MMX2)    av_log(c, AV_LOG_INFO, "using MMX2\n");
         else if (HAVE_AMD3DNOW && cpu_flags & AV_CPU_FLAG_3DNOW)   av_log(c, AV_LOG_INFO, "using 3DNOW\n");
@@ -1491,6 +1468,13 @@ void sws_printVec2(SwsVector *a, AVClass *log_ctx, int log_level)
     }
 }
 
+#if LIBSWSCALE_VERSION_MAJOR < 1
+void sws_printVec(SwsVector *a)
+{
+    sws_printVec2(a, NULL, AV_LOG_DEBUG);
+}
+#endif
+
 void sws_freeVec(SwsVector *a)
 {
     if (!a) return;
@@ -1564,7 +1548,7 @@ void sws_freeContext(SwsContext *c)
 #endif /* HAVE_MMX */
 
     av_freep(&c->yuvTable);
-    av_free(c->formatConvBuffer);
+    av_freep(&c->formatConvBuffer);
 
     av_free(c);
 }

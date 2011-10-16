@@ -59,7 +59,7 @@ enum ffdshow_colorspaces {
 #define FF_CSP_FLAGS_YUV_JPEG   (1U<<27)
 
 #include <stddef.h>
-typedef ptrdiff_t stride_t;
+typedef int stride_t;
 
 //==================================== xvid4 =====================================
 
