@@ -262,8 +262,8 @@ SRCS_YASM=\
     libavcodec/x86/vp3dsp.asm \
     libavcodec/x86/vp56dsp.asm \
     libavcodec/x86/vp8dsp.asm \
-    libavcodec/x86/x86util.asm
-
+    libavcodec/x86/x86util.asm \
+    libavcodec/x86/scale.asm
 
 OBJS += \
     $(SRCS_C:%.c=$(OBJ_DIR)%.o) \

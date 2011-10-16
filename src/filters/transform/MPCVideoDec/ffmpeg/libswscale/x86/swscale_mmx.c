@@ -1,20 +1,20 @@
 /*
  * Copyright (C) 2001-2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -72,14 +72,14 @@ DECLARE_ASM_CONST(8, uint64_t, ff_bgr24toY1Coeff) = 0x0C88000040870C88ULL;
 DECLARE_ASM_CONST(8, uint64_t, ff_bgr24toY2Coeff) = 0x20DE4087000020DEULL;
 DECLARE_ASM_CONST(8, uint64_t, ff_rgb24toY1Coeff) = 0x20DE0000408720DEULL;
 DECLARE_ASM_CONST(8, uint64_t, ff_rgb24toY2Coeff) = 0x0C88408700000C88ULL;
-DECLARE_ASM_CONST(8, uint64_t, ff_bgr24toYOffset) = 0x0008010000080100ULL;
+DECLARE_ASM_CONST(8, uint64_t, ff_bgr24toYOffset) = 0x0008400000084000ULL;
 
 DECLARE_ASM_CONST(8, uint64_t, ff_bgr24toUV)[2][4] = {
     {0x38380000DAC83838ULL, 0xECFFDAC80000ECFFULL, 0xF6E40000D0E3F6E4ULL, 0x3838D0E300003838ULL},
     {0xECFF0000DAC8ECFFULL, 0x3838DAC800003838ULL, 0x38380000D0E33838ULL, 0xF6E4D0E30000F6E4ULL},
 };
 
-DECLARE_ASM_CONST(8, uint64_t, ff_bgr24toUVOffset)= 0x0040010000400100ULL;
+DECLARE_ASM_CONST(8, uint64_t, ff_bgr24toUVOffset)= 0x0040400000404000ULL;
 
 //MMX versions
 #if HAVE_MMX
@@ -176,6 +176,41 @@ void updateMMXDitherTables(SwsContext *c, int dstY, int lumBufIndex, int chrBufI
     }
 }
 
+#define SCALE_FUNC(filter_n, from_bpc, to_bpc, opt) \
+extern void ff_hscale ## from_bpc ## to ## to_bpc ## _ ## filter_n ## _ ## opt( \
+                                                SwsContext *c, int16_t *data, \
+                                                int dstW, const uint8_t *src, \
+                                                const int16_t *filter, \
+                                                const int16_t *filterPos, int filterSize);
+
+#define SCALE_FUNCS(filter_n, opt) \
+    SCALE_FUNC(filter_n,  8, 15, opt); \
+    SCALE_FUNC(filter_n,  9, 15, opt); \
+    SCALE_FUNC(filter_n, 10, 15, opt); \
+    SCALE_FUNC(filter_n, 16, 15, opt); \
+    SCALE_FUNC(filter_n,  8, 19, opt); \
+    SCALE_FUNC(filter_n,  9, 19, opt); \
+    SCALE_FUNC(filter_n, 10, 19, opt); \
+    SCALE_FUNC(filter_n, 16, 19, opt)
+
+#define SCALE_FUNCS_MMX(opt) \
+    SCALE_FUNCS(4, opt); \
+    SCALE_FUNCS(8, opt); \
+    SCALE_FUNCS(X, opt)
+
+#define SCALE_FUNCS_SSE(opt) \
+    SCALE_FUNCS(4, opt); \
+    SCALE_FUNCS(8, opt); \
+    SCALE_FUNCS(X4, opt); \
+    SCALE_FUNCS(X8, opt)
+
+#if ARCH_X86_32
+SCALE_FUNCS_MMX(mmx);
+#endif
+SCALE_FUNCS_SSE(sse2);
+SCALE_FUNCS_SSE(ssse3);
+SCALE_FUNCS_SSE(sse4);
+
 void ff_sws_init_swScale_mmx(SwsContext *c)
 {
     int cpu_flags = av_get_cpu_flags();
@@ -185,5 +220,56 @@ void ff_sws_init_swScale_mmx(SwsContext *c)
 #if HAVE_MMX2
     if (cpu_flags & AV_CPU_FLAG_MMX2)
         sws_init_swScale_MMX2(c);
+#endif
+
+#if HAVE_YASM
+#define ASSIGN_SCALE_FUNC2(hscalefn, filtersize, opt1, opt2) do { \
+    if (c->srcBpc == 8) { \
+        hscalefn = c->dstBpc <= 10 ? ff_hscale8to15_ ## filtersize ## _ ## opt2 : \
+                                     ff_hscale8to19_ ## filtersize ## _ ## opt1; \
+    } else if (c->srcBpc == 9) { \
+        hscalefn = c->dstBpc <= 10 ? ff_hscale9to15_ ## filtersize ## _ ## opt2 : \
+                                     ff_hscale9to19_ ## filtersize ## _ ## opt1; \
+    } else if (c->srcBpc == 10) { \
+        hscalefn = c->dstBpc <= 10 ? ff_hscale10to15_ ## filtersize ## _ ## opt2 : \
+                                     ff_hscale10to19_ ## filtersize ## _ ## opt1; \
+    } else /* c->srcBpc == 16 */ { \
+        hscalefn = c->dstBpc <= 10 ? ff_hscale16to15_ ## filtersize ## _ ## opt2 : \
+                                     ff_hscale16to19_ ## filtersize ## _ ## opt1; \
+    } \
+} while (0)
+#define ASSIGN_MMX_SCALE_FUNC(hscalefn, filtersize, opt1, opt2) \
+    switch (filtersize) { \
+    case 4:  ASSIGN_SCALE_FUNC2(hscalefn, 4, opt1, opt2); break; \
+    case 8:  ASSIGN_SCALE_FUNC2(hscalefn, 8, opt1, opt2); break; \
+    default: ASSIGN_SCALE_FUNC2(hscalefn, X, opt1, opt2); break; \
+    }
+#if ARCH_X86_32
+    if (cpu_flags & AV_CPU_FLAG_MMX) {
+        ASSIGN_MMX_SCALE_FUNC(c->hyScale, c->hLumFilterSize, mmx, mmx);
+        ASSIGN_MMX_SCALE_FUNC(c->hcScale, c->hChrFilterSize, mmx, mmx);
+    }
+#endif
+#define ASSIGN_SSE_SCALE_FUNC(hscalefn, filtersize, opt1, opt2) \
+    switch (filtersize) { \
+    case 4:  ASSIGN_SCALE_FUNC2(hscalefn, 4, opt1, opt2); break; \
+    case 8:  ASSIGN_SCALE_FUNC2(hscalefn, 8, opt1, opt2); break; \
+    default: if (filtersize & 4) ASSIGN_SCALE_FUNC2(hscalefn, X4, opt1, opt2); \
+             else                ASSIGN_SCALE_FUNC2(hscalefn, X8, opt1, opt2); \
+             break; \
+    }
+    if (cpu_flags & AV_CPU_FLAG_SSE2) {
+        ASSIGN_SSE_SCALE_FUNC(c->hyScale, c->hLumFilterSize, sse2, sse2);
+        ASSIGN_SSE_SCALE_FUNC(c->hcScale, c->hChrFilterSize, sse2, sse2);
+    }
+    if (cpu_flags & AV_CPU_FLAG_SSSE3) {
+        ASSIGN_SSE_SCALE_FUNC(c->hyScale, c->hLumFilterSize, ssse3, ssse3);
+        ASSIGN_SSE_SCALE_FUNC(c->hcScale, c->hChrFilterSize, ssse3, ssse3);
+    }
+    if (cpu_flags & AV_CPU_FLAG_SSE4) {
+        /* Xto15 don't need special sse4 functions */
+        ASSIGN_SSE_SCALE_FUNC(c->hyScale, c->hLumFilterSize, sse4, ssse3);
+        ASSIGN_SSE_SCALE_FUNC(c->hcScale, c->hChrFilterSize, sse4, ssse3);
+    }
 #endif
 }
