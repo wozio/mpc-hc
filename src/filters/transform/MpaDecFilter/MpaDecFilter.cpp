@@ -2777,6 +2777,11 @@ HRESULT CMpaDecFilter::DeliverFFmpeg(int nCodecId, BYTE* p, int buffsize, int& s
 							}
 						}
 						break;
+					case SAMPLE_FMT_FLT:
+						pBuff.SetCount (nPCMLength / 4);
+						pDataOut = pBuff.GetData();
+						memcpy(pDataOut, m_pPCMData, nPCMLength);
+						break;
 					default :
 						ASSERT(FALSE);
 						break;
@@ -2881,6 +2886,11 @@ HRESULT CMpaDecFilter::DeliverFFmpeg(int nCodecId, BYTE* p, int buffsize, int& s
 								pDataOut++;
 							}
 						}
+						break;
+					case SAMPLE_FMT_FLT:
+						pBuff.SetCount (nPCMLength / 4);
+						pDataOut = pBuff.GetData();
+						memcpy(pDataOut, m_pPCMData, nPCMLength);
 						break;
 					default :
 						ASSERT(FALSE);
