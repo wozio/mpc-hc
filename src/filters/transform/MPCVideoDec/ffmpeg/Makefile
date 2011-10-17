@@ -21,11 +21,11 @@ TARGET_LIB     = $(TARGET_LIB_DIR)/libavcodec.lib
 
 
 # Compiler and yasm flags
-CFLAGS    = -I. -I.. -Ilibavcodec -Ilibavutil -Ilibswscale -I../../../../thirdparty/zlib \
+CFLAGS    = -I. -I.. -Ilibavcodec -Ilibavutil -I../../../../thirdparty/zlib \
             -DHAVE_AV_CONFIG_H -D_ISOC99_SOURCE -std=gnu99 -mdll -mthreads -pipe
 
 OPTFLAGS  = -fno-common -fno-tree-vectorize
-YASMFLAGS = -Pconfig.asm
+YASMFLAGS = -Pconfig.asm -Ilibavutil/x86
 
 ifeq ($(64BIT),yes)
     FFMPEG_PREFIX = x86_64-w64-mingw32-
@@ -85,7 +85,7 @@ SRCS_C=\
     libavcodec/ac3dsp.c \
     libavcodec/ac3tab.c \
     libavcodec/adpcm.c \
-	libavcodec/adpcm_data.c \
+    libavcodec/adpcm_data.c \
     libavcodec/allcodecs.c \
     libavcodec/avfft.c \
     libavcodec/avpacket.c \
@@ -202,11 +202,11 @@ SRCS_C=\
     libavcodec/x86/motion_est_mmx.c \
     libavcodec/x86/mpegaudiodec_mmx.c \
     libavcodec/x86/mpegvideo_mmx.c \
+    libavcodec/x86/rv40dsp.c \
     libavcodec/x86/simple_idct_mmx.c \
     libavcodec/x86/vc1dsp_mmx.c \
     libavcodec/x86/vp56dsp_init.c \
     libavcodec/x86/vp8dsp-init.c \
-	libavcodec/x86/rv40dsp.c \
 \
     libavutil/audioconvert.c \
     libavutil/avstring.c \
@@ -265,8 +265,7 @@ SRCS_YASM=\
     libavcodec/x86/vp56dsp.asm \
     libavcodec/x86/vp8dsp.asm \
     libavcodec/x86/x86util.asm \
-	libavcodec/x86/scale.asm		
-
+    libswscale/x86/scale.asm
 
 OBJS += \
     $(SRCS_C:%.c=$(OBJ_DIR)%.o) \
@@ -282,7 +281,7 @@ $(OBJ_DIR)%.o: %.asm
 	@echo YASM: Assembling $<
 	@yasm $(YASMFLAGS) -I$(<D)/ -o $@ $<
 
-$(TARGET_LIB): $(OBJS) libavcodec.def
+$(TARGET_LIB): $(OBJS)
 	@echo AR $@
 	@$(FFMPEG_PREFIX)ar rc $@ $(OBJS)
 

@@ -60,9 +60,9 @@
 
 // MPC custom code for linking with MSVC
 #if defined(__GNUC__) && ARCH_X86_64
-	#define EXTERN_PREFIX ""
+    #define EXTERN_PREFIX ""
 #else
-	#define EXTERN_PREFIX "_"
+    #define EXTERN_PREFIX "_"
 #endif
 #define EXTERN_ASM _
 
@@ -159,6 +159,7 @@
 #endif
 
 #define CONFIG_AC3ENC_FLOAT 0
+#define CONFIG_AUDIO_FLOAT 1
 #define CONFIG_DCT 0
 #define CONFIG_DWT 0
 #define CONFIG_GPL 1
@@ -251,6 +252,7 @@ Note: when adding a new codec, you have to:
 #define CONFIG_TSCC_DECODER 0
 #define CONFIG_ULTI_DECODER 0
 #define CONFIG_VC1_DECODER 1
+#define CONFIG_VC1IMAGE_DECODER 0
 #define CONFIG_VCR1_DECODER 0
 #define CONFIG_VP3_DECODER 1
 #define CONFIG_VP5_DECODER 1
@@ -261,12 +263,14 @@ Note: when adding a new codec, you have to:
 #define CONFIG_WMV1_DECODER 1
 #define CONFIG_WMV2_DECODER 1
 #define CONFIG_WMV3_DECODER 1
+#define CONFIG_WMV3IMAGE_DECODER 0
 #define CONFIG_WNV1_DECODER 0
 #define CONFIG_XL_DECODER 0
 #define CONFIG_ZLIB_DECODER 0
 #define CONFIG_ZMBV_DECODER 0
 
 #define CONFIG_AAC_DECODER 0
+#define CONFIG_AAC_LATM_DECODER 0
 #define CONFIG_AC3_DECODER 1
 #define CONFIG_ATRAC3_DECODER 0
 #define CONFIG_COOK_DECODER 0
@@ -346,6 +350,7 @@ Note: when adding a new codec, you have to:
 
 #define CONFIG_AC3_ENCODER 0
 #define CONFIG_AC3_FIXED_ENCODER 0
+#define CONFIG_EAC3_ENCODER 0
 
 #define CONFIG_AAC_PARSER 0
 #define CONFIG_AC3_PARSER 1

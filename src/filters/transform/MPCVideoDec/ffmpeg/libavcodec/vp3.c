@@ -1982,6 +1982,8 @@ static int vp3_decode_frame(AVCodecContext *avctx,
     }
     vp3_draw_horiz_band(s, s->avctx->height);
 
+    /* MPC Custom code begin */
+#if 0
     /* ffdshow custom code (begin) */
     if (s->theora && avctx->time_base.num){
         if (avctx->granulepos>-1){
@@ -2003,6 +2005,8 @@ static int vp3_decode_frame(AVCodecContext *avctx,
         s->current_frame.pict_type=s->keyframe?FF_I_TYPE:FF_P_TYPE;
     }
     /* ffdshow custom code (end) */
+#endif
+    /* MPC custom code end*/
 
     *data_size=sizeof(AVFrame);
     *(AVFrame*)data= s->current_frame;

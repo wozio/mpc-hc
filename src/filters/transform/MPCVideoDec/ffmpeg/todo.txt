@@ -1,3 +1,3 @@
-1) There's a macroblocking problem when seeking with some 1080p h264 videos (is present in the trunk too)
+1) There's a macroblocking problem when seeking with some 1080p h264 videos (it's present in the trunk builds too)
    http://www.mediafire.com/?w984256zcsvmu
-2) Multithreading doesn't work with the standalone MPCVideoDecFilter?
+2) Multithreading doesn't work if DXVA is enabled and the decoder fails back to software mode.
