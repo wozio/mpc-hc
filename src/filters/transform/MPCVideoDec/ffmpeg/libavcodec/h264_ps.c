@@ -130,8 +130,8 @@ static inline int decode_hrd_parameters(H264Context *h, SPS *sps){
     get_bits(&s->gb, 4); /* bit_rate_scale */
     get_bits(&s->gb, 4); /* cpb_size_scale */
     for(i=0; i<cpb_count; i++){
-        get_ue_golomb(&s->gb); /* bit_rate_value_minus1 */
-        get_ue_golomb(&s->gb); /* cpb_size_value_minus1 */
+        get_ue_golomb_long(&s->gb); /* bit_rate_value_minus1 */
+        get_ue_golomb_long(&s->gb); /* cpb_size_value_minus1 */
         get_bits1(&s->gb);     /* cbr_flag */
     }
     sps->initial_cpb_removal_delay_length = get_bits(&s->gb, 5) + 1;
@@ -398,16 +398,24 @@ int ff_h264_decode_seq_parameter_set(H264Context *h){
 #endif
     sps->crop= get_bits1(&s->gb);
     if(sps->crop){
-        int crop_limit = sps->chroma_format_idc == 3 ? 16 : 8;
+        int crop_vertical_limit = sps->chroma_format_idc & 2 ? 16 : 8;
+        int crop_horizontal_limit = sps->chroma_format_idc == 3 ? 16 : 8;
         sps->crop_left  = get_ue_golomb(&s->gb);
         sps->crop_right = get_ue_golomb(&s->gb);
         sps->crop_top   = get_ue_golomb(&s->gb);
         sps->crop_bottom= get_ue_golomb(&s->gb);
         if(sps->crop_left || sps->crop_top){
-            av_log(h->s.avctx, AV_LOG_ERROR, "insane cropping not completely supported, this could look slightly wrong ...\n");
+            av_log(h->s.avctx, AV_LOG_ERROR, "insane cropping not completely supported, this could look slightly wrong ... (left: %d, top: %d)\n", sps->crop_left, sps->crop_top);
         }
-        if(sps->crop_right >= crop_limit || sps->crop_bottom >= crop_limit){
-            av_log(h->s.avctx, AV_LOG_ERROR, "brainfart cropping not supported, this could look slightly wrong ...\n");
+        if(sps->crop_right >= crop_horizontal_limit || sps->crop_bottom >= crop_vertical_limit){
+            av_log(h->s.avctx, AV_LOG_ERROR, "brainfart cropping not supported, cropping disabled (right: %d, bottom: %d)\n", sps->crop_right, sps->crop_bottom);
+        /* It is very unlikely that partial cropping will make anybody happy.
+         * Not cropping at all fixes for example playback of Sisvel 3D streams
+         * in applications supporting Sisvel 3D. */
+        sps->crop_left  =
+        sps->crop_right =
+        sps->crop_top   =
+        sps->crop_bottom= 0;
         }
     }else{
         sps->crop_left  =
@@ -425,7 +433,7 @@ int ff_h264_decode_seq_parameter_set(H264Context *h){
         sps->sar.den= 1;
 
     if(s->avctx->debug&FF_DEBUG_PICT_INFO){
-        av_log(h->s.avctx, AV_LOG_DEBUG, "sps:%u profile:%d/%d poc:%d ref:%d %dx%d %s %s crop:%d/%d/%d/%d %s %s %d/%d\n",
+        av_log(h->s.avctx, AV_LOG_DEBUG, "sps:%u profile:%d/%d poc:%d ref:%d %dx%d %s %s crop:%d/%d/%d/%d %s %s %d/%d b%d\n",
                sps_id, sps->profile_idc, sps->level_idc,
                sps->poc_type,
                sps->ref_frame_count,
@@ -437,7 +445,8 @@ int ff_h264_decode_seq_parameter_set(H264Context *h){
                sps->vui_parameters_present_flag ? "VUI" : "",
                ((const char*[]){"Gray","420","422","444"})[sps->chroma_format_idc],
                sps->timing_info_present_flag ? sps->num_units_in_tick : 0,
-               sps->timing_info_present_flag ? sps->time_scale : 0
+               sps->timing_info_present_flag ? sps->time_scale : 0,
+               sps->bit_depth_luma
                );
     }
 
@@ -463,11 +472,8 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length){
     MpegEncContext * const s = &h->s;
     unsigned int pps_id= get_ue_golomb(&s->gb);
     PPS *pps;
-    #if ENABLE_HIGH_BIT
     const int qp_bd_offset = 6*(h->sps.bit_depth_luma-8);
-    #else
-    const int qp_bd_offset = 0;
-    #endif
+    int bits_left;
 
     if(pps_id >= MAX_PPS_COUNT) {
         av_log(h->s.avctx, AV_LOG_ERROR, "pps_id (%d) out of range\n", pps_id);
@@ -544,7 +550,9 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length){
     memcpy(pps->scaling_matrix4, h->sps_buffers[pps->sps_id]->scaling_matrix4, sizeof(pps->scaling_matrix4));
     memcpy(pps->scaling_matrix8, h->sps_buffers[pps->sps_id]->scaling_matrix8, sizeof(pps->scaling_matrix8));
 
-    if(get_bits_count(&s->gb) < bit_length){
+    bits_left = bit_length - get_bits_count(&s->gb);
+    if (bits_left && (bits_left > 8 ||
+                      show_bits(&s->gb, bits_left) != 1 << (bits_left - 1))) {
         pps->transform_8x8_mode= get_bits1(&s->gb);
         decode_scaling_matrices(h, h->sps_buffers[pps->sps_id], pps, 0, pps->scaling_matrix4, pps->scaling_matrix8);
         pps->chroma_qp_index_offset[1]= get_se_golomb(&s->gb); //second_chroma_qp_index_offset
@@ -552,13 +560,8 @@ int ff_h264_decode_picture_parameter_set(H264Context *h, int bit_length){
         pps->chroma_qp_index_offset[1]= pps->chroma_qp_index_offset[0];
     }
 
-    #if ENABLE_HIGH_BIT
     build_qp_table(pps, 0, pps->chroma_qp_index_offset[0], h->sps.bit_depth_luma);
     build_qp_table(pps, 1, pps->chroma_qp_index_offset[1], h->sps.bit_depth_luma);
-    #else
-    build_qp_table(pps, 0, pps->chroma_qp_index_offset[0], 8);
-    build_qp_table(pps, 1, pps->chroma_qp_index_offset[1], 8);
-    #endif
     if(pps->chroma_qp_index_offset[0] != pps->chroma_qp_index_offset[1])
         pps->chroma_qp_diff= 1;
 

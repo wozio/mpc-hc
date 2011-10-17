@@ -155,6 +155,8 @@ const uint8_t *ff_find_start_code(const uint8_t * restrict p, const uint8_t *end
 /* init common dct for both encoder and decoder */
 av_cold int ff_dct_common_init(MpegEncContext *s)
 {
+    dsputil_init(&s->dsp, s->avctx);
+
     s->dct_unquantize_h263_intra = dct_unquantize_h263_intra_c;
     s->dct_unquantize_h263_inter = dct_unquantize_h263_inter_c;
     s->dct_unquantize_mpeg1_intra = dct_unquantize_mpeg1_intra_c;
@@ -206,7 +208,7 @@ void ff_copy_picture(Picture *dst, Picture *src){
  */
 static void free_frame_buffer(MpegEncContext *s, Picture *pic)
 {
-    ff_thread_release_buffer(s->avctx, (AVFrame*)pic);
+		ff_thread_release_buffer(s->avctx, (AVFrame*)pic);
 }
 
 /**
@@ -216,7 +218,7 @@ static int alloc_frame_buffer(MpegEncContext *s, Picture *pic)
 {
     int r;
 
-    r = ff_thread_get_buffer(s->avctx, (AVFrame*)pic);
+		r = ff_thread_get_buffer(s->avctx, (AVFrame*)pic);
 
     if (r < 0 || !pic->f.age || !pic->f.type || !pic->f.data[0]) {
         av_log(s->avctx, AV_LOG_ERROR, "get_buffer() failed (%d %d %d %p)\n",
@@ -355,8 +357,7 @@ static int init_duplicate_context(MpegEncContext *s, MpegEncContext *base){
     int i;
 
     // edge emu needs blocksize + filter length - 1 (=17x17 for halfpel / 21x21 for h264)
-    FF_ALLOCZ_OR_GOTO(s->avctx, s->allocated_edge_emu_buffer, (s->width+64)*2*21*2, fail); //(width + edge + align)*interlaced*MBsize*tolerance
-    s->edge_emu_buffer= s->allocated_edge_emu_buffer + (s->width+64)*2*21;
+    FF_ALLOCZ_OR_GOTO(s->avctx, s->edge_emu_buffer, (s->width+64)*2*21*2, fail); //(width + edge + align)*interlaced*MBsize*tolerance
 
      //FIXME should be linesize instead of s->width*2 but that is not known before get_buffer()
     FF_ALLOCZ_OR_GOTO(s->avctx, s->me.scratchpad,  (s->width+64)*4*16*2*sizeof(uint8_t), fail)
@@ -394,7 +395,7 @@ fail:
 static void free_duplicate_context(MpegEncContext *s){
     if(s==NULL) return;
 
-    av_freep(&s->allocated_edge_emu_buffer); s->edge_emu_buffer= NULL;
+    av_freep(&s->edge_emu_buffer);
     av_freep(&s->me.scratchpad);
     s->me.temp=
     s->rd_scratchpad=
@@ -411,7 +412,6 @@ static void free_duplicate_context(MpegEncContext *s){
 
 static void backup_duplicate_context(MpegEncContext *bak, MpegEncContext *src){
 #define COPY(a) bak->a= src->a
-    COPY(allocated_edge_emu_buffer);
     COPY(edge_emu_buffer);
     COPY(me.scratchpad);
     COPY(me.temp);
@@ -517,7 +517,7 @@ int ff_mpeg_update_thread_context(AVCodecContext *dst, const AVCodecContext *src
         s->last_pict_type= s1->pict_type;
         if (s1->current_picture_ptr) s->last_lambda_for[s1->pict_type] = s1->current_picture_ptr->f.quality;
 
-        if(s1->pict_type!=AV_PICTURE_TYPE_B){
+        if (s1->pict_type != AV_PICTURE_TYPE_B) {
             s->last_non_b_pict_type= s1->pict_type;
         }
     }
@@ -591,7 +591,6 @@ av_cold int MPV_common_init(MpegEncContext *s)
     if((s->width || s->height) && av_image_check_size(s->width, s->height, 0, s->avctx))
         return -1;
 
-    dsputil_init(&s->dsp, s->avctx);
     ff_dct_common_init(s);
 
     s->flags= s->avctx->flags;
@@ -1024,9 +1023,9 @@ int MPV_frame_start(MpegEncContext *s, AVCodecContext *avctx)
     Picture *pic;
     s->mb_skipped = 0;
 
-	// ==> Start patch MPC
-//    assert(s->last_picture_ptr==NULL || s->out_format != FMT_H264 || s->codec_id == CODEC_ID_SVQ3);
-	// <== End patch MPC
+		// ==> Start patch MPC
+    // assert(s->last_picture_ptr==NULL || s->out_format != FMT_H264 || s->codec_id == CODEC_ID_SVQ3);
+		// <== End patch MPC
 
     /* mark&release old frames */
     if (s->pict_type != AV_PICTURE_TYPE_B && s->last_picture_ptr && s->last_picture_ptr != s->next_picture_ptr && s->last_picture_ptr->f.data[0]) {
@@ -1130,9 +1129,9 @@ int MPV_frame_start(MpegEncContext *s, AVCodecContext *avctx)
     if(s->last_picture_ptr) ff_copy_picture(&s->last_picture, s->last_picture_ptr);
     if(s->next_picture_ptr) ff_copy_picture(&s->next_picture, s->next_picture_ptr);
 
-	// ==> Start patch MPC
-    //assert(s->pict_type == AV_PICTURE_TYPE_I || (s->last_picture_ptr && s->last_picture_ptr->f.data[0]));
-	// <== End patch MPC
+		// ==> Start patch MPC
+    // assert(s->pict_type == AV_PICTURE_TYPE_I || (s->last_picture_ptr && s->last_picture_ptr->f.data[0]));
+		// <== End patch MPC
 
     if(s->picture_structure!=PICT_FRAME && s->out_format != FMT_H264){
         int i;
@@ -1982,12 +1981,15 @@ void ff_draw_horiz_band(MpegEncContext *s, int y, int h){
 
         edge_h= FFMIN(h, s->v_edge_pos - y);
 
-        s->dsp.draw_edges(s->current_picture_ptr->f.data[0] +  y         *s->linesize  , s->linesize,
-                          s->h_edge_pos        , edge_h        , EDGE_WIDTH        , EDGE_WIDTH        , sides);
-        s->dsp.draw_edges(s->current_picture_ptr->f.data[1] + (y>>vshift)*s->uvlinesize, s->uvlinesize,
-                          s->h_edge_pos>>hshift, edge_h>>hshift, EDGE_WIDTH>>hshift, EDGE_WIDTH>>vshift, sides);
-        s->dsp.draw_edges(s->current_picture_ptr->f.data[2] + (y>>vshift)*s->uvlinesize, s->uvlinesize,
-                          s->h_edge_pos>>hshift, edge_h>>hshift, EDGE_WIDTH>>hshift, EDGE_WIDTH>>vshift, sides);
+        s->dsp.draw_edges(s->current_picture_ptr->f.data[0] +  y         *s->linesize,
+                          s->linesize,           s->h_edge_pos,         edge_h,
+                          EDGE_WIDTH,            EDGE_WIDTH,            sides);
+        s->dsp.draw_edges(s->current_picture_ptr->f.data[1] + (y>>vshift)*s->uvlinesize,
+                          s->uvlinesize,         s->h_edge_pos>>hshift, edge_h>>vshift,
+                          EDGE_WIDTH>>hshift,    EDGE_WIDTH>>vshift,    sides);
+        s->dsp.draw_edges(s->current_picture_ptr->f.data[2] + (y>>vshift)*s->uvlinesize,
+                          s->uvlinesize,         s->h_edge_pos>>hshift, edge_h>>vshift,
+                          EDGE_WIDTH>>hshift,    EDGE_WIDTH>>vshift,    sides);
     }
 
     h= FFMIN(h, s->avctx->height - y);
@@ -2321,6 +2323,6 @@ void ff_set_qscale(MpegEncContext * s, int qscale)
 
 void MPV_report_decode_progress(MpegEncContext *s)
 {
-    if (s->pict_type != FF_B_TYPE && !s->partitioned_frame && !s->error_occurred)
+    if (s->pict_type != AV_PICTURE_TYPE_B && !s->partitioned_frame && !s->error_occurred)
         ff_thread_report_progress((AVFrame*)s->current_picture_ptr, s->mb_y, 0);
 }

@@ -85,6 +85,7 @@ SRCS_C=\
     libavcodec/ac3dsp.c \
     libavcodec/ac3tab.c \
     libavcodec/adpcm.c \
+	libavcodec/adpcm_data.c \
     libavcodec/allcodecs.c \
     libavcodec/avfft.c \
     libavcodec/avpacket.c \
@@ -205,6 +206,7 @@ SRCS_C=\
     libavcodec/x86/vc1dsp_mmx.c \
     libavcodec/x86/vp56dsp_init.c \
     libavcodec/x86/vp8dsp-init.c \
+	libavcodec/x86/rv40dsp.c \
 \
     libavutil/audioconvert.c \
     libavutil/avstring.c \
@@ -263,7 +265,8 @@ SRCS_YASM=\
     libavcodec/x86/vp56dsp.asm \
     libavcodec/x86/vp8dsp.asm \
     libavcodec/x86/x86util.asm \
-    libavcodec/x86/scale.asm
+	libavcodec/x86/scale.asm		
+
 
 OBJS += \
     $(SRCS_C:%.c=$(OBJ_DIR)%.o) \

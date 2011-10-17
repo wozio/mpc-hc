@@ -141,7 +141,6 @@ void av_log(void *avcl, int level, const char *fmt, ...);
 extern "C" {
 #endif
 // <== End patch MPC
-
 void av_vlog(void *avcl, int level, const char *fmt, va_list);
 int av_log_get_level(void);
 void av_log_set_level(int);
@@ -154,7 +153,6 @@ const char* av_default_item_name(void* ctx);
 }
 #endif
 // <== End patch MPC
-
 /**
  * av_dlog macros
  * Useful to print debug messages that shouldn't get compiled in normally.

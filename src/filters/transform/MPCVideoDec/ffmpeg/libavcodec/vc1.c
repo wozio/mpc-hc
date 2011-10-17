@@ -314,9 +314,6 @@ int vc1_decode_sequence_header(AVCodecContext *avctx, VC1Context *v, GetBitConte
                    "Old interlaced mode is not supported\n");
             return -1;
         }
-        if (v->res_sprite) {
-            av_log(avctx, AV_LOG_ERROR, "WMVP is not fully supported\n");
-        }
     }
 
     // (fps-2)/4 (->30)
@@ -388,8 +385,9 @@ int vc1_decode_sequence_header(AVCodecContext *avctx, VC1Context *v, GetBitConte
     v->finterpflag = get_bits1(gb); //common
 
     if (v->res_sprite) {
-        v->s.avctx->width  = v->s.avctx->coded_width  = get_bits(gb, 11);
-        v->s.avctx->height = v->s.avctx->coded_height = get_bits(gb, 11);
+        int w = get_bits(gb, 11);
+        int h = get_bits(gb, 11);
+        avcodec_set_dimensions(v->s.avctx, w, h);
         skip_bits(gb, 5); //frame rate
         v->res_x8 = get_bits1(gb);
         if (get_bits1(gb)) { // something to do with DC VLC selection
@@ -426,6 +424,7 @@ int vc1_decode_sequence_header(AVCodecContext *avctx, VC1Context *v, GetBitConte
 
 static int decode_sequence_header_adv(VC1Context *v, GetBitContext *gb)
 {
+    int w, h;
     v->res_rtm_flag = 1;
     v->level = get_bits(gb, 3);
     if(v->level >= 5)
@@ -446,18 +445,14 @@ static int decode_sequence_header_adv(VC1Context *v, GetBitContext *gb)
     v->bitrtq_postproc = get_bits(gb, 5); //common
     v->postprocflag = get_bits1(gb); //common
 
-    v->s.avctx->coded_width = (get_bits(gb, 12) + 1) << 1;
-    v->s.avctx->coded_height = (get_bits(gb, 12) + 1) << 1;
-    v->s.avctx->width = v->s.avctx->coded_width;
-    v->s.avctx->height = v->s.avctx->coded_height;
+    w = (get_bits(gb, 12) + 1) << 1;
+    h = (get_bits(gb, 12) + 1) << 1;
+    avcodec_set_dimensions(v->s.avctx, w, h);
     v->broadcast = get_bits1(gb);
     v->interlace = get_bits1(gb);
     v->tfcntrflag = get_bits1(gb);
     v->finterpflag = get_bits1(gb);
     skip_bits1(gb); // reserved
-
-    v->s.h_edge_pos = v->s.avctx->coded_width;
-    v->s.v_edge_pos = v->s.avctx->coded_height;
 
     av_log(v->s.avctx, AV_LOG_DEBUG,
                "Advanced Profile level %i:\nfrmrtq_postproc=%i, bitrtq_postproc=%i\n"
@@ -477,17 +472,23 @@ static int decode_sequence_header_adv(VC1Context *v, GetBitContext *gb)
     if(get_bits1(gb)) { //Display Info - decoding is not affected by it
         int w, h, ar = 0;
         av_log(v->s.avctx, AV_LOG_DEBUG, "Display extended info:\n");
-        v->s.avctx->width  = w = get_bits(gb, 14) + 1;
-        v->s.avctx->height = h = get_bits(gb, 14) + 1;
+        w = get_bits(gb, 14) + 1;
+        h = get_bits(gb, 14) + 1;
         av_log(v->s.avctx, AV_LOG_DEBUG, "Display dimensions: %ix%i\n", w, h);
         if(get_bits1(gb))
             ar = get_bits(gb, 4);
         if(ar && ar < 14){
             v->s.avctx->sample_aspect_ratio = ff_vc1_pixel_aspect[ar];
         }else if(ar == 15){
-            w = get_bits(gb, 8);
-            h = get_bits(gb, 8);
+            w = get_bits(gb, 8) + 1;
+            h = get_bits(gb, 8) + 1;
             v->s.avctx->sample_aspect_ratio = (AVRational){w, h};
+        } else {
+            av_reduce(&v->s.avctx->sample_aspect_ratio.num,
+                      &v->s.avctx->sample_aspect_ratio.den,
+                      v->s.avctx->height * w,
+                      v->s.avctx->width * h,
+                      1<<30);
         }
         av_log(v->s.avctx, AV_LOG_DEBUG, "Aspect: %i:%i\n", v->s.avctx->sample_aspect_ratio.num, v->s.avctx->sample_aspect_ratio.den);
 
@@ -503,6 +504,10 @@ static int decode_sequence_header_adv(VC1Context *v, GetBitContext *gb)
                     v->s.avctx->time_base.num = ff_vc1_fps_dr[dr - 1];
                     v->s.avctx->time_base.den = ff_vc1_fps_nr[nr - 1] * 1000;
                 }
+            }
+            if(v->broadcast) { // Pulldown may be present
+                v->s.avctx->time_base.den *= 2;
+                v->s.avctx->ticks_per_frame = 2;
             }
         }
 
@@ -551,8 +556,9 @@ int vc1_decode_entry_point(AVCodecContext *avctx, VC1Context *v, GetBitContext *
     }
 
     if(get_bits1(gb)){
-        avctx->coded_width = (get_bits(gb, 12)+1)<<1;
-        avctx->coded_height = (get_bits(gb, 12)+1)<<1;
+        int w = (get_bits(gb, 12)+1)<<1;
+        int h = (get_bits(gb, 12)+1)<<1;
+        avcodec_set_dimensions(avctx, w, h);
     }
     if(v->extended_mv)
         v->extended_dmv = get_bits1(gb);
@@ -821,7 +827,7 @@ int vc1_parse_frame_header_adv(VC1Context *v, GetBitContext* gb)
     case 4:
         v->s.pict_type = AV_PICTURE_TYPE_P; // skipped pic
         v->p_frame_skipped = 1;
-        return 0;
+        break;
     }
     if(v->tfcntrflag)
         skip_bits(gb, 8);
@@ -830,12 +836,15 @@ int vc1_parse_frame_header_adv(VC1Context *v, GetBitContext* gb)
             v->rptfrm = get_bits(gb, 2);
         } else {
             v->tff = get_bits1(gb);
-            v->rff = get_bits1(gb); // FFmpeg patch
+            v->rff = get_bits1(gb);
         }
     }
     if(v->panscanflag) {
         av_log_missing_feature(v->s.avctx, "Pan-scan", 0);
         //...
+    }
+    if(v->p_frame_skipped) {
+        return 0;
     }
     v->rnd = get_bits1(gb);
     if(v->interlace)

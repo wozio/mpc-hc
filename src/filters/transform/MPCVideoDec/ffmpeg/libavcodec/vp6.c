@@ -139,8 +139,11 @@ static int vp6_parse_header(VP56Context *s, const uint8_t *buf, int buf_size,
     if (coeff_offset) {
         buf      += coeff_offset;
         buf_size -= coeff_offset;
-        if (buf_size < 0)
+        if (buf_size < 0) {
+            if (s->framep[VP56_FRAME_CURRENT]->key_frame)
+                avcodec_set_dimensions(s->avctx, 0, 0);
             return 0;
+        }
         if (s->use_huffman) {
             s->parse_coeff = vp6_parse_coeff_huffman;
             init_get_bits(&s->gb, buf, buf_size<<3);
@@ -215,8 +218,8 @@ static int vp6_huff_cmp(const void *va, const void *vb)
     return (a->count - b->count)*16 + (b->sym - a->sym);
 }
 
-static void vp6_build_huff_tree(VP56Context *s, uint8_t coeff_model[],
-                                const uint8_t *map, unsigned size, VLC *vlc)
+static int vp6_build_huff_tree(VP56Context *s, uint8_t coeff_model[],
+                               const uint8_t *map, unsigned size, VLC *vlc)
 {
     Node nodes[2*VP6_MAX_HUFF_SIZE], *tmp = &nodes[size];
     int a, b, i;
@@ -231,12 +234,12 @@ static void vp6_build_huff_tree(VP56Context *s, uint8_t coeff_model[],
     }
 
     free_vlc(vlc);
-    /* then build the huffman tree accodring to probabilities */
-    ff_huff_build_tree(s->avctx, vlc, size, nodes, vp6_huff_cmp,
-                       FF_HUFFMAN_FLAG_HNODE_FIRST);
+    /* then build the huffman tree according to probabilities */
+    return ff_huff_build_tree(s->avctx, vlc, size, nodes, vp6_huff_cmp,
+                              FF_HUFFMAN_FLAG_HNODE_FIRST);
 }
 
-static void vp6_parse_coeff_models(VP56Context *s)
+static int vp6_parse_coeff_models(VP56Context *s)
 {
     VP56RangeCoder *c = &s->c;
     VP56Model *model = s->modelp;
@@ -281,15 +284,18 @@ static void vp6_parse_coeff_models(VP56Context *s)
 
     if (s->use_huffman) {
         for (pt=0; pt<2; pt++) {
-            vp6_build_huff_tree(s, model->coeff_dccv[pt],
-                                vp6_huff_coeff_map, 12, &s->dccv_vlc[pt]);
-            vp6_build_huff_tree(s, model->coeff_runv[pt],
-                                vp6_huff_run_map, 9, &s->runv_vlc[pt]);
+            if (vp6_build_huff_tree(s, model->coeff_dccv[pt],
+                                    vp6_huff_coeff_map, 12, &s->dccv_vlc[pt]))
+                return -1;
+            if (vp6_build_huff_tree(s, model->coeff_runv[pt],
+                                    vp6_huff_run_map, 9, &s->runv_vlc[pt]))
+                return -1;
             for (ct=0; ct<3; ct++)
                 for (cg = 0; cg < 6; cg++)
-                    vp6_build_huff_tree(s, model->coeff_ract[pt][ct][cg],
-                                        vp6_huff_coeff_map, 12,
-                                        &s->ract_vlc[pt][ct][cg]);
+                    if (vp6_build_huff_tree(s, model->coeff_ract[pt][ct][cg],
+                                            vp6_huff_coeff_map, 12,
+                                            &s->ract_vlc[pt][ct][cg]))
+                        return -1;
         }
         memset(s->nb_null, 0, sizeof(s->nb_null));
     } else {
@@ -299,6 +305,7 @@ static void vp6_parse_coeff_models(VP56Context *s)
             for (node=0; node<5; node++)
                 model->coeff_dcct[pt][ctx][node] = av_clip(((model->coeff_dccv[pt][node] * vp6_dccv_lc[ctx][node][0] + 128) >> 8) + vp6_dccv_lc[ctx][node][1], 1, 255);
     }
+    return 0;
 }
 
 static void vp6_parse_vector_adjustment(VP56Context *s, VP56mv *vect)
@@ -609,42 +616,39 @@ static av_cold int vp6_decode_free(AVCodecContext *avctx)
 }
 
 AVCodec ff_vp6_decoder = {
-    "vp6",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_VP6,
-    sizeof(VP56Context),
-    vp6_decode_init,
-    NULL,
-    vp6_decode_free,
-    ff_vp56_decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "vp6",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VP6,
+    .priv_data_size = sizeof(VP56Context),
+    .init           = vp6_decode_init,
+    .close          = vp6_decode_free,
+    .decode         = ff_vp56_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("On2 VP6"),
 };
 
 /* flash version, not flipped upside-down */
 AVCodec ff_vp6f_decoder = {
-    "vp6f",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_VP6F,
-    sizeof(VP56Context),
-    vp6_decode_init,
-    NULL,
-    vp6_decode_free,
-    ff_vp56_decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "vp6f",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VP6F,
+    .priv_data_size = sizeof(VP56Context),
+    .init           = vp6_decode_init,
+    .close          = vp6_decode_free,
+    .decode         = ff_vp56_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("On2 VP6 (Flash version)"),
 };
 
 /* flash version, not flipped upside-down, with alpha channel */
 AVCodec ff_vp6a_decoder = {
-    "vp6a",
-    AVMEDIA_TYPE_VIDEO,
-    CODEC_ID_VP6A,
-    sizeof(VP56Context),
-    vp6_decode_init,
-    NULL,
-    vp6_decode_free,
-    ff_vp56_decode_frame,
-    CODEC_CAP_DR1,
+    .name           = "vp6a",
+    .type           = AVMEDIA_TYPE_VIDEO,
+    .id             = CODEC_ID_VP6A,
+    .priv_data_size = sizeof(VP56Context),
+    .init           = vp6_decode_init,
+    .close          = vp6_decode_free,
+    .decode         = ff_vp56_decode_frame,
+    .capabilities   = CODEC_CAP_DR1,
     .long_name = NULL_IF_CONFIG_SMALL("On2 VP6 (Flash version, with alpha channel)"),
 };

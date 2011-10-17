@@ -111,6 +111,12 @@ void ff_vp3_idct_dc_add_c(uint8_t *dest/*align 8*/, int line_size, const DCTELEM
 void ff_vp3_v_loop_filter_c(uint8_t *src, int stride, int *bounding_values);
 void ff_vp3_h_loop_filter_c(uint8_t *src, int stride, int *bounding_values);
 
+/* RV40 functions */
+void ff_put_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride);
+void ff_avg_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride);
+void ff_put_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride);
+void ff_avg_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride);
+
 /* 1/2^n downscaling functions from imgconvert.c */
 void ff_shrink22(uint8_t *dst, int dst_wrap, const uint8_t *src, int src_wrap, int width, int height);
 void ff_shrink44(uint8_t *dst, int dst_wrap, const uint8_t *src, int src_wrap, int width, int height);
@@ -193,6 +199,8 @@ typedef struct ScanTable{
 } ScanTable;
 
 void ff_init_scantable(uint8_t *, ScanTable *st, const uint8_t *src_scantable);
+void ff_init_scantable_permutation(uint8_t *idct_permutation,
+                                   int idct_permutation_type);
 
 #define EMULATED_EDGE(depth) \
 void ff_emulated_edge_mc_ ## depth (uint8_t *buf, const uint8_t *src, int linesize,\
@@ -221,7 +229,6 @@ typedef struct DSPContext {
     void (*diff_pixels)(DCTELEM *block/*align 16*/, const uint8_t *s1/*align 8*/, const uint8_t *s2/*align 8*/, int stride);
     void (*put_pixels_clamped)(const DCTELEM *block/*align 16*/, uint8_t *pixels/*align 8*/, int line_size);
     void (*put_signed_pixels_clamped)(const DCTELEM *block/*align 16*/, uint8_t *pixels/*align 8*/, int line_size);
-//    void (*put_pixels_nonclamped)(const DCTELEM *block/*align 16*/, uint8_t *pixels/*align 8*/, int line_size);
     void (*add_pixels_clamped)(const DCTELEM *block/*align 16*/, uint8_t *pixels/*align 8*/, int line_size);
     void (*add_pixels8)(uint8_t *pixels, DCTELEM *block, int line_size);
     void (*add_pixels4)(uint8_t *pixels, DCTELEM *block, int line_size);
@@ -416,31 +423,16 @@ typedef struct DSPContext {
     void (*vector_fmul_scalar)(float *dst, const float *src, float mul,
                                int len);
     /**
-     * Multiply a vector of floats by concatenated short vectors of
-     * floats and by a scalar float.  Source and destination vectors
-     * must overlap exactly or not at all.
-     * [0]: short vectors of length 2, 8-byte aligned
-     * [1]: short vectors of length 4, 16-byte aligned
-     * @param dst output vector, 16-byte aligned
+     * Multiply a vector of floats by a scalar float and add to
+     * destination vector.  Source and destination vectors must
+     * overlap exactly or not at all.
+     * @param dst result vector, 16-byte aligned
      * @param src input vector, 16-byte aligned
-     * @param sv  array of pointers to short vectors
      * @param mul scalar value
-     * @param len number of elements in src and dst, multiple of 4
+     * @param len length of vector, multiple of 4
      */
-    void (*vector_fmul_sv_scalar[2])(float *dst, const float *src,
-                                     const float **sv, float mul, int len);
-    /**
-     * Multiply short vectors of floats by a scalar float, store
-     * concatenated result.
-     * [0]: short vectors of length 2, 8-byte aligned
-     * [1]: short vectors of length 4, 16-byte aligned
-     * @param dst output vector, 16-byte aligned
-     * @param sv  array of pointers to short vectors
-     * @param mul scalar value
-     * @param len number of output elements, multiple of 4
-     */
-    void (*sv_fmul_scalar[2])(float *dst, const float **sv,
-                              float mul, int len);
+    void (*vector_fmac_scalar)(float *dst, const float *src, float mul,
+                               int len);
     /**
      * Calculate the scalar product of two vectors of floats.
      * @param v1  first vector, 16-byte aligned
@@ -566,15 +558,7 @@ typedef struct DSPContext {
     void (*vector_clip_int32)(int32_t *dst, const int32_t *src, int32_t min,
                               int32_t max, unsigned int len);
 
-    /* rv30 functions */
-    qpel_mc_func put_rv30_tpel_pixels_tab[4][16];
-    qpel_mc_func avg_rv30_tpel_pixels_tab[4][16];
-
-    /* rv40 functions */
-    qpel_mc_func put_rv40_qpel_pixels_tab[4][16];
-    qpel_mc_func avg_rv40_qpel_pixels_tab[4][16];
-    h264_chroma_mc_func put_rv40_chroma_pixels_tab[3];
-    h264_chroma_mc_func avg_rv40_chroma_pixels_tab[3];
+//    op_fill_func fill_block_tab[2];
 } DSPContext;
 
 void dsputil_static_init(void);
@@ -648,8 +632,6 @@ void dsputil_init_sh4(DSPContext* c, AVCodecContext *avctx);
 void dsputil_init_vis(DSPContext* c, AVCodecContext *avctx);
 
 void ff_dsputil_init_dwt(DSPContext *c);
-void ff_rv30dsp_init(DSPContext* c, AVCodecContext *avctx);
-void ff_rv40dsp_init(DSPContext* c, AVCodecContext *avctx);
 void ff_intrax8dsp_init(DSPContext* c, AVCodecContext *avctx);
 void ff_mlp_init(DSPContext* c, AVCodecContext *avctx);
 void ff_mlp_init_x86(DSPContext* c, AVCodecContext *avctx);

@@ -238,17 +238,18 @@ static inline int pred_non_zero_count(H264Context *h, int n){
 }
 
 static av_cold void init_cavlc_level_tab(void){
-    int suffix_length, mask;
+    int suffix_length;
     unsigned int i;
 
     for(suffix_length=0; suffix_length<7; suffix_length++){
         for(i=0; i<(1<<LEVEL_TAB_BITS); i++){
             int prefix= LEVEL_TAB_BITS - av_log2(2*i);
-            int level_code= (prefix<<suffix_length) + (i>>(LEVEL_TAB_BITS-prefix-1-suffix_length)) - (1<<suffix_length);
 
-            mask= -(level_code&1);
-            level_code= (((2+level_code)>>1) ^ mask) - mask;
             if(prefix + 1 + suffix_length <= LEVEL_TAB_BITS){
+                int level_code = (prefix << suffix_length) +
+                    (i >> (av_log2(i) - suffix_length)) - (1 << suffix_length);
+                int mask = -(level_code&1);
+                level_code = (((2 + level_code) >> 1) ^ mask) - mask;
                 cavlc_level_tab[suffix_length][i][0]= level_code;
                 cavlc_level_tab[suffix_length][i][1]= prefix + 1 + suffix_length;
             }else if(prefix + 1 <= LEVEL_TAB_BITS){
@@ -998,11 +999,7 @@ decode_intra_mb:
         int ret;
         GetBitContext *gb= IS_INTRA(mb_type) ? h->intra_gb_ptr : h->inter_gb_ptr;
         const uint8_t *scan, *scan8x8;
-        #if ENABLE_HIGH_BIT
         const int max_qp = 51 + 6*(h->sps.bit_depth_luma-8);
-        #else
-        const int max_qp = 51;
-        #endif
 
         if(IS_INTERLACED(mb_type)){
             scan8x8= s->qscale ? h->field_scan8x8_cavlc : h->field_scan8x8_cavlc_q0;
