@@ -1051,7 +1051,11 @@ HRESULT CMPCVideoDecFilter::CheckInputType(const CMediaType* mtIn)
 
 bool CMPCVideoDecFilter::IsMultiThreadSupported(int nCodec)
 {
-	return (nCodec==CODEC_ID_H264 || nCodec==CODEC_ID_MPEG1VIDEO || nCodec==CODEC_ID_MPEG2VIDEO ||
+	return
+#ifdef _WIN64
+	false;
+#endif
+	(nCodec==CODEC_ID_H264 || nCodec==CODEC_ID_MPEG1VIDEO || nCodec==CODEC_ID_MPEG2VIDEO ||
 			nCodec==CODEC_ID_FFV1 || nCodec==CODEC_ID_DVVIDEO);
 }
 
@@ -1061,6 +1065,7 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 	int		nNewCodec;
 
 	if (direction == PINDIR_INPUT) {
+
 		nNewCodec = FindCodec(pmt);
 		if (nNewCodec == -1) {
 			return VFW_E_TYPE_NOT_ACCEPTED;
