@@ -1,8 +1,5 @@
 1) There's a macroblocking problem when seeking with some 1080p h264 videos
    (it's present in the trunk builds too)
    Sample:  http://www.mediafire.com/?w984256zcsvmu
-2) Multithreading doesn't work if DXVA is enabled and the decoder fails back to software mode
-3) Crash with h264 software decoder (x64 only)
-4) unable to playback E-AC3 track (need rewrite MpaDecFilter)
-5) x64 build, unable to playback Hi10P video stream (x86 playback is fine)
-6) x64 debug build, crash on seek on H.264 video stream
+2) Crash with h264 software decoder (x64 only)
+

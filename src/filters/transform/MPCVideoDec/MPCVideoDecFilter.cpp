@@ -1181,7 +1181,9 @@ HRESULT CMPCVideoDecFilter::SetMediaType(PIN_DIRECTION direction,const CMediaTyp
 
 			if (!m_bDXVACompatible) {
 				avcodec_close (m_pAVCtx);
-				FFSetThreadNumber(m_pAVCtx, ffCodecs[m_nCodecNb].nFFCodec, m_nThreadNumber);
+				if ((m_nThreadNumber > 1) && IsMultiThreadSupported (ffCodecs[m_nCodecNb].nFFCodec)) {
+					FFSetThreadNumber(m_pAVCtx, ffCodecs[m_nCodecNb].nFFCodec, m_nThreadNumber);
+				}
 				if (avcodec_open2(m_pAVCtx, m_pAVCodec, NULL)<0) {
 					return VFW_E_INVALIDMEDIATYPE;
 				}
