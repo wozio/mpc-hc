@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 CC = gcc.exe
-BIN_DIR  = ../../../bin
+BIN_DIR  = ../../../../bin
 ZLIB_DIR = ../zlib
 
 ifeq ($(64BIT),yes)
