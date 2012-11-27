@@ -1370,6 +1370,15 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     }
 #endif
 
+#if INTERNAL_SOURCEFILTER_LIBRARY
+    // if (src[SRC_UDP])
+    {
+        pFGF = DNew CFGFilterInternal<CLibraryReader>();
+        pFGF->m_protocols.AddTail(_T("hsl"));
+        m_source.AddTail(pFGF);
+    }
+#endif
+
 #if INTERNAL_SOURCEFILTER_AVI
     if (src[SRC_AVI]) {
         pFGF = DNew CFGFilterInternal<CAviSourceFilter>();

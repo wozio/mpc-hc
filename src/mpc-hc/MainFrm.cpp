@@ -90,6 +90,9 @@
 #include "MPCPngImage.h"
 #include "DSMPropertyBag.h"
 
+#include "OpenLibraryDlg.h"
+#include "discovery.h"
+
 #define DEFCLIENTW 292
 #define DEFCLIENTH 200
 
@@ -513,6 +516,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_UPDATE_COMMAND_UI(ID_VIEW_NAVIGATION, OnUpdateViewNavigation)
 
     ON_WM_WTSSESSION_CHANGE()
+
+    ON_COMMAND(ID_FILE_OPENLIBRARY, OnFileOpenLibrary)
 END_MESSAGE_MAP()
 
 #ifdef _DEBUG
@@ -652,6 +657,8 @@ CMainFrame::~CMainFrame()
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
+  DISCOVERY;
+
     if (__super::OnCreate(lpCreateStruct) == -1) {
         return -1;
     }
@@ -4104,6 +4111,12 @@ void CMainFrame::OnFileOpenmedia()
     }
 
     OpenCurPlaylistItem();
+}
+
+void CMainFrame::OnFileOpenLibrary()
+{
+  COpenLibraryDlg dlg;
+  dlg.DoModal();
 }
 
 void CMainFrame::OnUpdateFileOpen(CCmdUI* pCmdUI)
