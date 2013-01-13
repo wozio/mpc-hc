@@ -35,8 +35,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{921A5E4F-EC03-47D5-A709-422926B4BE76}</ProjectGuid>
-    <RootNamespace>LibraryReader</RootNamespace>
+    <ProjectGuid>{92D5FCEB-1E51-45A3-8915-8DBF37F25403}</ProjectGuid>
+    <RootNamespace>LibraryReaderPush</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -130,7 +130,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\..\include;..\..\..\thirdparty;..\..\..\..\..\yami4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_LIB;POCO_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -157,7 +157,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>LibraryReader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>LibraryReaderPush.def</ModuleDefinitionFile>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -169,7 +169,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>LibraryReader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>LibraryReaderPush.def</ModuleDefinitionFile>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -181,7 +181,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>LibraryReader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>LibraryReaderPush.def</ModuleDefinitionFile>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -193,7 +193,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Vfw32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>LibraryReader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>LibraryReaderPush.def</ModuleDefinitionFile>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -203,14 +203,14 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="LibraryReader.cpp" />
+    <ClCompile Include="LibraryReaderPush.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="LibraryReader.def" />
+    <None Include="LibraryReaderPush.def" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="LibraryReader.h" />
+    <ClInclude Include="LibraryReaderPush.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\DSUtil\DSUtil.vcxproj">

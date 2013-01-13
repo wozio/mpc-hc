@@ -18,12 +18,12 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LibraryReader.cpp">
+    <ClCompile Include="LibraryReaderPush.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="LibraryReader.def">
+    <None Include="LibraryReaderPush.def">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
@@ -31,7 +31,7 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LibraryReader.h">
+    <ClInclude Include="LibraryReaderPush.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

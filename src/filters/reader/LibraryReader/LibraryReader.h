@@ -25,6 +25,7 @@
 #include "AsyncReader/asyncio.h"
 #include "AsyncReader/asyncrdr.h"
 #include "../../../../../common/src/service.h"
+#include <boost/circular_buffer.hpp>
 
 #define LibraryReaderName L"MPC Library Reader"
 
@@ -33,32 +34,17 @@ class CLibraryStream : public CAsyncStream, public home_system::service
 private:
     CCritSec m_csLock;
 
-    class packet_t
-    {
-    public:
-        BYTE* m_buff;
-        __int64 m_start, m_end;
-        packet_t(BYTE* p, __int64 start, __int64 end);
-        virtual ~packet_t() {
-            delete [] m_buff;
-        }
-    };
-
-    int m_port;
-    CString m_ip;
-    SOCKET m_socket;
     GUID m_subtype;
     __int64 m_pos, m_len;
-    bool m_drop;
-    CAtlList<packet_t*> m_packets;
 
     void Clear();
     void Append(BYTE* buff, int len);
 
-    enum { CMD_EXIT, CMD_RUN };
-    DWORD ThreadProc();
+    boost::circular_buffer<BYTE> m_buffer;
 
     void on_msg(yami::incoming_message & im);
+
+    
 
 public:
     CLibraryStream();
@@ -73,6 +59,8 @@ public:
     DWORD Alignment();
     void Lock();
     void Unlock();
+
+    void operator()();
 };
 
 class __declspec(uuid("357E0F9C-0D74-45ED-899F-F1AC7CA6B0F4"))

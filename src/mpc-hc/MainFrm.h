@@ -75,7 +75,8 @@ enum {
     PM_NONE,
     PM_FILE,
     PM_DVD,
-    PM_CAPTURE
+    PM_CAPTURE,
+    PM_LIBRARY
 };
 
 interface __declspec(uuid("6E8D4A21-310C-11d0-B79A-00AA003767A7")) // IID_IAMLine21Decoder
@@ -125,6 +126,14 @@ public:
     ULONG Bandwidth;
     LONG  Offset;
     HWND  Hwnd;
+};
+
+class OpenLibraryData : public OpenMediaData
+{
+public:
+  OpenLibraryData()
+  {
+  }
 };
 
 
@@ -379,6 +388,7 @@ protected:
     void OpenDVD(OpenDVDData* pODD);
     void OpenCapture(OpenDeviceData* pODD);
     HRESULT OpenBDAGraph();
+    HRESULT OpenLibraryGraph();
     void OpenCustomizeGraph();
     void OpenSetupVideo();
     void OpenSetupAudio();

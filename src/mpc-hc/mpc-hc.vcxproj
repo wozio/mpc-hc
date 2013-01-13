@@ -144,13 +144,14 @@
       <Command>..\..\update_version.bat</Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\include;..\..\include\atl;..\DSUtil;..\filters\renderer\VideoRenderers;..\thirdparty;..\..\..\yami4;..\..\..\common\src;..\thirdparty\MediaInfo;..\thirdparty\ZenLib;$(DXSDK_DIR)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\include;..\..\include\atl;..\DSUtil;..\filters\renderer\VideoRenderers;..\thirdparty;..\..\..\yami4;..\thirdparty\MediaInfo;..\thirdparty\ZenLib;$(DXSDK_DIR)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>POCO_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>MPCVideoDec.lib;delayimp.lib;detours.lib;dsound.lib;dxguid.lib;libgcc.a;libmingwex.a;GdiPlus.lib;Psapi.lib;QTMLClient.lib;SetupAPI.lib;UxTheme.lib;Vfw32.lib;Winmm.lib;d3d9.lib;common.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>MPCVideoDec.lib;delayimp.lib;detours.lib;dsound.lib;dxguid.lib;libgcc.a;libmingwex.a;GdiPlus.lib;Psapi.lib;QTMLClient.lib;SetupAPI.lib;UxTheme.lib;Vfw32.lib;Winmm.lib;d3d9.lib;common.lib;yami4-cpp.lib;yami4-core.lib;yami4-core-windows.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)bin\lib\$(Configuration)_$(Platform);$(SolutionDir)mpc-hc\lib;$(DXSDK_DIR)Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>d3d9.dll;gdiplus.dll;psapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
@@ -318,6 +319,7 @@
     <ClCompile Include="FGFilter.cpp" />
     <ClCompile Include="FGManager.cpp" />
     <ClCompile Include="FGManagerBDA.cpp" />
+    <ClCompile Include="FGManagerLibrary.cpp" />
     <ClCompile Include="FileAssoc.cpp" />
     <ClCompile Include="FileDropTarget.cpp" />
     <ClCompile Include="FloatEdit.cpp" />
@@ -435,6 +437,7 @@
     <ClInclude Include="FGFilter.h" />
     <ClInclude Include="FGManager.h" />
     <ClInclude Include="FGManagerBDA.h" />
+    <ClInclude Include="FGManagerLibrary.h" />
     <ClInclude Include="FileAssoc.h" />
     <ClInclude Include="FileDropTarget.h" />
     <ClInclude Include="FilterEnum.h" />
@@ -669,6 +672,9 @@
     <ProjectReference Include="..\DSUtil\DSUtil.vcxproj">
       <Project>{fc70988b-1ae5-4381-866d-4f405e28ac42}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\filters\reader\LibraryReaderPush\LibraryReaderPush.vcxproj">
+      <Project>{92d5fceb-1e51-45a3-8915-8dbf37f25403}</Project>
     </ProjectReference>
     <ProjectReference Include="..\filters\reader\LibraryReader\LibraryReader.vcxproj">
       <Project>{921a5e4f-ec03-47d5-a709-422926b4be76}</Project>

@@ -71,6 +71,7 @@
 #include "text.h"
 #include "FGManager.h"
 #include "FGManagerBDA.h"
+#include "FGManagerLibrary.h"
 
 #include "TextPassThruFilter.h"
 #include "../filters/Filters.h"
@@ -91,7 +92,6 @@
 #include "DSMPropertyBag.h"
 
 #include "OpenLibraryDlg.h"
-#include "discovery.h"
 
 #define DEFCLIENTW 292
 #define DEFCLIENTH 200
@@ -114,6 +114,10 @@ using namespace MediaInfoLib;
 #include "MediaInfoDLL.h"
 using namespace MediaInfoDLL;
 #endif
+
+//#include "logger.h"
+#include "../../common/src/discovery.h"
+
 
 DWORD last_run = 0;
 UINT flast_nID = 0;
@@ -657,6 +661,7 @@ CMainFrame::~CMainFrame()
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
+  //home_system::logger::configure("mpc-hc.log", "debug", false);
   DISCOVERY;
 
     if (__super::OnCreate(lpCreateStruct) == -1) {
@@ -4115,8 +4120,30 @@ void CMainFrame::OnFileOpenmedia()
 
 void CMainFrame::OnFileOpenLibrary()
 {
-  COpenLibraryDlg dlg;
-  dlg.DoModal();
+  /*COpenLibraryDlg dlg;
+  dlg.DoModal();*/
+
+  const CAppSettings& s = AfxGetAppSettings();
+
+
+  if (m_iMediaLoadState == MLS_LOADING)
+  {
+    return;
+  }
+
+  SendMessage(WM_COMMAND, ID_FILE_CLOSEMEDIA);
+  SetForegroundWindow();
+
+  ShowWindow(SW_SHOW);
+
+  m_wndPlaylistBar.Empty();
+
+  CAutoPtr<OpenLibraryData> p(DNew OpenLibraryData());
+  OpenMedia(p);
+  if (GetPlaybackMode() == PM_LIBRARY && !s.fHideNavigation && m_iMediaLoadState == MLS_LOADED) {
+      m_wndNavigationBar.m_navdlg.UpdateElementList();
+      ShowControlBar(&m_wndNavigationBar, !s.fHideNavigation, TRUE);
+  }
 }
 
 void CMainFrame::OnUpdateFileOpen(CCmdUI* pCmdUI)
@@ -4405,6 +4432,7 @@ void CMainFrame::OnFileOpendvd()
 void CMainFrame::OnFileOpendevice()
 {
     const CAppSettings& s = AfxGetAppSettings();
+
 
     if (m_iMediaLoadState == MLS_LOADING) {
         return;
@@ -9492,7 +9520,7 @@ OAFilterState CMainFrame::GetMediaState() const
 void CMainFrame::SetPlaybackMode(int iNewStatus)
 {
     m_iPlaybackMode = iNewStatus;
-    if (m_wndNavigationBar.IsWindowVisible() && GetPlaybackMode() != PM_CAPTURE) {
+    if (m_wndNavigationBar.IsWindowVisible() && GetPlaybackMode() != PM_CAPTURE && GetPlaybackMode() != PM_LIBRARY) {
         ShowControlBar(&m_wndNavigationBar, !m_wndNavigationBar.IsWindowVisible(), TRUE);
     }
 }
@@ -10474,6 +10502,8 @@ void CMainFrame::OpenCreateGraphObject(OpenMediaData* pOMD)
         } else {
             pGB = DNew CFGManagerCapture(_T("CFGManagerCapture"), NULL, m_pVideoWnd->m_hWnd);
         }
+    } else if (OpenLibraryData* p = dynamic_cast<OpenLibraryData*>(pOMD)) {
+        pGB = DNew CFGManagerLibrary(_T("CFGManagerLibrary"), NULL, m_pVideoWnd->m_hWnd);
     }
 
     if (!pGB) {
@@ -10914,6 +10944,16 @@ HRESULT CMainFrame::OpenBDAGraph()
     return hr;
 }
 
+HRESULT CMainFrame::OpenLibraryGraph()
+{
+    HRESULT hr = pGB->RenderFile(L"", L"");
+    if (SUCCEEDED(hr)) {
+        AddTextPassThruFilter();
+        SetPlaybackMode(PM_LIBRARY);
+    }
+    return hr;
+}
+
 void CMainFrame::OpenCapture(OpenDeviceData* pODD)
 {
     CStringW vidfrname, audfrname;
@@ -11073,7 +11113,7 @@ void CMainFrame::OpenCapture(OpenDeviceData* pODD)
 
 void CMainFrame::OpenCustomizeGraph()
 {
-    if (GetPlaybackMode() == PM_CAPTURE) {
+    if (GetPlaybackMode() == PM_CAPTURE || GetPlaybackMode() == PM_LIBRARY) {
         return;
     }
 
@@ -11491,6 +11531,8 @@ void CMainFrame::OpenSetupWindowTitle(CString fn)
                 fn = _T("DVD");
             } else if (GetPlaybackMode() == PM_CAPTURE) {
                 fn.LoadString(IDS_CAPTURE_LIVE);
+            } else if (GetPlaybackMode() == PM_LIBRARY) {
+                fn = _T("Library Live TV");;
             }
         }
         title = fn;
@@ -11597,7 +11639,8 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
     OpenFileData* pFileData = dynamic_cast<OpenFileData*>(pOMD.m_p);
     OpenDVDData* pDVDData = dynamic_cast<OpenDVDData*>(pOMD.m_p);
     OpenDeviceData* pDeviceData = dynamic_cast<OpenDeviceData*>(pOMD.m_p);
-    if (!pFileData && !pDVDData  && !pDeviceData) {
+    OpenLibraryData* pLibraryData = dynamic_cast<OpenLibraryData*>(pOMD.m_p);
+    if (!pFileData && !pDVDData  && !pDeviceData && !pLibraryData) {
         ASSERT(0);
         return false;
     }
@@ -11762,6 +11805,13 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
             } else {
                 OpenCapture(pDeviceData);
             }
+         } else if (pLibraryData)
+        {
+          HRESULT hr = OpenLibraryGraph();
+          if (FAILED(hr))
+          {
+            throw(UINT)IDS_CAPTURE_ERROR_DEVICE;
+          }
         } else {
             throw(UINT)IDS_INVALID_PARAMS_ERROR;
         }
@@ -14458,6 +14508,8 @@ void CMainFrame::OpenMedia(CAutoPtr<OpenMediaData> pOMD)
             }
         }
     } else if (OpenDeviceData* p = dynamic_cast<OpenDeviceData*>(pOMD.m_p)) {
+        fUseThread = false;
+    } else if (OpenLibraryData* p = dynamic_cast<OpenLibraryData*>(pOMD.m_p)) {
         fUseThread = false;
     }
 
