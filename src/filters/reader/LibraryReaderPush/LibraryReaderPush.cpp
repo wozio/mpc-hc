@@ -5,51 +5,11 @@
 #include "../../../../../common/src/yamicontainer.h"
 #include "../../../../../common/src/logger.h"
 #include <boost/thread.hpp>
-#include <sstream>
+#include <fstream>
 
-#ifdef STANDALONE_FILTER
+#define BUFSIZE 18800
 
-const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
-  {&MEDIATYPE_Stream, &MEDIASUBTYPE_NULL},
-};
-
-const AMOVIESETUP_PIN sudOpPin[] = {
-  {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut}
-};
-
-const AMOVIESETUP_FILTER sudFilter[] = {
-  {&__uuidof(CLibraryReaderPush), LibraryReaderName, MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory}
-};
-
-CFactoryTemplate g_Templates[] = {
-  {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CLibraryReaderPush>, NULL, &sudFilter[0]}
-};
-
-int g_cTemplates = _countof(g_Templates);
-
-STDAPI DllRegisterServer()
-{
-  SetRegKeyValue(_T("udp"), 0, _T("Source Filter"), CStringFromGUID(__uuidof(CLibraryReaderPush)));
-  SetRegKeyValue(_T("tévé"), 0, _T("Source Filter"), CStringFromGUID(__uuidof(CLibraryReaderPush)));
-
-  return AMovieDllRegisterServer2(TRUE);
-}
-
-STDAPI DllUnregisterServer()
-{
-  // TODO
-
-  return AMovieDllRegisterServer2(FALSE);
-}
-
-#include "../../FilterApp.h"
-
-CFilterApp theApp;
-
-#endif
-
-#define BUFF_SIZE (256 * 1024)
-#define BUFF_SIZE_FIRST (4 * BUFF_SIZE)
+using namespace std;
 
 //
 // CLibraryReaderPush
@@ -71,41 +31,16 @@ CLibraryReaderPush::~CLibraryReaderPush()
   LOG("CLibraryReaderPush Destroyed");
 }
 
-STDMETHODIMP CLibraryReaderPush::NonDelegatingQueryInterface(REFIID riid, void** ppv)
-{
-  CheckPointer(ppv, E_POINTER);
-
-  return
-    QI(IAMFilterMiscFlags)
-    __super::NonDelegatingQueryInterface(riid, ppv);
-}
-
-// IAMFilterMiscFlags
-
-ULONG CLibraryReaderPush::GetMiscFlags()
-{
-    return AM_FILTER_MISC_FLAGS_IS_SOURCE;
-}
-
-STDMETHODIMP CLibraryReaderPush::QueryFilterInfo(FILTER_INFO* pInfo)
-{
-    CheckPointer(pInfo, E_POINTER);
-    ValidateReadWritePtr(pInfo, sizeof(FILTER_INFO));
-    wcscpy_s(pInfo->achName, LibraryReaderPushName);
-    pInfo->pGraph = m_pGraph;
-    if (m_pGraph) {
-        m_pGraph->AddRef();
-    }
-
-    return S_OK;
-}
-
 // CLibraryStreamPush
 
 CLibraryStreamPush::CLibraryStreamPush(CLibraryReaderPush* pParent, HRESULT* phr)
-: CSourceStream(NAME("LibraryPushStream"), phr, pParent, L"Output"),
+  : CSourceStream(NAME("LibraryPushStream"), phr, pParent, L"Output"),
   //CSourceSeeking(NAME("LibraryPushStream"), (IPin*)this, phr, &m_cSharedState),
-  home_system::service("player")
+  home_system::service("player"),
+  buffer_(100),
+  buffer_len_(0),
+  buffer_pos_(0),
+  tmp_len_(0)
 {
   LOG("CLibraryStreamPush Created");
 }
@@ -118,58 +53,159 @@ CLibraryStreamPush::~CLibraryStreamPush()
 HRESULT CLibraryStreamPush::DecideBufferSize(IMemAllocator* pAlloc, ALLOCATOR_PROPERTIES* pProperties)
 {
   LOG("DecideBufferSize");
-    //    CAutoLock cAutoLock(m_pFilter->pStateLock());
+  //    CAutoLock cAutoLock(m_pFilter->pStateLock());
 
-    ASSERT(pAlloc);
-    ASSERT(pProperties);
+  ASSERT(pAlloc);
+  ASSERT(pProperties);
 
-    HRESULT hr = NOERROR;
+  HRESULT hr = NOERROR;
 
-    pProperties->cBuffers = 1;
-    pProperties->cbBuffer = 18800;
+  pProperties->cBuffers = 1;
+  pProperties->cbBuffer = BUFSIZE;
 
-    ALLOCATOR_PROPERTIES Actual;
-    if (FAILED(hr = pAlloc->SetProperties(pProperties, &Actual))) {
-        return hr;
-    }
+  ALLOCATOR_PROPERTIES Actual;
+  if (FAILED(hr = pAlloc->SetProperties(pProperties, &Actual)))
+  {
+    return hr;
+  }
 
-    if (Actual.cbBuffer < pProperties->cbBuffer) {
-        return E_FAIL;
-    }
-    ASSERT(Actual.cBuffers == pProperties->cBuffers);
+  if (Actual.cbBuffer < pProperties->cbBuffer)
+  {
+    return E_FAIL;
+  }
+  ASSERT(Actual.cBuffers == pProperties->cBuffers);
 
-    return NOERROR;
+  return NOERROR;
 }
 
 HRESULT CLibraryStreamPush::FillBuffer(IMediaSample* pSample)
 {
-  LOG("FillBuffer");
-    HRESULT hr = S_OK;
-    return hr;
+  while(buffer_len_ == 0 || buffer_pos_ == buffer_len_)
+  {
+    Sleep(1);
+  }
+  size_t size = pSample->GetSize();
+  
+  BYTE* buf;
+  pSample->GetPointer(&buf);
+
+  CAutoLock lock(&buffer_lock_);
+  if (size > buffer_len_)
+  {
+    size = buffer_len_;
+  }
+
+  size_t read_size = size;
+
+  while (read_size != 0)
+  {
+    size_t buffer_index = buffer_pos_ / BUFSIZE;
+    size_t local_buf_pos = buffer_pos_ - buffer_index * BUFSIZE;
+    size_t to_read;
+    if (read_size >= BUFSIZE)
+    {
+      to_read = BUFSIZE - local_buf_pos;
+    }
+    else
+    {
+      to_read = read_size;
+    }
+    memcpy(buf, buffer_[buffer_index].get() + local_buf_pos, to_read);
+    buffer_pos_ += to_read;
+    read_size -= to_read;
+    buf += to_read;
+  }
+  pSample->SetActualDataLength(size);
+
+  LOG("buffer_pos="<<buffer_pos_);
+
+  return S_OK;
 }
 
 HRESULT CLibraryStreamPush::GetMediaType(CMediaType* pmt)
 {
   LOG("GetMediaType");
-    CAutoLock cAutoLock(m_pFilter->pStateLock());
+  CAutoLock lock(m_pFilter->pStateLock());
 
-    pmt->SetType(&MEDIATYPE_Stream);
-    pmt->SetSubtype(&MEDIASUBTYPE_MPEG2_TRANSPORT);
+  pmt->SetType(&MEDIATYPE_Stream);
+  pmt->SetSubtype(&MEDIASUBTYPE_MPEG2_TRANSPORT);
 
-    return NOERROR;
+  return NOERROR;
+}
+
+HRESULT CLibraryStreamPush::OnThreadStartPlay()
+{
+  yami::parameters params;
+                
+  params.set_long_long("local_channel", 37830072008705);
+  params.set_string("destination", "player");
+  params.set_string("endpoint", YC.endpoint());
+
+  auto_ptr<yami::outgoing_message> message(AGENT.send(DISCOVERY.get("dvb-source"), "dvb-source", "create_streaming_session", params));
+
+  message->wait_for_completion(1000);
+                
+  if (message->get_state() == yami::replied)
+  {
+    int session_id = message->get_reply().get_integer("session");
+    params.clear();
+                
+    params.set_integer("session", session_id);
+
+    AGENT.send(DISCOVERY.get("dvb-source"), "dvb-source", "start_streaming_session", params);
+  }
+
+  return S_OK;
 }
 
 void CLibraryStreamPush::on_msg(yami::incoming_message & im)
 {
-  LOG("On message: " << im.get_message_name().c_str());
   if (im.get_message_name() == "stream_part")
   {
     try
     {
       size_t len = 0;
-      const void* buf = im.get_parameters().get_binary("payload", len);
+      BYTE* buf = (BYTE*)im.get_parameters().get_binary("payload", len);
 
-      LOG("Received " << len << L" bytes");
+      // loop on arrived data until all gets copied into buffer
+      // some may be left in temporary buffer until next portion of data arrives
+      
+      while (len != 0)
+      {
+        LOG("len= " << len << " buffer_len_=" << buffer_len_ << " tmp_len_=" << tmp_len_);
+
+        size_t available_in_tmp = BUFSIZE - tmp_len_;
+        
+        if (tmp_len_ == 0)
+        {
+          tmp_buf_.reset(new BYTE[BUFSIZE]);
+        }
+
+        if (len >= available_in_tmp)
+        {
+          // if arrived data fills remaining space in temporary buffer
+          // copy all it fits into temporary buffer
+          memcpy(tmp_buf_.get() + tmp_len_, buf, available_in_tmp);
+
+          len -= available_in_tmp;
+          buf += available_in_tmp;
+
+          // add it to main buffer
+          CAutoLock lock(&buffer_lock_);
+          buffer_.push_back(tmp_buf_);
+          buffer_len_ += BUFSIZE;
+          tmp_len_ = 0;
+        }
+        else
+        {
+          // copy into temporary buffer
+          memcpy(tmp_buf_.get() + tmp_len_, buf, len);
+          tmp_len_ += len;
+          len = 0;
+        }
+      }
+
+      
     }
     catch (const std::exception& e)
     {

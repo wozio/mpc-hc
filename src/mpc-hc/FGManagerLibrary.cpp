@@ -175,8 +175,8 @@ CFGManagerLibrary::CFGManagerLibrary(LPCTSTR pName, LPUNKNOWN pUnk, HWND hWnd)
     m_DVBStreams[DVB_SUB] = CLibraryStream2(L"sub", &mt_Subtitle, false, MEDIA_TRANSPORT_PAYLOAD);
   }
 
-  m_nCurVideoType = DVB_MPV;
-  m_nCurAudioType = DVB_MPA;
+  m_nCurVideoType = DVB_H264;
+  m_nCurAudioType = DVB_EAC3;
   m_fHideWindow = false;
 
   // Hack : remove audio switcher !
@@ -468,14 +468,14 @@ STDMETHODIMP CFGManagerLibrary::Info(long lIndex, AM_MEDIA_TYPE** ppmt, DWORD* p
   return hr;
 }
 
-STDMETHODIMP CFGManagerLibrary::NonDelegatingQueryInterface(REFIID riid, void** ppv)
-{
-  CheckPointer(ppv, E_POINTER);
-
-  return
-    QI(IAMStreamSelect)
-    __super::NonDelegatingQueryInterface(riid, ppv);
-}
+//STDMETHODIMP CFGManagerLibrary::NonDelegatingQueryInterface(REFIID riid, void** ppv)
+//{
+//  CheckPointer(ppv, E_POINTER);
+//
+//  return
+//    //QI(IAMStreamSelect)
+//    __super::NonDelegatingQueryInterface(riid, ppv);
+//}
 
 HRESULT CFGManagerLibrary::CreateMicrosoftDemux(IBaseFilter* pSource, CComPtr<IBaseFilter>& pMpeg2Demux)
 {
@@ -514,15 +514,18 @@ HRESULT CFGManagerLibrary::CreateMicrosoftDemux(IBaseFilter* pSource, CComPtr<IB
         Stream.SetPin(pPin);
         LOG("Graph completed for stream type " << nType);
       } else {
-        CheckNoLog(Connect(pPin, NULL, false));
+        /*CheckNoLog(Connect(pPin, NULL, false));
         Stream.SetPin(pPin);
-        LOG("Filter connected to Demux for media type " << nType);
+        LOG("Filter connected to Demux for media type " << nType);*/
       }
       if (nType == DVB_H264) {
         m_pPin_h264 = pPin;  // Demux h264 output pin
       }
     }
   }
+
+  m_DVBStreams[DVB_H264].Map(102);
+  m_DVBStreams[DVB_EAC3].Map(104);
 
   return S_OK;
 }

@@ -120,7 +120,7 @@ public:
     STDMETHODIMP Info(long lIndex, AM_MEDIA_TYPE** ppmt, DWORD* pdwFlags, LCID* plcid, DWORD* pdwGroup, WCHAR** ppszName, IUnknown** ppObject, IUnknown** ppUnk);
 
     DECLARE_IUNKNOWN;
-    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
+    //STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
     //STDMETHODIMP UpdatePSI(PresentFollowing& NowNext);
 
 private:
@@ -135,7 +135,7 @@ private:
 
     HRESULT         ConnectFilters(IBaseFilter* pOutFiter, IBaseFilter* pInFilter);
     HRESULT         CreateMicrosoftDemux(IBaseFilter* pReceiver, CComPtr<IBaseFilter>& pMpeg2Demux);
-    HRESULT         ChangeState(FILTER_STATE nRequested);
+    HRESULT         ChangeState(FILTER_STATE niuy80Requested);
     FILTER_STATE    GetState();
 
     void Sleep(unsigned int mseconds) {

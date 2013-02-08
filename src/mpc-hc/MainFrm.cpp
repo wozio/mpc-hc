@@ -4140,10 +4140,6 @@ void CMainFrame::OnFileOpenLibrary()
 
   CAutoPtr<OpenLibraryData> p(DNew OpenLibraryData());
   OpenMedia(p);
-  if (GetPlaybackMode() == PM_LIBRARY && !s.fHideNavigation && m_iMediaLoadState == MLS_LOADED) {
-      m_wndNavigationBar.m_navdlg.UpdateElementList();
-      ShowControlBar(&m_wndNavigationBar, !s.fHideNavigation, TRUE);
-  }
 }
 
 void CMainFrame::OnUpdateFileOpen(CCmdUI* pCmdUI)
@@ -7016,6 +7012,8 @@ void CMainFrame::OnPlayPlay()
                     DisplayCurrentChannelOSD();
                 }
             }
+        } else if (GetPlaybackMode() == PM_LIBRARY) {
+            pMC->Run();
         }
 
         SetTimersPlay();
@@ -7226,6 +7224,8 @@ void CMainFrame::OnUpdatePlayPauseStop(CCmdUI* pCmdUI)
             if (fs == State_Stopped && pCmdUI->m_nID == ID_PLAY_PAUSE) {
                 fEnable = false;
             }
+        } else if (GetPlaybackMode() == PM_LIBRARY) {
+            fEnable = true;
         }
     } else if (pCmdUI->m_nID == ID_PLAY_PLAY && m_wndPlaylistBar.GetCount() > 0) {
         fEnable = true;
@@ -12741,7 +12741,9 @@ void CMainFrame::SetupNavAudioSubMenu()
 
     UINT id = ID_NAVIGATE_AUDIO_SUBITEM_START;
 
-    if (GetPlaybackMode() == PM_FILE || (GetPlaybackMode() == PM_CAPTURE && AfxGetAppSettings().iDefaultCaptureDevice == 1)) {
+    if (GetPlaybackMode() == PM_FILE ||
+      (GetPlaybackMode() == PM_CAPTURE && AfxGetAppSettings().iDefaultCaptureDevice == 1) ||
+      GetPlaybackMode() == PM_LIBRARY) {
         SetupNavStreamSelectSubMenu(pSub, id, 1);
     } else if (GetPlaybackMode() == PM_DVD) {
         ULONG ulStreamsAvailable, ulCurrentStream;
@@ -12833,7 +12835,9 @@ void CMainFrame::SetupNavSubtitleSubMenu()
 
     UINT id = ID_NAVIGATE_SUBP_SUBITEM_START;
 
-    if (GetPlaybackMode() == PM_FILE || (GetPlaybackMode() == PM_CAPTURE && AfxGetAppSettings().iDefaultCaptureDevice == 1)) {
+    if (GetPlaybackMode() == PM_FILE ||
+      (GetPlaybackMode() == PM_CAPTURE && AfxGetAppSettings().iDefaultCaptureDevice == 1) ||
+      GetPlaybackMode() == PM_LIBRARY) {
         SetupNavStreamSelectSubMenu(pSub, id, 2);
     } else if (GetPlaybackMode() == PM_DVD) {
         ULONG ulStreamsAvailable, ulCurrentStream;
