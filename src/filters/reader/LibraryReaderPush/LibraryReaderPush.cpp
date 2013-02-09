@@ -117,7 +117,7 @@ HRESULT CLibraryStreamPush::FillBuffer(IMediaSample* pSample)
   }
   pSample->SetActualDataLength(size);
 
-  LOG("buffer_pos="<<buffer_pos_);
+  //LOG("buffer_pos="<<buffer_pos_);
 
   return S_OK;
 }
@@ -172,7 +172,7 @@ void CLibraryStreamPush::on_msg(yami::incoming_message & im)
       
       while (len != 0)
       {
-        LOG("len= " << len << " buffer_len_=" << buffer_len_ << " tmp_len_=" << tmp_len_);
+        //LOG("len= " << len << " buffer_len_=" << buffer_len_ << " tmp_len_=" << tmp_len_ << " buffer_pos_=" << buffer_pos_);
 
         size_t available_in_tmp = BUFSIZE - tmp_len_;
         
@@ -205,7 +205,15 @@ void CLibraryStreamPush::on_msg(yami::incoming_message & im)
         }
       }
 
-      
+      // removing already read elements
+      while (buffer_pos_ >= BUFSIZE)
+      {
+        CAutoLock lock(&buffer_lock_);
+        buffer_.erase_begin(1);
+        buffer_pos_ -= BUFSIZE;
+        buffer_len_ -= BUFSIZE;
+      }
+      //LOG("buffer_len_=" << buffer_len_ << " tmp_len_=" << tmp_len_ << " buffer_pos_=" << buffer_pos_);
     }
     catch (const std::exception& e)
     {
