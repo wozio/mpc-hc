@@ -4,7 +4,7 @@
 #include "../../../../../common/src/discovery.h"
 #include "../../../../../common/src/yamicontainer.h"
 #include "../../../../../common/src/logger.h"
-#include <boost/thread.hpp>
+#include <thread>
 #include <fstream>
 
 #define BUFSIZE 18800
@@ -137,22 +137,17 @@ HRESULT CLibraryStreamPush::OnThreadStartPlay()
 {
   yami::parameters params;
                 
-  params.set_long_long("local_channel", 37830072008705);
+  params.set_integer("channel", 950);
   params.set_string("destination", "player");
   params.set_string("endpoint", YC.endpoint());
 
-  auto_ptr<yami::outgoing_message> message(AGENT.send(DISCOVERY.get("dvb-source"), "dvb-source", "create_streaming_session", params));
+  auto_ptr<yami::outgoing_message> message(AGENT.send(DISCOVERY.get("tv"), "tv", "create_client_session", params));
 
   message->wait_for_completion(1000);
                 
   if (message->get_state() == yami::replied)
   {
-    int session_id = message->get_reply().get_integer("session");
-    params.clear();
-                
-    params.set_integer("session", session_id);
-
-    AGENT.send(DISCOVERY.get("dvb-source"), "dvb-source", "start_streaming_session", params);
+    return S_FALSE;
   }
 
   return S_OK;
