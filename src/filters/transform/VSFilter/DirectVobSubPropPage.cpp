@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include <commdlg.h>
 #include <afxdlgs.h>
 #include "DirectVobSubFilter.h"
@@ -41,7 +42,7 @@ BOOL WINAPI MyGetDialogSize(int iResourceID, DLGPROC pDlgProc, LPARAM lParam, SI
                                   pDlgProc,
                                   lParam);
 
-    if (hwnd == NULL) {
+    if (hwnd == nullptr) {
         return FALSE;
     }
 
@@ -74,14 +75,14 @@ STDMETHODIMP CDVSBasePPage::GetPageInfo(LPPROPPAGEINFO pPageInfo)
     LPOLESTR pszTitle;
     HRESULT hr = AMGetWideString(wszTitle, &pszTitle);
     if (FAILED(hr)) {
-        NOTE("No caption memory");
+        TRACE(_T("No caption memory"));
         return hr;
     }
 
     pPageInfo->cb               = sizeof(PROPPAGEINFO);
     pPageInfo->pszTitle         = pszTitle;
-    pPageInfo->pszDocString     = NULL;
-    pPageInfo->pszHelpFile      = NULL;
+    pPageInfo->pszDocString     = nullptr;
+    pPageInfo->pszHelpFile      = nullptr;
     pPageInfo->dwHelpContext    = 0;
     // Set defaults in case GetDialogSize fails
     pPageInfo->size.cx          = 340;
@@ -108,7 +109,7 @@ STDMETHODIMP CDVSBasePPage::Activate(HWND hwndParent, LPCRECT pRect, BOOL fModal
     }
 
     m_hwnd = CreateDialogParam(AfxGetResourceHandle(), MAKEINTRESOURCE(m_DialogId), hwndParent, DialogProc, (LPARAM)this);
-    if (m_hwnd == NULL) {
+    if (m_hwnd == nullptr) {
         return E_OUTOFMEMORY;
     }
 
@@ -119,11 +120,11 @@ STDMETHODIMP CDVSBasePPage::Activate(HWND hwndParent, LPCRECT pRect, BOOL fModal
 
 /* CDVSBasePPage */
 
-CDVSBasePPage::CDVSBasePPage(TCHAR* pName, LPUNKNOWN lpunk, int DialogId, int TitleId) :
-    CBasePropertyPage(pName, lpunk, DialogId, TitleId),
-    m_bIsInitialized(FALSE),
-    m_fAttached(false),
-    m_fDisableInstantUpdate(false)
+CDVSBasePPage::CDVSBasePPage(TCHAR* pName, LPUNKNOWN lpunk, int DialogId, int TitleId)
+    : CBasePropertyPage(pName, lpunk, DialogId, TitleId)
+    , m_bIsInitialized(FALSE)
+    , m_fAttached(false)
+    , m_fDisableInstantUpdate(false)
 {
 }
 
@@ -146,7 +147,7 @@ INT_PTR CDVSBasePPage::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
                         if (!m_fDisableInstantUpdate
                                 && !(HIWORD(wParam) == BN_CLICKED && LOWORD(wParam) == IDC_INSTANTUPDATE)
                                 && LOWORD(wParam) != IDC_EDIT1 && LOWORD(wParam) != IDC_ANIMWHENBUFFERING
-                                && !!theApp.GetProfileInt(ResStr(IDS_R_GENERAL), ResStr(IDS_RG_INSTANTUPDATE), 1)) {
+                                && !!theApp.GetProfileInt(ResStr(IDS_R_GENERAL), ResStr(IDS_RG_INSTANTUPDATE), TRUE)) {
                             OnApplyChanges();
                         }
                     }
@@ -184,7 +185,7 @@ HRESULT CDVSBasePPage::OnConnect(IUnknown* pUnknown)
 
 HRESULT CDVSBasePPage::OnDisconnect()
 {
-    if (m_pDirectVobSub == NULL) {
+    if (m_pDirectVobSub == nullptr) {
         return E_UNEXPECTED;
     }
 
@@ -291,10 +292,19 @@ void CDVSBasePPage::BindControl(UINT id, CWnd& control)
 
 /* CDVSMainPPage */
 
-CDVSMainPPage::CDVSMainPPage(LPUNKNOWN pUnk, HRESULT* phr) :
-    CDVSBasePPage(NAME("DirectVobSub Property Page (main)"), pUnk, IDD_DVSMAINPAGE, IDD_DVSMAINPAGE),
-    m_nLangs(0),
-    m_ppLangs(NULL)
+#pragma warning(push)
+#pragma warning(disable: 4351) // new behavior: elements of array 'array' will be default initialized
+CDVSMainPPage::CDVSMainPPage(LPUNKNOWN pUnk, HRESULT* phr)
+    : CDVSBasePPage(NAME("VSFilter Property Page (main)"), pUnk, IDD_DVSMAINPAGE, IDD_DVSMAINPAGE)
+    , m_fn()
+    , m_nLangs(0)
+    , m_ppLangs(nullptr)
+    , m_iSelectedLanguage(0)
+    , m_fOverridePlacement(false)
+    , m_PlacementXperc(50)
+    , m_PlacementYperc(90)
+    , m_fOnlyShowForcedVobSubs(false)
+    , m_ePARCompensationType(CSimpleTextSubtitle::EPCTDisabled)
 {
     BindControl(IDC_FILENAME, m_fnedit);
     BindControl(IDC_LANGCOMBO, m_langs);
@@ -305,6 +315,7 @@ CDVSMainPPage::CDVSMainPPage(LPUNKNOWN pUnk, HRESULT* phr) :
     BindControl(IDC_ONLYSHOWFORCEDSUBS, m_forcedsubs);
     BindControl(IDC_PARCOMBO, m_PARCombo);
 }
+#pragma warning(pop)
 
 CDVSMainPPage::~CDVSMainPPage()
 {
@@ -319,7 +330,7 @@ void CDVSMainPPage::FreeLangs()
         }
         CoTaskMemFree(m_ppLangs);
         m_nLangs = 0;
-        m_ppLangs = NULL;
+        m_ppLangs = nullptr;
     }
 }
 
@@ -338,7 +349,7 @@ bool CDVSMainPPage::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     if (LOWORD(wParam) == IDC_OPEN) {
                         AFX_MANAGE_STATE(AfxGetStaticModuleState());
 
-                        CFileDialog fd(TRUE, NULL, NULL,
+                        CFileDialog fd(TRUE, nullptr, nullptr,
                                        OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST,
                                        _T(".idx .smi .sub .srt .psb .ssa .ass .usf|*.idx;*.smi;*.sub;*.srt;*.psb;*.ssa;*.ass;*.usf|")
                                        _T("All files (*.*)|*.*||"),
@@ -382,7 +393,7 @@ void CDVSMainPPage::UpdateObjectData(bool fSave)
             int nLangs;
             m_pDirectVobSub->get_LanguageCount(&nLangs);
             AllocLangs(nLangs);
-            for (ptrdiff_t i = 0; i < m_nLangs; i++) {
+            for (int i = 0; i < m_nLangs; i++) {
                 m_pDirectVobSub->get_LanguageName(i, &m_ppLangs[i]);
             }
             m_pDirectVobSub->get_SelectedLanguage(&m_iSelectedLanguage);
@@ -398,12 +409,12 @@ void CDVSMainPPage::UpdateObjectData(bool fSave)
         int nLangs;
         m_pDirectVobSub->get_LanguageCount(&nLangs);
         AllocLangs(nLangs);
-        for (ptrdiff_t i = 0; i < m_nLangs; i++) {
+        for (int i = 0; i < m_nLangs; i++) {
             m_pDirectVobSub->get_LanguageName(i, &m_ppLangs[i]);
         }
         m_pDirectVobSub->get_SelectedLanguage(&m_iSelectedLanguage);
         m_pDirectVobSub->get_Placement(&m_fOverridePlacement, &m_PlacementXperc, &m_PlacementYperc);
-        m_pDirectVobSub->get_VobSubSettings(NULL, &m_fOnlyShowForcedVobSubs, NULL);
+        m_pDirectVobSub->get_VobSubSettings(nullptr, &m_fOnlyShowForcedVobSubs, nullptr);
         m_pDirectVobSub->get_TextSettings(&m_defStyle);
         m_pDirectVobSub->get_AspectRatioSettings(&m_ePARCompensationType);
     }
@@ -442,6 +453,7 @@ void CDVSMainPPage::UpdateControlData(bool fSave)
         for (ptrdiff_t i = 0; i < m_nLangs; i++) {
             m_langs.AddString(CString(m_ppLangs[i]));
         }
+        CorrectComboListWidth(m_langs);
         m_langs.SetCurSel(m_iSelectedLanguage);
 
         m_PARCombo.ResetContent();
@@ -473,8 +485,17 @@ void CDVSMainPPage::UpdateControlData(bool fSave)
 
 /* CDVSGeneralPPage */
 
-CDVSGeneralPPage::CDVSGeneralPPage(LPUNKNOWN pUnk, HRESULT* phr) :
-    CDVSBasePPage(NAME("DirectVobSub Property Page (global settings)"), pUnk, IDD_DVSGENERALPAGE, IDD_DVSGENERALPAGE)
+CDVSGeneralPPage::CDVSGeneralPPage(LPUNKNOWN pUnk, HRESULT* phr)
+    : CDVSBasePPage(NAME("VSFilter Property Page (global settings)"), pUnk, IDD_DVSGENERALPAGE, IDD_DVSGENERALPAGE)
+    , m_HorExt(0)
+    , m_VerExt(0)
+    , m_ResX2(0)
+    , m_ResX2minw(0)
+    , m_ResX2minh(0)
+    , m_LoadLevel(0)
+    , m_fExternalLoad(true)
+    , m_fWebLoad(true)
+    , m_fEmbeddedLoad(true)
 {
     BindControl(IDC_VEREXTCOMBO, m_verext);
     BindControl(IDC_MOD32FIX, m_mod32fix);
@@ -530,16 +551,16 @@ void CDVSGeneralPPage::UpdateControlData(bool fSave)
 {
     if (fSave) {
         if (m_verext.GetCurSel() >= 0) {
-            m_VerExt = m_verext.GetItemData(m_verext.GetCurSel());
+            m_VerExt = (int)m_verext.GetItemData(m_verext.GetCurSel());
         }
         m_HorExt = !!m_mod32fix.GetCheck();
         if (m_resx2.GetCurSel() >= 0) {
-            m_ResX2 = m_resx2.GetItemData(m_resx2.GetCurSel());
+            m_ResX2 = (int)m_resx2.GetItemData(m_resx2.GetCurSel());
         }
         m_ResX2minw = m_resx2w.GetPos();
         m_ResX2minh = m_resx2h.GetPos();
         if (m_load.GetCurSel() >= 0) {
-            m_LoadLevel = m_load.GetItemData(m_load.GetCurSel());
+            m_LoadLevel = (int)m_load.GetItemData(m_load.GetCurSel());
         }
         m_fExternalLoad = !!m_extload.GetCheck();
         m_fWebLoad = !!m_webload.GetCheck();
@@ -595,8 +616,16 @@ void CDVSGeneralPPage::UpdateControlData(bool fSave)
 
 /* CDVSMiscPPage */
 
-CDVSMiscPPage::CDVSMiscPPage(LPUNKNOWN pUnk, HRESULT* phr) :
-    CDVSBasePPage(NAME("DirectVobSub Property Page (misc settings)"), pUnk, IDD_DVSMISCPAGE, IDD_DVSMISCPAGE)
+CDVSMiscPPage::CDVSMiscPPage(LPUNKNOWN pUnk, HRESULT* phr)
+    : CDVSBasePPage(NAME("VSFilter Property Page (misc settings)"), pUnk, IDD_DVSMISCPAGE, IDD_DVSMISCPAGE)
+    , m_fFlipPicture(false)
+    , m_fFlipSubtitles(false)
+    , m_fHideSubtitles(false)
+    , m_fOSD(false)
+    , m_fAnimWhenBuffering(true)
+    , m_fReloaderDisabled(false)
+    , m_fSaveFullPath(false)
+    , m_uSubPictToBuffer(10)
 {
     BindControl(IDC_FLIP, m_flippic);
     BindControl(IDC_FLIPSUB, m_flipsub);
@@ -672,14 +701,19 @@ void CDVSMiscPPage::UpdateControlData(bool fSave)
         m_animwhenbuff.SetCheck(m_fAnimWhenBuffering);
         m_showosd.SetCheck(m_fOSD);
         m_autoreload.SetCheck(!m_fReloaderDisabled);
-        m_instupd.SetCheck(!!theApp.GetProfileInt(ResStr(IDS_R_GENERAL), ResStr(IDS_RG_INSTANTUPDATE), 1));
+        m_instupd.SetCheck(!!theApp.GetProfileInt(ResStr(IDS_R_GENERAL), ResStr(IDS_RG_INSTANTUPDATE), TRUE));
     }
 }
 
 /* CDVSTimingPPage */
 
-CDVSTimingPPage::CDVSTimingPPage(LPUNKNOWN pUnk, HRESULT* phr) :
-    CDVSBasePPage(NAME("DirectVobSub Timing Property Page"), pUnk, IDD_DVSTIMINGPAGE, IDD_DVSTIMINGPAGE)
+CDVSTimingPPage::CDVSTimingPPage(LPUNKNOWN pUnk, HRESULT* phr)
+    : CDVSBasePPage(NAME("VSFilter Timing Property Page"), pUnk, IDD_DVSTIMINGPAGE, IDD_DVSTIMINGPAGE)
+    , m_SubtitleSpeedMul(1000)
+    , m_SubtitleSpeedDiv(1000)
+    , m_SubtitleDelay(0)
+    , m_fMediaFPSEnabled(false)
+    , m_MediaFPS(25.0)
 {
     BindControl(IDC_MODFPS, m_modfps);
     BindControl(IDC_FPS, m_fps);
@@ -759,7 +793,7 @@ bool CDVSAboutPPage::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg) {
         case WM_INITDIALOG: {
-            SetDlgItemText(m_Dlg, IDC_VERSION, _T("DirectVobSub 2.41.") MAKE_STR(MPC_VERSION_REV) _T(" ") MPC_VERSION_ARCH _T("\nCopyright 2001-2012 MPC-HC Team"));
+            SetDlgItemText(m_Dlg, IDC_VERSION, _T("VSFilter 2.41.") MAKE_STR(MPC_VERSION_REV) _T(" ") MPC_VERSION_ARCH _T("\nCopyright 2001-2013 MPC-HC Team"));
         }
         break;
         case WM_COMMAND: {
@@ -767,11 +801,11 @@ bool CDVSAboutPPage::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 case BN_CLICKED: {
                     if (LOWORD(wParam) == IDC_HOMEPAGEBTN) {
                         AFX_MANAGE_STATE(AfxGetStaticModuleState());
-                        ShellExecute(m_Dlg, _T("open"), ResStr(IDS_URL_HOMEPAGE), NULL, NULL, SW_SHOWNORMAL);
+                        ShellExecute(m_Dlg, _T("open"), ResStr(IDS_URL_HOMEPAGE), nullptr, nullptr, SW_SHOWNORMAL);
                         return true;
                     } else if (LOWORD(wParam) == IDC_BUGREPORTBTN) {
                         AFX_MANAGE_STATE(AfxGetStaticModuleState());
-                        ShellExecute(m_Dlg, _T("open"), ResStr(IDS_URL_EMAIL), NULL, NULL, SW_SHOWNORMAL);
+                        ShellExecute(m_Dlg, _T("open"), ResStr(IDS_URL_EMAIL), nullptr, nullptr, SW_SHOWNORMAL);
                         return true;
                     }
                 }
@@ -787,8 +821,9 @@ bool CDVSAboutPPage::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 /* CDVSZoomPPage */
 
 CDVSZoomPPage::CDVSZoomPPage(LPUNKNOWN pUnk, HRESULT* phr) :
-    CDVSBasePPage(NAME("DirectVobSub Zoom Property Page"), pUnk, IDD_DVSZOOMPAGE, IDD_DVSZOOMPAGE)
+    CDVSBasePPage(NAME("VSFilter Zoom Property Page"), pUnk, IDD_DVSZOOMPAGE, IDD_DVSZOOMPAGE)
 {
+    ZeroMemory(&m_rect, sizeof(m_rect));
     BindControl(IDC_SPIN1, m_posx);
     BindControl(IDC_SPIN2, m_posy);
     BindControl(IDC_SPIN7, m_scalex);
@@ -852,7 +887,7 @@ void CDVSZoomPPage::UpdateObjectData(bool fSave)
 /* CDVSColorPPage */
 
 CDVSColorPPage::CDVSColorPPage(LPUNKNOWN pUnk, HRESULT* phr) :
-    CDVSBasePPage(NAME("DirectVobSub Color Property Page"), pUnk, IDD_DVSCOLORPAGE, IDD_DVSCOLORPAGE)
+    CDVSBasePPage(NAME("VSFilter Color Property Page"), pUnk, IDD_DVSCOLORPAGE, IDD_DVSCOLORPAGE)
 {
     BindControl(IDC_PREFLIST, m_preflist);
     BindControl(IDC_DYNCHGLIST, m_dynchglist);
@@ -941,9 +976,9 @@ void CDVSColorPPage::UpdateControlData(bool fSave)
 {
     if (fSave) {
         if ((UINT)m_preflist.GetCount() == VIHSIZE) {
-            BYTE* pData = DNew BYTE[VIHSIZE];
+            BYTE* pData = DEBUG_NEW BYTE[VIHSIZE];
 
-            for (ptrdiff_t i = 0; i < m_preflist.GetCount(); i++) {
+            for (int i = 0; i < m_preflist.GetCount(); i++) {
                 pData[i] = (BYTE)m_preflist.GetItemData(i);
             }
 
@@ -959,7 +994,7 @@ void CDVSColorPPage::UpdateControlData(bool fSave)
         m_preflist.ResetContent();
         m_dynchglist.ResetContent();
 
-        BYTE* pData = NULL;
+        BYTE* pData = nullptr;
         UINT nSize;
 
         if (!theApp.GetProfileBinary(ResStr(IDS_R_GENERAL), ResStr(IDS_RG_COLORFORMATS), &pData, &nSize)
@@ -967,14 +1002,14 @@ void CDVSColorPPage::UpdateControlData(bool fSave)
             SAFE_DELETE_ARRAY(pData);
 
             nSize = VIHSIZE;
-            pData = DNew BYTE[VIHSIZE];
+            pData = DEBUG_NEW BYTE[VIHSIZE];
             for (size_t i = 0; i < VIHSIZE; i++) {
-                pData[i] = i;
+                pData[i] = (BYTE)i;
             }
         }
 
         if (pData) {
-            for (ptrdiff_t i = 0; i < (int)nSize; i++) {
+            for (int i = 0; i < (int)nSize; i++) {
                 m_dynchglist.AddString(VIH2String(pData[i]));
                 m_dynchglist.SetItemData(i, pData[i]);
                 m_preflist.AddString(VIH2String(pData[i]));
@@ -995,7 +1030,7 @@ void CDVSColorPPage::UpdateControlData(bool fSave)
 /* CDVSPathsPPage */
 
 CDVSPathsPPage::CDVSPathsPPage(LPUNKNOWN pUnk, HRESULT* phr) :
-    CDVSBasePPage(NAME("DirectVobSub Paths Property Page"), pUnk, IDD_DVSPATHSPAGE, IDD_DVSPATHSPAGE)
+    CDVSBasePPage(NAME("VSFilter Paths Property Page"), pUnk, IDD_DVSPATHSPAGE, IDD_DVSPATHSPAGE)
 {
     BindControl(IDC_PATHLIST, m_pathlist);
     BindControl(IDC_PATHEDIT, m_path);
@@ -1034,19 +1069,19 @@ bool CDVSPathsPPage::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 case BN_CLICKED: {
                     switch (LOWORD(wParam)) {
                         case IDC_BROWSE: {
-                            TCHAR pathbuff[_MAX_PATH];
+                            TCHAR pathbuff[MAX_PATH];
 
                             BROWSEINFO bi;
                             bi.hwndOwner = m_Dlg;
-                            bi.pidlRoot = NULL;
+                            bi.pidlRoot = nullptr;
                             bi.pszDisplayName = pathbuff;
                             bi.lpszTitle = _T("");
                             bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_EDITBOX | BIF_VALIDATE | BIF_USENEWUI;
-                            bi.lpfn = NULL;
+                            bi.lpfn = nullptr;
                             bi.lParam = 0;
                             bi.iImage = 0;
 
-                            LPITEMIDLIST iil = SHBrowseForFolder(&bi);
+                            PIDLIST_ABSOLUTE iil = SHBrowseForFolder(&bi);
                             if (iil) {
                                 SHGetPathFromIDList(iil, pathbuff);
                                 m_path.SetWindowText(pathbuff);
@@ -1060,7 +1095,7 @@ bool CDVSPathsPPage::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                             int i = m_pathlist.GetCurSel();
                             if (i >= 0) {
                                 m_pathlist.DeleteString(i);
-                                i = min(i, m_pathlist.GetCount() - 1);
+                                i = std::min(i, m_pathlist.GetCount() - 1);
                                 if (i >= 0 && m_pathlist.GetCount() > 0) {
                                     m_pathlist.SetCurSel(i);
                                     m_remove.EnableWindow(i >= 3 ? TRUE : FALSE);

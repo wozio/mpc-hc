@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -69,7 +69,7 @@ public:
     void InitSettings();
 
     bool GetCustomPal(RGBQUAD* cuspal, int& tridx);
-    void SetCustomPal(RGBQUAD* cuspal, int tridx);
+    void SetCustomPal(const RGBQUAD* cuspal, int tridx);
 
     void GetDestrect(CRect& r); // destrect of m_img, considering the current alignment mode
     void GetDestrect(CRect& r, int w, int h); // this will scale it to the frame size of (w, h)
@@ -85,7 +85,7 @@ protected:
 
     void TrimExtension(CString& fn);
     bool ReadIdx(CString fn, int& ver), ReadSub(CString fn), ReadRar(CString fn), ReadIfo(CString fn);
-    bool WriteIdx(CString fn), WriteSub(CString fn);
+    bool WriteIdx(CString fn, int delay), WriteSub(CString fn);
 
     CMemFile m_sub;
 
@@ -94,26 +94,26 @@ protected:
     bool GetFrameByTimeStamp(__int64 time);
     int GetFrameIdxByTimeStamp(__int64 time);
 
-    bool SaveVobSub(CString fn);
-    bool SaveWinSubMux(CString fn);
-    bool SaveScenarist(CString fn);
-    bool SaveMaestro(CString fn);
+    bool SaveVobSub(CString fn, int delay);
+    bool SaveWinSubMux(CString fn, int delay);
+    bool SaveScenarist(CString fn, int delay);
+    bool SaveMaestro(CString fn, int delay);
 
 public:
-    typedef struct {
+    struct SubPos {
         __int64 filepos;
         __int64 start, stop;
         bool fForced;
         char vobid, cellid;
         __int64 celltimestamp;
         bool fValid;
-    } SubPos;
+    };
 
-    typedef struct {
+    struct SubLang {
         int id;
         CString name, alt;
         CAtlArray<SubPos> subpos;
-    } SubLang;
+    };
 
     int m_iLang;
     SubLang m_langs[32];
@@ -124,16 +124,16 @@ public:
 
     bool Copy(CVobSubFile& vsf);
 
-    typedef enum {
+    enum SubFormat {
         None,
         VobSub,
         WinSubMux,
         Scenarist,
         Maestro
-    } SubFormat;
+    };
 
     bool Open(CString fn);
-    bool Save(CString fn, SubFormat sf = VobSub);
+    bool Save(CString fn, int delay = 0, SubFormat sf = VobSub);
     void Close();
 
     CString GetTitle() { return m_title; }
@@ -148,6 +148,7 @@ public:
     STDMETHODIMP_(REFERENCE_TIME) GetStop(POSITION pos, double fps);
     STDMETHODIMP_(bool) IsAnimated(POSITION pos);
     STDMETHODIMP Render(SubPicDesc& spd, REFERENCE_TIME rt, double fps, RECT& bbox);
+    STDMETHODIMP GetRelativeTo(POSITION pos, RelativeTo& relativeTo);
 
     // IPersist
     STDMETHODIMP GetClassID(CLSID* pClassID);
@@ -191,6 +192,7 @@ public:
     STDMETHODIMP_(REFERENCE_TIME) GetStop(POSITION pos, double fps);
     STDMETHODIMP_(bool) IsAnimated(POSITION pos);
     STDMETHODIMP Render(SubPicDesc& spd, REFERENCE_TIME rt, double fps, RECT& bbox);
+    STDMETHODIMP GetRelativeTo(POSITION pos, RelativeTo& relativeTo);
 
     // IPersist
     STDMETHODIMP GetClassID(CLSID* pClassID);

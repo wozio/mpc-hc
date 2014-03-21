@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,7 +29,7 @@
 // COpenDlg dialog
 
 //IMPLEMENT_DYNAMIC(COpenDlg, CResizableDialog)
-COpenDlg::COpenDlg(CWnd* pParent /*=NULL*/)
+COpenDlg::COpenDlg(CWnd* pParent /*=nullptr*/)
     : CResizableDialog(COpenDlg::IDD, pParent)
     , m_path(_T(""))
     , m_path2(_T(""))
@@ -74,22 +74,26 @@ BOOL COpenDlg::OnInitDialog()
 
     m_icon.SetIcon((HICON)LoadImage(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 
-    CRecentFileList& MRU = AfxGetAppSettings().MRU;
+    CAppSettings& s = AfxGetAppSettings();
+
+    CRecentFileList& MRU = s.MRU;
     MRU.ReadList();
     m_mrucombo.ResetContent();
-    for (int i = 0; i < MRU.GetSize(); i++)
+    for (int i = 0; i < MRU.GetSize(); i++) {
         if (!MRU[i].IsEmpty()) {
             m_mrucombo.AddString(MRU[i]);
         }
+    }
     CorrectComboListWidth(m_mrucombo);
 
-    CRecentFileList& MRUDub = AfxGetAppSettings().MRUDub;
+    CRecentFileList& MRUDub = s.MRUDub;
     MRUDub.ReadList();
     m_mrucombo2.ResetContent();
-    for (int i = 0; i < MRUDub.GetSize(); i++)
+    for (int i = 0; i < MRUDub.GetSize(); i++) {
         if (!MRUDub[i].IsEmpty()) {
             m_mrucombo2.AddString(MRUDub[i]);
         }
+    }
     CorrectComboListWidth(m_mrucombo2);
 
     if (m_mrucombo.GetCount() > 0) {
@@ -112,10 +116,10 @@ BOOL COpenDlg::OnInitDialog()
 
     CRect r;
     GetWindowRect(r);
-    CSize s = r.Size();
-    SetMinTrackSize(s);
-    s.cx = 1000;
-    SetMaxTrackSize(s);
+    CSize size = r.Size();
+    SetMinTrackSize(size);
+    size.cx = 1000;
+    SetMaxTrackSize(size);
 
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE
@@ -143,7 +147,7 @@ void COpenDlg::OnBnClickedBrowsebutton()
         dwFlags |= OFN_DONTADDTORECENT;
     }
 
-    COpenFileDlg fd(mask, true, NULL, m_path, dwFlags, filter, this);
+    COpenFileDlg fd(mask, true, nullptr, m_path, dwFlags, filter, this);
     if (fd.DoModal() != IDOK) {
         return;
     }
@@ -190,7 +194,7 @@ void COpenDlg::OnBnClickedBrowsebutton2()
         dwFlags |= OFN_DONTADDTORECENT;
     }
 
-    COpenFileDlg fd(mask, false, NULL, m_path2, dwFlags, filter, this);
+    COpenFileDlg fd(mask, false, nullptr, m_path2, dwFlags, filter, this);
 
     if (fd.DoModal() != IDOK) {
         return;

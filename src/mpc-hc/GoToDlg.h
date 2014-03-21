@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,7 +22,7 @@
 #pragma once
 
 #include <afxwin.h>
-#include "afxmaskededit.h"
+#include <afxmaskededit.h>
 #include "resource.h"
 
 
@@ -35,7 +35,7 @@ class CGoToDlg : public CDialog
     enum { TYPE_TIME, TYPE_FRAME };
 
 public:
-    CGoToDlg(REFERENCE_TIME time = -1, REFERENCE_TIME maxTime = -1, double fps = 0, CWnd* pParent = NULL);   // standard constructor
+    CGoToDlg(REFERENCE_TIME time = -1, REFERENCE_TIME maxTime = -1, double fps = 0, CWnd* pParent = nullptr);   // standard constructor
     virtual ~CGoToDlg();
 
     CString m_timestr;
@@ -58,7 +58,7 @@ protected:
     DECLARE_MESSAGE_MAP()
 
 public:
-    afx_msg void OnBnClickedOk1();
-    afx_msg void OnBnClickedOk2();
+    afx_msg void OnParseTimeCode();
+    afx_msg void OnParseFrameCode();
     virtual void OnOK();
 };

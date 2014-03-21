@@ -1,5 +1,5 @@
 /*
- * (C) 2009-2012 see Authors.txt
+ * (C) 2009-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,7 +23,7 @@
 #include "BaseClasses/streams.h"
 #include <dsound.h>
 
-#include <MMReg.h>  //must be before other Wasapi headers
+#include <MMReg.h>  //must be before other WASAPI headers
 #include <strsafe.h>
 #include <mmdeviceapi.h>
 #include <avrt.h>
@@ -34,7 +34,7 @@
 #include "MpcAudioRendererSettingsWnd.h"
 #include "SoundTouch/include/SoundTouch.h"
 
-#define MpcAudioRendererName L"MPC Audio Renderer"
+#define MpcAudioRendererName L"MPC-HC Audio Renderer"
 
 // REFERENCE_TIME time units per second and per millisecond
 #define REFTIMES_PER_SEC        10000000.0
@@ -129,7 +129,7 @@ private:
     HRESULT CreateAudioClient(IMMDevice* pMMDevice, IAudioClient** ppAudioClient);
     HRESULT InitAudioClient(WAVEFORMATEX* pWaveFormatEx, IAudioClient* pAudioClient, IAudioRenderClient** ppRenderClient);
     HRESULT CheckAudioClient(WAVEFORMATEX* pWaveFormatEx);
-    bool CheckFormatChanged(WAVEFORMATEX* pWaveFormatEx, WAVEFORMATEX** ppNewWaveFormatEx);
+    bool CheckFormatChanged(const WAVEFORMATEX* pWaveFormatEx, WAVEFORMATEX** ppNewWaveFormatEx);
     HRESULT DoRenderSampleWasapi(IMediaSample* pMediaSample);
     HRESULT GetBufferSize(WAVEFORMATEX* pWaveFormatEx, REFERENCE_TIME* pHnsBufferPeriod);
 
@@ -150,10 +150,11 @@ private:
     bool isAudioClientStarted;
     DWORD lastBufferTime;
 
-    // AVRT.dll (Vista or greater
+    // avrt.dll (Vista or greater)
     typedef HANDLE(__stdcall* PTR_AvSetMmThreadCharacteristicsW)(LPCWSTR TaskName, LPDWORD TaskIndex);
     typedef BOOL (__stdcall* PTR_AvRevertMmThreadCharacteristics)(HANDLE AvrtHandle);
 
+    HMODULE m_hLibAVRT;
     PTR_AvSetMmThreadCharacteristicsW pfAvSetMmThreadCharacteristicsW;
     PTR_AvRevertMmThreadCharacteristics pfAvRevertMmThreadCharacteristics;
 

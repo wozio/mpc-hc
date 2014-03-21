@@ -51,6 +51,7 @@ private:
     CMediaFormats m_mf;
     int m_iRtspHandler;
     BOOL m_fRtspFileExtFirst;
+    bool m_bHaveRegisteredCategory;
 
     enum { COL_CATEGORY, COL_ENGINE };
 
@@ -76,11 +77,13 @@ protected:
     DECLARE_MESSAGE_MAP()
 
     afx_msg void OnMediaCategoryClicked(NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnMediaCategoryKeyDown(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnMediaCategorySelected(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnBeginEditMediaCategoryEngine(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnEditMediaCategoryEngine(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnEndEditMediaCategoryEngine(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnBnVistaModify();
+    afx_msg void OnBnWin8SetDefProg();
     afx_msg void OnBnClickedSelectAllFormats();
     afx_msg void OnBnClickedSelectVideoFormats();
     afx_msg void OnBnClickedSelectAudioFormats();
@@ -89,4 +92,5 @@ protected:
     afx_msg void OnFilesAssocModified();
     afx_msg void OnUpdateButtonDefault(CCmdUI* pCmdUI);
     afx_msg void OnUpdateButtonSet(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateBnWin8SetDefProg(CCmdUI* pCmdUI);
 };

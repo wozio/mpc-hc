@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -70,7 +70,7 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* pmt)
 HRESULT CSubtitleInputPin::CompleteConnect(IPin* pReceivePin)
 {
     if (m_mt.majortype == MEDIATYPE_Text) {
-        if (!(m_pSubStream = DNew CRenderedTextSubtitle(m_pSubLock))) {
+        if (!(m_pSubStream = DEBUG_NEW CRenderedTextSubtitle(m_pSubLock))) {
             return E_FAIL;
         }
         CRenderedTextSubtitle* pRTS = (CRenderedTextSubtitle*)(ISubStream*)m_pSubStream;
@@ -83,14 +83,22 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin* pReceivePin)
         CString name;
         LCID    lcid = 0;
 
-        if (psi != NULL) {
+        if (psi != nullptr) {
             dwOffset = psi->dwOffset;
 
             name = ISO6392ToLanguage(psi->IsoLang);
             lcid = ISO6392ToLcid(psi->IsoLang);
 
-            if (wcslen(psi->TrackName) > 0) {
-                name += (!name.IsEmpty() ? _T(", ") : _T("")) + CString(psi->TrackName);
+            CString trackName(psi->TrackName);
+            trackName.Trim();
+            if (!trackName.IsEmpty()) {
+                if (!name.IsEmpty()) {
+                    if (trackName[0] != _T('(') && trackName[0] != _T('[')) {
+                        name += _T(",");
+                    }
+                    name += _T(" ");
+                }
+                name += trackName;
             }
             if (name.IsEmpty()) {
                 name = _T("Unknown");
@@ -105,7 +113,7 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin* pReceivePin)
                 || m_mt.subtype == MEDIASUBTYPE_SSA
                 || m_mt.subtype == MEDIASUBTYPE_ASS
                 || m_mt.subtype == MEDIASUBTYPE_ASS2) {
-            if (!(m_pSubStream = DNew CRenderedTextSubtitle(m_pSubLock))) {
+            if (!(m_pSubStream = DEBUG_NEW CRenderedTextSubtitle(m_pSubLock))) {
                 return E_FAIL;
             }
             CRenderedTextSubtitle* pRTS = (CRenderedTextSubtitle*)(ISubStream*)m_pSubStream;
@@ -128,13 +136,13 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin* pReceivePin)
                 pRTS->Open(mt.pbFormat + dwOffset, mt.cbFormat - dwOffset, DEFAULT_CHARSET, pRTS->m_name);
             }
         } else if (m_mt.subtype == MEDIASUBTYPE_VOBSUB) {
-            if (!(m_pSubStream = DNew CVobSubStream(m_pSubLock))) {
+            if (!(m_pSubStream = DEBUG_NEW CVobSubStream(m_pSubLock))) {
                 return E_FAIL;
             }
             CVobSubStream* pVSS = (CVobSubStream*)(ISubStream*)m_pSubStream;
             pVSS->Open(name, m_mt.pbFormat + dwOffset, m_mt.cbFormat - dwOffset);
         } else if (IsHdmvSub(&m_mt)) {
-            if (!(m_pSubStream = DNew CRenderedHdmvSubtitle(m_pSubLock, (m_mt.subtype == MEDIASUBTYPE_DVB_SUBTITLES) ? ST_DVB : ST_HDMV, name, lcid))) {
+            if (!(m_pSubStream = DEBUG_NEW CRenderedHdmvSubtitle(m_pSubLock, (m_mt.subtype == MEDIASUBTYPE_DVB_SUBTITLES) ? ST_DVB : ST_HDMV, name, lcid))) {
                 return E_FAIL;
             }
         }
@@ -148,7 +156,7 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin* pReceivePin)
 HRESULT CSubtitleInputPin::BreakConnect()
 {
     RemoveSubStream(m_pSubStream);
-    m_pSubStream = NULL;
+    m_pSubStream = nullptr;
 
     ASSERT(IsStopped());
 
@@ -159,10 +167,10 @@ STDMETHODIMP CSubtitleInputPin::ReceiveConnection(IPin* pConnector, const AM_MED
 {
     if (m_Connected) {
         RemoveSubStream(m_pSubStream);
-        m_pSubStream = NULL;
+        m_pSubStream = nullptr;
 
         m_Connected->Release();
-        m_Connected = NULL;
+        m_Connected = nullptr;
     }
 
     return __super::ReceiveConnection(pConnector, pmt);
@@ -199,8 +207,8 @@ STDMETHODIMP CSubtitleInputPin::NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME
 interface __declspec(uuid("D3D92BC3-713B-451B-9122-320095D51EA5"))
 IMpeg2DemultiplexerTesting :
 public IUnknown {
-    STDMETHOD(GetMpeg2StreamType)(ULONG * plType) = NULL;
-    STDMETHOD(toto)() = NULL;
+    STDMETHOD(GetMpeg2StreamType)(ULONG * plType) PURE;
+    STDMETHOD(toto)() PURE;
 };
 
 STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
@@ -219,9 +227,9 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
     tStart += m_tStart;
     tStop += m_tStart;
 
-    BYTE* pData = NULL;
+    BYTE* pData = nullptr;
     hr = pSample->GetPointer(&pData);
-    if (FAILED(hr) || pData == NULL) {
+    if (FAILED(hr) || pData == nullptr) {
         return hr;
     }
 
@@ -310,15 +318,15 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
                 CAtlList<CStringW> sl;
                 Explode(str, sl, ',', fields);
                 if (sl.GetCount() == (size_t)fields) {
-                    stse.readorder = wcstol(sl.RemoveHead(), NULL, 10);
-                    stse.layer = wcstol(sl.RemoveHead(), NULL, 10);
+                    stse.readorder = wcstol(sl.RemoveHead(), nullptr, 10);
+                    stse.layer = wcstol(sl.RemoveHead(), nullptr, 10);
                     stse.style = sl.RemoveHead();
                     stse.actor = sl.RemoveHead();
-                    stse.marginRect.left = wcstol(sl.RemoveHead(), NULL, 10);
-                    stse.marginRect.right = wcstol(sl.RemoveHead(), NULL, 10);
-                    stse.marginRect.top = stse.marginRect.bottom = wcstol(sl.RemoveHead(), NULL, 10);
+                    stse.marginRect.left = wcstol(sl.RemoveHead(), nullptr, 10);
+                    stse.marginRect.right = wcstol(sl.RemoveHead(), nullptr, 10);
+                    stse.marginRect.top = stse.marginRect.bottom = wcstol(sl.RemoveHead(), nullptr, 10);
                     if (fields == 10) {
-                        stse.marginRect.bottom = wcstol(sl.RemoveHead(), NULL, 10);
+                        stse.marginRect.bottom = wcstol(sl.RemoveHead(), nullptr, 10);
                     }
                     stse.effect = sl.RemoveHead();
                     stse.str = sl.RemoveHead();
@@ -334,7 +342,6 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
             CVobSubStream* pVSS = (CVobSubStream*)(ISubStream*)m_pSubStream;
             pVSS->Add(tStart, tStop, pData, len);
         } else if (IsHdmvSub(&m_mt)) {
-            CAutoLock cAutoLock3(m_pSubLock);
             CRenderedHdmvSubtitle* pHdmvSubtitle = (CRenderedHdmvSubtitle*)(ISubStream*)m_pSubStream;
             pHdmvSubtitle->ParseSample(pSample);
         }
@@ -351,11 +358,24 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
     return hr;
 }
 
+STDMETHODIMP CSubtitleInputPin::EndOfStream(void)
+{
+    HRESULT hr = __super::EndOfStream();
+
+    if (SUCCEEDED(hr) && IsHdmvSub(&m_mt)) {
+        CAutoLock cAutoLock(m_pSubLock);
+        CRenderedHdmvSubtitle* pHdmvSubtitle = (CRenderedHdmvSubtitle*)(ISubStream*)m_pSubStream;
+        pHdmvSubtitle->EndOfStream();
+    }
+
+    return hr;
+}
+
 bool CSubtitleInputPin::IsHdmvSub(const CMediaType* pmt)
 {
     return pmt->majortype == MEDIATYPE_Subtitle && (pmt->subtype == MEDIASUBTYPE_HDMVSUB ||         // Blu ray presentation graphics
-            pmt->subtype == MEDIASUBTYPE_DVB_SUBTITLES ||   // DVB subtitles
-            (pmt->subtype == MEDIASUBTYPE_NULL && pmt->formattype == FORMAT_SubtitleInfo)) // Workaround : support for Haali PGS
+            pmt->subtype == MEDIASUBTYPE_DVB_SUBTITLES ||                                           // DVB subtitles
+            (pmt->subtype == MEDIASUBTYPE_NULL && pmt->formattype == FORMAT_SubtitleInfo))          // Workaround : support for Haali PGS
            ? true
            : false;
 }

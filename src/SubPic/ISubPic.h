@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,19 +29,31 @@
 struct SubPicDesc {
     int type;
     int w, h, bpp, pitch, pitchUV;
-    void* bits;
+    BYTE* bits;
     BYTE* bitsU;
     BYTE* bitsV;
     RECT vidrect; // video rectangle
 
-    struct SubPicDesc() {
-        type = 0;
-        w = h = bpp = pitch = pitchUV = 0;
-        bits = NULL;
-        bitsU = bitsV = NULL;
+    struct SubPicDesc()
+        : type(0)
+        , w(0)
+        , h(0)
+        , bpp(0)
+        , pitch(0)
+        , pitchUV(0)
+        , bits(nullptr)
+        , bitsU(nullptr)
+        , bitsV(nullptr) {
+        ZeroMemory(&vidrect, sizeof(vidrect));
     }
 };
 #pragma pack(pop)
+
+enum RelativeTo {
+    WINDOW,
+    VIDEO,
+    BEST_FIT
+};
 
 //
 // ISubPic
@@ -70,14 +82,19 @@ public IUnknown {
     STDMETHOD(Lock)(SubPicDesc& spd /*[out]*/) PURE;
     STDMETHOD(Unlock)(RECT* pDirtyRect /*[in]*/) PURE;
 
-    STDMETHOD(AlphaBlt)(RECT * pSrc, RECT * pDst, SubPicDesc* pTarget = NULL /*[in]*/) PURE;
-    STDMETHOD(GetSourceAndDest)(SIZE* pSize /*[in]*/, RECT* pRcSource /*[out]*/, RECT* pRcDest /*[out]*/) PURE;
+    STDMETHOD(AlphaBlt)(RECT * pSrc, RECT * pDst, SubPicDesc* pTarget = nullptr /*[in]*/) PURE;
+    STDMETHOD(GetSourceAndDest)(RECT rcWindow /*[in]*/, RECT rcVideo /*[in]*/, RECT* pRcSource /*[out]*/, RECT* pRcDest /*[out]*/) PURE;
     STDMETHOD(SetVirtualTextureSize)(const SIZE pSize, const POINT pTopLeft) PURE;
+    STDMETHOD(GetRelativeTo)(RelativeTo* pRelativeTo /*[out]*/) PURE;
+    STDMETHOD(SetRelativeTo)(RelativeTo relativeTo /*[in]*/) PURE;
 
     STDMETHOD_(REFERENCE_TIME, GetSegmentStart)() PURE;
     STDMETHOD_(REFERENCE_TIME, GetSegmentStop)() PURE;
     STDMETHOD_(void, SetSegmentStart)(REFERENCE_TIME rtStart) PURE;
     STDMETHOD_(void, SetSegmentStop)(REFERENCE_TIME rtStop) PURE;
+
+    STDMETHOD_(bool, GetInverseAlpha)() PURE;
+    STDMETHOD_(void, SetInverseAlpha)(bool bInverted) PURE;
 };
 
 //
@@ -119,6 +136,7 @@ public IUnknown {
 
     STDMETHOD(Render)(SubPicDesc & spd, REFERENCE_TIME rt, double fps, RECT & bbox) PURE;
     STDMETHOD(GetTextureSize)(POSITION pos, SIZE & MaxTextureSize, SIZE & VirtualSize, POINT & VirtualTopLeft) PURE;
+    STDMETHOD(GetRelativeTo)(POSITION pos, RelativeTo & relativeTo) PURE;
 };
 
 //
@@ -137,7 +155,7 @@ public IUnknown {
     STDMETHOD(Invalidate)(REFERENCE_TIME rtInvalidate = -1) PURE;
     STDMETHOD_(bool, LookupSubPic)(REFERENCE_TIME rtNow /*[in]*/, CComPtr<ISubPic>& pSubPic /*[out]*/) PURE;
 
-    STDMETHOD(GetStats)(int & nSubPics, REFERENCE_TIME & rtNow, REFERENCE_TIME & rtStart, REFERENCE_TIME& rtStop /*[out]*/) PURE;
+    STDMETHOD(GetStats)(int& nSubPics, REFERENCE_TIME & rtNow, REFERENCE_TIME & rtStart, REFERENCE_TIME& rtStop /*[out]*/) PURE;
     STDMETHOD(GetStats)(int nSubPic /*[in]*/, REFERENCE_TIME & rtStart, REFERENCE_TIME& rtStop /*[out]*/) PURE;
 };
 
@@ -164,7 +182,7 @@ public IUnknown {
 
     STDMETHOD(GetDIB)(BYTE * lpDib, DWORD * size) PURE;
 
-    STDMETHOD(SetVideoAngle)(Vector v, bool fRepaint = true) PURE;
+    STDMETHOD(SetVideoAngle)(Vector v) PURE;
     STDMETHOD(SetPixelShader)(LPCSTR pSrcData, LPCSTR pTarget) PURE;
 
     STDMETHOD_(bool, ResetDevice)() PURE;

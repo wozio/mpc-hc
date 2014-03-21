@@ -11,9 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BaseSub.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CCDecoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VobSubImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderingCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -125,6 +125,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\Utf8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

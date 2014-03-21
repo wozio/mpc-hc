@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -103,12 +103,12 @@ CFGFilterRegistry::CFGFilterRegistry(IMoniker* pMoniker, UINT64 merit)
         return;
     }
 
-    LPOLESTR str = NULL;
+    LPOLESTR str = nullptr;
     if (FAILED(m_pMoniker->GetDisplayName(0, 0, &str))) {
         return;
     }
     m_DisplayName = m_name = str;
-    CoTaskMemFree(str), str = NULL;
+    CoTaskMemFree(str), str = nullptr;
 
     QueryProperties();
 
@@ -144,19 +144,19 @@ void CFGFilterRegistry::QueryProperties()
 {
     ASSERT(m_pMoniker);
     CComPtr<IPropertyBag> pPB;
-    if (SUCCEEDED(m_pMoniker->BindToStorage(0, 0, IID_IPropertyBag, (void**)&pPB))) {
+    if (SUCCEEDED(m_pMoniker->BindToStorage(0, 0, IID_PPV_ARGS(&pPB)))) {
         CComVariant var;
-        if (SUCCEEDED(pPB->Read(CComBSTR(_T("FriendlyName")), &var, NULL))) {
+        if (SUCCEEDED(pPB->Read(CComBSTR(_T("FriendlyName")), &var, nullptr))) {
             m_name = var.bstrVal;
             var.Clear();
         }
 
-        if (SUCCEEDED(pPB->Read(CComBSTR(_T("CLSID")), &var, NULL))) {
+        if (SUCCEEDED(pPB->Read(CComBSTR(_T("CLSID")), &var, nullptr))) {
             CLSIDFromString(var.bstrVal, &m_clsid);
             var.Clear();
         }
 
-        if (SUCCEEDED(pPB->Read(CComBSTR(_T("FilterData")), &var, NULL))) {
+        if (SUCCEEDED(pPB->Read(CComBSTR(_T("FilterData")), &var, nullptr))) {
             BSTR* pstr;
             if (SUCCEEDED(SafeArrayAccessData(var.parray, (void**)&pstr))) {
                 ExtractFilterData((BYTE*)pstr, var.parray->cbElements * (var.parray->rgsabound[0].cElements));
@@ -181,9 +181,9 @@ CFGFilterRegistry::CFGFilterRegistry(const CLSID& clsid, UINT64 merit)
 
     if (ERROR_SUCCESS == key.Open(HKEY_CLASSES_ROOT, _T("CLSID\\") + guid, KEY_READ)) {
         ULONG nChars = 0;
-        if (ERROR_SUCCESS == key.QueryStringValue(NULL, NULL, &nChars)) {
+        if (ERROR_SUCCESS == key.QueryStringValue(nullptr, nullptr, &nChars)) {
             CString name;
-            if (ERROR_SUCCESS == key.QueryStringValue(NULL, name.GetBuffer(nChars), &nChars)) {
+            if (ERROR_SUCCESS == key.QueryStringValue(nullptr, name.GetBuffer(nChars), &nChars)) {
                 name.ReleaseBuffer(nChars);
                 m_name = name;
             }
@@ -216,7 +216,7 @@ CFGFilterRegistry::CFGFilterRegistry(const CLSID& clsid, UINT64 merit)
 
         if (key) {
             ULONG nChars = 0;
-            if (ERROR_SUCCESS == key.QueryStringValue(_T("FriendlyName"), NULL, &nChars)) {
+            if (ERROR_SUCCESS == key.QueryStringValue(_T("FriendlyName"), nullptr, &nChars)) {
                 CString name;
                 if (ERROR_SUCCESS == key.QueryStringValue(_T("FriendlyName"), name.GetBuffer(nChars), &nChars)) {
                     name.ReleaseBuffer(nChars);
@@ -225,7 +225,7 @@ CFGFilterRegistry::CFGFilterRegistry(const CLSID& clsid, UINT64 merit)
             }
 
             ULONG nBytes = 0;
-            if (ERROR_SUCCESS == key.QueryBinaryValue(_T("FilterData"), NULL, &nBytes)) {
+            if (ERROR_SUCCESS == key.QueryBinaryValue(_T("FilterData"), nullptr, &nBytes)) {
                 CAutoVectorPtr<BYTE> buff;
                 if (buff.Allocate(nBytes) && ERROR_SUCCESS == key.QueryBinaryValue(_T("FilterData"), buff, &nBytes)) {
                     ExtractFilterData(buff, nBytes);
@@ -248,7 +248,7 @@ HRESULT CFGFilterRegistry::Create(IBaseFilter** ppBF, CInterfaceList<IUnknown, &
     HRESULT hr = E_FAIL;
 
     if (m_pMoniker) {
-        if (SUCCEEDED(hr = m_pMoniker->BindToObject(0, 0, IID_IBaseFilter, (void**)ppBF))) {
+        if (SUCCEEDED(hr = m_pMoniker->BindToObject(0, 0, IID_PPV_ARGS(ppBF)))) {
             m_clsid = ::GetCLSID(*ppBF);
         }
     } else if (m_clsid != GUID_NULL) {
@@ -276,7 +276,7 @@ public IUnknown {
 void CFGFilterRegistry::ExtractFilterData(BYTE* p, UINT len)
 {
     CComPtr<IAMFilterData> pFD;
-    BYTE* ptr = NULL;
+    BYTE* ptr = nullptr;
 
     if (SUCCEEDED(pFD.CoCreateInstance(CLSID_FilterMapper2))
             && SUCCEEDED(pFD->ParseFilterData(p, len, (BYTE**)&ptr))) {
@@ -408,7 +408,7 @@ void CFGFilterRegistry::ExtractFilterData(BYTE* p, UINT len)
 CFGFilterFile::CFGFilterFile(const CLSID& clsid, CString path, CStringW name, UINT64 merit)
     : CFGFilter(clsid, name, merit)
     , m_path(path)
-    , m_hInst(NULL)
+    , m_hInst(nullptr)
 {
 }
 
@@ -445,7 +445,7 @@ HRESULT CFGFilterVideoRenderer::Create(IBaseFilter** ppBF, CInterfaceList<IUnkno
             || m_clsid == CLSID_madVRAllocatorPresenter
             || m_clsid == CLSID_EVRAllocatorPresenter
             || m_clsid == CLSID_SyncAllocatorPresenter) {
-        bool bFullscreen = (AfxGetApp()->m_pMainWnd != NULL) && (((CMainFrame*)AfxGetApp()->m_pMainWnd)->IsD3DFullScreenMode());
+        bool bFullscreen = (AfxGetApp()->m_pMainWnd != nullptr) && (((CMainFrame*)AfxGetApp()->m_pMainWnd)->IsD3DFullScreenMode());
         if (SUCCEEDED(CreateAP7(m_clsid, m_hWnd, &pCAP))
                 || SUCCEEDED(CreateAP9(m_clsid, m_hWnd, bFullscreen, &pCAP))
                 || SUCCEEDED(CreateEVR(m_clsid, m_hWnd, bFullscreen, &pCAP))
@@ -454,6 +454,15 @@ HRESULT CFGFilterVideoRenderer::Create(IBaseFilter** ppBF, CInterfaceList<IUnkno
             if (SUCCEEDED(hr = pCAP->CreateRenderer(&pRenderer))) {
                 *ppBF = CComQIPtr<IBaseFilter>(pRenderer).Detach();
                 pUnks.AddTail(pCAP);
+                if (CComQIPtr<ISubPicAllocatorPresenter2> pCAP2 = pCAP) {
+                    pUnks.AddTail(pCAP2);
+                }
+                // madVR supports calling IVideoWindow::put_Owner before the pins are connected
+                if (m_clsid == CLSID_madVRAllocatorPresenter) {
+                    if (CComQIPtr<IVideoWindow> pVW = pCAP) {
+                        pVW->put_Owner((OAHWND)m_hWnd);
+                    }
+                }
             }
         }
     } else {
@@ -510,53 +519,53 @@ void CFGFilterList::RemoveAll()
 
 void CFGFilterList::Insert(CFGFilter* pFGF, int group, bool exactmatch, bool autodelete)
 {
-    if (CFGFilterRegistry* f1r = dynamic_cast<CFGFilterRegistry*>(pFGF)) {
-        POSITION pos = m_filters.GetHeadPosition();
-        while (pos) {
-            filter_t& f2 = m_filters.GetNext(pos);
+    bool bInsert = true;
 
-            if (group != f2.group) {
-                continue;
-            }
+    TRACE(_T("FGM: Inserting %d %d %016I64x '%s' --> "), group, exactmatch, pFGF->GetMerit(),
+          pFGF->GetName().IsEmpty() ? CStringFromGUID(pFGF->GetCLSID()) : CString(pFGF->GetName()));
 
-            if (CFGFilterRegistry* f2r = dynamic_cast<CFGFilterRegistry*>(f2.pFGF)) {
-                if (f1r->GetMoniker() && f2r->GetMoniker() && S_OK == f1r->GetMoniker()->IsEqual(f2r->GetMoniker())
-                        || f1r->GetCLSID() != GUID_NULL && f1r->GetCLSID() == f2r->GetCLSID()) {
-                    TRACE(_T("FGM: Inserting %d %d %016I64x '%s' NOT!\n"),
-                          group, exactmatch, pFGF->GetMerit(),
-                          pFGF->GetName().IsEmpty() ? CStringFromGUID(pFGF->GetCLSID()) : CString(pFGF->GetName()));
-
-                    if (autodelete) {
-                        delete pFGF;
-                    }
-                    return;
-                }
-            }
-        }
-    }
+    CFGFilterRegistry* pFGFR = dynamic_cast<CFGFilterRegistry*>(pFGF);
 
     POSITION pos = m_filters.GetHeadPosition();
     while (pos) {
-        if (m_filters.GetNext(pos).pFGF == pFGF) {
-            TRACE(_T("FGM: Inserting %d %d %016I64x '%s' DUP!\n"),
-                  group, exactmatch, pFGF->GetMerit(),
-                  pFGF->GetName().IsEmpty() ? CStringFromGUID(pFGF->GetCLSID()) : CString(pFGF->GetName()));
+        filter_t& f = m_filters.GetNext(pos);
 
-            if (autodelete) {
-                delete pFGF;
+        if (pFGF == f.pFGF) {
+            TRACE(_T("Rejected (exact duplicate)\n"));
+            bInsert = false;
+            break;
+        }
+
+        if (group != f.group) {
+            continue;
+        }
+
+        if (pFGF->GetCLSID() != GUID_NULL && pFGF->GetCLSID() == f.pFGF->GetCLSID()
+                && f.pFGF->GetMerit() == MERIT64_DO_NOT_USE) {
+            TRACE(_T("Rejected (same filter with merit DO_NOT_USE already in the list)\n"));
+            bInsert = false;
+            break;
+        }
+
+        if (CFGFilterRegistry* pFGFR2 = dynamic_cast<CFGFilterRegistry*>(f.pFGF)) {
+            if (pFGFR && pFGFR->GetMoniker() && pFGFR2->GetMoniker() && S_OK == pFGFR->GetMoniker()->IsEqual(pFGFR2->GetMoniker())) {
+                TRACE(_T("Rejected (duplicated moniker)\n"));
+                bInsert = false;
+                break;
             }
-            return;
         }
     }
 
-    TRACE(_T("FGM: Inserting %d %d %016I64x '%s'\n"),
-          group, exactmatch, pFGF->GetMerit(),
-          pFGF->GetName().IsEmpty() ? CStringFromGUID(pFGF->GetCLSID()) : CString(pFGF->GetName()));
+    if (bInsert) {
+        TRACE(_T("Success\n"));
 
-    filter_t f = {(int)m_filters.GetCount(), pFGF, group, exactmatch, autodelete};
-    m_filters.AddTail(f);
+        filter_t f = {(int)m_filters.GetCount(), pFGF, group, exactmatch, autodelete};
+        m_filters.AddTail(f);
 
-    m_sortedfilters.RemoveAll();
+        m_sortedfilters.RemoveAll();
+    } else if (autodelete) {
+        delete pFGF;
+    }
 }
 
 POSITION CFGFilterList::GetHeadPosition()
@@ -569,10 +578,11 @@ POSITION CFGFilterList::GetHeadPosition()
             sort[i] = m_filters.GetNext(pos);
         }
         qsort(&sort[0], sort.GetCount(), sizeof(sort[0]), filter_cmp);
-        for (size_t i = 0; i < sort.GetCount(); i++)
+        for (size_t i = 0; i < sort.GetCount(); i++) {
             if (sort[i].pFGF->GetMerit() >= MERIT64_DO_USE) {
                 m_sortedfilters.AddTail(sort[i].pFGF);
             }
+        }
     }
 
 #ifdef _DEBUG
@@ -605,6 +615,13 @@ int CFGFilterList::filter_cmp(const void* a, const void* b)
         return +1;
     }
 
+    if (fa->pFGF->GetMerit() > fb->pFGF->GetMerit()) {
+        return -1;
+    }
+    if (fa->pFGF->GetMerit() < fb->pFGF->GetMerit()) {
+        return +1;
+    }
+
     if (fa->pFGF->GetCLSID() == fb->pFGF->GetCLSID()) {
         CFGFilterFile* fgfa = dynamic_cast<CFGFilterFile*>(fa->pFGF);
         CFGFilterFile* fgfb = dynamic_cast<CFGFilterFile*>(fb->pFGF);
@@ -615,13 +632,6 @@ int CFGFilterList::filter_cmp(const void* a, const void* b)
         if (!fgfa && fgfb) {
             return +1;
         }
-    }
-
-    if (fa->pFGF->GetMerit() > fb->pFGF->GetMerit()) {
-        return -1;
-    }
-    if (fa->pFGF->GetMerit() < fb->pFGF->GetMerit()) {
-        return +1;
     }
 
     if (fa->exactmatch && !fb->exactmatch) {

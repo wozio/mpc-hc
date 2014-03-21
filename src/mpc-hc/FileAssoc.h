@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -52,6 +52,8 @@ private:
     static LPCTSTR strRegisteredAppKey;
     static LPCTSTR strRegAppFileAssocKey;
 
+    static bool m_bNoRecentDocs;
+
     static const CString strOpenCommand;
     static const CString strEnqueueCommand;
 
@@ -74,13 +76,15 @@ public:
     static bool FreeIconLib();
     static bool SaveIconLibVersion();
 
+    static void SetNoRecentDocs(bool bNoRecentDocs, bool bUpdateAssocs = false);
+
     static bool RegisterApp();
 
     static bool Register(CString ext, CString strLabel, bool bRegister, bool bRegisterContextMenuEntries, bool bAssociatedWithIcon);
     static bool IsRegistered(CString ext);
     static bool AreRegisteredFileContextMenuEntries(CString strExt);
 
-    static bool Register(CMediaFormatCategory& mfc, bool bRegister, bool bRegisterContextMenuEntries, bool bAssociatedWithIcon);
+    static bool Register(const CMediaFormatCategory& mfc, bool bRegister, bool bRegisterContextMenuEntries, bool bAssociatedWithIcon);
     static reg_state_t IsRegistered(const CMediaFormatCategory& mfc);
     static reg_state_t AreRegisteredFileContextMenuEntries(const CMediaFormatCategory& mfc);
 
@@ -96,4 +100,6 @@ public:
     static bool ReAssocIcons(const CAtlList<CString>& exts);
 
     static void CheckIconsAssoc();
+
+    static bool ShowWindowsAssocDialog();
 };

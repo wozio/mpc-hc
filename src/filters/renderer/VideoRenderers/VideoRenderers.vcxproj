@@ -22,8 +22,10 @@
     <ProjectGuid>{FB565A7A-50DC-4A0D-852D-5E7F74DAB82C}</ProjectGuid>
     <RootNamespace>VideoRenderers</RootNamespace>
     <Keyword>MFCProj</Keyword>
+    <ProjectName>VideoRenderers</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\..\..\platform.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>Static</UseOfMfc>
@@ -69,7 +71,6 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -121,6 +122,7 @@
     <ClCompile Include="DX9RenderingEngine.cpp" />
     <ClCompile Include="DXRAllocatorPresenter.cpp" />
     <ClCompile Include="EVRAllocatorPresenter.cpp" />
+    <ClCompile Include="FocusThread.cpp" />
     <ClCompile Include="IPinHook.cpp" />
     <ClCompile Include="MacrovisionKicker.cpp" />
     <ClCompile Include="madVRAllocatorPresenter.cpp" />
@@ -149,6 +151,7 @@
     <ClInclude Include="DX9RenderingEngine.h" />
     <ClInclude Include="DXRAllocatorPresenter.h" />
     <ClInclude Include="EVRAllocatorPresenter.h" />
+    <ClInclude Include="FocusThread.h" />
     <ClInclude Include="IPinHook.h" />
     <ClInclude Include="IQTVideoSurface.h" />
     <ClInclude Include="MacrovisionKicker.h" />
@@ -166,12 +169,6 @@
     <ClInclude Include="SyncRenderer.h" />
     <ClInclude Include="VMR7AllocatorPresenter.h" />
     <ClInclude Include="VMR9AllocatorPresenter.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\DSUtil\DSUtil.vcxproj">
-      <Project>{fc70988b-1ae5-4381-866d-4f405e28ac42}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

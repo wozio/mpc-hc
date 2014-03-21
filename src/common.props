@@ -1,25 +1,29 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <IntDir>$(SolutionDir)bin\obj\$(Configuration)_$(PlatformName)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)bin\lib\$(Configuration)_$(PlatformName)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Filter|Win32'">$(SolutionDir)bin\Filters_x86_Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Filter|x64'">$(SolutionDir)bin\Filters_x64_Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Filter|Win32'">$(SolutionDir)bin\Filters_x86\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Filter|x64'">$(SolutionDir)bin\Filters_x64\</OutDir>
     <LinkIncremental Condition="'$(Configuration)'=='Debug' Or '$(Configuration)'=='Debug Filter' Or '$(Configuration)'=='Debug Lite'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Release Filter' Or '$(Configuration)'=='Release Lite'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalOptions>/w34706 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(ANALYZE)'=='true'">/wd4244 /wd4996 /wd6031 /wd6309 /wd6387 %(AdditionalOptions)</AdditionalOptions>
-      <EnablePREfast Condition="'$(Platform)'=='Win32' And '$(ANALYZE)'=='true'">true</EnablePREfast>
+      <AdditionalOptions>/w34701 /w34706 /d2Zi+ %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(ANALYZE)'=='true'">/wd4005 /wd6031 /wd6246 /wd6309 /wd6387 /wd28204 %(AdditionalOptions)</AdditionalOptions>
+      <EnablePREfast Condition="'$(ANALYZE)'=='true'">true</EnablePREfast>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <ExceptionHandling>Sync</ExceptionHandling>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PreprocessorDefinitions>WINVER=0x0601;PSAPI_VERSION=1;_WINDOWS;WINDOWS;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug Filter' Or '$(Configuration)'=='Release Filter'">STANDALONE_FILTER;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;WINDOWS;WINVER=0x06010000;_WIN32_WINNT=0x06010000;_WIN32_IE=0x0800;PSAPI_VERSION=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(NOMINMAX)'!='False'">NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Debug Filter' Or '$(Configuration)'=='Release Filter'">STANDALONE_FILTER;_USRDLL;_AFX_NO_MFC_CONTROLS_IN_DIALOGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='Win32'">WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
@@ -54,6 +58,9 @@
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
+    <Link>
+      <ImageHasSafeExceptionHandlers Condition="'$(Platform)'=='Win32'">false</ImageHasSafeExceptionHandlers>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Release Filter' Or '$(Configuration)'=='Release Lite'">
     <ClCompile>
@@ -62,20 +69,20 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers Condition="'$(Platform)'=='Win32'">true</OmitFramePointers>
+      <OmitFramePointers Condition="'$(Platform)'=='Win32'">false</OmitFramePointers>
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StringPooling>true</StringPooling>
-      <WholeProgramOptimization Condition="'$(UseLTCG)'=='true'">true</WholeProgramOptimization>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Lib>
-      <LinkTimeCodeGeneration Condition="'$(UseLTCG)'=='true'">true</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <LargeAddressAware Condition="'$(Platform)'=='Win32'">true</LargeAddressAware>
-      <LinkTimeCodeGeneration Condition="'$(UseLTCG)'=='true'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <MergeSections>.rdata=.text</MergeSections>
       <OptimizeReferences>true</OptimizeReferences>
       <SetChecksum>true</SetChecksum>

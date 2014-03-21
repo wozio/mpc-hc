@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,25 +22,30 @@
 #pragma once
 
 #include "MPCPngImage.h"
+#include "MouseTouch.h"
 
-class CChildView : public CWnd
+class CChildView : public CMouseWnd
 {
     CRect m_vrect;
 
-    DWORD m_lastlmdowntime;
-    CPoint m_lastlmdownpoint;
-
-    CCritSec m_csLogo;
     CMPCPngImage m_logo;
 
+    CMainFrame* m_pMainFrame;
+
+    bool m_bSwitchingFullscreen;
+
+    EventClient m_eventc;
+
+    void EventCallback(MpcEvent ev);
+
 public:
-    CChildView();
+    CChildView(CMainFrame* pMainFrm);
     virtual ~CChildView();
 
     DECLARE_DYNAMIC(CChildView)
 
 public:
-    void SetVideoRect(CRect r = CRect(0, 0, 0, 0));
+    void SetVideoRect(const CRect& r = CRect(0, 0, 0, 0));
     CRect GetVideoRect() const { return m_vrect; }
 
     void LoadLogo();
@@ -50,15 +55,11 @@ protected:
     virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
     virtual BOOL PreTranslateMessage(MSG* pMsg);
 
+    DECLARE_MESSAGE_MAP()
+
     afx_msg void OnPaint();
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
     afx_msg void OnSize(UINT nType, int cx, int cy);
-    afx_msg BOOL OnPlayPlayPauseStop(UINT nID);
-    afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
-
-    DECLARE_MESSAGE_MAP()
-public:
-    afx_msg void OnSetFocus(CWnd* pOldWnd);
     afx_msg LRESULT OnNcHitTest(CPoint point);
     afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
 };

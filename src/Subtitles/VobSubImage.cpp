@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,15 +23,27 @@
 #include "VobSubImage.h"
 #include "RTS.h"
 #include <math.h>
+#include <algorithm>
 
 CVobSubImage::CVobSubImage()
+    : iLang(-1)
+    , iIdx(-1)
+    , fForced(false)
+    , start(0)
+    , delay(0)
+    , rect(CRect(0, 0, 0, 0))
+    , lpPixels(nullptr)
+    , lpTemp1(nullptr)
+    , lpTemp2(nullptr)
+    , org(CSize(0, 0))
+    , nPlane(0)
+    , fCustomPal(false)
+    , fAligned(1)
+    , tridx(0)
+    , orgpal(nullptr)
+    , cuspal(nullptr)
 {
-    iLang = iIdx = -1;
-    fForced = false;
-    start = delay = 0;
-    rect = CRect(0, 0, 0, 0);
-    lpPixels = lpTemp1 = lpTemp2 = NULL;
-    org = CSize(0, 0);
+    ZeroMemory(&pal, sizeof(pal));
 }
 
 CVobSubImage::~CVobSubImage()
@@ -45,18 +57,18 @@ bool CVobSubImage::Alloc(int w, int h)
     // wide border around the text, that's why we need a bit more memory
     // to be allocated.
 
-    if (lpTemp1 == NULL || w * h > org.cx * org.cy || (w + 2) * (h + 2) > (org.cx + 2) * (org.cy + 2)) {
+    if (lpTemp1 == nullptr || w * h > org.cx * org.cy || (w + 2) * (h + 2) > (org.cx + 2) * (org.cy + 2)) {
         Free();
 
-        lpTemp1 = DNew RGBQUAD[w * h];
+        lpTemp1 = DEBUG_NEW RGBQUAD[w * h];
         if (!lpTemp1) {
             return false;
         }
 
-        lpTemp2 = DNew RGBQUAD[(w + 2) * (h + 2)];
+        lpTemp2 = DEBUG_NEW RGBQUAD[(w + 2) * (h + 2)];
         if (!lpTemp2) {
             delete [] lpTemp1;
-            lpTemp1 = NULL;
+            lpTemp1 = nullptr;
             return false;
         }
 
@@ -74,7 +86,7 @@ void CVobSubImage::Free()
     SAFE_DELETE_ARRAY(lpTemp1);
     SAFE_DELETE_ARRAY(lpTemp2);
 
-    lpPixels = NULL;
+    lpPixels = nullptr;
 }
 
 bool CVobSubImage::Decode(BYTE* lpData, int packetsize, int datasize,
@@ -128,7 +140,7 @@ bool CVobSubImage::Decode(BYTE* lpData, int packetsize, int datasize,
         nPlane = 1 - nPlane;
     }
 
-    rect.bottom = min(p.y, rect.bottom);
+    rect.bottom = std::min(p.y, rect.bottom);
 
     if (fTrim) {
         TrimSubImage();
@@ -137,7 +149,7 @@ bool CVobSubImage::Decode(BYTE* lpData, int packetsize, int datasize,
     return true;
 }
 
-void CVobSubImage::GetPacketInfo(BYTE* lpData, int packetsize, int datasize)
+void CVobSubImage::GetPacketInfo(const BYTE* lpData, int packetsize, int datasize)
 {
     //  delay = 0;
 
@@ -242,7 +254,7 @@ void CVobSubImage::GetPacketInfo(BYTE* lpData, int packetsize, int datasize)
     }
 }
 
-BYTE CVobSubImage::GetNibble(BYTE* lpData)
+BYTE CVobSubImage::GetNibble(const BYTE* lpData)
 {
     WORD& off = nOffset[nPlane];
     BYTE ret = (lpData[off] >> (fAligned << 2)) & 0x0f;
@@ -330,7 +342,7 @@ void CVobSubImage::TrimSubImage()
     DWORD* src = (DWORD*)&lpTemp1[offset];
     DWORD* dst = (DWORD*)&lpTemp2[1 + w + 1];
 
-    memset(lpTemp2, 0, (1 + w + 1)*sizeof(RGBQUAD));
+    ZeroMemory(lpTemp2, (1 + w + 1)*sizeof(RGBQUAD));
 
     for (int height = h; height; height--, src += rect.Width()) {
         *dst++ = 0;
@@ -339,7 +351,7 @@ void CVobSubImage::TrimSubImage()
         *dst++ = 0;
     }
 
-    memset(dst, 0, (1 + w + 1)*sizeof(RGBQUAD));
+    ZeroMemory(dst, (1 + w + 1)*sizeof(RGBQUAD));
 
     lpPixels = lpTemp2;
 
@@ -354,17 +366,17 @@ CAutoPtrList<COutline>* CVobSubImage::GetOutlineList(CPoint& topleft)
 {
     int w = rect.Width(), h = rect.Height(), len = w * h;
     if (len <= 0) {
-        return NULL;
+        return nullptr;
     }
 
     CAutoVectorPtr<BYTE> p;
     if (!p.Allocate(len)) {
-        return NULL;
+        return nullptr;
     }
 
-    CAutoPtrList<COutline>* ol = DNew CAutoPtrList<COutline>();
+    CAutoPtrList<COutline>* ol = DEBUG_NEW CAutoPtrList<COutline>();
     if (!ol) {
-        return NULL;
+        return nullptr;
     }
 
     BYTE* cp = p;
@@ -402,11 +414,11 @@ CAutoPtrList<COutline>* CVobSubImage::GetOutlineList(CPoint& topleft)
             break;
         }
 
-        int prevdir, dir = UP;
+        int dir = UP;
 
         int ox = x, oy = y, odir = dir;
 
-        CAutoPtr<COutline> o(DNew COutline);
+        CAutoPtr<COutline> o(DEBUG_NEW COutline);
         if (!o) {
             break;
         }
@@ -417,7 +429,7 @@ CAutoPtrList<COutline>* CVobSubImage::GetOutlineList(CPoint& topleft)
             BYTE fr = 0;
             BYTE br = 0;
 
-            prevdir = dir;
+            int prevdir = dir;
 
             switch (prevdir) {
                 case UP:
@@ -516,7 +528,7 @@ CAutoPtrList<COutline>* CVobSubImage::GetOutlineList(CPoint& topleft)
             }
         } while (!(x == ox && y == oy && dir == odir));
 
-        if (o->pa.GetCount() > 0 && (x == ox && y == oy && dir == odir)) {
+        if (!o->pa.IsEmpty() && (x == ox && y == oy && dir == odir)) {
             ol->AddTail(o);
         } else {
             ASSERT(0);
@@ -526,7 +538,7 @@ CAutoPtrList<COutline>* CVobSubImage::GetOutlineList(CPoint& topleft)
     return ol;
 }
 
-static bool FitLine(COutline& o, int& start, int& end)
+static bool FitLine(const COutline& o, int& start, int& end)
 {
     int len = (int)o.pa.GetCount();
     if (len < 7) {
@@ -584,10 +596,10 @@ static bool FitLine(COutline& o, int& start, int& end)
     if (fl && fr && 1.0 * (end - start) / ((len - end) * 2 + (start - 0) * 2) > 0.4) {
         return false;    // if this section is relatively too small it may only be a rounded corner
     }
-    if (!fl && la.GetSize() > 0 && la.GetSize() <= 4 && (la[0] == 1 && la[la.GetSize() - 1] == 1)) {
+    if (!fl && !la.IsEmpty() && la.GetSize() <= 4 && (la[0] == 1 && la[la.GetSize() - 1] == 1)) {
         return false;    // one step at both ends, doesn't sound good for a line (may be it was skewed, so only eliminate smaller sections where beziers going to look just as good)
     }
-    if (!fr && ra.GetSize() > 0 && ra.GetSize() <= 4 && (ra[0] == 1 && ra[ra.GetSize() - 1] == 1)) {
+    if (!fr && !ra.IsEmpty() && ra.GetSize() <= 4 && (ra[0] == 1 && ra[ra.GetSize() - 1] == 1)) {
         return false;    // -''-
     }
 
@@ -650,7 +662,7 @@ static bool FitLine(COutline& o, int& start, int& end)
     return ((maxerr - minerr) / l < 0.1  || err / l < 1.5 || (fabs(maxerr) < 8 && fabs(minerr) < 8));
 }
 
-static int CalcPossibleCurveDegree(COutline& o)
+static int CalcPossibleCurveDegree(const COutline& o)
 {
     size_t len2 = o.da.GetCount();
 
@@ -860,7 +872,7 @@ static bool FitBezierVH(COutline& o, CPoint& p1, CPoint& p2)
     return true;
 }
 
-int CVobSubImage::GrabSegment(int start, COutline& o, COutline& ret)
+int CVobSubImage::GrabSegment(int start, const COutline& o, COutline& ret)
 {
     ret.RemoveAll();
 
@@ -928,7 +940,7 @@ int CVobSubImage::GrabSegment(int start, COutline& o, COutline& ret)
     return start;
 }
 
-void CVobSubImage::SplitOutline(COutline& o, COutline& o1, COutline& o2)
+void CVobSubImage::SplitOutline(const COutline& o, COutline& o1, COutline& o2)
 {
     size_t len = o.pa.GetCount();
     if (len < 4) {
@@ -1125,7 +1137,7 @@ void CVobSubImage::AddSegment(COutline& o, CAtlArray<BYTE>& pathTypes, CAtlArray
 bool CVobSubImage::Polygonize(CAtlArray<BYTE>& pathTypes, CAtlArray<CPoint>& pathPoints, bool fSmooth, int scale)
 {
     CPoint topleft;
-    CAutoPtr<CAutoPtrList<COutline> > ol(GetOutlineList(topleft));
+    CAutoPtr<CAutoPtrList<COutline>> ol(GetOutlineList(topleft));
     if (!ol) {
         return false;
     }
@@ -1274,42 +1286,44 @@ void CVobSubImage::Scale2x()
 {
     int w = rect.Width(), h = rect.Height();
 
-    DWORD* src = (DWORD*)lpPixels;
-    DWORD* dst = DNew DWORD[w * h];
+    if (w > 0 && h > 0) {
+        DWORD* src = (DWORD*)lpPixels;
+        DWORD* dst = DEBUG_NEW DWORD[w * h];
 
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++, src++, dst++) {
-            DWORD E = *src;
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++, src++, dst++) {
+                DWORD E = *src;
 
-            DWORD A = x > 0 && y > 0 ? src[-w - 1] : E;
-            DWORD B = y > 0 ? src[-w] : E;
-            DWORD C = x < w - 1 && y > 0 ? src[-w + 1] : E;
-            UNREFERENCED_PARAMETER(A);
-            UNREFERENCED_PARAMETER(C);
+                DWORD A = x > 0 && y > 0 ? src[-w - 1] : E;
+                DWORD B = y > 0 ? src[-w] : E;
+                DWORD C = x < w - 1 && y > 0 ? src[-w + 1] : E;
+                UNREFERENCED_PARAMETER(A);
+                UNREFERENCED_PARAMETER(C);
 
-            DWORD D = x > 0 ? src[-1] : E;
-            DWORD F = x < w - 1 ? src[+1] : E;
+                DWORD D = x > 0 ? src[-1] : E;
+                DWORD F = x < w - 1 ? src[+1] : E;
 
-            DWORD G = x > 0 && y < h - 1 ? src[+w - 1] : E;
-            DWORD H = y < h - 1 ? src[+w] : E;
-            DWORD I = x < w - 1 && y < h - 1 ? src[+w + 1] : E;
-            UNREFERENCED_PARAMETER(G);
-            UNREFERENCED_PARAMETER(I);
+                DWORD G = x > 0 && y < h - 1 ? src[+w - 1] : E;
+                DWORD H = y < h - 1 ? src[+w] : E;
+                DWORD I = x < w - 1 && y < h - 1 ? src[+w + 1] : E;
+                UNREFERENCED_PARAMETER(G);
+                UNREFERENCED_PARAMETER(I);
 
-            DWORD E0 = D == B && B != F && D != H ? D : E;
-            DWORD E1 = B == F && B != D && F != H ? F : E;
-            DWORD E2 = D == H && D != B && H != F ? D : E;
-            DWORD E3 = H == F && D != H && B != F ? F : E;
+                DWORD E0 = D == B && B != F && D != H ? D : E;
+                DWORD E1 = B == F && B != D && F != H ? F : E;
+                DWORD E2 = D == H && D != B && H != F ? D : E;
+                DWORD E3 = H == F && D != H && B != F ? F : E;
 
-            *dst = ((((E0 & 0x00ff00ff) + (E1 & 0x00ff00ff) + (E2 & 0x00ff00ff) + (E3 & 0x00ff00ff) + 2) >> 2) & 0x00ff00ff)
-                   | (((((E0 >> 8) & 0x00ff00ff) + ((E1 >> 8) & 0x00ff00ff) + ((E2 >> 8) & 0x00ff00ff) + ((E3 >> 8) & 0x00ff00ff) + 2) << 6) & 0xff00ff00);
+                *dst = ((((E0 & 0x00ff00ff) + (E1 & 0x00ff00ff) + (E2 & 0x00ff00ff) + (E3 & 0x00ff00ff) + 2) >> 2) & 0x00ff00ff)
+                       | (((((E0 >> 8) & 0x00ff00ff) + ((E1 >> 8) & 0x00ff00ff) + ((E2 >> 8) & 0x00ff00ff) + ((E3 >> 8) & 0x00ff00ff) + 2) << 6) & 0xff00ff00);
+            }
         }
+
+        src -= w * h;
+        dst -= w * h;
+
+        memcpy(src, dst, w * h * 4);
+
+        delete [] dst;
     }
-
-    src -= w * h;
-    dst -= w * h;
-
-    memcpy(src, dst, w * h * 4);
-
-    delete [] dst;
 }

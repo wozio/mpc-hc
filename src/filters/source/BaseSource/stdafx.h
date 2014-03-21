@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,19 +20,16 @@
  */
 
 #pragma once
+
 #include "../../../DSUtil/SharedInclude.h"
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
-#endif
+#define WIN32_LEAN_AND_MEAN                 // Exclude rarely-used stuff from Windows headers
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS  // some CString constructors will be explicit
-
-#ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN        // Exclude rarely-used stuff from Windows headers
-#endif
+#define VC_EXTRALEAN                        // Exclude rarely-used stuff from Windows headers
 
 #include <afx.h>
-#include <afxwin.h>         // MFC core and standard components
+#include <afxwin.h>                         // MFC core and standard components
 
 #include <dshow.h>
-#include "stdafx_common.h"
+#include "BaseClasses/streams.h"
+#include <dvdmedia.h>

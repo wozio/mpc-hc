@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -61,6 +61,37 @@ T ExplodeMin(const T& str, CAtlList<T>& sl, SEP sep, size_t limit = 0)
 }
 
 template<class T, typename SEP>
+T ExplodeEsc(T str, CAtlList<T>& sl, SEP sep, size_t limit = 0, SEP esc = _T('\\'))
+{
+    sl.RemoveAll();
+
+    int split = 0;
+    for (int i = 0, j = 0; ; i = j + 1) {
+        j = str.Find(sep, i);
+        if (j < 0) {
+            break;
+        }
+
+        // Skip this seperator if it is escaped
+        if (str.GetAt(j - 1) == esc) {
+            // Delete the escape character
+            str.Delete(j - 1);
+            continue;
+        }
+
+        if (sl.GetCount() < limit - 1) {
+            sl.AddTail(str.Mid(split, j - split).Trim());
+
+            // Save new splitting position
+            split = j + 1;
+        }
+    }
+    sl.AddTail(str.Mid(split).Trim());
+
+    return sl.GetHead();
+}
+
+template<class T, typename SEP>
 T Implode(const CAtlList<T>& sl, SEP sep)
 {
     T ret;
@@ -74,10 +105,28 @@ T Implode(const CAtlList<T>& sl, SEP sep)
     return ret;
 }
 
+template<class T, typename SEP>
+T ImplodeEsc(const CAtlList<T>& sl, SEP sep, SEP esc = _T('\\'))
+{
+    T ret;
+    T escsep = T(esc) + T(sep);
+    POSITION pos = sl.GetHeadPosition();
+    while (pos) {
+        T str = sl.GetNext(pos);
+        str.Replace(T(sep), escsep);
+        ret += str;
+        if (pos) {
+            ret += sep;
+        }
+    }
+    return ret;
+}
+
 extern CString ExtractTag(CString tag, CMapStringToString& attribs, bool& fClosing);
 extern CStringA ConvertMBCS(CStringA str, DWORD SrcCharSet, DWORD DstCharSet);
 extern CStringA UrlEncode(CStringA str_in, bool fArg = false);
 extern CStringA UrlDecode(CStringA str_in);
+extern CStringA HtmlSpecialChars(CStringA str, bool bQuotes = false);
 extern DWORD CharSetToCodePage(DWORD dwCharSet);
 extern CAtlList<CString>& MakeLower(CAtlList<CString>& sl);
 extern CAtlList<CString>& MakeUpper(CAtlList<CString>& sl);

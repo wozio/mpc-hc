@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2008-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -19,16 +19,17 @@
  */
 
 #include "stdafx.h"
+#include <atlpath.h>
 #include "mplayerc.h"
 #include "MiniDump.h"
 #include "resource.h"
 #include <DbgHelp.h>
-#include "version.h"
+#include "mpc-hc_config.h"
+#include "VersionInfo.h"
 #include "WinAPIUtils.h"
 
 
 CMiniDump _Singleton;
-bool CMiniDump::m_bMiniDumpEnabled = true;
 
 
 typedef BOOL (WINAPI* MINIDUMPWRITEDUMP)(HANDLE hProcess, DWORD dwPid, HANDLE hFile, MINIDUMP_TYPE DumpType,
@@ -42,7 +43,7 @@ CMiniDump::CMiniDump()
 {
 #ifndef _DEBUG
 
-    SetUnhandledExceptionFilter(UnhandledExceptionFilter);
+    Enable();
 
     //#ifndef _WIN64
     // Enable catching in CRT (http://blog.kalmbachnet.de/?postid=75)
@@ -57,18 +58,19 @@ CMiniDump::~CMiniDump()
 
 LPTOP_LEVEL_EXCEPTION_FILTER WINAPI MyDummySetUnhandledExceptionFilter(LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter)
 {
-    return NULL;
+    return nullptr;
 }
 
 BOOL CMiniDump::PreventSetUnhandledExceptionFilter()
 {
     HMODULE hKernel32 = LoadLibrary(_T("kernel32.dll"));
-    if (hKernel32 == NULL) {
+    if (hKernel32 == nullptr) {
         return FALSE;
     }
 
     void* pOrgEntry = GetProcAddress(hKernel32, "SetUnhandledExceptionFilter");
-    if (pOrgEntry == NULL) {
+    if (pOrgEntry == nullptr) {
+        FreeLibrary(hKernel32);
         return FALSE;
     }
 
@@ -90,68 +92,60 @@ BOOL CMiniDump::PreventSetUnhandledExceptionFilter()
 LONG WINAPI CMiniDump::UnhandledExceptionFilter(_EXCEPTION_POINTERS* lpTopLevelExceptionFilter)
 {
     LONG    retval = EXCEPTION_CONTINUE_SEARCH;
-    HMODULE hDll = NULL;
+    BOOL    bDumpCreated = FALSE;
+    HMODULE hDll = nullptr;
     TCHAR   szResult[800];
-    CString strDumpPath;
+    szResult[0] = _T('\0');
+    CPath   dumpPath;
 
-    if (!m_bMiniDumpEnabled) {
-        return retval;
-    }
-
-#ifndef DISABLE_MINIDUMP
+#if ENABLE_MINIDUMP
     hDll = ::LoadLibrary(_T("dbghelp.dll"));
 
-    if (hDll != NULL) {
+    if (hDll != nullptr) {
         MINIDUMPWRITEDUMP pMiniDumpWriteDump = (MINIDUMPWRITEDUMP)::GetProcAddress(hDll, "MiniDumpWriteDump");
-        if (pMiniDumpWriteDump != NULL) {
-            if (!AfxGetMyApp()->IsIniValid()) {
-                HRESULT hr = SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, strDumpPath.GetBuffer(_MAX_PATH));
-                if (FAILED(hr)) {
-                    return retval;
-                }
-
-                strDumpPath.ReleaseBuffer();
-                strDumpPath.Append(_T("\\Media Player Classic\\"));
-                strDumpPath.Append(AfxGetApp()->m_pszExeName);
-                strDumpPath.Append(_T(".exe"));
-            } else {
-                strDumpPath = GetProgramPath(true);
+        if (pMiniDumpWriteDump != nullptr && AfxGetMyApp()->GetAppSavePath(dumpPath)) {
+            // Check that the folder actually exists
+            if (!FileExists(dumpPath)) {
+                VERIFY(CreateDirectory(dumpPath, nullptr));
             }
-            strDumpPath.AppendFormat(_T(".%d.%d.%d.%d.dmp"), MPC_VERSION_NUM);
+
+            CString strDumpName = AfxGetApp()->m_pszExeName;
+            strDumpName.Append(_T(".exe.") + VersionInfo::GetVersionString() + _T(".dmp"));
+            dumpPath.Append(strDumpName);
 
             // create the file
-            HANDLE hFile = ::CreateFile(strDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
-                                        FILE_ATTRIBUTE_NORMAL, NULL);
+            HANDLE hFile = ::CreateFile(dumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS,
+                                        FILE_ATTRIBUTE_NORMAL, nullptr);
 
             if (hFile != INVALID_HANDLE_VALUE) {
                 _MINIDUMP_EXCEPTION_INFORMATION ExInfo;
 
                 ExInfo.ThreadId = ::GetCurrentThreadId();
                 ExInfo.ExceptionPointers = lpTopLevelExceptionFilter;
-                ExInfo.ClientPointers = NULL;
+                ExInfo.ClientPointers = FALSE;
 
                 // write the dump
-                BOOL bOK = pMiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpNormal, &ExInfo, NULL, NULL);
-                if (bOK) {
-                    _stprintf_s(szResult, _countof(szResult), ResStr(IDS_MPC_CRASH), strDumpPath);
+                bDumpCreated = pMiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile, MiniDumpNormal, &ExInfo, nullptr, nullptr);
+                if (bDumpCreated) {
+                    _stprintf_s(szResult, _countof(szResult), ResStr(IDS_MPC_CRASH), dumpPath);
                     retval = EXCEPTION_EXECUTE_HANDLER;
                 } else {
-                    _stprintf_s(szResult, _countof(szResult), ResStr(IDS_MPC_MINIDUMP_FAIL), strDumpPath, GetLastError());
+                    _stprintf_s(szResult, _countof(szResult), ResStr(IDS_MPC_MINIDUMP_FAIL), dumpPath, GetLastError());
                 }
 
                 ::CloseHandle(hFile);
             } else {
-                _stprintf_s(szResult, _countof(szResult), ResStr(IDS_MPC_MINIDUMP_FAIL), strDumpPath, GetLastError());
+                _stprintf_s(szResult, _countof(szResult), ResStr(IDS_MPC_MINIDUMP_FAIL), dumpPath, GetLastError());
             }
         }
         FreeLibrary(hDll);
     }
 
-    if (szResult) {
-        switch (MessageBox(NULL, szResult, _T("MPC-HC - Mini Dump"), retval ? MB_YESNO : MB_OK)) {
+    if (szResult[0]) {
+        switch (MessageBox(nullptr, szResult, _T("MPC-HC - Mini Dump"), bDumpCreated ? MB_YESNO : MB_OK)) {
             case IDYES:
-                ShellExecute(NULL, _T("open"), _T("http://sourceforge.net/apps/trac/mpc-hc/wiki/Bugs_-_Reporting"), NULL, NULL, SW_SHOWDEFAULT);
-                ExploreToFile(strDumpPath);
+                ShellExecute(nullptr, _T("open"), BUGS_URL, nullptr, nullptr, SW_SHOWDEFAULT);
+                ExploreToFile(dumpPath);
                 break;
             case IDNO:
                 retval = EXCEPTION_CONTINUE_SEARCH; // rethrow the exception to make easier attaching a debugger
@@ -159,8 +153,8 @@ LONG WINAPI CMiniDump::UnhandledExceptionFilter(_EXCEPTION_POINTERS* lpTopLevelE
         }
     }
 #else
-    if (MessageBox(NULL, ResStr(IDS_MPC_BUG_REPORT), ResStr(IDS_MPC_BUG_REPORT_TITLE), MB_YESNO) == IDYES) {
-        ShellExecute(NULL, _T("open"), _T("http://mpc-hc.sourceforge.net/downloads/"), NULL, NULL, SW_SHOWDEFAULT);
+    if (MessageBox(nullptr, ResStr(IDS_MPC_BUG_REPORT), ResStr(IDS_MPC_BUG_REPORT_TITLE), MB_YESNO) == IDYES) {
+        ShellExecute(nullptr, _T("open"), DOWNLOAD_URL, nullptr, nullptr, SW_SHOWDEFAULT);
     }
 #endif // DISABLE_MINIDUMP
 

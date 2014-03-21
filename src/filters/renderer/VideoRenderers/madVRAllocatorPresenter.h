@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -24,12 +24,7 @@
 #include "../../../SubPic/SubPicAllocatorPresenterImpl.h"
 #include "../../../SubPic/ISubRender.h"
 
-interface  __declspec(uuid("ABA34FDA-DD22-4E00-9AB4-4ABF927D0B0C"))
-IMadVRTextOsd :
-public IUnknown {
-    STDMETHOD(OsdDisplayMessage)(LPCWSTR text, DWORD milliseconds) = 0;
-    STDMETHOD(OsdClearMessage)() = 0;
-};
+#include <mvrInterfaces.h>
 
 namespace DSObjects
 {
@@ -42,7 +37,7 @@ namespace DSObjects
 
         public:
             CSubRenderCallback(CmadVRAllocatorPresenter* pDXRAP)
-                : CUnknown(_T("CSubRender"), NULL)
+                : CUnknown(_T("CSubRender"), nullptr)
                 , m_pDXRAP(pDXRAP) {
             }
 
@@ -103,5 +98,6 @@ namespace DSObjects
         STDMETHODIMP_(bool) Paint(bool fAll);
         STDMETHODIMP GetDIB(BYTE* lpDib, DWORD* size);
         STDMETHODIMP SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget);
+        STDMETHODIMP SetPixelShader2(LPCSTR pSrcData, LPCSTR pTarget, bool bScreenSpace);
     };
 }

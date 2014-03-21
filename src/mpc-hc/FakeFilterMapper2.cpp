@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,7 +25,7 @@
 #include "DSUtil.h"
 
 #include <InitGuid.h>
-#include "detours/detours.h"
+#include "mhook/mhook-lib/mhook.h"
 
 
 HRESULT(__stdcall* Real_CoCreateInstance)(CONST IID& a0,
@@ -224,11 +224,11 @@ LONG(WINAPI* Real_RegSetValueA)(HKEY a0, LPCSTR a1, DWORD a2, LPCSTR a3, DWORD a
 HRESULT WINAPI Mine_CoCreateInstance(IN REFCLSID rclsid, IN LPUNKNOWN pUnkOuter,
                                      IN DWORD dwClsContext, IN REFIID riid, OUT LPVOID FAR* ppv)
 {
-    if (CFilterMapper2::m_pFilterMapper2) {
+    if (CFilterMapper2::s_pFilterMapper2) {
         CheckPointer(ppv, E_POINTER);
 
         if (rclsid == CLSID_FilterMapper) {
-            ASSERT(0);
+            ASSERT(FALSE);
             return REGDB_E_CLASSNOTREG; // sorry...
         }
 
@@ -238,12 +238,12 @@ HRESULT WINAPI Mine_CoCreateInstance(IN REFCLSID rclsid, IN LPUNKNOWN pUnkOuter,
             }
 
             if (riid == __uuidof(IUnknown)) {
-                CFilterMapper2::m_pFilterMapper2->AddRef();
-                *ppv = (IUnknown*)CFilterMapper2::m_pFilterMapper2;
+                CFilterMapper2::s_pFilterMapper2->AddRef();
+                *ppv = (IUnknown*)CFilterMapper2::s_pFilterMapper2;
                 return S_OK;
             } else if (riid == __uuidof(IFilterMapper2)) {
-                CFilterMapper2::m_pFilterMapper2->AddRef();
-                *ppv = (IFilterMapper2*)CFilterMapper2::m_pFilterMapper2;
+                CFilterMapper2::s_pFilterMapper2->AddRef();
+                *ppv = (IFilterMapper2*)CFilterMapper2::s_pFilterMapper2;
                 return S_OK;
             } else {
                 return E_NOINTERFACE;
@@ -254,7 +254,7 @@ HRESULT WINAPI Mine_CoCreateInstance(IN REFCLSID rclsid, IN LPUNKNOWN pUnkOuter,
         {
             if (rclsid == CLSID_FilterMapper2)
             {
-                CFilterMapper2* pFM2 = DNew CFilterMapper2(true, false, pUnkOuter);
+                CFilterMapper2* pFM2 = DEBUG_NEW CFilterMapper2(true, false, pUnkOuter);
                 CComPtr<IUnknown> pUnk = (IUnknown*)pFM2;
                 return pUnk->QueryInterface(riid, ppv);
             }
@@ -264,11 +264,11 @@ HRESULT WINAPI Mine_CoCreateInstance(IN REFCLSID rclsid, IN LPUNKNOWN pUnkOuter,
         if (rclsid == CLSID_VideoMixingRenderer || rclsid == CLSID_VideoMixingRenderer9
                 || rclsid == CLSID_VideoRenderer || rclsid == CLSID_VideoRendererDefault
                 || rclsid == CLSID_OverlayMixer) { // || rclsid == CLSID_OverlayMixer2 - where is this declared?)
-            CMacrovisionKicker* pMK = DNew CMacrovisionKicker(NAME("CMacrovisionKicker"), NULL);
+            CMacrovisionKicker* pMK = DEBUG_NEW CMacrovisionKicker(NAME("CMacrovisionKicker"), nullptr);
             CComPtr<IUnknown> pUnk = (IUnknown*)(INonDelegatingUnknown*)pMK;
             CComPtr<IUnknown> pInner;
-            HRESULT hr;
-            if (SUCCEEDED(hr = Real_CoCreateInstance(rclsid, pUnk, dwClsContext, __uuidof(IUnknown), (void**)&pInner))) {
+
+            if (SUCCEEDED(Real_CoCreateInstance(rclsid, pUnk, dwClsContext, IID_PPV_ARGS(&pInner)))) {
                 pMK->SetInner(pInner);
                 return pUnk->QueryInterface(riid, ppv);
             }
@@ -281,7 +281,7 @@ HRESULT WINAPI Mine_CoCreateInstance(IN REFCLSID rclsid, IN LPUNKNOWN pUnkOuter,
 
 LONG WINAPI Mine_RegCloseKey(HKEY a0)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_SUCCESS;
     }
     return Real_RegCloseKey(a0);
@@ -289,7 +289,7 @@ LONG WINAPI Mine_RegCloseKey(HKEY a0)
 
 LONG WINAPI Mine_RegFlushKey(HKEY a0)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_SUCCESS;
     }
     return Real_RegFlushKey(a0);
@@ -297,7 +297,7 @@ LONG WINAPI Mine_RegFlushKey(HKEY a0)
 
 LONG WINAPI Mine_RegCreateKeyA(HKEY a0, LPCSTR a1, PHKEY a2)
 {
-    if (CFilterMapper2::m_pFilterMapper2) {
+    if (CFilterMapper2::s_pFilterMapper2) {
         *a2 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -306,7 +306,7 @@ LONG WINAPI Mine_RegCreateKeyA(HKEY a0, LPCSTR a1, PHKEY a2)
 
 LONG WINAPI Mine_RegCreateKeyW(HKEY a0, LPCWSTR a1, PHKEY a2)
 {
-    if (CFilterMapper2::m_pFilterMapper2) {
+    if (CFilterMapper2::s_pFilterMapper2) {
         *a2 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -315,7 +315,7 @@ LONG WINAPI Mine_RegCreateKeyW(HKEY a0, LPCWSTR a1, PHKEY a2)
 
 LONG WINAPI Mine_RegCreateKeyExA(HKEY a0, LPCSTR a1, DWORD a2, LPSTR a3, DWORD a4, REGSAM a5, LPSECURITY_ATTRIBUTES a6, PHKEY a7, LPDWORD a8)
 {
-    if (CFilterMapper2::m_pFilterMapper2) {
+    if (CFilterMapper2::s_pFilterMapper2) {
         *a7 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -324,7 +324,7 @@ LONG WINAPI Mine_RegCreateKeyExA(HKEY a0, LPCSTR a1, DWORD a2, LPSTR a3, DWORD a
 
 LONG WINAPI Mine_RegCreateKeyExW(HKEY a0, LPCWSTR a1, DWORD a2, LPWSTR a3, DWORD a4, REGSAM a5, LPSECURITY_ATTRIBUTES a6, PHKEY a7, LPDWORD a8)
 {
-    if (CFilterMapper2::m_pFilterMapper2) {
+    if (CFilterMapper2::s_pFilterMapper2) {
         *a7 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -333,7 +333,8 @@ LONG WINAPI Mine_RegCreateKeyExW(HKEY a0, LPCWSTR a1, DWORD a2, LPWSTR a3, DWORD
 
 LONG WINAPI Mine_RegDeleteKeyA(HKEY a0, LPCSTR a1)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegDeleteKeyA(a0, a1);
@@ -341,7 +342,8 @@ LONG WINAPI Mine_RegDeleteKeyA(HKEY a0, LPCSTR a1)
 
 LONG WINAPI Mine_RegDeleteKeyW(HKEY a0, LPCWSTR a1)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegDeleteKeyW(a0, a1);
@@ -349,7 +351,8 @@ LONG WINAPI Mine_RegDeleteKeyW(HKEY a0, LPCWSTR a1)
 
 LONG WINAPI Mine_RegDeleteValueA(HKEY a0, LPCSTR a1)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegDeleteValueA(a0, a1);
@@ -357,7 +360,8 @@ LONG WINAPI Mine_RegDeleteValueA(HKEY a0, LPCSTR a1)
 
 LONG WINAPI Mine_RegDeleteValueW(HKEY a0, LPCWSTR a1)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegDeleteValueW(a0, a1);
@@ -365,7 +369,7 @@ LONG WINAPI Mine_RegDeleteValueW(HKEY a0, LPCWSTR a1)
 
 LONG WINAPI Mine_RegEnumKeyExA(HKEY a0, DWORD a1, LPSTR a2, LPDWORD a3, LPDWORD a4, LPSTR a5, LPDWORD a6, struct _FILETIME* a7)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_NO_MORE_ITEMS;
     }
     return Real_RegEnumKeyExA(a0, a1, a2, a3, a4, a5, a6, a7);
@@ -373,7 +377,7 @@ LONG WINAPI Mine_RegEnumKeyExA(HKEY a0, DWORD a1, LPSTR a2, LPDWORD a3, LPDWORD 
 
 LONG WINAPI Mine_RegEnumKeyExW(HKEY a0, DWORD a1, LPWSTR a2, LPDWORD a3, LPDWORD a4, LPWSTR a5, LPDWORD a6, struct _FILETIME* a7)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_NO_MORE_ITEMS;
     }
     return Real_RegEnumKeyExW(a0, a1, a2, a3, a4, a5, a6, a7);
@@ -381,7 +385,7 @@ LONG WINAPI Mine_RegEnumKeyExW(HKEY a0, DWORD a1, LPWSTR a2, LPDWORD a3, LPDWORD
 
 LONG WINAPI Mine_RegEnumValueA(HKEY a0, DWORD a1, LPSTR a2, LPDWORD a3, LPDWORD a4, LPDWORD a5, LPBYTE a6, LPDWORD a7)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_NO_MORE_ITEMS;
     }
     return Real_RegEnumValueA(a0, a1, a2, a3, a4, a5, a6, a7);
@@ -389,7 +393,7 @@ LONG WINAPI Mine_RegEnumValueA(HKEY a0, DWORD a1, LPSTR a2, LPDWORD a3, LPDWORD 
 
 LONG WINAPI Mine_RegEnumValueW(HKEY a0, DWORD a1, LPWSTR a2, LPDWORD a3, LPDWORD a4, LPDWORD a5, LPBYTE a6, LPDWORD a7)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_NO_MORE_ITEMS;
     }
     return Real_RegEnumValueW(a0, a1, a2, a3, a4, a5, a6, a7);
@@ -397,7 +401,7 @@ LONG WINAPI Mine_RegEnumValueW(HKEY a0, DWORD a1, LPWSTR a2, LPDWORD a3, LPDWORD
 
 LONG WINAPI Mine_RegOpenKeyA(HKEY a0, LPCSTR a1, PHKEY a2)
 {
-    if (CFilterMapper2::m_pFilterMapper2) {
+    if (CFilterMapper2::s_pFilterMapper2) {
         *a2 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -406,7 +410,7 @@ LONG WINAPI Mine_RegOpenKeyA(HKEY a0, LPCSTR a1, PHKEY a2)
 
 LONG WINAPI Mine_RegOpenKeyW(HKEY a0, LPCWSTR a1, PHKEY a2)
 {
-    if (CFilterMapper2::m_pFilterMapper2) {
+    if (CFilterMapper2::s_pFilterMapper2) {
         *a2 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -415,7 +419,7 @@ LONG WINAPI Mine_RegOpenKeyW(HKEY a0, LPCWSTR a1, PHKEY a2)
 
 LONG WINAPI Mine_RegOpenKeyExA(HKEY a0, LPCSTR a1, DWORD a2, REGSAM a3, PHKEY a4)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a3 & (KEY_SET_VALUE | KEY_CREATE_SUB_KEY))) {
+    if (CFilterMapper2::s_pFilterMapper2 && (a3 & (KEY_SET_VALUE | KEY_CREATE_SUB_KEY))) {
         *a4 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -424,7 +428,7 @@ LONG WINAPI Mine_RegOpenKeyExA(HKEY a0, LPCSTR a1, DWORD a2, REGSAM a3, PHKEY a4
 
 LONG WINAPI Mine_RegOpenKeyExW(HKEY a0, LPCWSTR a1, DWORD a2, REGSAM a3, PHKEY a4)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a3 & (KEY_SET_VALUE | KEY_CREATE_SUB_KEY))) {
+    if (CFilterMapper2::s_pFilterMapper2 && (a3 & (KEY_SET_VALUE | KEY_CREATE_SUB_KEY))) {
         *a4 = FAKEHKEY;
         return ERROR_SUCCESS;
     }
@@ -433,7 +437,7 @@ LONG WINAPI Mine_RegOpenKeyExW(HKEY a0, LPCWSTR a1, DWORD a2, REGSAM a3, PHKEY a
 
 LONG WINAPI Mine_RegQueryInfoKeyA(HKEY a0, LPSTR a1, LPDWORD a2, LPDWORD a3, LPDWORD a4, LPDWORD a5, LPDWORD a6, LPDWORD a7, LPDWORD a8, LPDWORD a9, LPDWORD a10, struct _FILETIME* a11)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_INVALID_HANDLE;
     }
     return Real_RegQueryInfoKeyA(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
@@ -441,7 +445,7 @@ LONG WINAPI Mine_RegQueryInfoKeyA(HKEY a0, LPSTR a1, LPDWORD a2, LPDWORD a3, LPD
 
 LONG WINAPI Mine_RegQueryInfoKeyW(HKEY a0, LPWSTR a1, LPDWORD a2, LPDWORD a3, LPDWORD a4, LPDWORD a5, LPDWORD a6, LPDWORD a7, LPDWORD a8, LPDWORD a9, LPDWORD a10, struct _FILETIME* a11)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         return ERROR_INVALID_HANDLE;
     }
     return Real_RegQueryInfoKeyW(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
@@ -449,7 +453,7 @@ LONG WINAPI Mine_RegQueryInfoKeyW(HKEY a0, LPWSTR a1, LPDWORD a2, LPDWORD a3, LP
 
 LONG WINAPI Mine_RegQueryValueA(HKEY a0, LPCSTR a1, LPSTR a2, PLONG a3)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         *a3 = 0;
         return ERROR_SUCCESS;
     }
@@ -458,7 +462,7 @@ LONG WINAPI Mine_RegQueryValueA(HKEY a0, LPCSTR a1, LPSTR a2, PLONG a3)
 
 LONG WINAPI Mine_RegQueryValueW(HKEY a0, LPCWSTR a1, LPWSTR a2, PLONG a3)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         *a3 = 0;
         return ERROR_SUCCESS;
     }
@@ -467,7 +471,7 @@ LONG WINAPI Mine_RegQueryValueW(HKEY a0, LPCWSTR a1, LPWSTR a2, PLONG a3)
 
 LONG WINAPI Mine_RegQueryValueExA(HKEY a0, LPCSTR a1, LPDWORD a2, LPDWORD a3, LPBYTE a4, LPDWORD a5)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         *a5 = 0;
         return ERROR_SUCCESS;
     }
@@ -476,7 +480,7 @@ LONG WINAPI Mine_RegQueryValueExA(HKEY a0, LPCSTR a1, LPDWORD a2, LPDWORD a3, LP
 
 LONG WINAPI Mine_RegQueryValueExW(HKEY a0, LPCWSTR a1, LPDWORD a2, LPDWORD a3, LPBYTE a4, LPDWORD a5)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && a0 == FAKEHKEY) {
+    if (CFilterMapper2::s_pFilterMapper2 && a0 == FAKEHKEY) {
         *a5 = 0;
         return ERROR_SUCCESS;
     }
@@ -485,7 +489,8 @@ LONG WINAPI Mine_RegQueryValueExW(HKEY a0, LPCWSTR a1, LPDWORD a2, LPDWORD a3, L
 
 LONG WINAPI Mine_RegSetValueA(HKEY a0, LPCSTR a1, DWORD a2, LPCSTR a3, DWORD a4)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegSetValueA(a0, a1, a2, a3, a4);
@@ -493,23 +498,26 @@ LONG WINAPI Mine_RegSetValueA(HKEY a0, LPCSTR a1, DWORD a2, LPCSTR a3, DWORD a4)
 
 LONG WINAPI Mine_RegSetValueW(HKEY a0, LPCWSTR a1, DWORD a2, LPCWSTR a3, DWORD a4)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegSetValueW(a0, a1, a2, a3, a4);
 }
 
-LONG WINAPI Mine_RegSetValueExA(HKEY a0, LPCSTR a1, DWORD a2, DWORD a3, BYTE* a4, DWORD a5)
+LONG WINAPI Mine_RegSetValueExA(HKEY a0, LPCSTR a1, DWORD a2, DWORD a3, const BYTE* a4, DWORD a5)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegSetValueExA(a0, a1, a2, a3, a4, a5);
 }
 
-LONG WINAPI Mine_RegSetValueExW(HKEY a0, LPCWSTR a1, DWORD a2, DWORD a3, BYTE* a4, DWORD a5)
+LONG WINAPI Mine_RegSetValueExW(HKEY a0, LPCWSTR a1, DWORD a2, DWORD a3, const BYTE* a4, DWORD a5)
 {
-    if (CFilterMapper2::m_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
+    // (INT_PTR)a0 < 0 will catch all attempts to use a predefined HKEY directly
+    if (CFilterMapper2::s_pFilterMapper2 && (a0 == FAKEHKEY || (INT_PTR)a0 < 0)) {
         return ERROR_SUCCESS;
     }
     return Real_RegSetValueExW(a0, a1, a2, a3, a4, a5);
@@ -519,62 +527,61 @@ LONG WINAPI Mine_RegSetValueExW(HKEY a0, LPCWSTR a1, DWORD a2, DWORD a3, BYTE* a
 // CFilterMapper2
 //
 
-IFilterMapper2* CFilterMapper2::m_pFilterMapper2 = NULL;
+IFilterMapper2* CFilterMapper2::s_pFilterMapper2 = nullptr;
 
-bool CFilterMapper2::fInitialized = false;
+bool CFilterMapper2::s_bInitialized = false;
 
 void CFilterMapper2::Init()
 {
-    if (!fInitialized) {
-        DetourAttach(&(PVOID&)Real_CoCreateInstance, (PVOID)Mine_CoCreateInstance);
-        DetourAttach(&(PVOID&)Real_RegCloseKey, (PVOID)Mine_RegCloseKey);
-        DetourAttach(&(PVOID&)Real_RegFlushKey, (PVOID)Mine_RegFlushKey);
-        DetourAttach(&(PVOID&)Real_RegCreateKeyA, (PVOID)Mine_RegCreateKeyA);
-        DetourAttach(&(PVOID&)Real_RegCreateKeyW, (PVOID)Mine_RegCreateKeyW);
-        DetourAttach(&(PVOID&)Real_RegCreateKeyExA, (PVOID)Mine_RegCreateKeyExA);
-        DetourAttach(&(PVOID&)Real_RegCreateKeyExW, (PVOID)Mine_RegCreateKeyExW);
-        DetourAttach(&(PVOID&)Real_RegDeleteKeyA, (PVOID)Mine_RegDeleteKeyA);
-        DetourAttach(&(PVOID&)Real_RegDeleteKeyW, (PVOID)Mine_RegDeleteKeyW);
-        DetourAttach(&(PVOID&)Real_RegDeleteValueA, (PVOID)Mine_RegDeleteValueA);
-        DetourAttach(&(PVOID&)Real_RegDeleteValueW, (PVOID)Mine_RegDeleteValueW);
-        DetourAttach(&(PVOID&)Real_RegEnumKeyExA, (PVOID)Mine_RegEnumKeyExA);
-        DetourAttach(&(PVOID&)Real_RegEnumKeyExW, (PVOID)Mine_RegEnumKeyExW);
-        DetourAttach(&(PVOID&)Real_RegEnumValueA, (PVOID)Mine_RegEnumValueA);
-        DetourAttach(&(PVOID&)Real_RegEnumValueW, (PVOID)Mine_RegEnumValueW);
-        DetourAttach(&(PVOID&)Real_RegOpenKeyA, (PVOID)Mine_RegOpenKeyA);
-        DetourAttach(&(PVOID&)Real_RegOpenKeyW, (PVOID)Mine_RegOpenKeyW);
-        DetourAttach(&(PVOID&)Real_RegOpenKeyExA, (PVOID)Mine_RegOpenKeyExA);
-        DetourAttach(&(PVOID&)Real_RegOpenKeyExW, (PVOID)Mine_RegOpenKeyExW);
-        DetourAttach(&(PVOID&)Real_RegQueryInfoKeyA, (PVOID)Mine_RegQueryInfoKeyA);
-        DetourAttach(&(PVOID&)Real_RegQueryInfoKeyW, (PVOID)Mine_RegQueryInfoKeyW);
-        DetourAttach(&(PVOID&)Real_RegQueryValueA, (PVOID)Mine_RegQueryValueA);
-        DetourAttach(&(PVOID&)Real_RegQueryValueW, (PVOID)Mine_RegQueryValueW);
-        DetourAttach(&(PVOID&)Real_RegQueryValueExA, (PVOID)Mine_RegQueryValueExA);
-        DetourAttach(&(PVOID&)Real_RegQueryValueExW, (PVOID)Mine_RegQueryValueExW);
-        DetourAttach(&(PVOID&)Real_RegSetValueA, (PVOID)Mine_RegSetValueA);
-        DetourAttach(&(PVOID&)Real_RegSetValueW, (PVOID)Mine_RegSetValueW);
-        DetourAttach(&(PVOID&)Real_RegSetValueExA, (PVOID)Mine_RegSetValueExA);
-        DetourAttach(&(PVOID&)Real_RegSetValueExW, (PVOID)Mine_RegSetValueExW);
-
-        fInitialized = true;
+    if (!s_bInitialized) {
+        // In case of error, we don't report the failure immediately since the hooks might not be needed
+        s_bInitialized = Mhook_SetHook(&(PVOID&)Real_CoCreateInstance, (PVOID)Mine_CoCreateInstance)
+                         && Mhook_SetHook(&(PVOID&)Real_RegCloseKey, (PVOID)Mine_RegCloseKey)
+                         && Mhook_SetHook(&(PVOID&)Real_RegFlushKey, (PVOID)Mine_RegFlushKey)
+                         && Mhook_SetHook(&(PVOID&)Real_RegCreateKeyA, (PVOID)Mine_RegCreateKeyA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegCreateKeyW, (PVOID)Mine_RegCreateKeyW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegCreateKeyExA, (PVOID)Mine_RegCreateKeyExA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegCreateKeyExW, (PVOID)Mine_RegCreateKeyExW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegDeleteKeyA, (PVOID)Mine_RegDeleteKeyA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegDeleteKeyW, (PVOID)Mine_RegDeleteKeyW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegDeleteValueA, (PVOID)Mine_RegDeleteValueA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegDeleteValueW, (PVOID)Mine_RegDeleteValueW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegEnumKeyExA, (PVOID)Mine_RegEnumKeyExA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegEnumKeyExW, (PVOID)Mine_RegEnumKeyExW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegEnumValueA, (PVOID)Mine_RegEnumValueA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegEnumValueW, (PVOID)Mine_RegEnumValueW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegOpenKeyA, (PVOID)Mine_RegOpenKeyA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegOpenKeyW, (PVOID)Mine_RegOpenKeyW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegOpenKeyExA, (PVOID)Mine_RegOpenKeyExA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegOpenKeyExW, (PVOID)Mine_RegOpenKeyExW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegQueryInfoKeyA, (PVOID)Mine_RegQueryInfoKeyA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegQueryInfoKeyW, (PVOID)Mine_RegQueryInfoKeyW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegQueryValueA, (PVOID)Mine_RegQueryValueA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegQueryValueW, (PVOID)Mine_RegQueryValueW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegQueryValueExA, (PVOID)Mine_RegQueryValueExA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegQueryValueExW, (PVOID)Mine_RegQueryValueExW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegSetValueA, (PVOID)Mine_RegSetValueA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegSetValueW, (PVOID)Mine_RegSetValueW)
+                         && Mhook_SetHook(&(PVOID&)Real_RegSetValueExA, (PVOID)Mine_RegSetValueExA)
+                         && Mhook_SetHook(&(PVOID&)Real_RegSetValueExW, (PVOID)Mine_RegSetValueExW);
     }
 }
 
-CFilterMapper2::CFilterMapper2(bool fRefCounted, bool fAllowUnreg, LPUNKNOWN pUnkOuter)
+CFilterMapper2::CFilterMapper2(bool bRefCounted, bool bAllowUnreg /*= false*/, LPUNKNOWN pUnkOuter /*= nullptr*/)
     : CUnknown(NAME("CFilterMapper2"), pUnkOuter)
-    , m_fRefCounted(fRefCounted)
-    , m_fAllowUnreg(fAllowUnreg)
+    , m_bRefCounted(bRefCounted)
+    , m_bAllowUnreg(bAllowUnreg)
 {
-    m_cRef = fRefCounted ? 0 : 1;
+    m_cRef = bRefCounted ? 0 : 1;
 
-    Init();
+    // We can't call Init() if more than one thread is running due to a custom optimization
+    // we use for mhook. Instead we ensure that the hooks were properly set up at startup
+    ENSURE(s_bInitialized);
 
-    HRESULT hr = Real_CoCreateInstance(
-                     CLSID_FilterMapper2, (IUnknown*)(INonDelegatingUnknown*)this, CLSCTX_ALL,
-                     __uuidof(IUnknown), (void**)&m_pFM2);
+    HRESULT hr = Real_CoCreateInstance(CLSID_FilterMapper2, (IUnknown*)(INonDelegatingUnknown*)this,
+                                       CLSCTX_ALL, IID_PPV_ARGS(&m_pFM2));
     if (FAILED(hr) || !m_pFM2) {
-        ASSERT(0);
-        return;
+        ASSERT(FALSE);
     }
 }
 
@@ -594,24 +601,22 @@ STDMETHODIMP CFilterMapper2::NonDelegatingQueryInterface(REFIID riid, void** ppv
 
     HRESULT hr = m_pFM2 ? m_pFM2->QueryInterface(riid, ppv) : E_NOINTERFACE;
 
-    return
-        SUCCEEDED(hr) ? hr :
-        __super::NonDelegatingQueryInterface(riid, ppv);
+    return SUCCEEDED(hr) ? hr : __super::NonDelegatingQueryInterface(riid, ppv);
 }
 
 void CFilterMapper2::Register(CString path)
 {
     // Load filter
-    if (HMODULE h = LoadLibraryEx(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH)) {
+    if (HMODULE h = LoadLibraryEx(path, nullptr, LOAD_WITH_ALTERED_SEARCH_PATH)) {
         typedef HRESULT(__stdcall * PDllRegisterServer)();
-        if (PDllRegisterServer p = (PDllRegisterServer)GetProcAddress(h, "DllRegisterServer")) {
-            ASSERT(CFilterMapper2::m_pFilterMapper2 == NULL);
+        if (PDllRegisterServer fpDllRegisterServer = (PDllRegisterServer)GetProcAddress(h, "DllRegisterServer")) {
+            ASSERT(!CFilterMapper2::s_pFilterMapper2);
 
-            CFilterMapper2::m_pFilterMapper2 = this;
+            CFilterMapper2::s_pFilterMapper2 = this;
             m_path = path;
-            p();
+            fpDllRegisterServer();
             m_path.Empty();
-            CFilterMapper2::m_pFilterMapper2 = NULL;
+            CFilterMapper2::s_pFilterMapper2 = nullptr;
         }
 
         FreeLibrary(h);
@@ -636,9 +641,7 @@ STDMETHODIMP CFilterMapper2::UnregisterFilter(const CLSID* pclsidCategory, const
     if (!m_path.IsEmpty()) {
         return S_OK;
     } else if (CComQIPtr<IFilterMapper2> pFM2 = m_pFM2) {
-        return m_fAllowUnreg
-               ? pFM2->UnregisterFilter(pclsidCategory, szInstance, Filter)
-               : S_OK;
+        return m_bAllowUnreg ? pFM2->UnregisterFilter(pclsidCategory, szInstance, Filter) : S_OK;
     }
 
     return E_NOTIMPL;
@@ -647,7 +650,7 @@ STDMETHODIMP CFilterMapper2::UnregisterFilter(const CLSID* pclsidCategory, const
 STDMETHODIMP CFilterMapper2::RegisterFilter(REFCLSID clsidFilter, LPCWSTR Name, IMoniker** ppMoniker, const CLSID* pclsidCategory, const OLECHAR* szInstance, const REGFILTER2* prf2)
 {
     if (!m_path.IsEmpty()) {
-        if (FilterOverride* f = DNew FilterOverride) {
+        if (FilterOverride* f = DEBUG_NEW FilterOverride) {
             f->fDisabled = false;
             f->type = FilterOverride::EXTERNAL;
             f->path = m_path;
@@ -706,9 +709,9 @@ STDMETHODIMP CFilterMapper2::EnumMatchingFilters(IEnumMoniker** ppEnum, DWORD dw
         BOOL bOutputNeeded, DWORD cOutputTypes, const GUID* pOutputTypes, const REGPINMEDIUM* pMedOut, const CLSID* pPinCategoryOut)
 {
     if (CComQIPtr<IFilterMapper2> pFM2 = m_pFM2) {
-        pFM2->EnumMatchingFilters(ppEnum, dwFlags, bExactMatch, dwMerit,
-                                  bInputNeeded, cInputTypes, pInputTypes, pMedIn, pPinCategoryIn, bRender,
-                                  bOutputNeeded, cOutputTypes, pOutputTypes, pMedOut, pPinCategoryOut);
+        return pFM2->EnumMatchingFilters(ppEnum, dwFlags, bExactMatch, dwMerit,
+                                         bInputNeeded, cInputTypes, pInputTypes, pMedIn, pPinCategoryIn, bRender,
+                                         bOutputNeeded, cOutputTypes, pOutputTypes, pMedOut, pPinCategoryOut);
     }
 
     return E_NOTIMPL;

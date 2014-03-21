@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,12 +20,15 @@
  */
 
 #include "stdafx.h"
+#include "MainFrm.h"
 #include "mplayerc.h"
 #include "PPageFullscreen.h"
 #include "WinAPIUtils.h"
 
 #include "Monitors.h"
 #include "MultiMonitor.h"
+
+#define SANE_TIMEOUT_FOR_SHOW_CONTROLS_ON_MOUSE_MOVE 200
 
 // CPPagePlayer dialog
 
@@ -35,10 +38,12 @@ CPPageFullscreen::CPPageFullscreen()
     , m_launchfullscreen(FALSE)
     , m_fSetFullscreenRes(FALSE)
     , m_fSetDefault(FALSE)
-    , m_iShowBarsWhenFullScreen(FALSE)
-    , m_nShowBarsWhenFullScreenTimeOut(0)
+    , m_bHideFullscreenControls(FALSE)
+    , m_uHideFullscreenControlsDelay(0)
+    , m_bHideFullscreenDockedPanels(FALSE)
     , m_fExitFullScreenAtTheEnd(FALSE)
     , m_fRestoreResAfterExit(TRUE)
+    , m_uAutoChangeFullscrResDelay(0)
     , m_iMonitorType(0)
     , m_list(0)
     , m_iSel(-1)
@@ -59,11 +64,14 @@ void CPPageFullscreen::DoDataExchange(CDataExchange* pDX)
     DDX_CBIndex(pDX, IDC_COMBO1, m_iMonitorType);
     DDX_Control(pDX, IDC_COMBO1, m_iMonitorTypeCtrl);
     DDX_Control(pDX, IDC_LIST1, m_list);
-    DDX_Check(pDX, IDC_CHECK4, m_iShowBarsWhenFullScreen);
-    DDX_Text(pDX, IDC_EDIT1, m_nShowBarsWhenFullScreenTimeOut);
+    DDX_Check(pDX, IDC_CHECK4, m_bHideFullscreenControls);
+    DDX_Control(pDX, IDC_COMBO2, m_hidePolicy);
+    DDX_Text(pDX, IDC_EDIT1, m_uHideFullscreenControlsDelay);
+    DDX_Check(pDX, IDC_CHECK6, m_bHideFullscreenDockedPanels);
     DDX_Check(pDX, IDC_CHECK5, m_fExitFullScreenAtTheEnd);
-    DDX_Control(pDX, IDC_SPIN1, m_nTimeOutCtrl);
     DDX_Check(pDX, IDC_RESTORERESCHECK, m_fRestoreResAfterExit);
+    DDX_Text(pDX, IDC_EDIT2, m_uAutoChangeFullscrResDelay);
+    DDX_Control(pDX, IDC_SPIN1, m_delaySpinner);
 }
 
 BEGIN_MESSAGE_MAP(CPPageFullscreen, CPPageBase)
@@ -75,19 +83,25 @@ BEGIN_MESSAGE_MAP(CPPageFullscreen, CPPageBase)
     ON_NOTIFY(NM_CLICK, IDC_LIST1, OnNMClickList1)
     ON_NOTIFY(NM_CUSTOMDRAW, IDC_LIST1, OnCustomdrawList)
     ON_CLBN_CHKCHANGE(IDC_LIST1, OnCheckChangeList)
-    ON_UPDATE_COMMAND_UI(IDC_LIST1, OnUpdateList)
-    ON_UPDATE_COMMAND_UI(IDC_CHECK3, OnUpdateApplyDefault)
-    ON_UPDATE_COMMAND_UI(IDC_SPIN1, OnUpdateTimeout)
-    ON_UPDATE_COMMAND_UI(IDC_EDIT1, OnUpdateTimeout)
-    ON_UPDATE_COMMAND_UI(IDC_RESTORERESCHECK, OnUpdateRestoreRes)
+    ON_UPDATE_COMMAND_UI(IDC_LIST1, OnUpdateAutoChangeFullscrRes)
+    ON_UPDATE_COMMAND_UI(IDC_CHECK3, OnUpdateAutoChangeFullscrRes)
+    ON_CBN_SELCHANGE(IDC_COMBO2, OnHideControlsPolicyChange)
+    ON_UPDATE_COMMAND_UI(IDC_COMBO2, OnUpdateHideControls)
+    ON_UPDATE_COMMAND_UI(IDC_EDIT1, OnUpdateHideDelay)
+    ON_UPDATE_COMMAND_UI(IDC_STATIC1, OnUpdateHideDelay)
+    ON_UPDATE_COMMAND_UI(IDC_CHECK6, OnUpdateHideControls)
+    ON_UPDATE_COMMAND_UI(IDC_RESTORERESCHECK, OnUpdateAutoChangeFullscrRes)
     ON_BN_CLICKED(IDC_BUTTON2, OnRemove)
     ON_UPDATE_COMMAND_UI(IDC_BUTTON2, OnUpdateRemove)
     ON_BN_CLICKED(IDC_BUTTON1, OnAdd)
-    ON_UPDATE_COMMAND_UI(IDC_BUTTON1, OnUpdateAdd)
+    ON_UPDATE_COMMAND_UI(IDC_BUTTON1, OnUpdateAutoChangeFullscrRes)
     ON_BN_CLICKED(IDC_BUTTON3, OnMoveUp)
     ON_BN_CLICKED(IDC_BUTTON4, OnMoveDown)
     ON_UPDATE_COMMAND_UI(IDC_BUTTON3, OnUpdateUp)
     ON_UPDATE_COMMAND_UI(IDC_BUTTON4, OnUpdateDown)
+    ON_UPDATE_COMMAND_UI(IDC_EDIT2, OnUpdateAutoChangeFullscrRes)
+    ON_UPDATE_COMMAND_UI(IDC_SPIN1, OnUpdateAutoChangeFullscrRes)
+    ON_UPDATE_COMMAND_UI(IDC_STATIC2, OnUpdateAutoChangeFullscrRes)
 END_MESSAGE_MAP()
 
 // CPPagePlayer message handlers
@@ -102,11 +116,9 @@ BOOL CPPageFullscreen::OnInitDialog()
 
     m_launchfullscreen = s.fLaunchfullscreen;
     m_AutoChangeFullscrRes = s.AutoChangeFullscrRes;
+    m_uAutoChangeFullscrResDelay = s.uAutoChangeFullscrResDelay;
     m_fSetDefault = s.AutoChangeFullscrRes.bApplyDefault;
     m_f_hmonitor = s.strFullScreenMonitor;
-    m_iShowBarsWhenFullScreen = s.fShowBarsWhenFullScreen;
-    m_nShowBarsWhenFullScreenTimeOut = s.nShowBarsWhenFullScreenTimeOut;
-    m_nTimeOutCtrl.SetRange(-1, 10);
     m_fExitFullScreenAtTheEnd = s.fExitFullScreenAtTheEnd;
     m_fRestoreResAfterExit = s.fRestoreResAfterExit;
 
@@ -134,7 +146,7 @@ BOOL CPPageFullscreen::OnInitDialog()
             DISPLAY_DEVICE displayDevice;
             ZeroMemory(&displayDevice, sizeof(displayDevice));
             displayDevice.cb = sizeof(displayDevice);
-            VERIFY(EnumDisplayDevices(str, 0,  &displayDevice, 0));
+            VERIFY(EnumDisplayDevices(str, 0, &displayDevice, 0) == (i != monitors.GetCount() - 1));
             if (str == strCurMon) {
                 m_iMonitorTypeCtrl.AddString(str + _T(" - [") + ResStr(IDS_FULLSCREENMONITOR_CURRENT) + _T("] - ") + displayDevice.DeviceString);
             } else {
@@ -161,6 +173,33 @@ BOOL CPPageFullscreen::OnInitDialog()
     m_list.InsertColumn(COL_VFR_F, ResStr(IDS_PPAGE_FS_CLN_FROM_FPS), LVCFMT_RIGHT, 60);
     m_list.InsertColumn(COL_VFR_T, ResStr(IDS_PPAGE_FS_CLN_TO_FPS), LVCFMT_RIGHT, 60);
     m_list.InsertColumn(COL_SRR, ResStr(IDS_PPAGE_FS_CLN_DISPLAY_MODE), LVCFMT_LEFT, 135);
+
+
+    m_bHideFullscreenControls = s.bHideFullscreenControls;
+    m_uHideFullscreenControlsDelay = s.uHideFullscreenControlsDelay;
+    m_bHideFullscreenDockedPanels = s.bHideFullscreenDockedPanels;
+
+    auto addHidePolicy = [&](LPCTSTR lpszName, CAppSettings::HideFullscreenControlsPolicy ePolicy) {
+        int n = m_hidePolicy.InsertString(-1, lpszName);
+        if (n >= 0) {
+            VERIFY(m_hidePolicy.SetItemData(n, static_cast<DWORD_PTR>(ePolicy)) != CB_ERR);
+            if (ePolicy == s.eHideFullscreenControlsPolicy) {
+                VERIFY(m_hidePolicy.SetCurSel(n) == n);
+            }
+        } else {
+            ASSERT(FALSE);
+        }
+    };
+    auto loadString = [&](UINT nID) {
+        CString ret;
+        VERIFY(ret.LoadString(nID));
+        return ret;
+    };
+    addHidePolicy(loadString(IDS_PPAGEFULLSCREEN_SHOWNEVER), CAppSettings::HideFullscreenControlsPolicy::SHOW_NEVER);
+    addHidePolicy(loadString(IDS_PPAGEFULLSCREEN_SHOWMOVED), CAppSettings::HideFullscreenControlsPolicy::SHOW_WHEN_CURSOR_MOVED);
+    addHidePolicy(loadString(IDS_PPAGEFULLSCREEN_SHOHHOVERED), CAppSettings::HideFullscreenControlsPolicy::SHOW_WHEN_HOVERED);
+
+    m_delaySpinner.SetRange(0, 9);
 
     ModesUpdate();
     UpdateData(FALSE);
@@ -197,7 +236,7 @@ BOOL CPPageFullscreen::OnApply()
     CAppSettings& s = AfxGetAppSettings();
     m_AutoChangeFullscrRes.bEnabled = !!m_fSetFullscreenRes;
 
-    for (int i = 0; i < MaxFpsCount; i++) {
+    for (int i = 0; i < MAX_FPS_COUNT; i++) {
         int n = m_iSeldm[i];
         if (n >= 0 && (size_t)n < m_dms.GetCount() && i < m_list.GetItemCount()) {
             m_AutoChangeFullscrRes.dmFullscreenRes[i].dmFSRes = m_dms[n];
@@ -208,8 +247,8 @@ BOOL CPPageFullscreen::OnApply()
                 m_AutoChangeFullscrRes.dmFullscreenRes[i].vfr_from = 0;
                 m_AutoChangeFullscrRes.dmFullscreenRes[i].vfr_to = 0;
             } else {
-                m_AutoChangeFullscrRes.dmFullscreenRes[i].vfr_from = wcstod(m_list.GetItemText(i, COL_VFR_F), NULL);
-                m_AutoChangeFullscrRes.dmFullscreenRes[i].vfr_to = wcstod(m_list.GetItemText(i, COL_VFR_T), NULL);
+                m_AutoChangeFullscrRes.dmFullscreenRes[i].vfr_from = wcstod(m_list.GetItemText(i, COL_VFR_F), nullptr);
+                m_AutoChangeFullscrRes.dmFullscreenRes[i].vfr_to = wcstod(m_list.GetItemText(i, COL_VFR_T), nullptr);
             }
         } else {
             m_AutoChangeFullscrRes.dmFullscreenRes[i].fIsData = false;
@@ -226,12 +265,35 @@ BOOL CPPageFullscreen::OnApply()
 
     m_AutoChangeFullscrRes.bApplyDefault = !!m_fSetDefault;
     s.AutoChangeFullscrRes = m_AutoChangeFullscrRes;
+    s.uAutoChangeFullscrResDelay = m_uAutoChangeFullscrResDelay;
+
     s.fLaunchfullscreen = !!m_launchfullscreen;
-    s.strFullScreenMonitor =  m_f_hmonitor;
-    s.fShowBarsWhenFullScreen = !!m_iShowBarsWhenFullScreen;
-    s.nShowBarsWhenFullScreenTimeOut = m_nShowBarsWhenFullScreenTimeOut;
+    s.strFullScreenMonitor = m_f_hmonitor;
     s.fExitFullScreenAtTheEnd = !!m_fExitFullScreenAtTheEnd;
     s.fRestoreResAfterExit = !!m_fRestoreResAfterExit;
+
+    s.bHideFullscreenControls = !!m_bHideFullscreenControls;
+    {
+        int n = m_hidePolicy.GetCurSel();
+        if (n != CB_ERR) {
+            s.eHideFullscreenControlsPolicy =
+                static_cast<CAppSettings::HideFullscreenControlsPolicy>(m_hidePolicy.GetItemData(n));
+        } else {
+            ASSERT(FALSE);
+        }
+    }
+    if (s.eHideFullscreenControlsPolicy == CAppSettings::HideFullscreenControlsPolicy::SHOW_WHEN_CURSOR_MOVED &&
+            m_uHideFullscreenControlsDelay > 0 && m_uHideFullscreenControlsDelay < SANE_TIMEOUT_FOR_SHOW_CONTROLS_ON_MOUSE_MOVE) {
+        m_uHideFullscreenControlsDelay = SANE_TIMEOUT_FOR_SHOW_CONTROLS_ON_MOUSE_MOVE;
+        UpdateData(FALSE);
+    }
+    s.uHideFullscreenControlsDelay = m_uHideFullscreenControlsDelay;
+    s.bHideFullscreenDockedPanels = !!m_bHideFullscreenDockedPanels;
+
+    // There is no main frame when the option dialog is displayed stand-alone
+    if (CMainFrame* pMainFrame = AfxGetMainFrame()) {
+        pMainFrame->UpdateControlState(CMainFrame::UPDATE_CONTROLS_VISIBILITY);
+    }
 
     return __super::OnApply();
 }
@@ -273,7 +335,7 @@ void CPPageFullscreen::OnDolabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
     }
     CAtlList<CString> sl1;
     CMonitors monitors;
-    CString strModes;
+
     switch (pItem->iSubItem) {
         case COL_SRR:
             sl1.RemoveAll();
@@ -342,21 +404,6 @@ void CPPageFullscreen::OnCheckChangeList()
     SetModified();
 }
 
-void CPPageFullscreen::OnUpdateList(CCmdUI* pCmdUI)
-{
-    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2));
-}
-
-void CPPageFullscreen::OnUpdateApplyDefault(CCmdUI* pCmdUI)
-{
-    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2));
-}
-
-void CPPageFullscreen::OnUpdateRestoreRes(CCmdUI* pCmdUI)
-{
-    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2));
-}
-
 void CPPageFullscreen::OnUpdateFullScrCombo()
 {
     CMonitors monitors;
@@ -369,10 +416,27 @@ void CPPageFullscreen::OnUpdateFullScrCombo()
     SetModified();
 }
 
-void CPPageFullscreen::OnUpdateTimeout(CCmdUI* pCmdUI)
+void CPPageFullscreen::OnUpdateHideControls(CCmdUI* pCmdUI)
 {
-    UpdateData();
-    pCmdUI->Enable(m_iShowBarsWhenFullScreen);
+    pCmdUI->Enable(IsDlgButtonChecked(IDC_CHECK4));
+}
+
+void CPPageFullscreen::OnHideControlsPolicyChange()
+{
+    UpdateData(TRUE);
+    if (m_hidePolicy.GetItemData(m_hidePolicy.GetCurSel()) ==
+            static_cast<int>(CAppSettings::HideFullscreenControlsPolicy::SHOW_WHEN_CURSOR_MOVED) &&
+            m_uHideFullscreenControlsDelay > 0 && m_uHideFullscreenControlsDelay < SANE_TIMEOUT_FOR_SHOW_CONTROLS_ON_MOUSE_MOVE) {
+        m_uHideFullscreenControlsDelay = SANE_TIMEOUT_FOR_SHOW_CONTROLS_ON_MOUSE_MOVE;
+        UpdateData(FALSE);
+    }
+    SetModified();
+}
+
+void CPPageFullscreen::OnUpdateHideDelay(CCmdUI* pCmdUI)
+{
+    int n = m_hidePolicy.GetCurSel();
+    pCmdUI->Enable(IsDlgButtonChecked(IDC_CHECK4) && n != CB_ERR && n != 0);
 }
 
 void CPPageFullscreen::ModesUpdate()
@@ -380,17 +444,19 @@ void CPPageFullscreen::ModesUpdate()
     CMonitors monitors;
 
     m_fSetFullscreenRes = m_AutoChangeFullscrRes.bEnabled;
-    CString sl2[MaxFpsCount];
-    dispmode dm,  dmtoset[MaxFpsCount];
+    CString sl2[MAX_FPS_COUNT];
+    dispmode dm, dmtoset[MAX_FPS_COUNT];
 
-    int i0;
+    int i0 = 0;
 
-    CString str, strCurMon, strModes;
+    CString strModes;
     CString strCur;
-    GetCurDispModeString(strCur);
+    if (!GetCurDispModeString(strCur)) {
+        return;
+    }
 
     int iNoData = 0;
-    for (int i = 0; i < MaxFpsCount; i++) {
+    for (int i = 0; i < MAX_FPS_COUNT; i++) {
         dmtoset[i] = m_AutoChangeFullscrRes.dmFullscreenRes[i].dmFSRes;
         if (m_AutoChangeFullscrRes.dmFullscreenRes[i].fIsData == true) {
             iNoData++;
@@ -400,27 +466,29 @@ void CPPageFullscreen::ModesUpdate()
     if (!m_AutoChangeFullscrRes.bEnabled
             || m_AutoChangeFullscrRes.dmFullscreenRes[0].dmFSRes.freq < 0
             || m_AutoChangeFullscrRes.dmFullscreenRes[0].fIsData == false) {
-        GetCurDispMode(dmtoset[0], m_f_hmonitor);
-        for (int i = 1; i < MaxFpsCount; i++) {
+        if (!CMainFrame::GetCurDispMode(m_f_hmonitor, dmtoset[0])) {
+            return;
+        }
+
+        for (int i = 1; i < MAX_FPS_COUNT; i++) {
             dmtoset[i] = dmtoset[0];
         }
     }
     m_list.DeleteAllItems();
     m_dms.RemoveAll();
     sl.RemoveAll();
-    for (int i = 1; i < MaxFpsCount; i++) {
+    for (int i = 1; i < MAX_FPS_COUNT; i++) {
         sl2[i] = _T("");
     }
     memset(m_iSeldm, -1, sizeof(m_iSeldm));
     m_iSel = -1;
 
-    for (int i = 0, m = 0, ModeExist = true;  ; i++) {
-        ModeExist = GetDispMode(i, dm, m_f_hmonitor);
-        if (!ModeExist) {
+    for (int i = 0, m = 0;  ; i++) {
+        if (!CMainFrame::GetDispMode(m_f_hmonitor, i, dm)) {
             break;
         }
-        if (dm.bpp != 32) {
-            continue;    // skip non 32bpp mode
+        if (dm.bpp != 32 || dm.size.cx < 640) {
+            continue; // skip low resolution and non 32bpp mode
         }
 
         int j = 0;
@@ -463,7 +531,7 @@ void CPPageFullscreen::ModesUpdate()
         }
 
         sl.Add(strModes);
-        for (int n = 0; n < MaxFpsCount; n++) {
+        for (int n = 0; n < MAX_FPS_COUNT; n++) {
             if (m_iSeldm[n] < 0
                     && dmtoset[n].fValid
                     && m_dms[i].size            == dmtoset[n].size
@@ -479,7 +547,7 @@ void CPPageFullscreen::ModesUpdate()
         }
     }
 
-    for (int n = 0; n < MaxFpsCount; n++) {
+    for (int n = 0; n < MAX_FPS_COUNT; n++) {
         if (m_AutoChangeFullscrRes.dmFullscreenRes[n].fIsData == true) {
             m_list.InsertItem(n, _T(""));
             CString ss = sl2[n];
@@ -595,7 +663,7 @@ void CPPageFullscreen::OnUpdateRemove(CCmdUI* pCmdUI)
 {
     POSITION pos = m_list.GetFirstSelectedItemPosition();
     int i = m_list.GetNextSelectedItem(pos);
-    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2) && (i > 0 || pos != NULL));
+    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2) && (i > 0 || pos != nullptr));
 }
 
 void CPPageFullscreen::OnAdd()
@@ -605,7 +673,7 @@ void CPPageFullscreen::OnAdd()
     if (i <= 0) {
         i = m_list.GetItemCount();
     }
-    if (m_list.GetItemCount() <= MaxFpsCount) {
+    if (m_list.GetItemCount() <= MAX_FPS_COUNT) {
         CString str, strCur;
         (i < 10) ? str.Format(_T("0%d"), i) : str.Format(_T("%d"), i);
         m_list.InsertItem(i, str);
@@ -622,12 +690,6 @@ void CPPageFullscreen::OnAdd()
         SetModified();
     }
 }
-
-void CPPageFullscreen::OnUpdateAdd(CCmdUI* pCmdUI)
-{
-    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2));
-}
-
 
 void CPPageFullscreen::OnMoveUp()
 {
@@ -700,7 +762,7 @@ void CPPageFullscreen::OnUpdateUp(CCmdUI* pCmdUI)
 {
     POSITION pos = m_list.GetFirstSelectedItemPosition();
     int i = m_list.GetNextSelectedItem(pos);
-    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2) && (i > 1 || pos != NULL));
+    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2) && (i > 1 || pos != nullptr));
 }
 
 void CPPageFullscreen::OnUpdateDown(CCmdUI* pCmdUI)
@@ -709,6 +771,11 @@ void CPPageFullscreen::OnUpdateDown(CCmdUI* pCmdUI)
     int i = m_list.GetNextSelectedItem(pos);
     pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2) && (i > 0 && i < m_list.GetItemCount() - 1));
 
+}
+
+void CPPageFullscreen::OnUpdateAutoChangeFullscrRes(CCmdUI* pCmdUI)
+{
+    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK2));
 }
 
 void CPPageFullscreen::ReindexList()
@@ -733,10 +800,14 @@ void CPPageFullscreen::ReindexListSubItem()
     }
 }
 
-void CPPageFullscreen::GetCurDispModeString(CString& strCur)
+bool CPPageFullscreen::GetCurDispModeString(CString& strCur)
 {
     dispmode dmod;
-    GetCurDispMode(dmod, m_f_hmonitor);
-    strCur.Format(_T("[ %d ]  @ %dx%d "), dmod.freq, dmod.size.cx, dmod.size.cy);
-    (dmod.dmDisplayFlags == DM_INTERLACED) ? strCur += _T("i") : strCur += _T("p");
+    bool ret = CMainFrame::GetCurDispMode(m_f_hmonitor, dmod);
+    if (ret) {
+        strCur.Format(_T("[ %d ]  @ %dx%d "), dmod.freq, dmod.size.cx, dmod.size.cy);
+        strCur += (dmod.dmDisplayFlags == DM_INTERLACED) ? _T("i") : _T("p");
+    }
+
+    return ret;
 }

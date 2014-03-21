@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -46,7 +46,7 @@ class CWebClientSocket : public CAsyncSocket
 
     void Clear();
     void HandleRequest();
-    void ParseHeader(char* headerEnd);
+    void ParseHeader(const char* headerEnd);
     void ParsePostData();
 
 protected:
@@ -75,6 +75,6 @@ public:
     bool OnStatus(CStringA& hdr, CStringA& body, CStringA& mime);
     bool OnError404(CStringA& hdr, CStringA& body, CStringA& mime);
     bool OnPlayer(CStringA& hdr, CStringA& body, CStringA& mime);
-    bool OnSnapShotJpeg(CStringA& hdr, CStringA& body, CStringA& mime);
+    bool OnSnapshotJpeg(CStringA& hdr, CStringA& body, CStringA& mime);
     bool OnViewRes(CStringA& hdr, CStringA& body, CStringA& mime);
 };

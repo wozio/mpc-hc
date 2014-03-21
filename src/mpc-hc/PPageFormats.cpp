@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,6 +27,7 @@
 #include "WinAPIUtils.h"
 #include <psapi.h>
 #include <string>
+#include <atlimage.h>
 
 
 // CPPageFormats dialog
@@ -41,6 +42,7 @@ CPPageFormats::CPPageFormats()
     , m_fRtspFileExtFirst(FALSE)
     , m_bInsufficientPrivileges(false)
     , m_bFileExtChanged(false)
+    , m_bHaveRegisteredCategory(false)
 {
 }
 
@@ -98,21 +100,18 @@ void CPPageFormats::UpdateMediaCategoryState(int iItem)
 
 bool CPPageFormats::IsNeededIconsLib()
 {
-    bool needIconsLib = false;
-    int i = 0;
-
-    while (!needIconsLib && i < m_list.GetItemCount()) {
+    for (int i = 0, cnt = m_list.GetItemCount(); i < cnt; i++) {
         if (IsCheckedMediaCategory(i) == 1) {
-            needIconsLib = true;
+            return true;
         }
-        i++;
     }
 
-    return needIconsLib;
+    return false;
 }
 
 BEGIN_MESSAGE_MAP(CPPageFormats, CPPageBase)
     ON_NOTIFY(NM_CLICK, IDC_LIST1, OnMediaCategoryClicked)
+    ON_NOTIFY(LVN_KEYDOWN, IDC_LIST1, OnMediaCategoryKeyDown)
     ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST1, OnMediaCategorySelected)
     ON_NOTIFY(LVN_BEGINLABELEDIT, IDC_LIST1, OnBeginEditMediaCategoryEngine)
     ON_NOTIFY(LVN_DOLABELEDIT, IDC_LIST1, OnEditMediaCategoryEngine)
@@ -123,10 +122,12 @@ BEGIN_MESSAGE_MAP(CPPageFormats, CPPageBase)
     ON_BN_CLICKED(IDC_BUTTON4, OnBnClickedSelectVideoFormats)
     ON_BN_CLICKED(IDC_BUTTON3, OnBnClickedSelectAudioFormats)
     ON_BN_CLICKED(IDC_BUTTON5, OnBnVistaModify)
+    ON_BN_CLICKED(IDC_BUTTON6, OnBnWin8SetDefProg)
     ON_BN_CLICKED(IDC_CHECK7, OnFilesAssocModified)
     ON_BN_CLICKED(IDC_CHECK8, OnFilesAssocModified)
     ON_UPDATE_COMMAND_UI(IDC_BUTTON2, OnUpdateButtonDefault)
     ON_UPDATE_COMMAND_UI(IDC_BUTTON_EXT_SET, OnUpdateButtonSet)
+    ON_UPDATE_COMMAND_UI(IDC_BUTTON6, OnUpdateBnWin8SetDefProg)
 END_MESSAGE_MAP()
 
 // CPPageFormats message handlers
@@ -136,6 +137,7 @@ BOOL CPPageFormats::OnInitDialog()
     __super::OnInitDialog();
 
     m_bFileExtChanged = false;
+    m_bHaveRegisteredCategory = false;
 
     m_list.SetExtendedStyle(m_list.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
 
@@ -156,6 +158,10 @@ BOOL CPPageFormats::OnInitDialog()
     m_mf = s.m_Formats;
 
     for (int i = 0, cnt = (int)m_mf.GetCount(); i < cnt; i++) {
+        if (!m_mf[i].IsAssociable()) {
+            continue;
+        }
+
         CString label;
         label.Format(_T("%s (%s)"), m_mf[i].GetDescription(), m_mf[i].GetExts());
 
@@ -169,6 +175,9 @@ BOOL CPPageFormats::OnInitDialog()
                            e == ShockWave ? _T("ShockWave") : _T("-"));
 
         CFileAssoc::reg_state_t state = CFileAssoc::IsRegistered(m_mf[i]);
+        if (!m_bHaveRegisteredCategory && state != CFileAssoc::NOT_REGISTERED) {
+            m_bHaveRegisteredCategory = true;
+        }
         SetCheckedMediaCategory(iItem, (state == CFileAssoc::SOME_REGISTERED) ? 2 : (state == CFileAssoc::ALL_REGISTERED));
 
         if (!fSetContextFiles && CFileAssoc::AreRegisteredFileContextMenuEntries(m_mf[i]) != CFileAssoc::NOT_REGISTERED) {
@@ -200,11 +209,17 @@ BOOL CPPageFormats::OnInitDialog()
         GetDlgItem(IDC_BUTTON1)->ShowWindow(SW_HIDE);
         GetDlgItem(IDC_BUTTON3)->ShowWindow(SW_HIDE);
         GetDlgItem(IDC_BUTTON4)->ShowWindow(SW_HIDE);
+
+        GetDlgItem(IDC_EDIT1)->EnableWindow(FALSE);
+
         GetDlgItem(IDC_CHECK1)->EnableWindow(FALSE);
         GetDlgItem(IDC_CHECK2)->EnableWindow(FALSE);
         GetDlgItem(IDC_CHECK3)->EnableWindow(FALSE);
         GetDlgItem(IDC_CHECK4)->EnableWindow(FALSE);
         GetDlgItem(IDC_CHECK5)->EnableWindow(FALSE);
+        GetDlgItem(IDC_CHECK6)->EnableWindow(FALSE);
+        GetDlgItem(IDC_CHECK7)->EnableWindow(FALSE);
+        GetDlgItem(IDC_CHECK8)->EnableWindow(FALSE);
 
         GetDlgItem(IDC_RADIO1)->EnableWindow(FALSE);
         GetDlgItem(IDC_RADIO2)->EnableWindow(FALSE);
@@ -218,6 +233,33 @@ BOOL CPPageFormats::OnInitDialog()
         GetDlgItem(IDC_BUTTON5)->ShowWindow(SW_HIDE);
     }
 
+    if (SysVersion::Is8OrLater()) {
+        CRect r;
+        GetDlgItem(IDC_STATIC2)->GetWindowRect(r);
+        ScreenToClient(r);
+        r.BottomRight().Offset(0, -50);
+        GetDlgItem(IDC_STATIC2)->MoveWindow(r);
+        GetDlgItem(IDC_LIST1)->GetWindowRect(r);
+        ScreenToClient(r);
+        r.BottomRight().Offset(0, -50);
+        GetDlgItem(IDC_LIST1)->MoveWindow(r);
+        GetDlgItem(IDC_EDIT1)->GetWindowRect(r);
+        ScreenToClient(r);
+        r.OffsetRect(0, -50);
+        GetDlgItem(IDC_EDIT1)->MoveWindow(r);
+        GetDlgItem(IDC_BUTTON2)->GetWindowRect(r);
+        ScreenToClient(r);
+        r.OffsetRect(0, -50);
+        GetDlgItem(IDC_BUTTON2)->MoveWindow(r);
+        GetDlgItem(IDC_BUTTON_EXT_SET)->GetWindowRect(r);
+        ScreenToClient(r);
+        r.OffsetRect(0, -50);
+        GetDlgItem(IDC_BUTTON_EXT_SET)->MoveWindow(r);
+    } else {
+        GetDlgItem(IDC_STATIC3)->ShowWindow(SW_HIDE);
+        GetDlgItem(IDC_BUTTON6)->ShowWindow(SW_HIDE);
+    }
+
     m_fContextDir.SetCheck(CFileAssoc::AreRegisteredFolderContextMenuEntries());
     m_fAssociatedWithIcons.SetCheck(s.fAssociatedWithIcons);
 
@@ -229,59 +271,66 @@ BOOL CPPageFormats::OnInitDialog()
 
 BOOL CPPageFormats::OnApply()
 {
-    UpdateData();
+    m_bHaveRegisteredCategory = false;
 
-    int iSelectedItem = m_list.GetSelectionMark();
-    if (iSelectedItem >= 0) {
-        DWORD_PTR i = m_list.GetItemData(iSelectedItem);
+    if (!m_bInsufficientPrivileges) {
+        UpdateData();
 
-        m_mf[i].SetExts(m_exts);
-        m_exts = m_mf[i].GetExtsWithPeriod();
-        UpdateData(FALSE);
-    }
+        int iSelectedItem = m_list.GetSelectionMark();
+        if (iSelectedItem >= 0) {
+            DWORD_PTR i = m_list.GetItemData(iSelectedItem);
 
-    CFileAssoc::RegisterApp();
-
-    int fSetContextFiles = m_fContextFiles.GetCheck();
-    int fSetAssociatedWithIcon = m_fAssociatedWithIcons.GetCheck();
-
-    if (m_bFileExtChanged) {
-        if (fSetAssociatedWithIcon && IsNeededIconsLib() && !CFileAssoc::LoadIconLib()) {
-            AfxMessageBox(IDS_MISSING_ICONS_LIB, MB_ICONEXCLAMATION | MB_OK, 0);
+            m_mf[i].SetExts(m_exts);
+            m_exts = m_mf[i].GetExtsWithPeriod();
+            UpdateData(FALSE);
         }
 
-        for (int i = 0, cnt = m_list.GetItemCount(); i < cnt; i++) {
-            int iChecked = IsCheckedMediaCategory(i);
-            if (iChecked == 2) {
-                continue;
+        CFileAssoc::RegisterApp();
+
+        int fSetContextFiles = m_fContextFiles.GetCheck();
+        int fSetAssociatedWithIcon = m_fAssociatedWithIcons.GetCheck();
+
+        if (m_bFileExtChanged) {
+            if (fSetAssociatedWithIcon && IsNeededIconsLib() && !CFileAssoc::LoadIconLib()) {
+                AfxMessageBox(IDS_MISSING_ICONS_LIB, MB_ICONEXCLAMATION | MB_OK, 0);
             }
 
-            CFileAssoc::Register(m_mf[m_list.GetItemData(i)], !!iChecked, !!fSetContextFiles, !!fSetAssociatedWithIcon);
+            for (int i = 0, cnt = m_list.GetItemCount(); i < cnt; i++) {
+                int iChecked = IsCheckedMediaCategory(i);
+                if (!m_bHaveRegisteredCategory && iChecked) {
+                    m_bHaveRegisteredCategory = true;
+                }
+                if (iChecked == 2) {
+                    continue;
+                }
+
+                CFileAssoc::Register(m_mf[m_list.GetItemData(i)], !!iChecked, !!fSetContextFiles, !!fSetAssociatedWithIcon);
+            }
+
+            m_bFileExtChanged = false;
+
+            if (fSetAssociatedWithIcon) {
+                CFileAssoc::FreeIconLib();
+            }
         }
 
-        m_bFileExtChanged = false;
+        CFileAssoc::RegisterFolderContextMenuEntries(!!m_fContextDir.GetCheck());
 
-        if (fSetAssociatedWithIcon) {
-            CFileAssoc::FreeIconLib();
-        }
+        UpdateMediaCategoryState(m_list.GetSelectionMark());
+
+        CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_VIDEO, !!m_apvideo.GetCheck());
+        CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_MUSIC, !!m_apmusic.GetCheck());
+        CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_AUDIOCD, !!m_apaudiocd.GetCheck());
+        CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_DVDMOVIE, !!m_apdvd.GetCheck());
+
+        m_mf.SetRtspHandler(m_iRtspHandler == 0 ? RealMedia : m_iRtspHandler == 1 ? QuickTime : DirectShow, !!m_fRtspFileExtFirst);
+
+        CAppSettings& s = AfxGetAppSettings();
+        s.m_Formats = m_mf;
+        s.fAssociatedWithIcons = !!m_fAssociatedWithIcons.GetCheck();
+
+        SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
     }
-
-    CFileAssoc::RegisterFolderContextMenuEntries(!!m_fContextDir.GetCheck());
-
-    UpdateMediaCategoryState(m_list.GetSelectionMark());
-
-    CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_VIDEO, !!m_apvideo.GetCheck());
-    CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_MUSIC, !!m_apmusic.GetCheck());
-    CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_AUDIOCD, !!m_apaudiocd.GetCheck());
-    CFileAssoc::RegisterAutoPlay(CFileAssoc::AP_DVDMOVIE, !!m_apdvd.GetCheck());
-
-    m_mf.SetRtspHandler(m_iRtspHandler == 0 ? RealMedia : m_iRtspHandler == 1 ? QuickTime : DirectShow, !!m_fRtspFileExtFirst);
-
-    CAppSettings& s = AfxGetAppSettings();
-    s.m_Formats = m_mf;
-    s.fAssociatedWithIcons = !!m_fAssociatedWithIcons.GetCheck();
-
-    SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 
     return __super::OnApply();
 }
@@ -302,6 +351,24 @@ void CPPageFormats::OnMediaCategoryClicked(NMHDR* pNMHDR, LRESULT* pResult)
                 m_bFileExtChanged = true;
                 SetModified();
             }
+        }
+    }
+
+    *pResult = 0;
+}
+
+void CPPageFormats::OnMediaCategoryKeyDown(NMHDR* pNMHDR, LRESULT* pResult)
+{
+    LPNMLVKEYDOWN lpkd = (LPNMLVKEYDOWN)pNMHDR;
+
+    if (lpkd->wVKey == VK_SPACE) {
+        if (m_bInsufficientPrivileges) {
+            MessageBox(ResStr(IDS_CANNOT_CHANGE_FORMAT));
+        } else {
+            int iItem = m_list.GetSelectionMark();
+            SetCheckedMediaCategory(iItem, (IsCheckedMediaCategory(iItem) != 1));
+            m_bFileExtChanged = true;
+            SetModified();
         }
     }
 
@@ -427,10 +494,10 @@ void CPPageFormats::OnBnClickedSelectAudioFormats()
 
 void CPPageFormats::OnBnVistaModify()
 {
-    TCHAR   strApp[_MAX_PATH];
+    TCHAR   strApp[MAX_PATH];
     CString strCmd;
 
-    GetModuleFileNameEx(GetCurrentProcess(), AfxGetMyApp()->m_hInstance, strApp, _MAX_PATH);
+    GetModuleFileNameEx(GetCurrentProcess(), AfxGetMyApp()->m_hInstance, strApp, MAX_PATH);
     strCmd.Format(_T("/adminoption %d"), IDD);
 
     AfxGetMyApp()->RunAsAdministrator(strApp, strCmd, true);
@@ -450,6 +517,10 @@ void CPPageFormats::OnBnClickedResetExtensionsList()
 
         mfc.RestoreDefaultExts();
         m_exts = mfc.GetExtsWithPeriod();
+
+        CString label;
+        label.Format(_T("%s (%s)"), mfc.GetDescription(), mfc.GetExts());
+        m_list.SetItemText(iItem, COL_CATEGORY, label);
 
         UpdateMediaCategoryState(iItem);
         UpdateData(FALSE);
@@ -471,6 +542,10 @@ void CPPageFormats::OnBnClickedSetExtensionsList()
         mfc.SetExts(m_exts);
         m_exts = mfc.GetExtsWithPeriod();
 
+        CString label;
+        label.Format(_T("%s (%s)"), mfc.GetDescription(), mfc.GetExts());
+        m_list.SetItemText(iItem, COL_CATEGORY, label);
+
         UpdateMediaCategoryState(iItem);
         UpdateData(FALSE);
 
@@ -482,6 +557,13 @@ void CPPageFormats::OnFilesAssocModified()
 {
     m_bFileExtChanged = true;
     SetModified();
+}
+
+void CPPageFormats::OnBnWin8SetDefProg()
+{
+    // Windows 8 prevents the applications from programmatically changing the default handler
+    // for a file type or protocol so we have to make use of Windows UI for that.
+    CFileAssoc::ShowWindowsAssocDialog();
 }
 
 void CPPageFormats::OnUpdateButtonDefault(CCmdUI* pCmdUI)
@@ -516,4 +598,9 @@ void CPPageFormats::OnUpdateButtonSet(CCmdUI* pCmdUI)
 
         pCmdUI->Enable(!!newexts.CompareNoCase(orgexts));
     }
+}
+
+void CPPageFormats::OnUpdateBnWin8SetDefProg(CCmdUI* pCmdUI)
+{
+    pCmdUI->Enable(m_bHaveRegisteredCategory);
 }

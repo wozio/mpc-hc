@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,12 +23,16 @@
 
 #include "StatusLabel.h"
 
+class CMainFrame;
 
 // CPlayerStatusBar
 
 class CPlayerStatusBar : public CDialogBar
 {
     DECLARE_DYNAMIC(CPlayerStatusBar)
+
+private:
+    CMainFrame* m_pMainFrame;
 
     CStatic m_type;
     CStatusLabel m_status, m_time;
@@ -43,7 +47,7 @@ class CPlayerStatusBar : public CDialogBar
     void Relayout();
 
 public:
-    CPlayerStatusBar();
+    CPlayerStatusBar(CMainFrame* pMainFrame);
     virtual ~CPlayerStatusBar();
 
     void Clear();
@@ -53,9 +57,13 @@ public:
     void SetStatusMessage(CString str);
     void SetStatusTimer(CString str);
     void SetStatusTimer(REFERENCE_TIME rtNow, REFERENCE_TIME rtDur, bool fHighPrecision,
-                        const GUID* pTimeFormat = &TIME_FORMAT_MEDIA_TIME);
+                        const GUID& timeFormat = TIME_FORMAT_MEDIA_TIME);
 
-    CString GetStatusTimer();
+    CString GetStatusTimer() const;
+    CString GetStatusMessage() const;
+
+    CString PreparePathStatusMessage(CPath path);
+
     void ShowTimer(bool fShow);
 
     // Overrides
@@ -74,4 +82,5 @@ protected:
     afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
     afx_msg BOOL PreTranslateMessage(MSG* pMsg);
     afx_msg void OnTimeDisplayClicked();
+    afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
 };

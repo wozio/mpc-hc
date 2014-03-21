@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <io.h>
+#include <algorithm>
 #include "VobFile.h"
 #include "CSSauth.h"
 #include "CSSscramble.h"
@@ -8,8 +9,11 @@
 #include "../DSUtil/GolombBuffer.h"
 #include "../DSUtil/DSUtil.h"
 
-#define Audio_block_size    66
-#define Subtitle_block_size 194
+#define AUDIO_BLOCK_SIZE    66
+#define SUBTITLE_BLOCK_SIZE 194
+#define IFO_HEADER_SIZE     12
+#define VIDEO_TS_HEADER     "DVDVIDEO-VMG"
+#define VTS_HEADER          "DVDVIDEO-VTS"
 
 //
 // CDVDSession
@@ -19,6 +23,9 @@ CDVDSession::CDVDSession()
     : m_session(DVD_END_ALL_SESSIONS)
     , m_hDrive(INVALID_HANDLE_VALUE)
 {
+    ZeroMemory(m_SessionKey, sizeof(m_SessionKey));
+    ZeroMemory(m_DiscKey, sizeof(m_DiscKey));
+    ZeroMemory(m_TitleKey, sizeof(m_TitleKey));
 }
 
 CDVDSession::~CDVDSession()
@@ -33,8 +40,8 @@ bool CDVDSession::Open(LPCTSTR path)
     CString fn = path;
     CString drive = _T("\\\\.\\") + fn.Left(fn.Find(':') + 1);
 
-    m_hDrive = CreateFile(drive, GENERIC_READ, FILE_SHARE_READ, NULL,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN, (HANDLE)NULL);
+    m_hDrive = CreateFile(drive, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                          OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN, (HANDLE)nullptr);
     if (m_hDrive == INVALID_HANDLE_VALUE) {
         return false;
     }
@@ -59,10 +66,10 @@ bool CDVDSession::BeginSession()
     }
 
     DWORD BytesReturned;
-    if (!DeviceIoControl(m_hDrive, IOCTL_DVD_START_SESSION, NULL, 0, &m_session, sizeof(m_session), &BytesReturned, NULL)) {
+    if (!DeviceIoControl(m_hDrive, IOCTL_DVD_START_SESSION, nullptr, 0, &m_session, sizeof(m_session), &BytesReturned, nullptr)) {
         m_session = DVD_END_ALL_SESSIONS;
-        if (!DeviceIoControl(m_hDrive, IOCTL_DVD_END_SESSION, &m_session, sizeof(m_session), NULL, 0, &BytesReturned, NULL)
-                || !DeviceIoControl(m_hDrive, IOCTL_DVD_START_SESSION, NULL, 0, &m_session, sizeof(m_session), &BytesReturned, NULL)) {
+        if (!DeviceIoControl(m_hDrive, IOCTL_DVD_END_SESSION, &m_session, sizeof(m_session), nullptr, 0, &BytesReturned, nullptr)
+                || !DeviceIoControl(m_hDrive, IOCTL_DVD_START_SESSION, nullptr, 0, &m_session, sizeof(m_session), &BytesReturned, nullptr)) {
             Close();
             DWORD err = GetLastError();
             UNREFERENCED_PARAMETER(err);
@@ -77,7 +84,7 @@ void CDVDSession::EndSession()
 {
     if (m_session != DVD_END_ALL_SESSIONS) {
         DWORD BytesReturned;
-        DeviceIoControl(m_hDrive, IOCTL_DVD_END_SESSION, &m_session, sizeof(m_session), NULL, 0, &BytesReturned, NULL);
+        DeviceIoControl(m_hDrive, IOCTL_DVD_END_SESSION, &m_session, sizeof(m_session), nullptr, 0, &BytesReturned, nullptr);
         m_session = DVD_END_ALL_SESSIONS;
     }
 }
@@ -202,12 +209,12 @@ bool CDVDSession::SendKey(DVD_KEY_TYPE KeyType, BYTE* pKeyData)
 
     switch (KeyType) {
         case DvdChallengeKey:
-            key.Attach((DVD_COPY_PROTECT_KEY*)DNew BYTE[DVD_CHALLENGE_KEY_LENGTH]);
+            key.Attach((DVD_COPY_PROTECT_KEY*)DEBUG_NEW BYTE[DVD_CHALLENGE_KEY_LENGTH]);
             key->KeyLength = DVD_CHALLENGE_KEY_LENGTH;
             Reverse(key->KeyData, pKeyData, 10);
             break;
         case DvdBusKey2:
-            key.Attach((DVD_COPY_PROTECT_KEY*)DNew BYTE[DVD_BUS_KEY_LENGTH]);
+            key.Attach((DVD_COPY_PROTECT_KEY*)DEBUG_NEW BYTE[DVD_BUS_KEY_LENGTH]);
             key->KeyLength = DVD_BUS_KEY_LENGTH;
             Reverse(key->KeyData, pKeyData, 5);
             break;
@@ -224,7 +231,7 @@ bool CDVDSession::SendKey(DVD_KEY_TYPE KeyType, BYTE* pKeyData)
     key->KeyFlags = 0;
 
     DWORD BytesReturned;
-    return !!DeviceIoControl(m_hDrive, IOCTL_DVD_SEND_KEY, key, key->KeyLength, NULL, 0, &BytesReturned, NULL);
+    return !!DeviceIoControl(m_hDrive, IOCTL_DVD_SEND_KEY, key, key->KeyLength, nullptr, 0, &BytesReturned, nullptr);
 }
 
 bool CDVDSession::ReadKey(DVD_KEY_TYPE KeyType, BYTE* pKeyData, int lba)
@@ -233,22 +240,22 @@ bool CDVDSession::ReadKey(DVD_KEY_TYPE KeyType, BYTE* pKeyData, int lba)
 
     switch (KeyType) {
         case DvdChallengeKey:
-            key.Attach((DVD_COPY_PROTECT_KEY*)DNew BYTE[DVD_CHALLENGE_KEY_LENGTH]);
+            key.Attach((DVD_COPY_PROTECT_KEY*)DEBUG_NEW BYTE[DVD_CHALLENGE_KEY_LENGTH]);
             key->KeyLength = DVD_CHALLENGE_KEY_LENGTH;
             key->Parameters.TitleOffset.QuadPart = 0;
             break;
         case DvdBusKey1:
-            key.Attach((DVD_COPY_PROTECT_KEY*)DNew BYTE[DVD_BUS_KEY_LENGTH]);
+            key.Attach((DVD_COPY_PROTECT_KEY*)DEBUG_NEW BYTE[DVD_BUS_KEY_LENGTH]);
             key->KeyLength = DVD_BUS_KEY_LENGTH;
             key->Parameters.TitleOffset.QuadPart = 0;
             break;
         case DvdDiskKey:
-            key.Attach((DVD_COPY_PROTECT_KEY*)DNew BYTE[DVD_DISK_KEY_LENGTH]);
+            key.Attach((DVD_COPY_PROTECT_KEY*)DEBUG_NEW BYTE[DVD_DISK_KEY_LENGTH]);
             key->KeyLength = DVD_DISK_KEY_LENGTH;
             key->Parameters.TitleOffset.QuadPart = 0;
             break;
         case DvdTitleKey:
-            key.Attach((DVD_COPY_PROTECT_KEY*)DNew BYTE[DVD_TITLE_KEY_LENGTH]);
+            key.Attach((DVD_COPY_PROTECT_KEY*)DEBUG_NEW BYTE[DVD_TITLE_KEY_LENGTH]);
             key->KeyLength = DVD_TITLE_KEY_LENGTH;
             key->Parameters.TitleOffset.QuadPart = 2048i64 * lba;
             break;
@@ -265,7 +272,7 @@ bool CDVDSession::ReadKey(DVD_KEY_TYPE KeyType, BYTE* pKeyData, int lba)
     key->KeyFlags = 0;
 
     DWORD BytesReturned;
-    if (!DeviceIoControl(m_hDrive, IOCTL_DVD_READ_KEY, key, key->KeyLength, key, key->KeyLength, &BytesReturned, NULL)) {
+    if (!DeviceIoControl(m_hDrive, IOCTL_DVD_READ_KEY, key, key->KeyLength, key, key->KeyLength, &BytesReturned, nullptr)) {
         DWORD err = GetLastError();
         UNREFERENCED_PARAMETER(err);
         return false;
@@ -309,7 +316,7 @@ CLBAFile::~CLBAFile()
 {
 }
 
-bool CLBAFile::IsOpen()
+bool CLBAFile::IsOpen() const
 {
     return (m_hFile != hFileNull);
 }
@@ -328,12 +335,12 @@ void CLBAFile::Close()
     }
 }
 
-int CLBAFile::GetLength()
+int CLBAFile::GetLengthLBA() const
 {
     return (int)(CFile::GetLength() / 2048);
 }
 
-int CLBAFile::GetPosition()
+int CLBAFile::GetPositionLBA() const
 {
     return (int)(CFile::GetPosition() / 2048);
 }
@@ -355,19 +362,19 @@ bool CLBAFile::Read(BYTE* buff)
 CVobFile::CVobFile()
 {
     Close();
-    m_ChaptersCount = -1;
+    m_iChaptersCount = -1;
 }
 
 CVobFile::~CVobFile()
 {
 }
 
-bool CVobFile::IsDVD()
+bool CVobFile::IsDVD() const
 {
     return m_fDVD;
 }
 
-bool CVobFile::HasDiscKey(BYTE* key)
+bool CVobFile::HasDiscKey(BYTE* key) const
 {
     if (key) {
         memcpy(key, m_DiscKey, 5);
@@ -375,7 +382,7 @@ bool CVobFile::HasDiscKey(BYTE* key)
     return m_fHasDiscKey;
 }
 
-bool CVobFile::HasTitleKey(BYTE* key)
+bool CVobFile::HasTitleKey(BYTE* key) const
 {
     if (key) {
         memcpy(key, m_TitleKey, 5);
@@ -418,26 +425,57 @@ static short GetFrames(byte val)
     return (short)(((byte0_high - 4) * 10) + byte0_low);
 }
 
-bool CVobFile::Open(CString fn, CAtlList<CString>& vobs)
+bool CVobFile::GetTitleInfo(LPCTSTR fn, ULONG nTitleNum, ULONG& VTSN, ULONG& TTN)
+{
+    CFile ifoFile;
+    if (!ifoFile.Open(fn, CFile::modeRead | CFile::typeBinary | CFile::shareDenyNone)) {
+        return false;
+    }
+
+    char hdr[IFO_HEADER_SIZE + 1];
+    ifoFile.Read(hdr, IFO_HEADER_SIZE);
+    hdr[IFO_HEADER_SIZE] = '\0';
+    if (strcmp(hdr, VIDEO_TS_HEADER)) {
+        return false;
+    }
+
+    ifoFile.Seek(0xC4, CFile::begin);
+    DWORD TT_SRPTPosition; // Read a 32-bit unsigned big-endian integer
+    ifoFile.Read(&TT_SRPTPosition, sizeof(TT_SRPTPosition));
+    TT_SRPTPosition = _byteswap_ulong(TT_SRPTPosition);
+    TT_SRPTPosition *= 2048;
+    ifoFile.Seek(TT_SRPTPosition + 8 + (nTitleNum - 1) * 12 + 6, CFile::begin);
+    BYTE tmp;
+    ifoFile.Read(&tmp, sizeof(tmp));
+    VTSN = tmp;
+    ifoFile.Read(&tmp, sizeof(tmp));
+    TTN = tmp;
+
+    ifoFile.Close();
+
+    return true;
+}
+
+bool CVobFile::Open(CString fn, CAtlList<CString>& vobs, ULONG nProgNum /*= 1*/)
 {
     if (!m_ifoFile.Open(fn, CFile::modeRead | CFile::typeBinary | CFile::shareDenyNone)) {
         return false;
     }
 
-    char hdr[13];
-    m_ifoFile.Read(hdr, 12);
-    hdr[12] = 0;
-    if (strcmp(hdr, "DVDVIDEO-VTS")) {
+    char hdr[IFO_HEADER_SIZE + 1];
+    m_ifoFile.Read(hdr, IFO_HEADER_SIZE);
+    hdr[IFO_HEADER_SIZE] = '\0';
+    if (strcmp(hdr, VTS_HEADER)) {
         return false;
     }
 
     // Audio streams ...
     m_ifoFile.Seek(0x202, CFile::begin);
-    BYTE buffer[Subtitle_block_size];
-    m_ifoFile.Read(buffer, Audio_block_size);
-    CGolombBuffer gb(buffer, Audio_block_size);
+    BYTE buffer[SUBTITLE_BLOCK_SIZE];
+    m_ifoFile.Read(buffer, AUDIO_BLOCK_SIZE);
+    CGolombBuffer gb(buffer, AUDIO_BLOCK_SIZE);
     int stream_count = gb.ReadShort();
-    for (int i = 0; i < min(stream_count, 8); i++) {
+    for (int i = 0; i < std::min(stream_count, 8); i++) {
         BYTE Coding_mode = (BYTE)gb.BitRead(3);
         gb.BitRead(5);// skip
         int ToAdd = 0;
@@ -465,10 +503,10 @@ bool CVobFile::Open(CString fn, CAtlList<CString>& vobs)
 
     // Subtitle streams ...
     m_ifoFile.Seek(0x254, CFile::begin);
-    m_ifoFile.Read(buffer, Subtitle_block_size);
-    CGolombBuffer gb_s(buffer, Subtitle_block_size);
+    m_ifoFile.Read(buffer, SUBTITLE_BLOCK_SIZE);
+    CGolombBuffer gb_s(buffer, SUBTITLE_BLOCK_SIZE);
     stream_count = gb_s.ReadShort();
-    for (int i = 0; i < min(stream_count, 32); i++) {
+    for (int i = 0; i < std::min(stream_count, 32); i++) {
         gb_s.ReadShort();
         char lang[2];
         gb_s.ReadBuffer((BYTE*)lang, 2);
@@ -477,13 +515,18 @@ bool CVobFile::Open(CString fn, CAtlList<CString>& vobs)
     }
 
     // Chapters ...
-    m_ifoFile.Seek(0xCC, CFile::begin); //Get VTS_PGCI adress
-    WORD pcgITPosition = ReadDword() * 2048;
-    m_ifoFile.Seek(pcgITPosition + 8 + 4, CFile::begin);
-    WORD chainOffset = ReadDword();
+    m_ifoFile.Seek(0xCC, CFile::begin); //Get VTS_PGCI address
+    DWORD pcgITPosition = ReadDword() * 2048;
+    m_ifoFile.Seek(pcgITPosition, CFile::begin);
+    WORD nProgCount = (WORD)ReadShort();
+    if (nProgNum > nProgCount) {
+        return false;
+    }
+    m_ifoFile.Seek(pcgITPosition + 8 * nProgNum + 4, CFile::begin);
+    DWORD chainOffset = ReadDword();
     m_ifoFile.Seek(pcgITPosition + chainOffset + 2, CFile::begin);
     BYTE programChainPrograms = ReadByte();
-    m_ChaptersCount = programChainPrograms;
+    m_iChaptersCount = programChainPrograms;
     m_ifoFile.Seek(pcgITPosition + chainOffset + 230, CFile::begin);
     int programMapOffset = ReadShort();
     m_ifoFile.Seek(pcgITPosition + chainOffset + 0xE8, CFile::begin);
@@ -535,7 +578,6 @@ bool CVobFile::Open(CString fn, CAtlList<CString>& vobs)
         m_pChapters[currentProgram + 1] = rtDuration;
     }
 
-    //
     m_ifoFile.Close();
 
     int offset = -1;
@@ -574,11 +616,11 @@ bool CVobFile::Open(CString fn, CAtlList<CString>& vobs)
     return Open(vobs, offset);
 }
 
-bool CVobFile::Open(CAtlList<CString>& vobs, int offset)
+bool CVobFile::Open(const CAtlList<CString>& vobs, int offset)
 {
     Close();
 
-    if (vobs.GetCount() == 0) {
+    if (vobs.IsEmpty()) {
         return false;
     }
 
@@ -608,7 +650,7 @@ bool CVobFile::Open(CAtlList<CString>& vobs, int offset)
         m_size += f.size;
     }
 
-    if (m_files.GetCount() > 0 && CDVDSession::Open(m_files[0].fn)) {
+    if (!m_files.IsEmpty() && CDVDSession::Open(m_files[0].fn)) {
         for (size_t i = 0; !m_fHasTitleKey && i < m_files.GetCount(); i++) {
             if (BeginSession()) {
                 m_fDVD = true;
@@ -673,7 +715,7 @@ bool CVobFile::Open(CAtlList<CString>& vobs, int offset)
         }
     }
     /*
-        if(m_files.GetCount() > 0 && !m_fDVD)
+        if(!m_files.IsEmpty() && !m_fDVD)
         {
             CString fn = m_files[0].fn;
             fn.MakeLower();
@@ -684,7 +726,7 @@ bool CVobFile::Open(CAtlList<CString>& vobs, int offset)
             }
         }
     */
-    m_offset = max(offset, 0);
+    m_offset = std::max(offset, 0);
 
     return true;
 }
@@ -699,19 +741,19 @@ void CVobFile::Close()
     m_fDVD = m_fHasDiscKey = m_fHasTitleKey = false;
 }
 
-int CVobFile::GetLength()
+int CVobFile::GetLength() const
 {
     return (m_size - m_offset);
 }
 
-int CVobFile::GetPosition()
+int CVobFile::GetPosition() const
 {
     return (m_pos - m_offset);
 }
 
 int CVobFile::Seek(int pos)
 {
-    pos = min(max(pos + m_offset, m_offset), m_size - 1);
+    pos = std::min(std::max(pos + m_offset, m_offset), m_size - 1);
 
     int i = -1;
     int size = 0;
@@ -743,7 +785,7 @@ bool CVobFile::Read(BYTE* buff)
         return false;
     }
 
-    if (m_file.IsOpen() && m_file.GetPosition() == m_file.GetLength()) {
+    if (m_file.IsOpen() && m_file.GetPositionLBA() == m_file.GetLengthLBA()) {
         m_file.Close();
     }
 
@@ -778,16 +820,16 @@ bool CVobFile::Read(BYTE* buff)
     return true;
 }
 
-BSTR CVobFile::GetTrackName(UINT aTrackIdx)
+BSTR CVobFile::GetTrackName(UINT aTrackIdx) const
 {
-    CString TrackName = _T("");
-    m_pStream_Lang.Lookup(aTrackIdx, TrackName);
-    return TrackName.AllocSysString();
+    CString trackName;
+    m_pStream_Lang.Lookup(aTrackIdx, trackName);
+    return trackName.AllocSysString();
 }
 
-REFERENCE_TIME CVobFile::GetChapterOffset(UINT ChapterNumber)
+REFERENCE_TIME CVobFile::GetChapterOffset(UINT ChapterNumber) const
 {
-    REFERENCE_TIME ChapterOffset = 0;
-    m_pChapters.Lookup(ChapterNumber, ChapterOffset);
-    return ChapterOffset;
+    REFERENCE_TIME rtChapterOffset = 0;
+    m_pChapters.Lookup(ChapterNumber, rtChapterOffset);
+    return rtChapterOffset;
 }

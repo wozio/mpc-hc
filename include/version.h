@@ -1,6 +1,6 @@
 #ifndef ISPP_INVOKED
 /*
- * (C) 2010-2012 see Authors.txt
+ * (C) 2010-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -34,11 +34,13 @@
 #ifndef MPC_VERSION_H
 #define MPC_VERSION_H
 
+#include "mpc-hc_config.h"
+
 #ifndef _T
 #if !defined(ISPP_INVOKED) && (defined(UNICODE) || defined(_UNICODE))
-#define _T(text) L##text
+#define _T(text)    L##text
 #else
-#define _T(text) text
+#define _T(text)    text
 #endif
 #endif
 
@@ -46,42 +48,76 @@
 #include "version_rev.h"
 #endif
 
-#define DO_MAKE_STR(x) _T(#x)
-#define MAKE_STR(x)    DO_MAKE_STR(x)
+#define DO_MAKE_STR(x)          _T(#x)
+#define MAKE_STR(x)             DO_MAKE_STR(x)
 
-#define MPC_VERSION_MAJOR 1
-#define MPC_VERSION_MINOR 6
-#define MPC_VERSION_PATCH 5
+#define MPC_VERSION_MAJOR       1
+#define MPC_VERSION_MINOR       7
+#define MPC_VERSION_PATCH       3
 
+#define MPC_NIGHTLY_RELEASE     1
 
-#define MPC_COMP_NAME_STR    _T("MPC-HC Team")
-#define MPC_COPYRIGHT_STR    _T("Copyright © 2002-2012 all contributors, see Authors.txt")
-#define MPC_VERSION_COMMENTS _T("http://sourceforge.net/projects/mpc-hc/")
+#define MPC_COMP_NAME_STR       _T("MPC-HC Team")
+#define MPC_COPYRIGHT_STR       _T("Copyright © 2002-2014 all contributors, see Authors.txt")
+#define MPC_VERSION_COMMENTS    WEBSITE_URL
+
 
 #ifndef ISPP_INVOKED
 
 #ifdef NO_VERSION_REV_NEEDED
-#define MPC_VERSION_NUM      MPC_VERSION_MAJOR,MPC_VERSION_MINOR,MPC_VERSION_PATCH,0
-#define MPC_VERSION_STR      MAKE_STR(MPC_VERSION_MAJOR) _T(".") MAKE_STR(MPC_VERSION_MINOR) _T(".") MAKE_STR(MPC_VERSION_PATCH) _T(".0")
-#define MPC_VERSION_STR_FULL MPC_VERSION_STR
-#else
-#define MPC_VERSION_NUM      MPC_VERSION_MAJOR,MPC_VERSION_MINOR,MPC_VERSION_PATCH,MPC_VERSION_REV
-#define MPC_VERSION_STR      MAKE_STR(MPC_VERSION_MAJOR) _T(".") MAKE_STR(MPC_VERSION_MINOR) _T(".") MAKE_STR(MPC_VERSION_PATCH) _T(".") MAKE_STR(MPC_VERSION_REV)
-#define MPC_VERSION_STR_FULL MAKE_STR(MPC_VERSION_MAJOR) _T(".") MAKE_STR(MPC_VERSION_MINOR) _T(".") MAKE_STR(MPC_VERSION_PATCH) _T(".") MPC_VERSION_REV_FULL
+
+#define MPC_VERSION_NUM         MPC_VERSION_MAJOR,MPC_VERSION_MINOR,MPC_VERSION_PATCH,0
+#define MPC_VERSION_STR         MAKE_STR(MPC_VERSION_MAJOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_MINOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_PATCH)
+#define MPC_VERSION_STR_FULL    MPC_VERSION_STR
+
+#else // !NO_VERSION_REV_NEEDED
+
+#define MPC_VERSION_NUM         MPC_VERSION_MAJOR,MPC_VERSION_MINOR,MPC_VERSION_PATCH,MPC_VERSION_REV
+
+#if MPC_NIGHTLY_RELEASE
+
+#define MPC_VERSION_STR         MAKE_STR(MPC_VERSION_MAJOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_MINOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_PATCH) _T(".") \
+                                MAKE_STR(MPC_VERSION_REV)
+#define MPC_VERSION_STR_FULL    MAKE_STR(MPC_VERSION_MAJOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_MINOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_PATCH) _T(".") \
+                                MAKE_STR(MPC_VERSION_REV) \
+                                MPC_VERSION_ADDITIONAL
+
+#else // !MPC_NIGHTLY_RELEASE
+
+#define MPC_VERSION_STR         MAKE_STR(MPC_VERSION_MAJOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_MINOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_PATCH)
+#define MPC_VERSION_STR_FULL    MAKE_STR(MPC_VERSION_MAJOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_MINOR) _T(".") \
+                                MAKE_STR(MPC_VERSION_PATCH) \
+                                MPC_VERSION_ADDITIONAL
+
+#endif // MPC_NIGHTLY_RELEASE
+
 #endif // NO_VERSION_REV_NEEDED
 
 #endif // ISPP_INVOKED
 
 
-#ifdef _WIN64
-#define MPC_VERSION_ARCH     _T("x64")
-#else
-#define MPC_VERSION_ARCH     _T("x86")
+#if MPC_NIGHTLY_RELEASE
+#define MPC_VERSION_NIGHTLY     _T("Nightly")
 #endif
 
-#define MPC_DX_SDK_MONTH     _T("June")
-#define MPC_DX_SDK_YEAR      2010
-#define MPC_DX_SDK_NUMBER    43
+#ifdef _WIN64
+#define MPC_VERSION_ARCH        _T("x64")
+#else
+#define MPC_VERSION_ARCH        _T("x86")
+#endif
+
+#define MPC_DX_SDK_MONTH        _T("June")
+#define MPC_DX_SDK_YEAR         2010
+#define MPC_DX_SDK_NUMBER       43
 
 
 #endif // MPC_VERSION_H

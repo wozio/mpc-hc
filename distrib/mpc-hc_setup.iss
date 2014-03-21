@@ -1,4 +1,4 @@
-; (C) 2009-2012 see Authors.txt
+; (C) 2009-2014 see Authors.txt
 ;
 ; This file is part of MPC-HC.
 ;
@@ -20,8 +20,12 @@
 ; Inno Setup Unicode: http://www.jrsoftware.org/isdl.php
 
 
-#if VER < EncodeVer(5,5,2)
-  #error Update your Inno Setup version (5.5.2 or newer)
+#if VER < EncodeVer(5,5,4)
+  #error Update your Inno Setup version (5.5.4 or newer)
+#endif
+
+#if VER > EncodeVer(5,5,4)
+  #error Update script to use Turkish from the compiler dir and remove this check
 #endif
 
 #ifndef UNICODE
@@ -45,34 +49,63 @@
 
 ; From now on you shouldn't need to change anything
 
+#include "..\include\mpc-hc_config.h"
 #include "..\include\version.h"
 
-#define copyright_year "2002-2012"
-#define app_name       "MPC-HC"
-#define app_version    str(MPC_VERSION_MAJOR) + "." + str(MPC_VERSION_MINOR) + "." + str(MPC_VERSION_PATCH) + "." + str(MPC_VERSION_REV)
-#define quick_launch   "{userappdata}\Microsoft\Internet Explorer\Quick Launch"
+#define copyright_str   str(MPC_COPYRIGHT_STR)
+#define app_name        "MPC-HC"
 
+#if MPC_NIGHTLY_RELEASE
+  #define app_ver       str(MPC_VERSION_MAJOR) + "." + str(MPC_VERSION_MINOR) + "." + str(MPC_VERSION_PATCH) + "." + str(MPC_VERSION_REV)
+#else
+  #define app_ver       str(MPC_VERSION_MAJOR) + "." + str(MPC_VERSION_MINOR) + "." + str(MPC_VERSION_PATCH)
+#endif
+
+#define app_vername     = app_name + " " + app_ver
+#define quick_launch    "{userappdata}\Microsoft\Internet Explorer\Quick Launch"
+
+#define base_bindir     = "..\bin"
 
 #ifdef x64Build
-  #define bindir       = "..\bin\mpc-hc_x64"
-  #define mpchc_exe    = "mpc-hc64.exe"
-  #define mpchc_ini    = "mpc-hc64.ini"
-  #define OutFilename  = app_name + "." + app_version + ".x64"
+  #define bindir        = AddBackslash(base_bindir) + "mpc-hc_x64"
+  #define mpchc_exe     = "mpc-hc64.exe"
+  #define mpchc_ini     = "mpc-hc64.ini"
+  #define lavfiltersdir = "LAVFilters64"
+  #define OutFilename   = app_name + "." + app_ver + ".x64"
 #else
-  #define bindir       = "..\bin\mpc-hc_x86"
-  #define mpchc_exe    = "mpc-hc.exe"
-  #define mpchc_ini    = "mpc-hc.ini"
-  #define OutFilename  = app_name + "." + app_version + ".x86"
+  #define bindir        = AddBackslash(base_bindir) + "mpc-hc_x86"
+  #define mpchc_exe     = "mpc-hc.exe"
+  #define mpchc_ini     = "mpc-hc.ini"
+  #define lavfiltersdir = "LAVFilters"
+  #define OutFilename   = app_name + "." + app_ver + ".x86"
 #endif
 
-#if localize != "true" && defined(MPCHC_LITE)
-  #define OutFilename  = OutFilename + ".Lite"
-#elif localize != "true"
-  #define OutFilename  = OutFilename + ".en"
-#endif
-
-#ifnexist bindir + "\" + mpchc_exe
+#ifnexist AddBackslash(bindir) + mpchc_exe
   #error Compile MPC-HC first
+#endif
+
+#if localize != "true"
+  #if defined(MPCHC_LITE)
+    #define OutFilename  = OutFilename + ".Lite"
+  #else
+    #define OutFilename  = OutFilename + ".en"
+  #endif
+#endif
+
+#if MPC_NIGHTLY_RELEASE
+  #define FullAppNameVer = app_vername + " " + "(" + str(MPCHC_HASH) + ")"
+#else
+  #define FullAppNameVer = app_vername
+#endif
+
+#if MPC_NIGHTLY_RELEASE
+  #define FullAppNameVer = FullAppNameVer + " " + str(MPC_VERSION_NIGHTLY)
+#endif
+#ifdef MPCHC_LITE
+  #define FullAppNameVer = FullAppNameVer + " " + "Lite"
+#endif
+#ifdef x64Build
+  #define FullAppNameVer = FullAppNameVer + " " + "(64-bit)"
 #endif
 
 
@@ -80,41 +113,32 @@
 #ifdef x64Build
 AppId={{2ACBF1FA-F5C3-4B19-A774-B22A31F231B9}
 DefaultGroupName={#app_name} x64
-#if defined(MPCHC_LITE)
-UninstallDisplayName={#app_name} {#app_version} Lite (64-bit)
-#else
-UninstallDisplayName={#app_name} {#app_version} (64-bit)
-#endif
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 #else
 AppId={{2624B969-7135-4EB1-B0F6-2D8C397B45F7}
 DefaultGroupName={#app_name}
-#if defined(MPCHC_LITE)
-UninstallDisplayName={#app_name} {#app_version} Lite
-#else
-UninstallDisplayName={#app_name} {#app_version}
-#endif
 #endif
 
 AppName={#app_name}
-AppVersion={#app_version}
-AppVerName={#app_name} {#app_version}
+AppVersion={#app_ver}
+AppVerName={#app_vername}
 AppPublisher=MPC-HC Team
-AppPublisherURL=http://mpc-hc.sourceforge.net/
-AppSupportURL=http://mpc-hc.sourceforge.net/bug-reports/
-AppUpdatesURL=http://mpc-hc.sourceforge.net/
-AppContact=http://mpc-hc.sourceforge.net/contact-us/
-AppCopyright=Copyright © {#copyright_year} all contributors, see Authors.txt
+AppPublisherURL={#WEBSITE_URL}
+AppSupportURL={#TRAC_URL}
+AppUpdatesURL={#WEBSITE_URL}
+AppContact={#WEBSITE_URL}contact-us/
+AppCopyright={#copyright_str}
 VersionInfoCompany=MPC-HC Team
-VersionInfoCopyright=Copyright © {#copyright_year}, MPC-HC Team
+VersionInfoCopyright={#copyright_str}
 VersionInfoDescription={#app_name} Setup
 VersionInfoProductName={#app_name}
-VersionInfoProductVersion={#app_version}
-VersionInfoProductTextVersion={#app_version}
-VersionInfoTextVersion={#app_version}
-VersionInfoVersion={#app_version}
+VersionInfoProductVersion={#app_ver}
+VersionInfoProductTextVersion={#app_ver}
+VersionInfoTextVersion={#app_ver}
+VersionInfoVersion={#app_ver}
 UninstallDisplayIcon={app}\{#mpchc_exe}
+UninstallDisplayName={#FullAppNameVer}
 OutputBaseFilename={#OutFilename}
 DefaultDirName={code:GetInstallFolder}
 LicenseFile=..\COPYING.txt
@@ -132,36 +156,46 @@ DisableDirPage=auto
 DisableProgramGroupPage=auto
 MinVersion=5.01.2600sp3
 AppMutex=MediaPlayerClassicW
+#ifexist "..\signinfo.txt"
+SignTool=MySignTool
+#endif
 
 
 [Languages]
-Name: en; MessagesFile: compiler:Default.isl
+Name: en;    MessagesFile: compiler:Default.isl
 
 #if localize == "true"
-Name: br; MessagesFile: compiler:Languages\BrazilianPortuguese.isl
-Name: by; MessagesFile: Languages\Belarusian.isl
-Name: ca; MessagesFile: compiler:Languages\Catalan.isl
-Name: cz; MessagesFile: compiler:Languages\Czech.isl
-Name: de; MessagesFile: compiler:Languages\German.isl
-Name: el; MessagesFile: compiler:Languages\Greek.isl
-Name: es; MessagesFile: compiler:Languages\Spanish.isl
-Name: eu; MessagesFile: Languages\Basque.isl
-Name: fr; MessagesFile: compiler:Languages\French.isl
-Name: he; MessagesFile: compiler:Languages\Hebrew.isl
-Name: hu; MessagesFile: compiler:Languages\Hungarian.isl
-Name: hy; MessagesFile: Languages\Armenian.islu
-Name: it; MessagesFile: compiler:Languages\Italian.isl
-Name: ja; MessagesFile: compiler:Languages\Japanese.isl
-Name: kr; MessagesFile: Languages\Korean.isl
-Name: nl; MessagesFile: compiler:Languages\Dutch.isl
-Name: pl; MessagesFile: compiler:Languages\Polish.isl
-Name: ru; MessagesFile: compiler:Languages\Russian.isl
-Name: sc; MessagesFile: Languages\ChineseSimplified.isl
-Name: sv; MessagesFile: Languages\Swedish.isl
-Name: sk; MessagesFile: Languages\Slovak.isl
-Name: tc; MessagesFile: Languages\ChineseTraditional.isl
-Name: tr; MessagesFile: Languages\Turkish.isl
-Name: ua; MessagesFile: compiler:Languages\Ukrainian.isl
+Name: be;    MessagesFile: Languages\Belarusian.isl
+Name: ca;    MessagesFile: compiler:Languages\Catalan.isl
+Name: cs;    MessagesFile: compiler:Languages\Czech.isl
+Name: de;    MessagesFile: compiler:Languages\German.isl
+Name: el;    MessagesFile: compiler:Languages\Greek.isl
+Name: en_GB; MessagesFile: Languages\EnglishBritish.isl
+Name: es;    MessagesFile: compiler:Languages\Spanish.isl
+Name: eu;    MessagesFile: Languages\Basque.isl
+Name: fr;    MessagesFile: compiler:Languages\French.isl
+Name: gl;    MessagesFile: Languages\Galician.isl
+Name: he;    MessagesFile: compiler:Languages\Hebrew.isl
+Name: hr;    MessagesFile: Languages\Croatian.isl
+Name: hu;    MessagesFile: compiler:Languages\Hungarian.isl
+Name: hy;    MessagesFile: Languages\Armenian.islu
+Name: it;    MessagesFile: compiler:Languages\Italian.isl
+Name: ja;    MessagesFile: compiler:Languages\Japanese.isl
+Name: ko;    MessagesFile: Languages\Korean.isl
+Name: ms_MY; MessagesFile: Languages\Malaysian.isl
+Name: nl;    MessagesFile: compiler:Languages\Dutch.isl
+Name: pl;    MessagesFile: compiler:Languages\Polish.isl
+Name: pt_BR; MessagesFile: compiler:Languages\BrazilianPortuguese.isl
+Name: ro;    MessagesFile: Languages\Romanian.isl
+Name: ru;    MessagesFile: compiler:Languages\Russian.isl
+Name: sk;    MessagesFile: Languages\Slovak.isl
+Name: sl;    MessagesFile: compiler:Languages\Slovenian.isl
+Name: sv;    MessagesFile: Languages\Swedish.isl
+Name: tr;    MessagesFile: Languages\Turkish.isl
+Name: uk;    MessagesFile: compiler:Languages\Ukrainian.isl
+Name: vi;    MessagesFile: Languages\Vietnamese.isl
+Name: zh_CN; MessagesFile: Languages\ChineseSimplified.isl
+Name: zh_TW; MessagesFile: Languages\ChineseTraditional.isl
 #endif
 
 ; Include installer's custom messages
@@ -169,19 +203,7 @@ Name: ua; MessagesFile: compiler:Languages\Ukrainian.isl
 
 
 [Messages]
-#ifdef x64Build
-#ifdef MPCHC_LITE
-BeveledLabel={#app_name} {#app_version} Lite (64-bit)
-#else
-BeveledLabel={#app_name} {#app_version} (64-bit)
-#endif
-#else
-#ifdef MPCHC_LITE
-BeveledLabel={#app_name} {#app_version} Lite
-#else
-BeveledLabel={#app_name} {#app_version}
-#endif
-#endif
+BeveledLabel={#FullAppNameVer}
 
 
 [Types]
@@ -190,7 +212,7 @@ Name: custom;             Description: {cm:types_CustomInstallation};           
 
 
 [Components]
-Name: main;               Description: {#app_name} {#app_version}; Types: default custom; Flags: fixed
+Name: main;               Description: {#app_vername};             Types: default custom; Flags: fixed
 Name: mpciconlib;         Description: {cm:comp_mpciconlib};       Types: default custom
 #if localize == "true"
 Name: mpcresources;       Description: {cm:comp_mpcresources};     Types: default custom; Flags: disablenouninstallwarning
@@ -202,60 +224,44 @@ Name: desktopicon;        Description: {cm:CreateDesktopIcon};     GroupDescript
 Name: desktopicon\user;   Description: {cm:tsk_CurrentUser};       GroupDescription: {cm:AdditionalIcons}; Flags: exclusive
 Name: desktopicon\common; Description: {cm:tsk_AllUsers};          GroupDescription: {cm:AdditionalIcons}; Flags: unchecked exclusive
 Name: quicklaunchicon;    Description: {cm:CreateQuickLaunchIcon}; GroupDescription: {cm:AdditionalIcons}; Flags: unchecked;             OnlyBelowVersion: 6.01
-Name: reset_settings;     Description: {cm:tsk_ResetSettings};     GroupDescription: {cm:tsk_Other};       Flags: checkedonce unchecked; Check: SettingsExistCheck()
+Name: reset_settings;     Description: {cm:tsk_ResetSettings};     GroupDescription: {cm:tsk_Other};       Flags: checkedonce unchecked; Check: SettingsExist()
 
 
 [Files]
 #if localize == "true"
-Source: {#bindir}\Lang\mpcresources.br.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.by.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.ca.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.cz.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.de.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.el.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.es.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.eu.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.fr.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.he.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.hu.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.hy.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.it.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.ja.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.kr.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.nl.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.pl.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.ru.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.sc.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.sk.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.sv.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.tc.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.tr.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
-Source: {#bindir}\Lang\mpcresources.ua.dll; DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
+Source: {#bindir}\Lang\mpcresources.??.dll;     DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
+Source: {#bindir}\Lang\mpcresources.??_??.dll;  DestDir: {app}\Lang; Components: mpcresources; Flags: ignoreversion
 #endif
-Source: {#bindir}\D3DCompiler_{#MPC_DX_SDK_NUMBER}.dll; DestDir: {app}; Components: main;  Flags: ignoreversion
-Source: {#bindir}\d3dx9_{#MPC_DX_SDK_NUMBER}.dll;       DestDir: {app}; Components: main;  Flags: ignoreversion
-Source: {#bindir}\mpciconlib.dll;           DestDir: {app};      Components: mpciconlib;   Flags: ignoreversion
-Source: {#bindir}\{#mpchc_exe};             DestDir: {app};      Components: main;         Flags: ignoreversion
-Source: ..\COPYING.txt;                     DestDir: {app};      Components: main;         Flags: ignoreversion
-Source: ..\docs\Authors.txt;                DestDir: {app};      Components: main;         Flags: ignoreversion
-Source: ..\docs\Changelog.txt;              DestDir: {app};      Components: main;         Flags: ignoreversion
-Source: ..\docs\Readme.txt;                 DestDir: {app};      Components: main;         Flags: ignoreversion
+#ifndef MPCHC_LITE
+Source: {#bindir}\{#lavfiltersdir}\*.dll;       DestDir: {app}\{#lavfiltersdir}; Components: main; Flags: ignoreversion
+Source: {#bindir}\{#lavfiltersdir}\*.ax;        DestDir: {app}\{#lavfiltersdir}; Components: main; Flags: ignoreversion
+Source: {#bindir}\{#lavfiltersdir}\*.manifest;  DestDir: {app}\{#lavfiltersdir}; Components: main; Flags: ignoreversion
+#endif
+Source: {#bindir}\D3DCompiler_{#MPC_DX_SDK_NUMBER}.dll; DestDir: {app}; Components: main; Flags: ignoreversion
+Source: {#bindir}\d3dx9_{#MPC_DX_SDK_NUMBER}.dll;       DestDir: {app}; Components: main; Flags: ignoreversion
+Source: {#bindir}\mpciconlib.dll;               DestDir: {app}; Components: mpciconlib;   Flags: ignoreversion
+Source: {#bindir}\{#mpchc_exe};                 DestDir: {app}; Components: main;         Flags: ignoreversion
+Source: ..\COPYING.txt;                         DestDir: {app}; Components: main;         Flags: ignoreversion
+Source: ..\docs\Authors.txt;                    DestDir: {app}; Components: main;         Flags: ignoreversion
+Source: ..\docs\Changelog.txt;                  DestDir: {app}; Components: main;         Flags: ignoreversion
+Source: ..\docs\Readme.txt;                     DestDir: {app}; Components: main;         Flags: ignoreversion
+Source: ..\src\mpc-hc\res\shaders\external\*.hlsl; DestDir: {app}\Shaders; Components: main; Flags: ignoreversion
 
 
 [Icons]
 #ifdef x64Build
-Name: {group}\{#app_name} x64;                   Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0
-Name: {commondesktop}\{#app_name} x64;           Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\common
-Name: {userdesktop}\{#app_name} x64;             Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\user
-Name: {#quick_launch}\{#app_name} x64;           Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: quicklaunchicon
+Name: {group}\{#app_name} x64;                   Filename: {app}\{#mpchc_exe}; Comment: {#app_vername} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0
+Name: {commondesktop}\{#app_name} x64;           Filename: {app}\{#mpchc_exe}; Comment: {#app_vername} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\common
+Name: {userdesktop}\{#app_name} x64;             Filename: {app}\{#mpchc_exe}; Comment: {#app_vername} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\user
+Name: {#quick_launch}\{#app_name} x64;           Filename: {app}\{#mpchc_exe}; Comment: {#app_vername} (64-bit); WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: quicklaunchicon
 #else
-Name: {group}\{#app_name};                       Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0
-Name: {commondesktop}\{#app_name};               Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\common
-Name: {userdesktop}\{#app_name};                 Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\user
-Name: {#quick_launch}\{#app_name};               Filename: {app}\{#mpchc_exe}; Comment: {#app_name} {#app_version}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: quicklaunchicon
+Name: {group}\{#app_name};                       Filename: {app}\{#mpchc_exe}; Comment: {#app_vername}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0
+Name: {commondesktop}\{#app_name};               Filename: {app}\{#mpchc_exe}; Comment: {#app_vername}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\common
+Name: {userdesktop}\{#app_name};                 Filename: {app}\{#mpchc_exe}; Comment: {#app_vername}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: desktopicon\user
+Name: {#quick_launch}\{#app_name};               Filename: {app}\{#mpchc_exe}; Comment: {#app_vername}; WorkingDir: {app}; IconFilename: {app}\{#mpchc_exe}; IconIndex: 0; Tasks: quicklaunchicon
 #endif
 Name: {group}\Changelog;                         Filename: {app}\Changelog.txt; Comment: {cm:ViewChangelog};                WorkingDir: {app}
-Name: {group}\{cm:ProgramOnTheWeb,{#app_name}};  Filename: http://mpc-hc.sourceforge.net/
+Name: {group}\{cm:ProgramOnTheWeb,{#app_name}};  Filename: {#WEBSITE_URL}
 Name: {group}\{cm:UninstallProgram,{#app_name}}; Filename: {uninstallexe};      Comment: {cm:UninstallProgram,{#app_name}}; WorkingDir: {app}
 
 
@@ -268,21 +274,21 @@ Filename: {app}\Changelog.txt;                   Description: {cm:ViewChangelog}
 Type: files; Name: {userdesktop}\{#app_name}.lnk;   Check: not IsTaskSelected('desktopicon\user')   and IsUpgrade()
 Type: files; Name: {commondesktop}\{#app_name}.lnk; Check: not IsTaskSelected('desktopicon\common') and IsUpgrade()
 Type: files; Name: {#quick_launch}\{#app_name}.lnk; Check: not IsTaskSelected('quicklaunchicon')    and IsUpgrade(); OnlyBelowVersion: 6.01
-Type: files; Name: {app}\AUTHORS
-Type: files; Name: {app}\ChangeLog
-Type: files; Name: {app}\COPYING
+Type: files; Name: {app}\AUTHORS;                   Check: IsUpgrade()
+Type: files; Name: {app}\ChangeLog;                 Check: IsUpgrade()
+Type: files; Name: {app}\COPYING;                   Check: IsUpgrade()
 
 ; old shortcuts
 #ifdef x64Build
-Type: files; Name: {group}\Media Player Classic - Home Cinema x64.lnk;               Check: IsUpgrade()
-Type: files; Name: {commondesktop}\Media Player Classic - Home Cinema x64.lnk;       Check: IsUpgrade()
-Type: files; Name: {userdesktop}\Media Player Classic - Home Cinema x64.lnk;         Check: IsUpgrade()
-Type: files; Name: {#quick_launch}\Media Player Classic - Home Cinema x64.lnk;       Check: IsUpgrade()
+Type: files; Name: {group}\Media Player Classic - Home Cinema x64.lnk;                   Check: IsUpgrade()
+Type: files; Name: {commondesktop}\Media Player Classic - Home Cinema x64.lnk;           Check: IsUpgrade()
+Type: files; Name: {userdesktop}\Media Player Classic - Home Cinema x64.lnk;             Check: IsUpgrade()
+Type: files; Name: {#quick_launch}\Media Player Classic - Home Cinema x64.lnk;           Check: IsUpgrade()
 #else
-Type: files; Name: {group}\Media Player Classic - Home Cinema.lnk;                   Check: IsUpgrade()
-Type: files; Name: {commondesktop}\Media Player Classic - Home Cinema.lnk;           Check: IsUpgrade()
-Type: files; Name: {userdesktop}\Media Player Classic - Home Cinema.lnk;             Check: IsUpgrade()
-Type: files; Name: {#quick_launch}\Media Player Classic - Home Cinema.lnk;           Check: IsUpgrade()
+Type: files; Name: {group}\Media Player Classic - Home Cinema.lnk;                       Check: IsUpgrade()
+Type: files; Name: {commondesktop}\Media Player Classic - Home Cinema.lnk;               Check: IsUpgrade()
+Type: files; Name: {userdesktop}\Media Player Classic - Home Cinema.lnk;                 Check: IsUpgrade()
+Type: files; Name: {#quick_launch}\Media Player Classic - Home Cinema.lnk;               Check: IsUpgrade()
 #endif
 Type: files; Name: {group}\{cm:ProgramOnTheWeb,Media Player Classic - Home Cinema}.url;  Check: IsUpgrade()
 Type: files; Name: {group}\{cm:UninstallProgram,Media Player Classic - Home Cinema}.lnk; Check: IsUpgrade()
@@ -290,6 +296,22 @@ Type: files; Name: {group}\{cm:UninstallProgram,Media Player Classic - Home Cine
 Type: files; Name: {userdesktop}\Media Player Classic - Home Cinema.lnk;   Check: not IsTaskSelected('desktopicon\user')   and IsUpgrade()
 Type: files; Name: {commondesktop}\Media Player Classic - Home Cinema.lnk; Check: not IsTaskSelected('desktopicon\common') and IsUpgrade()
 Type: files; Name: {#quick_launch}\Media Player Classic - Home Cinema.lnk; Check: not IsTaskSelected('quicklaunchicon')    and IsUpgrade(); OnlyBelowVersion: 6.01
+
+#ifdef x64Build
+Type: files; Name: {app}\LAVFilters\avcodec-lav-??.dll;                    Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\avfilter-lav-?.dll;                    Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\avformat-lav-??.dll;                   Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\avresample-lav-?.dll;                  Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\avutil-lav-??.dll;                     Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\IntelQuickSyncDecoder.dll;             Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\LAVAudio.ax;                           Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\LAVFilters.Dependencies.manifest;      Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\LAVSplitter.ax;                        Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\LAVVideo.ax;                           Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\libbluray.dll;                         Check: IsUpgrade()
+Type: files; Name: {app}\LAVFilters\swscale-lav-?.dll;                     Check: IsUpgrade()
+Type: dirifempty; Name: {app}\LAVFilters\;                                 Check: IsUpgrade()
+#endif
 
 
 #if localize == "true"
@@ -316,6 +338,14 @@ Type: files; Name: {app}\mpcresources.sv.dll
 Type: files; Name: {app}\mpcresources.tc.dll
 Type: files; Name: {app}\mpcresources.tr.dll
 Type: files; Name: {app}\mpcresources.ua.dll
+Type: files; Name: {app}\Lang\mpcresources.br.dll
+Type: files; Name: {app}\Lang\mpcresources.by.dll
+Type: files; Name: {app}\Lang\mpcresources.cz.dll
+Type: files; Name: {app}\Lang\mpcresources.en-GB.dll
+Type: files; Name: {app}\Lang\mpcresources.kr.dll
+Type: files; Name: {app}\Lang\mpcresources.sc.dll
+Type: files; Name: {app}\Lang\mpcresources.tc.dll
+Type: files; Name: {app}\Lang\mpcresources.ua.dll
 #endif
 
 
@@ -332,11 +362,12 @@ function GetInstallFolder(Default: String): String;
 var
   sInstallPath: String;
 begin
-  if not RegQueryStringValue(HKCU, 'SOFTWARE\Gabest\Media Player Classic', 'ExePath', sInstallPath) then begin
+  if not RegQueryStringValue(HKCU, 'SOFTWARE\Gabest\Media Player Classic', 'ExePath', sInstallPath)
+  or not RegQueryStringValue(HKCU, 'SOFTWARE\MPC-HC\MPC-HC', 'ExePath', sInstallPath) then begin
     Result := ExpandConstant('{pf}\MPC-HC');
   end
   else begin
-    RegQueryStringValue(HKCU, 'SOFTWARE\Gabest\Media Player Classic', 'ExePath', sInstallPath);
+    RegQueryStringValue(HKCU, 'SOFTWARE\MPC-HC\MPC-HC', 'ExePath', sInstallPath);
     Result := ExtractFileDir(sInstallPath);
     if (Result = '') or not DirExists(Result) then begin
       Result := ExpandConstant('{pf}\MPC-HC');
@@ -373,9 +404,10 @@ end;
 
 
 // Check if MPC-HC's settings exist
-function SettingsExistCheck(): Boolean;
+function SettingsExist(): Boolean;
 begin
   if RegKeyExists(HKEY_CURRENT_USER, 'Software\Gabest\Media Player Classic') or
+  RegKeyExists(HKEY_CURRENT_USER, 'Software\MPC-HC\MPC-HC') or
   FileExists(ExpandConstant('{app}\{#mpchc_ini}')) then
     Result := True
   else
@@ -393,19 +425,25 @@ end;
 
 procedure CleanUpSettingsAndFiles();
 begin
-  //DeleteFile(ExpandConstant('{app}\bitstream.log'));
-  //DeleteFile(ExpandConstant('{app}\dxva_ipinhook.log'));
-  //DeleteFile(ExpandConstant('{app}\picture.log'));
-  //DeleteFile(ExpandConstant('{app}\slicelong.log'));
-  //DeleteFile(ExpandConstant('{app}\sliceshort.log'));
-  //DelTree('{app}\BitStream*.bin', False, True, False);
-  //DelTree('{app}\Matrix*.bin', False, True, False);
   DeleteFile(ExpandConstant('{app}\{#mpchc_ini}'));
+  DeleteFile(ExpandConstant('{userappdata}\MPC-HC\default.mpcpl'));
+  RemoveDir(ExpandConstant('{userappdata}\MPC-HC'));
+  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\MPC-HC\Filters');
+  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\MPC-HC\MPC-HC');
+  RegDeleteKeyIfEmpty(HKCU, 'Software\MPC-HC');
+end;
+
+
+procedure CleanUpOldSettingsAndFiles();
+begin
   DeleteFile(ExpandConstant('{userappdata}\Media Player Classic\default.mpcpl'));
   RemoveDir(ExpandConstant('{userappdata}\Media Player Classic'));
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Gabest\Filters');
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Gabest\Media Player Classic');
   RegDeleteKeyIfEmpty(HKCU, 'Software\Gabest');
+  RegDeleteValue(HKLM, 'SOFTWARE\Gabest\Media Player Classic', 'ExePath')
+  RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\Gabest\Media Player Classic');
+  RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\Gabest');
 end;
 
 
@@ -414,14 +452,18 @@ var
   iLanguage: Integer;
 begin
   if CurStep = ssPostInstall then begin
-    if IsTaskSelected('reset_settings') then
+    if IsTaskSelected('reset_settings') then begin
       CleanUpSettingsAndFiles();
+      RegWriteStringValue(HKCU, 'Software\MPC-HC\MPC-HC', 'ExePath', ExpandConstant('{app}\{#mpchc_exe}'));
+    end;
 
     iLanguage := StrToInt(ExpandConstant('{cm:langid}'));
-    if IsComponentSelected('mpcresources') and FileExists(ExpandConstant('{app}\{#mpchc_ini}')) then
-      SetIniInt('Settings', 'InterfaceLanguage', iLanguage, ExpandConstant('{app}\{#mpchc_ini}'))
-    else
-      RegWriteDWordValue(HKCU, 'Software\Gabest\Media Player Classic\Settings', 'InterfaceLanguage', iLanguage);
+    if IsComponentSelected('mpcresources') then begin
+      if FileExists(ExpandConstant('{app}\{#mpchc_ini}')) then
+        SetIniInt('Settings', 'InterfaceLanguage', iLanguage, ExpandConstant('{app}\{#mpchc_ini}'))
+      else
+        RegWriteDWordValue(HKCU, 'Software\MPC-HC\MPC-HC\Settings', 'InterfaceLanguage', iLanguage);
+    end;
   end;
 
 end;
@@ -430,13 +472,15 @@ end;
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   // When uninstalling, ask the user to delete MPC-HC settings
-  if (CurUninstallStep = usUninstall) and SettingsExistCheck() then begin
-    if SuppressibleMsgBox(CustomMessage('msg_DeleteSettings'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES then
+  if (CurUninstallStep = usUninstall) and SettingsExist() then begin
+    if SuppressibleMsgBox(CustomMessage('msg_DeleteSettings'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES then begin
       CleanUpSettingsAndFiles();
+      CleanUpOldSettingsAndFiles();
+    end;
 
-    RegDeleteValue(HKLM, 'SOFTWARE\Gabest\Media Player Classic', 'ExePath')
-    RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\Gabest\Media Player Classic');
-    RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\Gabest');
+    RegDeleteValue(HKLM, 'SOFTWARE\MPC-HC\MPC-HC', 'ExePath')
+    RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\MPC-HC\MPC-HC');
+    RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\MPC-HC');
 
   end;
 end;

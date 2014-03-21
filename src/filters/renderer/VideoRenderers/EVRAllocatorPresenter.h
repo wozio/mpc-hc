@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -37,7 +37,7 @@ namespace DSObjects
     typedef HRESULT(__stdcall* PTR_MFCreateVideoSampleFromSurface)(IUnknown* pUnkSurface, IMFSample** ppSample);
     typedef HRESULT(__stdcall* PTR_MFCreateVideoMediaType)(const MFVIDEOFORMAT* pVideoFormat, IMFVideoMediaType** ppIVideoMediaType);
 
-    // AVRT.dll
+    // avrt.dll
     typedef HANDLE(__stdcall* PTR_AvSetMmThreadCharacteristicsW)(LPCWSTR TaskName, LPDWORD TaskIndex);
     typedef BOOL (__stdcall* PTR_AvSetMmThreadPriority)(HANDLE AvrtHandle, AVRT_PRIORITY Priority);
     typedef BOOL (__stdcall* PTR_AvRevertMmThreadCharacteristics)(HANDLE AvrtHandle);
@@ -57,8 +57,7 @@ namespace DSObjects
         public IMFRateSupport,
         public IMFVideoDisplayControl,
         public IEVRTrustedVideoPlugin
-    /*  public IMFVideoPositionMapper,      // Non mandatory EVR Presenter Interfaces (see later...)
-    */
+    /*  public IMFVideoPositionMapper,      // Non mandatory EVR Presenter Interfaces (see later...) */
     {
     public:
         CEVRAllocatorPresenter(HWND hWnd, bool bFullscreen, HRESULT& hr, CString& _Error);
@@ -167,19 +166,19 @@ namespace DSObjects
 
     private:
 
-        typedef enum {
+        enum RENDER_STATE {
             Started  = State_Running,
             Stopped  = State_Stopped,
             Paused   = State_Paused,
             Shutdown = State_Running + 1
-        } RENDER_STATE;
+        };
 
         COuterEVR*                       m_pOuterEVR;
         CComPtr<IMFClock>                m_pClock;
         CComPtr<IDirect3DDeviceManager9> m_pD3DManager;
         CComPtr<IMFTransform>            m_pMixer;
         CComPtr<IMediaEventSink>         m_pSink;
-        CComPtr<IMFVideoMediaType>       m_pMediaType;
+        CComPtr<IMFMediaType>            m_pMediaType;
         MFVideoAspectRatioMode           m_dwVideoAspectRatioMode;
         MFVideoRenderPrefs               m_dwVideoRenderPrefs;
         COLORREF                         m_BorderColor;
@@ -197,10 +196,12 @@ namespace DSObjects
 
         HANDLE                           m_hThread;
         HANDLE                           m_hGetMixerThread;
+        HANDLE                           m_hVSyncThread;
         RENDER_STATE                     m_nRenderState;
 
         CCritSec                         m_SampleQueueLock;
         CCritSec                         m_ImageProcessingLock;
+        CCritSec                         m_MediaTypeLock;
 
         CInterfaceList<IMFSample, &IID_IMFSample> m_FreeSamples;
         CInterfaceList<IMFSample, &IID_IMFSample> m_ScheduledSamples;
@@ -242,6 +243,8 @@ namespace DSObjects
         HRESULT                          CheckShutdown() const;
         void                             CompleteFrameStep(bool bCancel);
         void                             CheckWaitingSampleFromMixer();
+        static DWORD WINAPI              VSyncThreadStatic(LPVOID lpParam);
+        void                             VSyncThread();
 
         void                             RemoveAllSamples();
         HRESULT                          GetFreeSample(IMFSample** ppSample);
@@ -260,7 +263,11 @@ namespace DSObjects
         HRESULT                          GetMediaTypeMerit(IMFMediaType* pType, int* pMerit);
         LPCTSTR                          GetMediaTypeFormatDesc(IMFMediaType* pMediaType);
 
-        // === Functions pointers on Vista / .NET3 specific library
+        // === Functions pointers on Vista+ / .NET Framework 3.5 specific library
+        HMODULE m_hDXVA2Lib;
+        HMODULE m_hEVRLib;
+        HMODULE m_hAVRTLib;
+
         PTR_DXVA2CreateDirect3DDeviceManager9 pfDXVA2CreateDirect3DDeviceManager9;
         PTR_MFCreateDXSurfaceBuffer           pfMFCreateDXSurfaceBuffer;
         PTR_MFCreateVideoSampleFromSurface    pfMFCreateVideoSampleFromSurface;

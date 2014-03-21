@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -65,7 +65,7 @@ LRESULT CALLBACK HookProc(UINT code, WPARAM wParam, LPARAM lParam)
     }
 
     // Always call next hook in chain
-    return CallNextHookEx(g_hHook, code,  wParam, lParam);
+    return CallNextHookEx(g_hHook, code, wParam, lParam);
 }
 
 BEGIN_MESSAGE_MAP(CSystrayWindow, CWnd)
@@ -164,7 +164,7 @@ LRESULT CSystrayWindow::OnTaskBarRestart(WPARAM, LPARAM)
         //tnid.hIcon = (HICON)LoadImage(AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON1), IMAGE_ICON, 0, 0, LR_LOADTRANSPARENT);
         tnid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
         tnid.uCallbackMessage = WM_NOTIFYICON;
-        _tcscpy_s(tnid.szTip, _T("DirectVobSub"));
+        _tcscpy_s(tnid.szTip, _T("VSFilter"));
 
         BOOL res = Shell_NotifyIcon(NIM_ADD, &tnid);
 
@@ -246,12 +246,14 @@ LRESULT CSystrayWindow::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
                 bool fMMSwitcher = !names[j].Compare(_T("Morgan Stream Switcher"));
 
                 DWORD cStreams = 0;
-                pStreams[j]->Count(&cStreams);
+                if (FAILED(pStreams[j]->Count(&cStreams)) || !cStreams) {
+                    continue;
+                }
 
-                DWORD flags, group, prevgroup = (DWORD) - 1;
+                DWORD flags, group, prevgroup = DWORD_MAX;
 
                 for (UINT i = 0; i < cStreams; i++) {
-                    WCHAR* pName = NULL;
+                    WCHAR* pName = nullptr;
 
                     if (S_OK == pStreams[j]->Info(i, 0, &flags, 0, &group, &pName, 0, 0)) {
                         if (prevgroup != group && i > 1) {
@@ -270,9 +272,7 @@ LRESULT CSystrayWindow::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
                     }
                 }
 
-                if (cStreams > 0) {
-                    popup.AppendMenu(MF_SEPARATOR);
-                }
+                popup.AppendMenu(MF_SEPARATOR);
             }
 
             int i = 0;
@@ -305,7 +305,9 @@ LRESULT CSystrayWindow::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
                     }
                 }
 
-                CallPPage(m_tbid->graph, id & 0xff, hWnd);
+                if (hWnd != INVALID_HANDLE_VALUE) {
+                    CallPPage(m_tbid->graph, id & 0xff, hWnd);
+                }
             }
         }
         break;
@@ -324,14 +326,14 @@ DWORD CALLBACK SystrayThreadProc(void* pParam)
     AFX_MANAGE_STATE(AfxGetStaticModuleState());
 
     CSystrayWindow wnd((SystrayIconData*)pParam);
-    if (!wnd.CreateEx(0, AfxRegisterWndClass(0), _T("DVSWND"), WS_OVERLAPPED, CRect(0, 0, 0, 0), NULL, 0, NULL)) {
-        return (DWORD) - 1;
+    if (!wnd.CreateEx(0, AfxRegisterWndClass(0), _T("DVSWND"), WS_OVERLAPPED, CRect(0, 0, 0, 0), nullptr, 0, nullptr)) {
+        return DWORD_ERROR;
     }
 
     ((SystrayIconData*)pParam)->hSystrayWnd = wnd.m_hWnd;
 
     MSG msg;
-    while (GetMessage(&msg, NULL/*wnd.m_hWnd*/, 0, 0)) {
+    while (GetMessage(&msg, nullptr/*wnd.m_hWnd*/, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
@@ -345,10 +347,10 @@ DWORD CALLBACK SystrayThreadProc(void* pParam)
 static TCHAR* CallPPage(IFilterGraph* pGraph, int idx, HWND hWnd)
 {
     int i = 0;
-    WCHAR* wstr = NULL;
+    CStringW name;
     CComPtr<IBaseFilter> pFilter;
     CAUUID caGUID;
-    caGUID.pElems = NULL;
+    caGUID.pElems = nullptr;
 
     BeginEnumFilters(pGraph, pEF, pBF) {
         CComQIPtr<ISpecifyPropertyPages> pSPS = pBF;
@@ -360,7 +362,7 @@ static TCHAR* CallPPage(IFilterGraph* pGraph, int idx, HWND hWnd)
         if (i == idx) {
             pFilter = pBF;
             pSPS->GetPages(&caGUID);
-            wstr = _wcsdup(CStringW(GetFilterName(pBF))); // double char-wchar conversion happens in the non-unicode build, but anyway... :)
+            name = GetFilterName(pBF);
             break;
         }
 
@@ -368,24 +370,21 @@ static TCHAR* CallPPage(IFilterGraph* pGraph, int idx, HWND hWnd)
     }
     EndEnumFilters;
 
-    TCHAR* ret = NULL;
+    TCHAR* ret = nullptr;
 
     if (pFilter) {
         if (hWnd != INVALID_HANDLE_VALUE) {
             ShowPPage(pFilter, hWnd);
         } else {
-            ret = DNew TCHAR[wcslen(wstr) + 1];
+            ret = DEBUG_NEW TCHAR[name.GetLength() + 1];
             if (ret) {
-                _tcscpy_s(ret, wcslen(wstr) + 1, CString(wstr));
+                _tcscpy_s(ret, name.GetLength() + 1, CString(name));
             }
         }
     }
 
     if (caGUID.pElems) {
         CoTaskMemFree(caGUID.pElems);
-    }
-    if (wstr) {
-        free(wstr);
     }
 
     return ret;

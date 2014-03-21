@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -93,45 +93,41 @@ STDMETHODIMP CVMR7AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
 {
     CheckPointer(ppRenderer, E_POINTER);
 
-    *ppRenderer = NULL;
+    *ppRenderer = nullptr;
     HRESULT hr;
 
-    do {
-        CComPtr<IBaseFilter> pBF;
+    CComPtr<IBaseFilter> pBF;
 
-        if (FAILED(hr = pBF.CoCreateInstance(CLSID_VideoMixingRenderer))) {
-            break;
-        }
+    if (FAILED(hr = pBF.CoCreateInstance(CLSID_VideoMixingRenderer))) {
+        return E_FAIL;
+    }
 
-        CComQIPtr<IVMRFilterConfig> pConfig = pBF;
-        if (!pConfig) {
-            break;
-        }
+    CComQIPtr<IVMRFilterConfig> pConfig = pBF;
+    if (!pConfig) {
+        return E_FAIL;
+    }
 
-        if (FAILED(hr = pConfig->SetRenderingMode(VMRMode_Renderless))) {
-            break;
-        }
+    if (FAILED(hr = pConfig->SetRenderingMode(VMRMode_Renderless))) {
+        return E_FAIL;
+    }
 
-        CComQIPtr<IVMRSurfaceAllocatorNotify> pSAN = pBF;
-        if (!pSAN) {
-            break;
-        }
+    CComQIPtr<IVMRSurfaceAllocatorNotify> pSAN = pBF;
+    if (!pSAN) {
+        return E_FAIL;
+    }
 
-        if (FAILED(hr = pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator*>(this)))
-                || FAILED(hr = AdviseNotify(pSAN))) {
-            break;
-        }
+    if (FAILED(hr = pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator*>(this)))
+            || FAILED(hr = AdviseNotify(pSAN))) {
+        return E_FAIL;
+    }
 
-        CComPtr<IPin> pPin = GetFirstPin(pBF);
-        CComQIPtr<IMemInputPin> pMemInputPin = pPin;
-        m_fUseInternalTimer = HookNewSegmentAndReceive((IPinC*)(IPin*)pPin, (IMemInputPinC*)(IMemInputPin*)pMemInputPin);
+    CComPtr<IPin> pPin = GetFirstPin(pBF);
+    CComQIPtr<IMemInputPin> pMemInputPin = pPin;
+    m_fUseInternalTimer = HookNewSegmentAndReceive((IPinC*)(IPin*)pPin, (IMemInputPinC*)(IMemInputPin*)pMemInputPin);
 
-        *ppRenderer = (IUnknown*)pBF.Detach();
+    *ppRenderer = (IUnknown*)pBF.Detach();
 
-        return S_OK;
-    } while (0);
-
-    return E_FAIL;
+    return S_OK;
 }
 
 STDMETHODIMP_(void) CVMR7AllocatorPresenter::SetTime(REFERENCE_TIME rtNow)
@@ -182,7 +178,7 @@ STDMETHODIMP CVMR7AllocatorPresenter::AllocateSurface(DWORD_PTR dwUserID, VMRALL
     }
 
     // test if the colorspace is acceptable
-    if (FAILED(hr = m_pVideoSurface->Blt(NULL, *lplpSurface, NULL, DDBLT_WAIT, NULL))) {
+    if (FAILED(hr = m_pVideoSurface->Blt(nullptr, *lplpSurface, nullptr, DDBLT_WAIT, nullptr))) {
         DeleteSurfaces();
         return hr;
     }
@@ -190,7 +186,7 @@ STDMETHODIMP CVMR7AllocatorPresenter::AllocateSurface(DWORD_PTR dwUserID, VMRALL
     DDBLTFX fx;
     INITDDSTRUCT(fx);
     fx.dwFillColor = 0;
-    m_pVideoSurface->Blt(NULL, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &fx);
+    m_pVideoSurface->Blt(nullptr, nullptr, nullptr, DDBLT_WAIT | DDBLT_COLORFILL, &fx);
 
     return hr;
 }
@@ -203,7 +199,7 @@ STDMETHODIMP CVMR7AllocatorPresenter::FreeSurface(DWORD_PTR dwUserID)
 
 STDMETHODIMP CVMR7AllocatorPresenter::PrepareSurface(DWORD_PTR dwUserID, IDirectDrawSurface7* lpSurface, DWORD dwSurfaceFlags)
 {
-    SetThreadName((DWORD) - 1, "CVMR7AllocatorPresenter");
+    SetThreadName(DWORD(-1), "CVMR7AllocatorPresenter");
 
     if (!lpSurface) {
         return E_POINTER;
@@ -260,19 +256,22 @@ STDMETHODIMP CVMR7AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMRPRESEN
     CAutoLock cAutoLock(this);
 
     if (!m_bPendingResetDevice) {
-        m_pVideoSurface->Blt(NULL, lpPresInfo->lpSurf, NULL, DDBLT_WAIT, NULL);
+        m_pVideoSurface->Blt(nullptr, lpPresInfo->lpSurf, nullptr, DDBLT_WAIT, nullptr);
     }
 
     if (lpPresInfo->rtEnd > lpPresInfo->rtStart) {
         REFERENCE_TIME rtTimePerFrame = lpPresInfo->rtEnd - lpPresInfo->rtStart;
         m_fps = 10000000.0 / rtTimePerFrame;
+    } else {
+        TRACE(_T("VMR7: Invalid frame timestamps (%s - %s), not setting the FPS. The timestamp from the pin hook will be used anyway (%s).\n"),
+              ReftimeToString(lpPresInfo->rtStart), ReftimeToString(lpPresInfo->rtEnd), ReftimeToString(g_tSampleStart));
+    }
 
-        if (m_pSubPicQueue) {
-            m_pSubPicQueue->SetFPS(m_fps);
+    if (m_pSubPicQueue) {
+        m_pSubPicQueue->SetFPS(m_fps);
 
-            if (m_fUseInternalTimer && !g_bExternalSubtitleTime) {
-                __super::SetTime(g_tSegmentStart + g_tSampleStart);
-            }
+        if (m_fUseInternalTimer && !g_bExternalSubtitleTime) {
+            __super::SetTime(g_tSegmentStart + g_tSampleStart);
         }
     }
 
@@ -337,7 +336,7 @@ STDMETHODIMP CVMR7AllocatorPresenter::GetVideoPosition(LPRECT lpSRCRect, LPRECT 
     CopyRect(lpSRCRect, CRect(CPoint(0, 0), m_NativeVideoSize));
     CopyRect(lpDSTRect, &m_VideoRect);
     // DVD Nav. bug workaround fix
-    GetNativeVideoSize(&lpSRCRect->right, &lpSRCRect->bottom, NULL, NULL);
+    GetNativeVideoSize(&lpSRCRect->right, &lpSRCRect->bottom, nullptr, nullptr);
     return S_OK;
 }
 

@@ -1,5 +1,5 @@
 /*
- * (C) 2008-2012 see Authors.txt
+ * (C) 2008-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,6 +22,7 @@
 //
 
 #pragma once
+
 #include "../mpc-hc/MpcApi.h"
 #include "HScrollListBox.h"
 
@@ -34,7 +35,7 @@ class CRegisterCopyDataDlg : public CDialog
     // Construction
 public:
     HWND m_RemoteWindow;
-    CRegisterCopyDataDlg(CWnd* pParent = NULL); // standard constructor
+    CRegisterCopyDataDlg(CWnd* pParent = nullptr); // standard constructor
 
     // Dialog Data
     //{{AFX_DATA(CRegisterCopyDataDlg)

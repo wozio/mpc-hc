@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,6 +23,11 @@
 #include "FontInstaller.h"
 
 CFontInstaller::CFontInstaller()
+    : pAddFontMemResourceEx(nullptr)
+    , pAddFontResourceEx(nullptr)
+    , pRemoveFontMemResourceEx(nullptr)
+    , pRemoveFontResourceEx(nullptr)
+    , pMoveFileEx(nullptr)
 {
     if (HMODULE hGdi = GetModuleHandle(_T("gdi32.dll"))) {
         pAddFontMemResourceEx = (HANDLE(WINAPI*)(PVOID, DWORD, PVOID, DWORD*))GetProcAddress(hGdi, "AddFontMemResourceEx");
@@ -67,7 +72,7 @@ void CFontInstaller::UninstallFonts()
             CString fn = m_files.GetNext(pos);
             pRemoveFontResourceEx(fn, FR_PRIVATE, 0);
             if (!DeleteFile(fn) && pMoveFileEx) {
-                pMoveFileEx(fn, NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+                pMoveFileEx(fn, nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
             }
         }
 
@@ -82,7 +87,7 @@ bool CFontInstaller::InstallFontMemory(const void* pData, UINT len)
     }
 
     DWORD nFonts = 0;
-    HANDLE hFont = pAddFontMemResourceEx((PVOID)pData, len, NULL, &nFonts);
+    HANDLE hFont = pAddFontMemResourceEx((PVOID)pData, len, nullptr, &nFonts);
     if (hFont && nFonts > 0) {
         m_fonts.AddTail(hFont);
     }
@@ -96,8 +101,8 @@ bool CFontInstaller::InstallFontFile(const void* pData, UINT len)
     }
 
     CFile f;
-    TCHAR path[_MAX_PATH], fn[_MAX_PATH];
-    if (!GetTempPath(_MAX_PATH, path) || !GetTempFileName(path, _T("g_font"), 0, fn)) {
+    TCHAR path[MAX_PATH], fn[MAX_PATH];
+    if (!GetTempPath(MAX_PATH, path) || !GetTempFileName(path, _T("g_font"), 0, fn)) {
         return false;
     }
 

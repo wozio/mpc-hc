@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,6 +23,7 @@
 
 #include <afxwin.h>
 #include <afxcmn.h>
+#include <dvdmedia.h>
 #include "../filters/transform/BufferFilter/BufferFilter.h"
 #include "FloatEdit.h"
 #include "resource.h"
@@ -40,7 +41,7 @@ public:
 };
 
 template<class T>
-class CFormat : public CAutoPtrArray<CFormatElem<T> >
+class CFormat : public CAutoPtrArray<CFormatElem<T>>
 {
 public:
     CString name;
@@ -51,7 +52,7 @@ public:
 };
 
 template<class T>
-class CFormatArray : public CAutoPtrArray<CFormat<T> >
+class CFormatArray : public CAutoPtrArray<CFormat<T>>
 {
 public:
     virtual ~CFormatArray() {}
@@ -64,13 +65,13 @@ public:
         }
 
         if (fCreate) {
-            CAutoPtr<CFormat<T> > pf(DNew CFormat<T>(name));
+            CAutoPtr<CFormat<T>> pf(DEBUG_NEW CFormat<T>(name));
             CFormat<T>* tmp = pf;
             Add(pf);
             return tmp;
         }
 
-        return NULL;
+        return nullptr;
     }
 
     bool FindFormat(AM_MEDIA_TYPE* pmt, CFormat<T>** ppf) {
@@ -123,7 +124,7 @@ public:
             return false;
         }
 
-        if (FindFormat(pmt, NULL, NULL, NULL)) {
+        if (FindFormat(pmt, nullptr, nullptr, nullptr)) {
             DeleteMediaType(pmt);
             return false;
         }
@@ -135,7 +136,7 @@ public:
             return false;
         }
 
-        CAutoPtr<CFormatElem<T> > pfe(DNew CFormatElem<T>());
+        CAutoPtr<CFormatElem<T>> pfe(DEBUG_NEW CFormatElem<T>());
         pfe->mt = *pmt;
         pfe->caps = caps;
         pf->Add(pfe);
@@ -172,19 +173,21 @@ public:
                                 ? &((VIDEOINFOHEADER*)pmt->pbFormat)->bmiHeader
                                 : (pmt->formattype == FORMAT_VideoInfo2)
                                 ? &((VIDEOINFOHEADER2*)pmt->pbFormat)->bmiHeader
-                                : NULL;
+                                : nullptr;
 
         if (!bih) {
             // it may have a fourcc in the mediasubtype, let's check that
 
             WCHAR guid[100];
-            memset(guid, 0, 100 * sizeof(WCHAR));
+            ZeroMemory(guid, 100 * sizeof(WCHAR));
             StringFromGUID2(pmt->subtype, guid, 100);
 
             if (CStringW(guid).MakeUpper().Find(L"0000-0010-8000-00AA00389B71") >= 0) {
                 str.Format(_T("%c%c%c%c"),
-                           (TCHAR)((pmt->subtype.Data1 >> 0) & 0xff), (TCHAR)((pmt->subtype.Data1 >> 8) & 0xff),
-                           (TCHAR)((pmt->subtype.Data1 >> 16) & 0xff), (TCHAR)((pmt->subtype.Data1 >> 24) & 0xff));
+                           (TCHAR)((pmt->subtype.Data1 >> 0) & 0xff),
+                           (TCHAR)((pmt->subtype.Data1 >> 8) & 0xff),
+                           (TCHAR)((pmt->subtype.Data1 >> 16) & 0xff),
+                           (TCHAR)((pmt->subtype.Data1 >> 24) & 0xff));
             }
 
             return str;
@@ -192,7 +195,7 @@ public:
 
         switch (bih->biCompression) {
             case BI_RGB:
-                str.Format(_T("RGB%d"), bih->biBitCount);
+                str.Format(_T("RGB%u"), bih->biBitCount);
                 break;
             case BI_RLE8:
                 str = _T("RLE8");
@@ -201,7 +204,7 @@ public:
                 str = _T("RLE4");
                 break;
             case BI_BITFIELDS:
-                str.Format(_T("BITF%d"), bih->biBitCount);
+                str.Format(_T("BITF%u"), bih->biBitCount);
                 break;
             case BI_JPEG:
                 str = _T("JPEG");
@@ -232,18 +235,18 @@ public:
                                 ? &((VIDEOINFOHEADER*)pfe->mt.pbFormat)->bmiHeader
                                 : (pfe->mt.formattype == FORMAT_VideoInfo2)
                                 ? &((VIDEOINFOHEADER2*)pfe->mt.pbFormat)->bmiHeader
-                                : NULL;
+                                : nullptr;
 
-        if (bih == NULL) {
+        if (bih == nullptr) {
             return str;
         }
 
-        str.Format(_T("%dx%d %.2f"), bih->biWidth, bih->biHeight, (float)10000000 / ((VIDEOINFOHEADER*)pfe->mt.pbFormat)->AvgTimePerFrame);
+        str.Format(_T("%dx%d %.2f"), bih->biWidth, bih->biHeight, 10000000.0f / ((VIDEOINFOHEADER*)pfe->mt.pbFormat)->AvgTimePerFrame);
 
         if (pfe->mt.formattype == FORMAT_VideoInfo2) {
             VIDEOINFOHEADER2* vih2 = (VIDEOINFOHEADER2*)pfe->mt.pbFormat;
             CString str2;
-            str2.Format(_T(" i%02x %d:%d"), vih2->dwInterlaceFlags, vih2->dwPictAspectRatioX, vih2->dwPictAspectRatioY);
+            str2.Format(_T(" i%02x %u:%u"), vih2->dwInterlaceFlags, vih2->dwPictAspectRatioX, vih2->dwPictAspectRatioY);
             str += str2;
         }
 
@@ -266,11 +269,11 @@ public:
 
         WAVEFORMATEX* wfe = (pmt->formattype == FORMAT_WaveFormatEx)
                             ? (WAVEFORMATEX*)pmt->pbFormat
-                            : NULL;
+                            : nullptr;
 
         if (!wfe) {
             WCHAR guid[100];
-            memset(guid, 0, 100 * sizeof(WCHAR));
+            ZeroMemory(guid, 100 * sizeof(WCHAR));
             StringFromGUID2(pmt->subtype, guid, 100);
 
             if (CStringW(guid).MakeUpper().Find(L"0000-0010-8000-00AA00389B71") >= 0) {
@@ -301,7 +304,7 @@ public:
 
         WAVEFORMATEX* wfe = (pfe->mt.formattype == FORMAT_WaveFormatEx)
                             ? (WAVEFORMATEX*)pfe->mt.pbFormat
-                            : NULL;
+                            : nullptr;
 
         if (!wfe) {
             return str;
@@ -310,10 +313,10 @@ public:
         str.Empty();
         CString str2;
 
-        str2.Format(_T("%6dKHz "), wfe->nSamplesPerSec);
+        str2.Format(_T("%6uKHz "), wfe->nSamplesPerSec);
         str += str2;
 
-        str2.Format(_T("%dbps "), wfe->wBitsPerSample);
+        str2.Format(_T("%ubps "), wfe->wBitsPerSample);
         str += str2;
 
         switch (wfe->nChannels) {
@@ -324,12 +327,12 @@ public:
                 str += _T("stereo ");
                 break;
             default:
-                str2.Format(_T("%d channels "), wfe->nChannels);
+                str2.Format(_T("%u channels "), wfe->nChannels);
                 str += str2;
                 break;
         }
 
-        str2.Format(_T("%3dkbps "), wfe->nAvgBytesPerSec * 8 / 1000);
+        str2.Format(_T("%3ukbps "), wfe->nAvgBytesPerSec * 8 / 1000);
         str += str2;
 
         return str;
@@ -338,12 +341,12 @@ public:
 
 //
 
-typedef struct {
+struct Codec {
     CComPtr<IMoniker> pMoniker;
     CComPtr<IBaseFilter> pBF;
     CString FriendlyName;
     CComBSTR DisplayName;
-} Codec;
+};
 
 typedef CAtlArray<Codec> CCodecArray;
 
@@ -352,6 +355,8 @@ typedef CAtlArray<Codec> CCodecArray;
 class CPlayerCaptureDialog : public CResizableDialog //CDialog
 {
     //DECLARE_DYNAMIC(CPlayerCaptureDialog)
+
+    bool m_bInitialized;
 
     // video input
     CStringW m_VidDisplayName;
@@ -396,7 +401,7 @@ public:
     CPlayerCaptureDialog();   // standard constructor
     virtual ~CPlayerCaptureDialog();
 
-    BOOL Create(CWnd* pParent = NULL);
+    BOOL Create(CWnd* pParent = nullptr);
 
     // Dialog Data
     enum { IDD = IDD_CAPTURE_DLG };
@@ -432,6 +437,7 @@ public:
     int m_nAudBuffers;
     CString m_file;
     CButton m_recordbtn;
+    UINT_PTR m_nRecordTimerID;
     BOOL m_fSepAudio;
     int m_muxtype;
     CComboBox m_muxctrl;
@@ -442,6 +448,8 @@ public:
     CComPtr<IBaseFilter> m_pVidBuffer, m_pAudBuffer;
 
 public:
+    void InitControls();
+
     void SetupVideoControls(CStringW DisplayName, IAMStreamConfig* pAMSC, IAMCrossbar* pAMXB, IAMTVTuner* pAMTuner);
     void SetupVideoControls(CStringW DisplayName, IAMStreamConfig* pAMSC, IAMVfwCaptureDialogs* pAMVfwCD);
     void SetupAudioControls(CStringW DisplayName, IAMStreamConfig* pAMSC, const CInterfaceArray<IAMAudioInputMixer>& pAMAIM);

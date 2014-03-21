@@ -1,4 +1,6 @@
-/* jshint forin:true, noarg:true, noempty:true, eqeqeq:true, bitwise:true, camelcase:true, trailing:true, strict:false, undef:false, boss:true, unused:true, curly:true, browser:true, indent:4, maxerr:100 */
+/* jshint bitwise:true, boss:true, browser:true, camelcase:true, curly:true, eqeqeq:true,
+   forin:true, indent:4, noarg:true, noempty:true, quotmark:double, strict:false, trailing:true,
+   undef:false, unused:false */
 
 var filePath;
 var curPos;
@@ -8,7 +10,7 @@ var pbr;
 var eta;
 var volume;
 var muted; /*-1 no sound*/
-var startTime = (new Date()).getTime();
+var startTime = new Date().getTime();
 var sliderSize = 500;
 var sliderButtonWidth = 15;
 var vsb = 10;
@@ -19,6 +21,7 @@ var AP;
 var RL;
 var rpt;
 var etaup = false;
+
 if (eta === 0) {
 	eta = (state < 0 && filePath.length > 0) ? 2 : 120;
 }
@@ -34,9 +37,14 @@ function init(_filePath, _curPos, _length, _state, _pbr, _eta, _volume, _muted) 
 	muted = _muted;
 
 	if (eta > 0) {
-		RL = setTimeout("etaup=true; if (re.checked===true) {postForm(0,'null',0);}", 1000 * eta);
+		RL = setTimeout(function () {
+			etaup = true;
+			if (re.checked === true) {
+				postForm(0, "null", 0);
+			}
+		}, 1000 * eta);
 	}
-	Live = (length < 1);
+	Live = length < 1;
 	startTime = startTime - curPos;
 	rdirt = length * pbr / sliderSize;
 	rdirt = Math.floor(rdirt > 1000 ? 1000 : (rdirt < 300 ? 300 : rdirt));
@@ -71,14 +79,21 @@ function init(_filePath, _curPos, _length, _state, _pbr, _eta, _volume, _muted) 
 function autoplay(a) {
 	if (etaup && re.checked === true) {
 		etaup = false;
-		RL = setTimeout("etaup=true; if (re.checked===true) {postForm(0,'null',0);}", 5000);
+		RL = setTimeout(function () {
+			etaup = true;
+			if (re.checked === true) {
+				postForm(0, "null", 0);
+			}
+		}, 5000);
 	}
 	AP = setTimeout(autoplay, rdirt);
-	var ct = (new Date()).getTime();
+	var ct = new Date().getTime();
 	var cap = pbr * (ct - startTime);
 	if (cap > length && !Live) {
 		if (re.checked === true) {
-			RL = setTimeout("window.location=window.location;", 5000);
+			RL = setTimeout(function () {
+				window.location = window.location;
+			}, 5000);
 		}
 	}
 	cap = ((cap > length && !Live) ? length : (cap < 0 ? 0 : cap));
@@ -143,10 +158,10 @@ function parseTime(y) {
 		t = parseFloat((ts + " ").substring(0, p1 + 4));
 	}
 	if (p2 !== -1 && p3 === -1) {
-		t = parseInt(ts.substring(0, p2)) * 60 + parseFloat("0" + (ts + " ").substring(p2 + 1, p1 + 4));
+		t = parseInt(ts.substring(0, p2), 10) * 60 + parseFloat("0" + (ts + " ").substring(p2 + 1, p1 + 4));
 	}
 	if (p2 !== -1 && p3 !== -1) {
-		t = parseInt(ts.substring(0, p2)) * 3600 + parseInt(ts.substring(p2 + 1, p3)) * 60 + parseFloat("0" + (ts + " ").substring(p3 + 1, p1 + 4));
+		t = parseInt(ts.substring(0, p2), 10) * 3600 + parseInt(ts.substring(p2 + 1, p3), 10) * 60 + parseFloat("0" + (ts + " ").substring(p3 + 1, p1 + 4));
 	}
 	return t;
 }
@@ -272,7 +287,8 @@ function getXMLHTTP() {
 	} catch (e) {
 		try {
 			return new ActiveXObject("Microsoft.XMLHTTP");
-		} catch (e) {}
+		} catch (e) {
+		}
 	}
 	if (typeof XMLHttpRequest !== "undefined") {
 		return new XMLHttpRequest();
@@ -285,7 +301,8 @@ function MakeRequest(req) {
 	try {
 		httpRequest.open("GET", req, true);
 		httpRequest.send(null);
-	} catch (e) {}
+	} catch (e) {
+	}
 }
 
 function getOffsetX(m) {
@@ -342,7 +359,7 @@ function OnReadyStateChange() {
 	if (httpRequestStatus && httpRequestStatus.readyState === 4 && httpRequestStatus.responseText) {
 		if (httpRequestStatus.responseText.charAt(0) !== "<") {
 			var params = statusRegExp.exec(httpRequestStatus.responseText);
-			OnStatus(params[1], params[2], parseInt(params[3]), params[4], parseInt(params[5]), params[6], parseInt(params[7]), parseInt(params[8]), params[9]);
+			OnStatus(params[1], params[2], parseInt(params[3], 10), params[4], parseInt(params[5], 10), params[6], parseInt(params[7], 10), parseInt(params[8], 10), params[9]);
 		} else {
 			alert(httpRequestStatus.responseText);
 		}
@@ -357,25 +374,26 @@ function StatusLoop() {
 			httpRequestStatus.open("GET", "status.html", true);
 			httpRequestStatus.onreadystatechange = OnReadyStateChange;
 			httpRequestStatus.send(null);
-		} catch (e) {}
+		} catch (e) {
+		}
 	}
 	setTimeout(StatusLoop, 500);
 }
 
 var snapshotCounter = 0;
 
-function LoadSnapShot() {
+function LoadSnapshot() {
 	if (img = document.getElementById("snapshot")) {
 		img.src = "snapshot.jpg" + "?" + snapshotCounter++;
 	}
 }
 
-function OnLoadSnapShot() {
-	setTimeout(LoadSnapShot, 5000);
+function OnLoadSnapshot() {
+	setTimeout(LoadSnapshot, 5000);
 }
 
-function OnAbortErrorSnapShot() {
-	setTimeout(LoadSnapShot, 10000);
+function OnAbortErrorSnapshot() {
+	setTimeout(LoadSnapshot, 10000);
 }
 
 function OnSeek(e) {
@@ -424,7 +442,7 @@ function OnCommand(id) {
 
 function playerInit() {
 	StatusLoop();
-	LoadSnapShot();
+	LoadSnapshot();
 	if (e = document.getElementById("seekbar")) {
 		e.onclick = OnSeek;
 	}

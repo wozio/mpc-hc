@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,6 +22,7 @@
 #include "stdafx.h"
 #include "mplayerc.h"
 #include "MainFrm.h"
+#include "FileAssoc.h"
 #include "PPagePlayer.h"
 
 
@@ -31,7 +32,6 @@ IMPLEMENT_DYNAMIC(CPPagePlayer, CPPageBase)
 CPPagePlayer::CPPagePlayer()
     : CPPageBase(CPPagePlayer::IDD, CPPagePlayer::IDD)
     , m_iAllowMultipleInst(0)
-    , m_iAlwaysOnTop(FALSE)
     , m_fTrayIcon(FALSE)
     , m_iTitleBarTextStyle(0)
     , m_bTitleBarTextTitle(0)
@@ -48,6 +48,7 @@ CPPagePlayer::CPPagePlayer()
     , m_fRememberDVDPos(FALSE)
     , m_fRememberFilePos(FALSE)
     , m_bRememberPlaylistItems(TRUE)
+    , m_dwCheckIniLastTick(0)
 {
 }
 
@@ -63,7 +64,6 @@ void CPPagePlayer::DoDataExchange(CDataExchange* pDX)
     DDX_Radio(pDX, IDC_RADIO1, m_iAllowMultipleInst);
     DDX_Radio(pDX, IDC_RADIO3, m_iTitleBarTextStyle);
     DDX_Check(pDX, IDC_CHECK13, m_bTitleBarTextTitle);
-    //DDX_Check(pDX, IDC_CHECK2, m_iAlwaysOnTop);
     DDX_Check(pDX, IDC_CHECK3, m_fTrayIcon);
     DDX_Check(pDX, IDC_CHECK6, m_fRememberWindowPos);
     DDX_Check(pDX, IDC_CHECK7, m_fRememberWindowSize);
@@ -84,6 +84,7 @@ BEGIN_MESSAGE_MAP(CPPagePlayer, CPPageBase)
     ON_UPDATE_COMMAND_UI(IDC_CHECK13, OnUpdateCheck13)
     ON_UPDATE_COMMAND_UI(IDC_DVD_POS, OnUpdatePos)
     ON_UPDATE_COMMAND_UI(IDC_FILE_POS, OnUpdatePos)
+    ON_UPDATE_COMMAND_UI(IDC_CHECK8, OnUpdateSaveToIni)
 END_MESSAGE_MAP()
 
 // CPPagePlayer message handlers
@@ -100,7 +101,6 @@ BOOL CPPagePlayer::OnInitDialog()
     m_iAllowMultipleInst = s.fAllowMultipleInst;
     m_iTitleBarTextStyle = s.iTitleBarTextStyle;
     m_bTitleBarTextTitle = s.fTitleBarTextTitle;
-    m_iAlwaysOnTop = s.iOnTop;
     m_fTrayIcon = s.fTrayIcon;
     m_fRememberWindowPos = s.fRememberWindowPos;
     m_fRememberWindowSize = s.fRememberWindowSize;
@@ -134,7 +134,6 @@ BOOL CPPagePlayer::OnApply()
     s.fAllowMultipleInst = !!m_iAllowMultipleInst;
     s.iTitleBarTextStyle = m_iTitleBarTextStyle;
     s.fTitleBarTextTitle = !!m_bTitleBarTextTitle;
-    s.iOnTop = m_iAlwaysOnTop;
     s.fTrayIcon = !!m_fTrayIcon;
     s.fRememberWindowPos = !!m_fRememberWindowPos;
     s.fRememberWindowSize = !!m_fRememberWindowSize;
@@ -150,17 +149,34 @@ BOOL CPPagePlayer::OnApply()
     s.bRememberPlaylistItems = !!m_bRememberPlaylistItems;
 
     if (!m_fKeepHistory) {
-        for (int i = 0; i < s.MRU.GetSize(); i++) {
+        // Empty MPC-HC's recent menu (iterating reverse because the indexes change)
+        for (int i = s.MRU.GetSize() - 1; i >= 0; i--) {
             s.MRU.Remove(i);
         }
-        for (int i = 0; i < s.MRUDub.GetSize(); i++) {
+        for (int i = s.MRUDub.GetSize() - 1; i >= 0; i--) {
             s.MRUDub.Remove(i);
         }
         s.MRU.WriteList();
         s.MRUDub.WriteList();
 
-        s.ClearFilePositions();
-        s.ClearDVDPositions();
+        // Empty the "Recent" jump list
+        CComPtr<IApplicationDestinations> pDests;
+        HRESULT hr = pDests.CoCreateInstance(CLSID_ApplicationDestinations, nullptr, CLSCTX_INPROC_SERVER);
+        if (SUCCEEDED(hr)) {
+            pDests->RemoveAllDestinations();
+        }
+
+        // Ensure no new items are added in Windows recent menu and in the "Recent" jump list
+        CFileAssoc::SetNoRecentDocs(true, true);
+    } else {
+        // Re-enable Windows recent menu and the "Recent" jump list if needed
+        CFileAssoc::SetNoRecentDocs(false, true);
+    }
+    if (!m_fKeepHistory || !m_fRememberFilePos) {
+        s.filePositions.Empty();
+    }
+    if (!m_fKeepHistory || !m_fRememberDVDPos) {
+        s.dvdPositions.Empty();
     }
 
     // Check if the settings location needs to be changed
@@ -168,7 +184,12 @@ BOOL CPPagePlayer::OnApply()
         AfxGetMyApp()->ChangeSettingsLocation(!!m_fUseIni);
     }
 
-    ((CMainFrame*)AfxGetMainWnd())->ShowTrayIcon(s.fTrayIcon);
+    // There is no main frame when the option dialog is displayed stand-alone
+    if (CMainFrame* pMainFrame = AfxGetMainFrame()) {
+        pMainFrame->ShowTrayIcon(s.fTrayIcon);
+        pMainFrame->UpdateControlState(CMainFrame::UPDATE_LOGO);
+        pMainFrame->UpdateControlState(CMainFrame::UPDATE_WINDOW_TITLE);
+    }
 
     ::SetPriorityClass(::GetCurrentProcess(), s.dwPriority);
 
@@ -190,4 +211,20 @@ void CPPagePlayer::OnUpdatePos(CCmdUI* pCmdUI)
     UpdateData();
 
     pCmdUI->Enable(!!m_fKeepHistory);
+}
+
+void CPPagePlayer::OnUpdateSaveToIni(CCmdUI* pCmdUI)
+{
+    DWORD dwTick = GetTickCount();
+    // run this check no often than once per second
+    if (dwTick - m_dwCheckIniLastTick >= 1000) {
+        CPath iniDirPath(AfxGetMyApp()->GetIniPath());
+        VERIFY(iniDirPath.RemoveFileSpec());
+        HANDLE hDir = CreateFile(iniDirPath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                 OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+        // gray-out "save to .ini" option when we don't have writing permissions in the target directory
+        pCmdUI->Enable(hDir != INVALID_HANDLE_VALUE);
+        CloseHandle(hDir);
+        m_dwCheckIniLastTick = dwTick;
+    }
 }

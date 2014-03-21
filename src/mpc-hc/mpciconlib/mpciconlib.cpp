@@ -1,5 +1,5 @@
 /*
- * (C) 2008-2012 see Authors.txt
+ * (C) 2008-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -83,8 +83,6 @@ extern "C" __declspec(dllexport) int GetIconIndex(LPCTSTR ext)
         iconIndex = IDI_BINK_ICON;
     } else if (_tcsicmp(ext, _T(".cda")) == 0) {
         iconIndex = IDI_CDA_ICON;
-    } else if (_tcsicmp(ext, _T(".d2v")) == 0) {
-        iconIndex = IDI_D2V_ICON;
     } else if (_tcsicmp(ext, _T(".divx")) == 0) {
         iconIndex = IDI_OTHER_ICON;
     } else if (_tcsicmp(ext, _T(".dsa")) == 0) {
@@ -220,8 +218,6 @@ extern "C" __declspec(dllexport) int GetIconIndex(LPCTSTR ext)
     } else if (_tcsicmp(ext, _T(".rp")) == 0) {
         iconIndex = IDI_RT_ICON;
     } else if (_tcsicmp(ext, _T(".rt")) == 0) {
-        iconIndex = IDI_RT_ICON;
-    } else if (_tcsicmp(ext, _T(".smi")) == 0) {
         iconIndex = IDI_RT_ICON;
     } else if (_tcsicmp(ext, _T(".smil")) == 0) {
         iconIndex = IDI_RT_ICON;

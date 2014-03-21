@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,6 +22,7 @@
 #pragma once
 
 #include <afxwin.h>
+#include <atlpath.h>
 
 
 // COpenFileDlg
@@ -33,14 +34,15 @@ class COpenFileDlg : public CFileDialog
 private:
     TCHAR* m_buff;
     CAtlArray<CString>& m_mask;
+    CPath m_defaultDir;
 
 public:
     COpenFileDlg(CAtlArray<CString>& mask, bool fAllowDirSelection,
-                 LPCTSTR lpszDefExt = NULL,
-                 LPCTSTR lpszFileName = NULL,
+                 LPCTSTR lpszDefExt = nullptr,
+                 LPCTSTR lpszFileName = nullptr,
                  DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-                 LPCTSTR lpszFilter = NULL,
-                 CWnd* pParentWnd = NULL);
+                 LPCTSTR lpszFilter = nullptr,
+                 CWnd* pParentWnd = nullptr);
     virtual ~COpenFileDlg();
 
     static bool m_fAllowDirSelection;

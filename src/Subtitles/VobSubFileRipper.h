@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -26,10 +26,8 @@
 #include "../DSUtil/DSUtil.h"
 #include "VobSubFile.h"
 
-#pragma pack(push)
-#pragma pack(1)
-
-typedef struct {
+#pragma pack(push, 1)
+struct vidinfo {
     WORD perm_displ  : 2;
     WORD ratio       : 2;
     WORD system      : 2;
@@ -40,25 +38,25 @@ typedef struct {
     WORD cbrvbr      : 2;
     WORD line21_2    : 1;
     WORD line21_1    : 1;
-} vidinfo;
+};
 
-typedef struct {
+struct vc_t {
     BYTE vob, cell;
     DWORD tTime, tOffset, tTotal;
     DWORD start, end;
     int iAngle;
     bool fDiscontinuity;
-} vc_t;
+};
 
-typedef struct {
+struct PGC {
     int nAngles;
     CAtlArray<vc_t> angles[10];
     int iSelAngle;
     RGBQUAD pal[16];
     WORD ids[32];
-} PGC;
+};
 
-typedef struct VSFRipperData_t {
+struct VSFRipperData {
     CSize vidsize;
     vidinfo vidinfo;
     CAtlArray<PGC> pgcs;
@@ -72,14 +70,13 @@ typedef struct VSFRipperData_t {
     CAtlMap<BYTE, bool> selids;
 
     void Reset();
-    void Copy(struct VSFRipperData_t& rd);
+    void Copy(struct VSFRipperData& rd);
+};
 
-} VSFRipperData;
-
-typedef struct {
+struct vcchunk {
     __int64 start, end;
     DWORD vc;
-} vcchunk;
+};
 
 #pragma pack(pop)
 
@@ -115,7 +112,7 @@ protected:
     STDMETHODIMP OnFinished(bool fSucceeded) { return S_FALSE; }
 
 public:
-    IVSFRipperCallbackImpl() : CUnknown(NAME("IVSFRipperCallbackImpl"), NULL) {}
+    IVSFRipperCallbackImpl() : CUnknown(NAME("IVSFRipperCallbackImpl"), nullptr) {}
 };
 
 //
@@ -146,11 +143,11 @@ private:
 
     //
 
-    typedef enum {
+    enum log_t {
         LOG_INFO,
         LOG_WARNING,
         LOG_ERROR
-    } log_t;
+    };
     void Log(log_t type, LPCTSTR lpszFormat, ...);
     void Progress(double progress);
     void Finished(bool fSucceeded);

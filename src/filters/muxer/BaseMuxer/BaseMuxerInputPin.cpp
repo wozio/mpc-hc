@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include <MMReg.h>
 #include "BaseMuxer.h"
 #include "../../../DSUtil/DSUtil.h"
@@ -38,6 +39,7 @@ CBaseMuxerInputPin::CBaseMuxerInputPin(LPCWSTR pName, CBaseFilter* pFilter, CCri
     , m_evAcceptPacket(TRUE)
     , m_iPacketIndex(0)
     , m_fEOS(false)
+    , m_rtMaxStart(_I64_MIN)
 {
     static int s_iID = 0;
     m_iID = s_iID++;
@@ -165,7 +167,7 @@ HRESULT CBaseMuxerInputPin::CompleteConnect(IPin* pReceivePin)
             if (SUCCEEDED(pPB->CountProperties(&cProperties)) && cProperties > 0) {
                 for (ULONG iProperty = 0; iProperty < cProperties; iProperty++) {
                     PROPBAG2 PropBag;
-                    memset(&PropBag, 0, sizeof(PropBag));
+                    ZeroMemory(&PropBag, sizeof(PropBag));
                     ULONG cPropertiesReturned = 0;
                     if (FAILED(pPB->GetPropertyInfo(iProperty, 1, &PropBag, &cPropertiesReturned))) {
                         continue;
@@ -173,7 +175,7 @@ HRESULT CBaseMuxerInputPin::CompleteConnect(IPin* pReceivePin)
 
                     HRESULT hr2;
                     CComVariant var;
-                    if (SUCCEEDED(pPB->Read(1, &PropBag, NULL, &var, &hr2)) && SUCCEEDED(hr2)) {
+                    if (SUCCEEDED(pPB->Read(1, &PropBag, nullptr, &var, &hr2)) && SUCCEEDED(hr2)) {
                         SetProperty(PropBag.pstrName, &var);
                     }
 
@@ -220,11 +222,11 @@ STDMETHODIMP CBaseMuxerInputPin::Receive(IMediaSample* pSample)
         return hr;
     }
 
-    CAutoPtr<MuxerPacket> pPacket(DNew MuxerPacket(this));
+    CAutoPtr<MuxerPacket> pPacket(DEBUG_NEW MuxerPacket(this));
 
     long len = pSample->GetActualDataLength();
 
-    BYTE* pData = NULL;
+    BYTE* pData = nullptr;
     if (FAILED(pSample->GetPointer(&pData)) || !pData) {
         return S_OK;
     }
@@ -247,7 +249,7 @@ STDMETHODIMP CBaseMuxerInputPin::Receive(IMediaSample* pSample)
             pPacket->flags |= MuxerPacket::bogus;
         }
 
-        m_rtMaxStart = max(m_rtMaxStart,  pPacket->rtStart);
+        m_rtMaxStart = std::max(m_rtMaxStart, pPacket->rtStart);
     } else if (pPacket->flags & MuxerPacket::syncpoint) {
         pPacket->flags &= ~MuxerPacket::syncpoint;
         pPacket->flags |= MuxerPacket::bogus;
@@ -275,7 +277,7 @@ STDMETHODIMP CBaseMuxerInputPin::EndOfStream()
 
     ASSERT(!m_fEOS);
 
-    CAutoPtr<MuxerPacket> pPacket(DNew MuxerPacket(this));
+    CAutoPtr<MuxerPacket> pPacket(DEBUG_NEW MuxerPacket(this));
     pPacket->flags |= MuxerPacket::eos;
     PushPacket(pPacket);
 

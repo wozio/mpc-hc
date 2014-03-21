@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -37,6 +37,7 @@ CPPagePlayback::CPPagePlayback()
     , m_fRewind(FALSE)
     , m_iZoomLevel(0)
     , m_iRememberZoomLevel(FALSE)
+    , m_nAutoFitFactor(75)
     , m_nVolume(0)
     , m_oldVolume(0)
     , m_nBalance(0)
@@ -46,6 +47,9 @@ CPPagePlayback::CPPagePlayback()
     , m_fReportFailedPins(FALSE)
     , m_subtitlesLanguageOrder(_T(""))
     , m_audiosLanguageOrder(_T(""))
+    , m_fAllowOverridingExternalSplitterChoice(FALSE)
+    , m_nSpeedStep(0)
+    , m_nVolumeStep(0)
 {
 }
 
@@ -73,6 +77,12 @@ void CPPagePlayback::DoDataExchange(CDataExchange* pDX)
     DDX_Check(pDX, IDC_CHECK6, m_fReportFailedPins);
     DDX_Text(pDX, IDC_EDIT2, m_subtitlesLanguageOrder);
     DDX_Text(pDX, IDC_EDIT3, m_audiosLanguageOrder);
+    DDX_Check(pDX, IDC_CHECK4, m_fAllowOverridingExternalSplitterChoice);
+    DDX_Text(pDX, IDC_VOLUMESTEP, m_nVolumeStep);
+    DDX_Text(pDX, IDC_EDIT4, m_nAutoFitFactor);
+    DDX_Control(pDX, IDC_VOLUMESTEP_SPIN, m_VolumeStepCtrl);
+    DDX_Control(pDX, IDC_SPEEDSTEP_SPIN, m_SpeedStepCtrl);
+    DDX_Control(pDX, IDC_SPIN1, m_AutoFitFactorCtrl);
 }
 
 BEGIN_MESSAGE_MAP(CPPagePlayback, CPPageBase)
@@ -81,6 +91,10 @@ BEGIN_MESSAGE_MAP(CPPagePlayback, CPPageBase)
     ON_UPDATE_COMMAND_UI(IDC_EDIT1, OnUpdateLoopNum)
     ON_UPDATE_COMMAND_UI(IDC_STATIC1, OnUpdateLoopNum)
     ON_UPDATE_COMMAND_UI(IDC_COMBO1, OnUpdateAutoZoomCombo)
+    ON_UPDATE_COMMAND_UI(IDC_SPEEDSTEP_SPIN, OnUpdateSpeedStep)
+    ON_UPDATE_COMMAND_UI(IDC_EDIT4, OnUpdateAutoZoomFactor)
+    ON_UPDATE_COMMAND_UI(IDC_STATIC2, OnUpdateAutoZoomFactor)
+    ON_UPDATE_COMMAND_UI(IDC_STATIC3, OnUpdateAutoZoomFactor)
 
     ON_STN_DBLCLK(IDC_STATIC_BALANCE, OnBalanceTextDblClk)
     ON_NOTIFY_EX_RANGE(TTN_NEEDTEXT, 0, 0xFFFF, OnToolTipNotify)
@@ -100,22 +114,29 @@ BOOL CPPagePlayback::OnInitDialog()
     m_volumectrl.SetRange(0, 100);
     m_volumectrl.SetTicFreq(10);
     m_balancectrl.SetRange(-100, 100);
-    m_balancectrl.SetLineSize(2);
-    m_balancectrl.SetPageSize(2);
     m_balancectrl.SetTicFreq(20);
     m_nVolume = m_oldVolume = s.nVolume;
     m_nBalance = s.nBalance;
+    m_nVolumeStep = s.nVolumeStep;
+    m_VolumeStepCtrl.SetRange(1, 25);
+    m_nSpeedStep = s.nSpeedStep;
+    m_SpeedStepCtrl.SetPos(m_nSpeedStep);
+    m_SpeedStepCtrl.SetRange(0, 100);
     m_iLoopForever = s.fLoopForever ? 1 : 0;
     m_nLoops = s.nLoops;
     m_fRewind = s.fRewind;
     m_iZoomLevel = s.iZoomLevel;
     m_iRememberZoomLevel = s.fRememberZoomLevel;
+    m_nAutoFitFactor = s.nAutoFitFactor;
+    m_AutoFitFactorCtrl.SetPos(m_nAutoFitFactor);
+    m_AutoFitFactorCtrl.SetRange(25, 100);
     m_fAutoloadAudio = s.fAutoloadAudio;
     m_fAutoloadSubtitles = s.fAutoloadSubtitles;
     m_fEnableWorkerThreadForOpening = s.fEnableWorkerThreadForOpening;
     m_fReportFailedPins = s.fReportFailedPins;
     m_subtitlesLanguageOrder = s.strSubtitlesLanguageOrder;
     m_audiosLanguageOrder = s.strAudiosLanguageOrder;
+    m_fAllowOverridingExternalSplitterChoice = s.bAllowOverridingExternalSplitterChoice;
 
     m_zoomlevelctrl.AddString(ResStr(IDS_ZOOM_50));
     m_zoomlevelctrl.AddString(ResStr(IDS_ZOOM_100));
@@ -124,7 +145,17 @@ BOOL CPPagePlayback::OnInitDialog()
     m_zoomlevelctrl.AddString(ResStr(IDS_ZOOM_AUTOFIT_LARGER));
     CorrectComboListWidth(m_zoomlevelctrl);
 
+    // set the spinner acceleration value
+    UDACCEL accel = { 0, 10 };
+    m_SpeedStepCtrl.SetAccel(1, &accel);
+
     EnableToolTips(TRUE);
+    CreateToolTip();
+
+    m_wndToolTip.AddTool(GetDlgItem(IDC_EDIT2), ResStr(IDS_LANG_PREF_EXAMPLE));
+    m_wndToolTip.AddTool(GetDlgItem(IDC_EDIT3), ResStr(IDS_LANG_PREF_EXAMPLE));
+    m_wndToolTip.AddTool(GetDlgItem(IDC_CHECK4), ResStr(IDS_OVERRIDE_EXT_SPLITTER_CHOICE));
+
     UpdateData(FALSE);
 
     return TRUE;  // return TRUE unless you set the focus to a control
@@ -139,17 +170,26 @@ BOOL CPPagePlayback::OnApply()
 
     s.nVolume = m_oldVolume = m_nVolume;
     s.nBalance = m_nBalance;
+    s.nVolumeStep = min(max(m_nVolumeStep, 1), 100);
+    s.nSpeedStep = m_nSpeedStep;
     s.fLoopForever = !!m_iLoopForever;
     s.nLoops = m_nLoops;
     s.fRewind = !!m_fRewind;
     s.iZoomLevel = m_iZoomLevel;
     s.fRememberZoomLevel = !!m_iRememberZoomLevel;
+    s.nAutoFitFactor = m_nAutoFitFactor = min(max(m_nAutoFitFactor, 25), 100);
     s.fAutoloadAudio = !!m_fAutoloadAudio;
     s.fAutoloadSubtitles = !!m_fAutoloadSubtitles;
     s.fEnableWorkerThreadForOpening = !!m_fEnableWorkerThreadForOpening;
     s.fReportFailedPins = !!m_fReportFailedPins;
     s.strSubtitlesLanguageOrder = m_subtitlesLanguageOrder;
     s.strAudiosLanguageOrder = m_audiosLanguageOrder;
+    s.bAllowOverridingExternalSplitterChoice = !!m_fAllowOverridingExternalSplitterChoice;
+
+    // There is no main frame when the option dialog is displayed stand-alone
+    if (CMainFrame* pMainFrame = AfxGetMainFrame()) {
+        pMainFrame->UpdateControlState(CMainFrame::UPDATE_VOLUME_STEP);
+    }
 
     return __super::OnApply();
 }
@@ -184,11 +224,31 @@ void CPPagePlayback::OnUpdateAutoZoomCombo(CCmdUI* pCmdUI)
     pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK5));
 }
 
+void CPPagePlayback::OnUpdateAutoZoomFactor(CCmdUI* pCmdUI)
+{
+    int iZoomLevel = m_zoomlevelctrl.GetCurSel();
+    pCmdUI->Enable(!!IsDlgButtonChecked(IDC_CHECK5) && (iZoomLevel == 3 || iZoomLevel == 4));
+}
+
+void CPPagePlayback::OnUpdateSpeedStep(CCmdUI* pCmdUI)
+{
+    // if there is an error retrieving the position, assume the speedstep is set to auto
+    BOOL bError = FALSE;
+    int iPos = m_SpeedStepCtrl.GetPos32(&bError);
+    m_nSpeedStep = bError ? 0 : iPos;
+
+    // set the edit box text to auto if the position is zero
+    if (!bError && iPos == 0) {
+        SetDlgItemText(IDC_SPEEDSTEP, ResStr(IDS_SPEEDSTEP_AUTO));
+    }
+}
+
 void CPPagePlayback::OnBalanceTextDblClk()
 {
     // double click on text "Balance" resets the balance to zero
-    m_balancectrl.SetPos(0);
-    ((CMainFrame*)GetParentFrame())->SetBalance(0);
+    m_nBalance = 0;
+    m_balancectrl.SetPos(m_nBalance);
+    ((CMainFrame*)GetParentFrame())->SetBalance(m_nBalance);
     SetModified();
 }
 
@@ -208,14 +268,14 @@ BOOL CPPagePlayback::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult)
     CString strTipText;
 
     if (nID == IDC_SLIDER1) {
-        strTipText.Format(_T("%d%%"), m_nVolume);
+        strTipText.Format(ResStr(IDS_VOLUME), m_nVolume);
     } else if (nID == IDC_SLIDER2) {
         if (m_nBalance > 0) {
-            strTipText.Format(_T("R +%d%%"), m_nBalance);
+            strTipText.Format(ResStr(IDS_BALANCE_R), m_nBalance);
         } else if (m_nBalance < 0) {
-            strTipText.Format(_T("L +%d%%"), -m_nBalance);
+            strTipText.Format(ResStr(IDS_BALANCE_L), -m_nBalance);
         } else { //if (m_nBalance == 0)
-            strTipText = _T("L = R");
+            strTipText = ResStr(IDS_BALANCE);
         }
     } else if (nID == IDC_COMBO1) {
         int i = m_zoomlevelctrl.GetCurSel();

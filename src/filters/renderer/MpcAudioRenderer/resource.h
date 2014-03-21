@@ -2,9 +2,10 @@
 // Microsoft Visual C++ generated include file.
 // Used by MpcAudioRenderer.rc
 //
-#define IDS_ARS_WASAPI_MODE             33436
-#define IDS_ARS_MUTE_FAST_FORWARD       33437
-#define IDS_ARS_SOUND_DEVICE            33438
+#define IDS_FILTER_SETTINGS_CAPTION     7000
+#define IDS_ARS_WASAPI_MODE             7100
+#define IDS_ARS_MUTE_FAST_FORWARD       7101
+#define IDS_ARS_SOUND_DEVICE            7102
 
 // Next default values for new objects
 //

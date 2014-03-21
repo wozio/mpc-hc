@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,22 +23,27 @@
 
 #include "StreamSwitcher.h"
 
-#define AudioSwitcherName L"MPC AudioSwitcher"
+#define AudioSwitcherName L"MPC-HC AudioSwitcher"
+#define AS_MAX_CHANNELS 18
 
 
 interface __declspec(uuid("CEDB2890-53AE-4231-91A3-B0AAFCD1DBDE"))
 IAudioSwitcherFilter :
 public IUnknown {
-    STDMETHOD(GetInputSpeakerConfig)(DWORD * pdwChannelMask) = 0;
-    STDMETHOD(GetSpeakerConfig)(bool * pfCustomChannelMapping, DWORD pSpeakerToChannelMap[18][18]) = 0;
-    STDMETHOD(SetSpeakerConfig)(bool fCustomChannelMapping, DWORD pSpeakerToChannelMap[18][18]) = 0;
-    STDMETHOD_(int, GetNumberOfInputChannels)() = 0;
-    STDMETHOD_(bool, IsDownSamplingTo441Enabled)() = 0;
-    STDMETHOD(EnableDownSamplingTo441)(bool fEnable) = 0;
-    STDMETHOD_(REFERENCE_TIME, GetAudioTimeShift)() = 0;
-    STDMETHOD(SetAudioTimeShift)(REFERENCE_TIME rtAudioTimeShift) = 0;
-    STDMETHOD(GetNormalizeBoost)(bool & fNormalize, bool & fNormalizeRecover, float & boost) = 0;
-    STDMETHOD(SetNormalizeBoost)(bool fNormalize, bool fNormalizeRecover, float boost) = 0;
+    STDMETHOD(GetInputSpeakerConfig)(DWORD * pdwChannelMask) PURE;
+    STDMETHOD(GetSpeakerConfig)(bool * pfCustomChannelMapping, DWORD pSpeakerToChannelMap[AS_MAX_CHANNELS][AS_MAX_CHANNELS]) PURE;
+    STDMETHOD(SetSpeakerConfig)(bool fCustomChannelMapping, DWORD pSpeakerToChannelMap[AS_MAX_CHANNELS][AS_MAX_CHANNELS]) PURE;
+    STDMETHOD_(int, GetNumberOfInputChannels)() PURE;
+    STDMETHOD_(bool, IsDownSamplingTo441Enabled)() PURE;
+    STDMETHOD(EnableDownSamplingTo441)(bool fEnable) PURE;
+    STDMETHOD_(REFERENCE_TIME, GetAudioTimeShift)() PURE;
+    STDMETHOD(SetAudioTimeShift)(REFERENCE_TIME rtAudioTimeShift) PURE;
+    // Deprecated
+    STDMETHOD(GetNormalizeBoost)(bool & fNormalize, bool & fNormalizeRecover, float & boost_dB) PURE;
+    // Deprecated
+    STDMETHOD(SetNormalizeBoost)(bool fNormalize, bool fNormalizeRecover, float boost_dB) PURE;
+    STDMETHOD(GetNormalizeBoost2)(bool & fNormalize, UINT & nMaxNormFactor, bool & fNormalizeRecover, UINT & nBoost) PURE;
+    STDMETHOD(SetNormalizeBoost2)(bool fNormalize, UINT nMaxNormFactor, bool fNormalizeRecover, UINT nBoost) PURE;
 };
 
 class AudioStreamResampler;
@@ -46,19 +51,19 @@ class AudioStreamResampler;
 class __declspec(uuid("18C16B08-6497-420e-AD14-22D21C2CEAB7"))
     CAudioSwitcherFilter : public CStreamSwitcherFilter, public IAudioSwitcherFilter
 {
-    typedef struct {
+    struct ChMap {
         DWORD Speaker, Channel;
-    } ChMap;
-    CAtlArray<ChMap> m_chs[18];
+    };
+    CAtlArray<ChMap> m_chs[AS_MAX_CHANNELS];
 
     bool m_fCustomChannelMapping;
-    DWORD m_pSpeakerToChannelMap[18][18];
+    DWORD m_pSpeakerToChannelMap[AS_MAX_CHANNELS][AS_MAX_CHANNELS];
     bool m_fDownSampleTo441;
     REFERENCE_TIME m_rtAudioTimeShift;
     CAutoPtrArray<AudioStreamResampler> m_pResamplers;
-    double m_sample_max;
     bool m_fNormalize, m_fNormalizeRecover;
-    float m_boost_mul;
+    double m_nMaxNormFactor, m_boostFactor;
+    double m_normalizeFactor;
 
     REFERENCE_TIME m_rtNextStart, m_rtNextStop;
 
@@ -78,15 +83,19 @@ public:
 
     // IAudioSwitcherFilter
     STDMETHODIMP GetInputSpeakerConfig(DWORD* pdwChannelMask);
-    STDMETHODIMP GetSpeakerConfig(bool* pfCustomChannelMapping, DWORD pSpeakerToChannelMap[18][18]);
-    STDMETHODIMP SetSpeakerConfig(bool fCustomChannelMapping, DWORD pSpeakerToChannelMap[18][18]);
+    STDMETHODIMP GetSpeakerConfig(bool* pfCustomChannelMapping, DWORD pSpeakerToChannelMap[AS_MAX_CHANNELS][AS_MAX_CHANNELS]);
+    STDMETHODIMP SetSpeakerConfig(bool fCustomChannelMapping, DWORD pSpeakerToChannelMap[AS_MAX_CHANNELS][AS_MAX_CHANNELS]);
     STDMETHODIMP_(int) GetNumberOfInputChannels();
     STDMETHODIMP_(bool) IsDownSamplingTo441Enabled();
     STDMETHODIMP EnableDownSamplingTo441(bool fEnable);
     STDMETHODIMP_(REFERENCE_TIME) GetAudioTimeShift();
     STDMETHODIMP SetAudioTimeShift(REFERENCE_TIME rtAudioTimeShift);
-    STDMETHODIMP GetNormalizeBoost(bool& fNormalize, bool& fNormalizeRecover, float& boost);
-    STDMETHODIMP SetNormalizeBoost(bool fNormalize, bool fNormalizeRecover, float boost);
+    // Deprecated
+    STDMETHODIMP GetNormalizeBoost(bool& fNormalize, bool& fNormalizeRecover, float& boost_dB);
+    // Deprecated
+    STDMETHODIMP SetNormalizeBoost(bool fNormalize, bool fNormalizeRecover, float boost_dB);
+    STDMETHODIMP GetNormalizeBoost2(bool& fNormalize, UINT& nMaxNormFactor, bool& fNormalizeRecover, UINT& nBoost);
+    STDMETHODIMP SetNormalizeBoost2(bool fNormalize, UINT nMaxNormFactor, bool fNormalizeRecover, UINT nBoost);
 
     // IAMStreamSelect
     STDMETHODIMP Enable(long lIndex, DWORD dwFlags);

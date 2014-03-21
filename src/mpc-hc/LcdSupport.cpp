@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -31,7 +31,7 @@
 
 #include "mplayerc.h"
 
-#define LCD_APP_NAME  "Media Player Classic"
+#define LCD_APP_NAME  "MPC-HC"
 #define LCD_UPD_TIMER 40
 
 
@@ -121,7 +121,7 @@ void CLCDMyProgressBar::OnDraw(CLCDGfxBase& rGfx)
             FillRect(rGfx.GetHDC(), &r, m_hBrush);
             HPEN hOldPen = (HPEN)::SelectObject(rGfx.GetHDC(), m_hPen);
 
-            ::MoveToEx(rGfx.GetHDC(), 0, (r.bottom - r.top) / 2, NULL);
+            ::MoveToEx(rGfx.GetHDC(), 0, (r.bottom - r.top) / 2, nullptr);
             ::LineTo(rGfx.GetHDC(), nCursorPos, (r.bottom - r.top) / 2);
             ::SelectObject(rGfx.GetHDC(), hOldPen);
         }
@@ -137,13 +137,13 @@ void CLCDMyProgressBar::SetProgressStyle(ePROGRESS_STYLE eStyle)
 
     //Convert and update the new Style type
     switch (eStyle) {
-        case STYLE_CURSOR:
+        case CLCDProgressBar::STYLE_CURSOR:
             m_eMyStyle = STYLE_CURSOR;
             break;
-        case STYLE_FILLED:
+        case CLCDProgressBar::STYLE_FILLED:
             m_eMyStyle = STYLE_FILLED_H;
             break;
-        case STYLE_DASHED_CURSOR:
+        case CLCDProgressBar::STYLE_DASHED_CURSOR:
             m_eMyStyle = STYLE_DASHED_CURSOR;
             break;
         default:
@@ -564,9 +564,17 @@ void CLCDMyColorPage::SetPlayState(PlayState ps)
 
 /* attach to an available lcd */
 CMPC_Lcd::CMPC_Lcd()
+    : hLCD_UpdateThread(nullptr)
+    , m_nMediaStart(0)
+    , m_nMediaStop(0)
+    , m_nVolumeStart(0)
+    , m_nVolumeStop(100)
+    , m_MonoOutput(nullptr)
+    , m_ColorOutput(nullptr)
+    , Thread_Loop(false)
+    , nThread_tTimeout(0)
 {
     InitializeCriticalSection(&cs);
-    hLCD_UpdateThread = NULL;
 
     // lcd init
     ZeroMemory(&m_ConnCtx, sizeof(m_ConnCtx));
@@ -575,13 +583,13 @@ CMPC_Lcd::CMPC_Lcd()
     m_ConnCtx.dwAppletCapabilitiesSupported = LGLCD_APPLET_CAP_BW | LGLCD_APPLET_CAP_QVGA;
     m_ConnCtx.isAutostartable = FALSE;
     m_ConnCtx.isPersistent = FALSE;
-    m_ConnCtx.onConfigure.configCallback = NULL;     // we don't have a configuration screen
-    m_ConnCtx.onConfigure.configContext = NULL;
-    m_ConnCtx.onNotify.notificationCallback = NULL;
-    m_ConnCtx.onNotify.notifyContext = NULL;
+    m_ConnCtx.onConfigure.configCallback = nullptr;     // we don't have a configuration screen
+    m_ConnCtx.onConfigure.configContext = nullptr;
+    m_ConnCtx.onNotify.notificationCallback = nullptr;
+    m_ConnCtx.onNotify.notifyContext = nullptr;
     m_ConnCtx.connection = LGLCD_INVALID_CONNECTION; // the "connection" member will be returned upon return
 
-    CAppSettings& s = AfxGetAppSettings();
+    const CAppSettings& s = AfxGetAppSettings();
     if (!s.fLCDSupport) {
         return;
     }
@@ -614,7 +622,7 @@ CMPC_Lcd::~CMPC_Lcd()
     if (m_Connection.IsConnected()) {
         Thread_Loop = false;
         WaitForSingleObject(hLCD_UpdateThread, LCD_UPD_TIMER * 2 /* timeout */);
-        hLCD_UpdateThread = NULL;
+        hLCD_UpdateThread = nullptr;
     }
 
     DeleteCriticalSection(&cs);
@@ -730,11 +738,11 @@ void CMPC_Lcd::SetPlayState(CMPC_Lcd::PlayState ps)
 
 HRESULT CMPC_Lcd::SetAsForeground(BOOL setAsForeground)
 {
-    if (NULL != m_Connection.MonoOutput()) {
+    if (nullptr != m_Connection.MonoOutput()) {
         m_Connection.MonoOutput()->SetAsForeground(setAsForeground);
     }
 
-    if (NULL != m_Connection.ColorOutput()) {
+    if (nullptr != m_Connection.ColorOutput()) {
         m_Connection.ColorOutput()->SetAsForeground(setAsForeground);
     }
 

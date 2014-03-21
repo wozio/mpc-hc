@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -48,21 +48,21 @@ HRESULT CreateAP7(const CLSID& clsid, HWND hWnd, ISubPicAllocatorPresenter** ppA
 {
     CheckPointer(ppAP, E_POINTER);
 
-    *ppAP = NULL;
+    *ppAP = nullptr;
 
     HRESULT hr = S_OK;
 
     if (IsEqualCLSID(clsid, CLSID_VMR7AllocatorPresenter)) {
-        *ppAP = DNew CVMR7AllocatorPresenter(hWnd, hr);
+        *ppAP = DEBUG_NEW CVMR7AllocatorPresenter(hWnd, hr);
     } else if (IsEqualCLSID(clsid, CLSID_RM7AllocatorPresenter)) {
-        *ppAP = DNew CRM7AllocatorPresenter(hWnd, hr);
+        *ppAP = DEBUG_NEW CRM7AllocatorPresenter(hWnd, hr);
     } else if (IsEqualCLSID(clsid, CLSID_QT7AllocatorPresenter)) {
-        *ppAP = DNew CQT7AllocatorPresenter(hWnd, hr);
+        *ppAP = DEBUG_NEW CQT7AllocatorPresenter(hWnd, hr);
     } else {
         return E_FAIL;
     }
 
-    if (*ppAP == NULL) {
+    if (*ppAP == nullptr) {
         return E_OUTOFMEMORY;
     }
 
@@ -70,7 +70,7 @@ HRESULT CreateAP7(const CLSID& clsid, HWND hWnd, ISubPicAllocatorPresenter** ppA
 
     if (FAILED(hr)) {
         (*ppAP)->Release();
-        *ppAP = NULL;
+        *ppAP = nullptr;
     }
 
     return hr;

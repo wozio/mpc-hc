@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -90,7 +90,7 @@ float Vector::Angle(Vector& a, Vector& b)
     return (((a - *this).Unit()).Angle((b - *this).Unit()));
 }
 
-float Vector::Angle(Vector& a)
+float Vector::Angle(const Vector& a)
 {
     float angle = *this | a;
     return ((angle > 1) ? 0 : (angle < -1) ? (float)M_PI : acos(angle));
@@ -119,7 +119,7 @@ Vector Vector::Angle()
     return ret;
 }
 
-Vector& Vector::Min(Vector& a)
+Vector& Vector::Min(const Vector& a)
 {
     x = (x < a.x) ? x : a.x;
     y = (y < a.y) ? y : a.y;
@@ -127,7 +127,7 @@ Vector& Vector::Min(Vector& a)
     return *this;
 }
 
-Vector& Vector::Max(Vector& a)
+Vector& Vector::Max(const Vector& a)
 {
     x = (x > a.x) ? x : a.x;
     y = (y > a.y) ? y : a.y;
@@ -155,6 +155,7 @@ Vector Vector::Refract(Vector& N, float nFront, float nBack, float* nOut)
     Vector cos_D = N * N_dot_D;
     Vector sin_T = (cos_D - D) * n;
 
+    // cppcheck-suppress duplicateExpression
     float len_sin_T = sin_T | sin_T;
 
     if (len_sin_T > 1) {
@@ -186,6 +187,7 @@ Vector Vector::Refract2(Vector& N, float nFrom, float nTo, float* nOut)
     Vector cos_D = N * N_dot_D;
     Vector sin_T = (cos_D - D) * n;
 
+    // cppcheck-suppress duplicateExpression
     float len_sin_T = sin_T | sin_T;
 
     if (len_sin_T > 1) {
@@ -207,12 +209,12 @@ Vector Vector::Refract2(Vector& N, float nFrom, float nTo, float* nOut)
     return (sin_T - (N * N_dot_T));
 }
 
-float Vector::operator | (Vector& v)
+float Vector::operator | (const Vector& v)
 {
     return (x * v.x + y * v.y + z * v.z);
 }
 
-Vector Vector::operator % (Vector& v)
+Vector Vector::operator % (const Vector& v)
 {
     return Vector(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
 }
@@ -245,7 +247,7 @@ Vector Vector::operator + (float d)
     return Vector(x + d, y + d, z + d);
 }
 
-Vector Vector::operator + (Vector& v)
+Vector Vector::operator + (const Vector& v)
 {
     return Vector(x + v.x, y + v.y, z + v.z);
 }
@@ -265,7 +267,7 @@ Vector Vector::operator * (float d)
     return Vector(x * d, y * d, z * d);
 }
 
-Vector Vector::operator * (Vector& v)
+Vector Vector::operator * (const Vector& v)
 {
     return Vector(x * v.x, y * v.y, z * v.z);
 }
@@ -275,7 +277,7 @@ Vector Vector::operator / (float d)
     return Vector(x / d, y / d, z / d);
 }
 
-Vector Vector::operator / (Vector& v)
+Vector Vector::operator / (const Vector& v)
 {
     return Vector(x / v.x, y / v.y, z / v.z);
 }
@@ -288,7 +290,7 @@ Vector& Vector::operator += (float d)
     return *this;
 }
 
-Vector& Vector::operator += (Vector& v)
+Vector& Vector::operator += (const Vector& v)
 {
     x += v.x;
     y += v.y;
@@ -320,7 +322,7 @@ Vector& Vector::operator *= (float d)
     return *this;
 }
 
-Vector& Vector::operator *= (Vector& v)
+Vector& Vector::operator *= (const Vector& v)
 {
     x *= v.x;
     y *= v.y;
@@ -336,7 +338,7 @@ Vector& Vector::operator /= (float d)
     return *this;
 }
 
-Vector& Vector::operator /= (Vector& v)
+Vector& Vector::operator /= (const Vector& v)
 {
     x /= v.x;
     y /= v.y;
@@ -349,12 +351,12 @@ Vector& Vector::operator /= (Vector& v)
 //
 
 Ray::Ray(Vector& p, Vector& d)
+    : p(p)
+    , d(d)
 {
-    this->p = p;
-    this->d = d;
 }
 
-void Ray::Set(Vector& p, Vector& d)
+void Ray::Set(const Vector& p, const Vector& d)
 {
     this->p = p;
     this->d = d;
@@ -371,6 +373,7 @@ float Ray::GetDistanceFrom(Ray& r)
 
 float Ray::GetDistanceFrom(Vector& v)
 {
+    // cppcheck-suppress duplicateExpression
     float t = ((v - p) | d) / (d | d);
     return ((p + d * t) - v).Length();
 }
@@ -384,20 +387,9 @@ Vector Ray::operator [](float t)
 // XForm
 //
 
+
 XForm::XForm(Ray& r, Vector& s, bool isWorldToLocal)
 {
-    Initalize(r, s, isWorldToLocal);
-}
-
-void XForm::Initalize()
-{
-    m.Initalize();
-}
-
-void XForm::Initalize(Ray& r, Vector& s, bool isWorldToLocal)
-{
-    Initalize();
-
     m_isWorldToLocal = isWorldToLocal;
     if (isWorldToLocal) {
         *this -= r.p;
@@ -411,7 +403,7 @@ void XForm::Initalize(Ray& r, Vector& s, bool isWorldToLocal)
     }
 }
 
-void XForm::operator *= (Vector& v)
+void XForm::operator *= (const Vector& v)
 {
     Matrix s;
     s.mat[0][0] = v.x;
@@ -420,7 +412,7 @@ void XForm::operator *= (Vector& v)
     m *= s;
 }
 
-void XForm::operator += (Vector& v)
+void XForm::operator += (const Vector& v)
 {
     Matrix t;
     t.mat[3][0] = v.x;
@@ -429,7 +421,7 @@ void XForm::operator += (Vector& v)
     m *= t;
 }
 
-void XForm::operator <<= (Vector& v)
+void XForm::operator <<= (const Vector& v)
 {
     Matrix x;
     x.mat[1][1] = cos(v.x);
@@ -452,7 +444,7 @@ void XForm::operator <<= (Vector& v)
     m = m_isWorldToLocal ? (m * y * x * z) : (m * z * x * y);
 }
 
-void XForm::operator /= (Vector& v)
+void XForm::operator /= (const Vector& v)
 {
     Vector s;
     s.x = IsZero(v.x) ? 0 : 1 / v.x;
@@ -488,7 +480,7 @@ Vector XForm::operator < (Vector& n)
     return ret;
 }
 
-Vector XForm::operator << (Vector& v)
+Vector XForm::operator << (const Vector& v)
 {
     Vector ret;
 
@@ -513,16 +505,21 @@ Ray XForm::operator << (Ray& r)
     return Ray(*this << r.p, *this < r.d);
 }
 
+bool XForm::operator == (const XForm& x) const
+{
+    return m_isWorldToLocal == x.m_isWorldToLocal && m == x.m;
+}
+
+bool XForm::operator != (const XForm& x) const
+{
+    return !(*this == x);
+}
+
 //
 // XForm::Matrix
 //
 
 XForm::Matrix::Matrix()
-{
-    Initalize();
-}
-
-void XForm::Matrix::Initalize()
 {
     mat[0][0] = 1;
     mat[0][1] = 0;
@@ -542,7 +539,7 @@ void XForm::Matrix::Initalize()
     mat[3][3] = 1;
 }
 
-XForm::Matrix XForm::Matrix::operator * (Matrix& m)
+XForm::Matrix XForm::Matrix::operator * (const Matrix& m)
 {
     Matrix ret;
 
@@ -565,4 +562,9 @@ XForm::Matrix XForm::Matrix::operator * (Matrix& m)
 XForm::Matrix& XForm::Matrix::operator *= (XForm::Matrix& m)
 {
     return (*this = *this * m);
+}
+
+bool XForm::Matrix::operator == (const XForm::Matrix& m) const
+{
+    return mat == m.mat;
 }

@@ -50,17 +50,17 @@ CSRIAPI csri_inst* csri_open_file(csri_rend* renderer, const char* filename, str
     int namesize;
     wchar_t* namebuf;
 
-    namesize = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+    namesize = MultiByteToWideChar(CP_UTF8, 0, filename, -1, nullptr, 0);
     if (!namesize) {
         return 0;
     }
     namesize++;
-    namebuf = DNew wchar_t[namesize];
+    namebuf = DEBUG_NEW wchar_t[namesize];
     MultiByteToWideChar(CP_UTF8, 0, filename, -1, namebuf, namesize);
 
-    csri_inst* inst = DNew csri_inst();
-    inst->cs = DNew CCritSec();
-    inst->rts = DNew CRenderedTextSubtitle(inst->cs);
+    csri_inst* inst = DEBUG_NEW csri_inst();
+    inst->cs = DEBUG_NEW CCritSec();
+    inst->rts = DEBUG_NEW CRenderedTextSubtitle(inst->cs);
     if (inst->rts->Open(CString(namebuf), DEFAULT_CHARSET)) {
         delete [] namebuf;
         inst->readorder = 0;
@@ -78,9 +78,9 @@ CSRIAPI csri_inst* csri_open_mem(csri_rend* renderer, const void* data, size_t l
 {
     // This is actually less effecient than opening a file, since this first writes the memory data to a temp file,
     // then opens that file and parses from that.
-    csri_inst* inst = DNew csri_inst();
-    inst->cs = DNew CCritSec();
-    inst->rts = DNew CRenderedTextSubtitle(inst->cs);
+    csri_inst* inst = DEBUG_NEW csri_inst();
+    inst->cs = DEBUG_NEW CCritSec();
+    inst->rts = DEBUG_NEW CRenderedTextSubtitle(inst->cs);
     if (inst->rts->Open((BYTE*)data, (int)length, DEFAULT_CHARSET, _T("CSRI memory subtitles"))) {
         inst->readorder = 0;
         return inst;
@@ -201,10 +201,11 @@ static struct csri_info csri_vsfilter_info = {
     // 2.41 removes SSF support
     "VSFilter/TextSub (MPC-HC)", // longname
     "Gabest", // author
-    "Copyright (c) 2003-2012 by Gabest et al." // copyright
+    "Copyright (C) 2003-2013 by Gabest et al." // copyright
 };
 
-CSRIAPI struct csri_info* csri_renderer_info(csri_rend* rend) {
+CSRIAPI struct csri_info* csri_renderer_info(csri_rend* rend)
+{
     return &csri_vsfilter_info;
 }
 

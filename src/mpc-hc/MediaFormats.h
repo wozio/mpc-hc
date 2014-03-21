@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -32,15 +32,16 @@ protected:
     CAtlList<CString> m_exts, m_backupexts;
     bool m_fAudioOnly;
     engine_t m_engine;
+    bool m_fAssociable;
 
 public:
     CMediaFormatCategory();
     CMediaFormatCategory(
         CString label, CString description, CAtlList<CString>& exts, bool fAudioOnly = false,
-        CString specreqnote =  _T(""), engine_t e = DirectShow);
+        CString specreqnote = _T(""), engine_t e = DirectShow, bool fAssociable = true);
     CMediaFormatCategory(
         CString label, CString description, CString exts, bool fAudioOnly = false,
-        CString specreqnote =  _T(""), engine_t e = DirectShow);
+        CString specreqnote = _T(""), engine_t e = DirectShow, bool fAssociable = true);
     virtual ~CMediaFormatCategory();
 
     void UpdateData(bool fSave);
@@ -53,7 +54,7 @@ public:
     void SetExts(CString exts);
 
     bool FindExt(CString ext) const {
-        return m_exts.Find(ext.TrimLeft(_T('.')).MakeLower()) != NULL;
+        return m_exts.Find(ext.TrimLeft(_T('.')).MakeLower()) != nullptr;
     }
 
     CString GetLabel() const { return m_label; }
@@ -65,6 +66,7 @@ public:
     CString GetBackupExtsWithPeriod(bool fAppendEngine = false) const;
     CString GetSpecReqNote() const { return m_specreqnote; }
     bool IsAudioOnly() const { return m_fAudioOnly; }
+    bool IsAssociable() const { return m_fAssociable; }
     engine_t GetEngineType() const { return m_engine; }
     void SetEngineType(engine_t e) { m_engine = e; }
 };
@@ -97,9 +99,11 @@ public:
     bool IsUsingEngine(CString path, engine_t e) const;
     engine_t GetEngine(CString path) const;
 
-    bool FindExt(CString ext, bool fAudioOnly = false) const;
-    const CMediaFormatCategory* FindMediaByExt(CString ext, bool fAudioOnly = false) const;
+    bool FindExt(CString ext, bool fAudioOnly = false, bool fAssociableOnly = true) const;
+    const CMediaFormatCategory* FindMediaByExt(CString ext, bool fAudioOnly = false, bool fAssociableOnly = true) const;
 
     void GetFilter(CString& filter, CAtlArray<CString>& mask) const;
     void GetAudioFilter(CString& filter, CAtlArray<CString>& mask) const;
+
+    static bool IsExtHidden();
 };

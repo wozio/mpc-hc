@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,10 +22,7 @@
 #pragma once
 
 #include <math.h>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+#include <array>
 
 #define EPSILON      (1e-7)
 #define BIGNUMBER    (1e+9)
@@ -44,51 +41,51 @@ public:
 
     Vector Normal(Vector& a, Vector& b);
     float Angle(Vector& a, Vector& b);
-    float Angle(Vector& a);
-    void Angle(float& u, float& v); // returns spherical coords in radian, -M_PI_2 <= u <= M_PI_2, -M_PI <= v <= M_PI
-    Vector Angle();                 // does like prev., returns 'u' in 'ret.x', and 'v' in 'ret.y'
+    float Angle(const Vector& a);
+    void Angle(float& u, float& v);     // returns spherical coords in radian, -M_PI_2 <= u <= M_PI_2, -M_PI <= v <= M_PI
+    Vector Angle();                     // does like prev., returns 'u' in 'ret.x', and 'v' in 'ret.y'
 
     Vector Unit();
     Vector& Unitalize();
     float Length();
-    float Sum();        // x + y + z
-    float CrossSum();   // xy + xz + yz
-    Vector Cross();     // xy, xz, yz
+    float Sum();                        // x + y + z
+    float CrossSum();                   // xy + xz + yz
+    Vector Cross();                     // xy, xz, yz
     Vector Pow(float exp);
 
-    Vector& Min(Vector& a);
-    Vector& Max(Vector& a);
+    Vector& Min(const Vector& a);
+    Vector& Max(const Vector& a);
     Vector Abs();
 
     Vector Reflect(Vector& n);
-    Vector Refract(Vector& n, float nFront, float nBack, float* nOut = NULL);
-    Vector Refract2(Vector& n, float nFrom, float nTo, float* nOut = NULL);
+    Vector Refract(Vector& n, float nFront, float nBack, float* nOut = nullptr);
+    Vector Refract2(Vector& n, float nFrom, float nTo, float* nOut = nullptr);
 
     Vector operator - ();
     float& operator [](size_t i);
 
-    float operator | (Vector& v);   // dot
-    Vector operator % (Vector& v);  // cross
+    float operator | (const Vector& v);     // dot
+    Vector operator % (const Vector& v);    // cross
 
     bool operator == (const Vector& v) const;
     bool operator != (const Vector& v) const;
 
     Vector operator + (float d);
-    Vector operator + (Vector& v);
+    Vector operator + (const Vector& v);
     Vector operator - (float d);
     Vector operator - (Vector& v);
     Vector operator * (float d);
-    Vector operator * (Vector& v);
+    Vector operator * (const Vector& v);
     Vector operator / (float d);
-    Vector operator / (Vector& v);
+    Vector operator / (const Vector& v);
     Vector& operator += (float d);
-    Vector& operator += (Vector& v);
+    Vector& operator += (const Vector& v);
     Vector& operator -= (float d);
     Vector& operator -= (Vector& v);
     Vector& operator *= (float d);
-    Vector& operator *= (Vector& v);
+    Vector& operator *= (const Vector& v);
     Vector& operator /= (float d);
-    Vector& operator /= (Vector& v);
+    Vector& operator /= (const Vector& v);
 
     template<typename T> static float DegToRad(T angle) { return (float)(angle * M_PI / 180); }
 };
@@ -100,10 +97,10 @@ public:
 
     Ray() {}
     Ray(Vector& p, Vector& d);
-    void Set(Vector& p, Vector& d);
+    void Set(const Vector& p, const Vector& d);
 
-    float GetDistanceFrom(Ray& r);      // r = plane
-    float GetDistanceFrom(Vector& v);   // v = point
+    float GetDistanceFrom(Ray& r);          // r = plane
+    float GetDistanceFrom(Vector& v);       // v = point
 
     Vector operator [](float t);
 };
@@ -113,34 +110,34 @@ class XForm
     class Matrix
     {
     public:
-        float mat[4][4];
+        std::array<std::array<float, 4>, 4> mat;
 
         Matrix();
-        void Initalize();
 
-        Matrix operator * (Matrix& m);
+        Matrix operator * (const Matrix& m);
         Matrix& operator *= (Matrix& m);
+        bool operator == (const Matrix& m) const;
     } m;
 
     bool m_isWorldToLocal;
 
 public:
-    XForm() : m_isWorldToLocal(true) {}
+    XForm() : m_isWorldToLocal(false) {}
     XForm(Ray& r, Vector& s, bool isWorldToLocal = true);
 
-    void Initalize();
-    void Initalize(Ray& r, Vector& s, bool isWorldToLocal = true);
+    void operator *= (const Vector& s);      // scale
+    void operator += (const Vector& t);      // translate
+    void operator <<= (const Vector& r);     // rotate
 
-    void operator *= (Vector& s);   // scale
-    void operator += (Vector& t);   // translate
-    void operator <<= (Vector& r);  // rotate
+    void operator /= (const Vector& s);      // scale
+    void operator -= (Vector& t);            // translate
+    void operator >>= (Vector& r);           // rotate
 
-    void operator /= (Vector& s);   // scale
-    void operator -= (Vector& t);   // translate
-    void operator >>= (Vector& r);  // rotate
+    bool operator == (const XForm& x) const; // compare
+    bool operator != (const XForm& x) const;
 
     //  transformations
-    Vector operator < (Vector& n);  // normal
-    Vector operator << (Vector& v); // vector
-    Ray operator << (Ray& r);       // ray
+    Vector operator < (Vector& n);           // normal
+    Vector operator << (const Vector& v);    // vector
+    Ray operator << (Ray& r);                // ray
 };

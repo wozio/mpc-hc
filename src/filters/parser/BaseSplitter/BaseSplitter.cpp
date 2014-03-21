@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,6 +25,7 @@
 #include "moreuuids.h"
 #include "../../switcher/AudioSwitcher/AudioSwitcher.h"
 #include "BaseSplitter.h"
+#include <algorithm>
 
 
 //
@@ -48,7 +49,7 @@ void CPacketQueue::Add(CAutoPtr<Packet> p)
             Packet* tail = GetTail();
             size_t oldsize = tail->GetCount();
             size_t newsize = tail->GetCount() + p->GetCount();
-            tail->SetCount(newsize, max(1024, (int)newsize)); // doubles the reserved buffer size
+            tail->SetCount(newsize, std::max(1024, (int)newsize)); // doubles the reserved buffer size
             memcpy(tail->GetData() + oldsize, p->GetData(), p->GetCount());
             /*
             GetTail()->Append(*p); // too slow
@@ -106,7 +107,7 @@ CBaseSplitterInputPin::~CBaseSplitterInputPin()
 HRESULT CBaseSplitterInputPin::GetAsyncReader(IAsyncReader** ppAsyncReader)
 {
     CheckPointer(ppAsyncReader, E_POINTER);
-    *ppAsyncReader = NULL;
+    *ppAsyncReader = nullptr;
     CheckPointer(m_pAsyncReader, VFW_E_NOT_CONNECTED);
     (*ppAsyncReader = m_pAsyncReader)->AddRef();
     return S_OK;
@@ -194,12 +195,14 @@ CBaseSplitterOutputPin::CBaseSplitterOutputPin(CAtlArray<CMediaType>& mts, LPCWS
     : CBaseOutputPin(NAME("CBaseSplitterOutputPin"), pFilter, pLock, phr, pName)
     , m_hrDeliver(S_OK) // just in case it were asked before the worker thread could be created and reset it
     , m_fFlushing(false)
+    , m_fFlushed(false)
     , m_eEndFlush(TRUE)
     , m_QueueMaxPackets(QueueMaxPackets)
+    , m_rtStart(0)
 {
     m_mts.Copy(mts);
-    m_nBuffers = max(nBuffers, 1);
-    memset(&m_brs, 0, sizeof(m_brs));
+    m_nBuffers = std::max(nBuffers, 1);
+    ZeroMemory(&m_brs, sizeof(m_brs));
     m_brs.rtLastDeliverTime = Packet::INVALID_TIME;
 }
 
@@ -207,11 +210,13 @@ CBaseSplitterOutputPin::CBaseSplitterOutputPin(LPCWSTR pName, CBaseFilter* pFilt
     : CBaseOutputPin(NAME("CBaseSplitterOutputPin"), pFilter, pLock, phr, pName)
     , m_hrDeliver(S_OK) // just in case it were asked before the worker thread could be created and reset it
     , m_fFlushing(false)
+    , m_fFlushed(false)
     , m_eEndFlush(TRUE)
     , m_QueueMaxPackets(QueueMaxPackets)
+    , m_rtStart(0)
 {
-    m_nBuffers = max(nBuffers, 1);
-    memset(&m_brs, 0, sizeof(m_brs));
+    m_nBuffers = std::max(nBuffers, 1);
+    ZeroMemory(&m_brs, sizeof(m_brs));
     m_brs.rtLastDeliverTime = Packet::INVALID_TIME;
 }
 
@@ -239,7 +244,7 @@ HRESULT CBaseSplitterOutputPin::SetName(LPCWSTR pName)
     if (m_pName) {
         delete [] m_pName;
     }
-    m_pName = DNew WCHAR[wcslen(pName) + 1];
+    m_pName = DEBUG_NEW WCHAR[wcslen(pName) + 1];
     CheckPointer(m_pName, E_OUTOFMEMORY);
     wcscpy_s(m_pName, wcslen(pName) + 1, pName);
     return S_OK;
@@ -252,13 +257,13 @@ HRESULT CBaseSplitterOutputPin::DecideBufferSize(IMemAllocator* pAlloc, ALLOCATO
 
     HRESULT hr = NOERROR;
 
-    pProperties->cBuffers = max(pProperties->cBuffers, m_nBuffers);
-    pProperties->cbBuffer = max(m_mt.lSampleSize, 1);
+    pProperties->cBuffers = std::max<long>(pProperties->cBuffers, m_nBuffers);
+    pProperties->cbBuffer = std::max((long)m_mt.lSampleSize, 1l);
 
     // TODO: is this still needed ?
     if (m_mt.subtype == MEDIASUBTYPE_Vorbis && m_mt.formattype == FORMAT_VorbisFormat) {
         // oh great, the oggds vorbis decoder assumes there will be two at least, stupid thing...
-        pProperties->cBuffers = max(pProperties->cBuffers, 2);
+        pProperties->cBuffers = std::max(pProperties->cBuffers, 2l);
     }
 
     ALLOCATOR_PROPERTIES Actual;
@@ -438,7 +443,7 @@ bool CBaseSplitterOutputPin::IsActive()
 
 DWORD CBaseSplitterOutputPin::ThreadProc()
 {
-    SetThreadName((DWORD) - 1, "CBaseSplitterOutputPin");
+    SetThreadName(DWORD(-1), "CBaseSplitterOutputPin");
     m_hrDeliver = S_OK;
     m_fFlushing = m_fFlushed = false;
     m_eEndFlush.Set();
@@ -447,7 +452,7 @@ DWORD CBaseSplitterOutputPin::ThreadProc()
     bool iHaaliRenderConnect = false;
     CComPtr<IPin> pPinTo = this, pTmp;
     while (pPinTo && SUCCEEDED(pPinTo->ConnectedTo(&pTmp)) && (pPinTo = pTmp)) {
-        pTmp = NULL;
+        pTmp = nullptr;
         CComPtr<IBaseFilter> pBF = GetFilterFromPin(pPinTo);
         if (GetCLSID(pBF) == CLSID_DXR) { // Haali Renderer
             iHaaliRenderConnect = true;
@@ -465,7 +470,7 @@ DWORD CBaseSplitterOutputPin::ThreadProc()
 
         DWORD cmd;
         if (CheckRequest(&cmd)) {
-            m_hThread = NULL;
+            m_hThread = nullptr;
             cmd = GetRequest();
             Reply(S_OK);
             ASSERT(cmd == CMD_EXIT);
@@ -559,7 +564,7 @@ HRESULT CBaseSplitterOutputPin::DeliverPacket(CAutoPtr<Packet> p)
 
     do {
         CComPtr<IMediaSample> pSample;
-        if (S_OK != (hr = GetDeliveryBuffer(&pSample, NULL, NULL, 0))) {
+        if (S_OK != (hr = GetDeliveryBuffer(&pSample, nullptr, nullptr, 0))) {
             break;
         }
 
@@ -590,7 +595,7 @@ HRESULT CBaseSplitterOutputPin::DeliverPacket(CAutoPtr<Packet> p)
             if (S_OK != (hr = m_pAllocator->Commit())) {
                 break;
             }
-            if (S_OK != (hr = GetDeliveryBuffer(&pSample, NULL, NULL, 0))) {
+            if (S_OK != (hr = GetDeliveryBuffer(&pSample, nullptr, nullptr, 0))) {
                 break;
             }
         }
@@ -615,7 +620,7 @@ HRESULT CBaseSplitterOutputPin::DeliverPacket(CAutoPtr<Packet> p)
 
         ASSERT(!p->bSyncPoint || fTimeValid);
 
-        BYTE* pData = NULL;
+        BYTE* pData = nullptr;
         if (S_OK != (hr = pSample->GetPointer(&pData)) || !pData) {
             break;
         }
@@ -623,10 +628,10 @@ HRESULT CBaseSplitterOutputPin::DeliverPacket(CAutoPtr<Packet> p)
         if (S_OK != (hr = pSample->SetActualDataLength(nBytes))) {
             break;
         }
-        if (S_OK != (hr = pSample->SetTime(fTimeValid ? &p->rtStart : NULL, fTimeValid ? &p->rtStop : NULL))) {
+        if (S_OK != (hr = pSample->SetTime(fTimeValid ? &p->rtStart : nullptr, fTimeValid ? &p->rtStop : nullptr))) {
             break;
         }
-        if (S_OK != (hr = pSample->SetMediaTime(NULL, NULL))) {
+        if (S_OK != (hr = pSample->SetMediaTime(nullptr, nullptr))) {
             break;
         }
         if (S_OK != (hr = pSample->SetDiscontinuity(p->bDiscontinuity))) {
@@ -650,13 +655,13 @@ void CBaseSplitterOutputPin::MakeISCRHappy()
 {
     CComPtr<IPin> pPinTo = this, pTmp;
     while (pPinTo && SUCCEEDED(pPinTo->ConnectedTo(&pTmp)) && (pPinTo = pTmp)) {
-        pTmp = NULL;
+        pTmp = nullptr;
 
         CComPtr<IBaseFilter> pBF = GetFilterFromPin(pPinTo);
 
         if (GetCLSID(pBF) == GUIDFromCString(_T("{48025243-2D39-11CE-875D-00608CB78066}"))) { // ISCR
-            CAutoPtr<Packet> p(DNew Packet());
-            p->TrackNumber = (DWORD) - 1;
+            CAutoPtr<Packet> p(DEBUG_NEW Packet());
+            p->TrackNumber = DWORD_ERROR;
             p->rtStart = -1;
             p->rtStop = 0;
             p->bSyncPoint = FALSE;
@@ -780,12 +785,15 @@ CBaseSplitterFilter::CBaseSplitterFilter(LPCTSTR pName, LPUNKNOWN pUnk, HRESULT*
     , m_rtLastStop(_I64_MIN)
     , m_priority(THREAD_PRIORITY_NORMAL)
     , m_QueueMaxPackets(QueueMaxPackets)
+    , m_rtNewStart(0)
+    , m_rtNewStop(0)
+    , m_fFlushing(false)
 {
     if (phr) {
         *phr = S_OK;
     }
 
-    m_pInput.Attach(DNew CBaseSplitterInputPin(NAME("CBaseSplitterInputPin"), this, this, phr));
+    m_pInput.Attach(DEBUG_NEW CBaseSplitterInputPin(NAME("CBaseSplitterInputPin"), this, this, phr));
 }
 
 CBaseSplitterFilter::~CBaseSplitterFilter()
@@ -800,7 +808,7 @@ STDMETHODIMP CBaseSplitterFilter::NonDelegatingQueryInterface(REFIID riid, void*
 {
     CheckPointer(ppv, E_POINTER);
 
-    *ppv = NULL;
+    *ppv = nullptr;
 
     if (m_pInput && riid == __uuidof(IFileSourceFilter)) {
         return E_NOINTERFACE;
@@ -826,7 +834,7 @@ CBaseSplitterOutputPin* CBaseSplitterFilter::GetOutputPin(DWORD TrackNum)
 {
     CAutoLock cAutoLock(&m_csPinMap);
 
-    CBaseSplitterOutputPin* pPin = NULL;
+    CBaseSplitterOutputPin* pPin = nullptr;
     m_pPinMap.Lookup(TrackNum, pPin);
     return pPin;
 }
@@ -845,7 +853,7 @@ DWORD CBaseSplitterFilter::GetOutputTrackNum(CBaseSplitterOutputPin* pPin)
         }
     }
 
-    return (DWORD) - 1;
+    return DWORD_ERROR;
 }
 
 HRESULT CBaseSplitterFilter::RenameOutputPin(DWORD TrackNumSrc, DWORD TrackNumDst, const AM_MEDIA_TYPE* pmt)
@@ -953,7 +961,7 @@ DWORD CBaseSplitterFilter::ThreadProc()
         for (;;) {
             DWORD cmd = GetRequest();
             if (cmd == CMD_EXIT) {
-                CAMThread::m_hThread = NULL;
+                CAMThread::m_hThread = nullptr;
             }
             Reply(S_OK);
             if (cmd == CMD_EXIT) {
@@ -965,9 +973,9 @@ DWORD CBaseSplitterFilter::ThreadProc()
     m_eEndFlush.Set();
     m_fFlushing = false;
 
-    for (DWORD cmd = (DWORD) - 1; ; cmd = GetRequest()) {
+    for (DWORD cmd = DWORD_ERROR; ; cmd = GetRequest()) {
         if (cmd == CMD_EXIT) {
-            m_hThread = NULL;
+            m_hThread = nullptr;
             Reply(S_OK);
             return 0;
         }
@@ -979,7 +987,7 @@ DWORD CBaseSplitterFilter::ThreadProc()
 
         DemuxSeek(m_rtStart);
 
-        if (cmd != (DWORD) - 1) {
+        if (cmd != DWORD_ERROR) {
             Reply(S_OK);
         }
 
@@ -1008,7 +1016,7 @@ DWORD CBaseSplitterFilter::ThreadProc()
 
     ASSERT(0); // we should only exit via CMD_EXIT
 
-    m_hThread = NULL;
+    m_hThread = nullptr;
     return 0;
 }
 
@@ -1177,7 +1185,7 @@ CBasePin* CBaseSplitterFilter::GetPin(int n)
         return m_pInput;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 STDMETHODIMP CBaseSplitterFilter::Stop()
@@ -1239,9 +1247,9 @@ STDMETHODIMP CBaseSplitterFilter::Load(LPCOLESTR pszFileName, const AM_MEDIA_TYP
     CAtlList<CHdmvClipInfo::PlaylistChapter> Chapters;
 
     if (BuildPlaylist(pszFileName, Items)) {
-        pAsyncReader = (IAsyncReader*)DNew CAsyncFileReader(Items, hr);
+        pAsyncReader = (IAsyncReader*)DEBUG_NEW CAsyncFileReader(Items, hr);
     } else {
-        pAsyncReader = (IAsyncReader*)DNew CAsyncFileReader(CString(pszFileName), hr);
+        pAsyncReader = (IAsyncReader*)DEBUG_NEW CAsyncFileReader(CString(pszFileName), hr);
     }
 
     if (FAILED(hr)
@@ -1286,19 +1294,19 @@ STDMETHODIMP CBaseSplitterFilter::GetCurFile(LPOLESTR* ppszFileName, AM_MEDIA_TY
 LPCTSTR CBaseSplitterFilter::GetPartFilename(IAsyncReader* pAsyncReader)
 {
     CComQIPtr<IFileHandle>  pFH = pAsyncReader;
-    return pFH ? pFH->GetFileName() : m_fn;
+    return pFH ? pFH->GetFileName() : (LPCWSTR)m_fn;
 }
 
 // IMediaSeeking
 
 STDMETHODIMP CBaseSplitterFilter::GetCapabilities(DWORD* pCapabilities)
 {
-    return pCapabilities ? *pCapabilities =
-               AM_SEEKING_CanGetStopPos |
-               AM_SEEKING_CanGetDuration |
-               AM_SEEKING_CanSeekAbsolute |
-               AM_SEEKING_CanSeekForwards |
-               AM_SEEKING_CanSeekBackwards, S_OK : E_POINTER;
+    CheckPointer(pCapabilities, E_POINTER);
+
+    *pCapabilities = AM_SEEKING_CanGetStopPos | AM_SEEKING_CanGetDuration
+                     | AM_SEEKING_CanSeekAbsolute | AM_SEEKING_CanSeekForwards | AM_SEEKING_CanSeekBackwards;
+
+    return S_OK;
 }
 
 STDMETHODIMP CBaseSplitterFilter::CheckCapabilities(DWORD* pCapabilities)
@@ -1330,7 +1338,11 @@ STDMETHODIMP CBaseSplitterFilter::QueryPreferredFormat(GUID* pFormat)
 
 STDMETHODIMP CBaseSplitterFilter::GetTimeFormat(GUID* pFormat)
 {
-    return pFormat ? *pFormat = TIME_FORMAT_MEDIA_TIME, S_OK : E_POINTER;
+    CheckPointer(pFormat, E_POINTER);
+
+    *pFormat = TIME_FORMAT_MEDIA_TIME;
+
+    return S_OK;
 }
 
 STDMETHODIMP CBaseSplitterFilter::IsUsingTimeFormat(const GUID* pFormat)
@@ -1391,17 +1403,32 @@ STDMETHODIMP CBaseSplitterFilter::GetAvailable(LONGLONG* pEarliest, LONGLONG* pL
 
 STDMETHODIMP CBaseSplitterFilter::SetRate(double dRate)
 {
-    return dRate > 0 ? m_dRate = dRate, S_OK : E_INVALIDARG;
+    HRESULT hr = E_INVALIDARG;
+
+    if (dRate > 0.0) {
+        m_dRate = dRate;
+        hr = S_OK;
+    }
+
+    return hr;
 }
 
 STDMETHODIMP CBaseSplitterFilter::GetRate(double* pdRate)
 {
-    return pdRate ? *pdRate = m_dRate, S_OK : E_POINTER;
+    CheckPointer(pdRate, E_POINTER);
+
+    *pdRate = m_dRate;
+
+    return S_OK;
 }
 
 STDMETHODIMP CBaseSplitterFilter::GetPreroll(LONGLONG* pllPreroll)
 {
-    return pllPreroll ? *pllPreroll = 0, S_OK : E_POINTER;
+    CheckPointer(pllPreroll, E_POINTER);
+
+    *pllPreroll = 0;
+
+    return S_OK;
 }
 
 HRESULT CBaseSplitterFilter::SetPositionsInternal(void* id, LONGLONG* pCurrent, DWORD dwCurrentFlags, LONGLONG* pStop, DWORD dwStopFlags)
@@ -1414,9 +1441,8 @@ HRESULT CBaseSplitterFilter::SetPositionsInternal(void* id, LONGLONG* pCurrent, 
         return S_OK;
     }
 
-    REFERENCE_TIME
-    rtCurrent = m_rtCurrent,
-    rtStop = m_rtStop;
+    REFERENCE_TIME rtCurrent = m_rtCurrent;
+    REFERENCE_TIME rtStop = m_rtStop;
 
     if (pCurrent)
         switch (dwCurrentFlags & AM_SEEKING_PositioningBitsMask) {
@@ -1568,7 +1594,7 @@ STDMETHODIMP CBaseSplitterFilter::GetMarkerTime(long MarkerNum, double* pMarkerT
 
 STDMETHODIMP CBaseSplitterFilter::GetMarkerName(long MarkerNum, BSTR* pbstrMarkerName)
 {
-    return ChapGet((int)MarkerNum - 1, NULL, pbstrMarkerName);
+    return ChapGet((int)MarkerNum - 1, nullptr, pbstrMarkerName);
 }
 
 // IKeyFrameInfo

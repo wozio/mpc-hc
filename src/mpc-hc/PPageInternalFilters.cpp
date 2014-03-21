@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,184 +21,16 @@
 
 #include "stdafx.h"
 #include "mplayerc.h"
+#include "FGFilterLAV.h"
 #include "PPageInternalFilters.h"
-#include "ComPropertySheet.h"
 #include "../filters/Filters.h"
 #include "InternalFiltersConfig.h"
 
-
-static filter_t s_filters[] = {
-#if INTERNAL_SOURCEFILTER_AVI
-    {_T("AVI"), SOURCE_FILTER, SRC_AVI, IDS_SRC_AVI, CreateInstance<CAviSplitterFilter>},
-#endif
-#if INTERNAL_SOURCEFILTER_CDDA
-    {_T("CDDA (Audio CD)"), SOURCE_FILTER, SRC_CDDA, IDS_SRC_CDDA, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_CDXA
-    {_T("CDXA (VCD/SVCD/XCD)"), SOURCE_FILTER, SRC_CDXA, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_DSM
-    {_T("DirectShow Media"), SOURCE_FILTER, SRC_DSM, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_DTSAC3
-    {_T("DTS/AC3"), SOURCE_FILTER, SRC_DTSAC3, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_VTS
-    {_T("DVD Video Title Set"), SOURCE_FILTER, SRC_VTS, IDS_SRC_VTS, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_DVSOURCE
-    {_T("DVD2AVI Project File"), SOURCE_FILTER, SRC_D2V, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_FLIC
-    {_T("FLI/FLC"), SOURCE_FILTER, SRC_FLIC, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_FLAC
-    {_T("FLAC"), SOURCE_FILTER, SRC_FLAC, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_FLV
-    {_T("FLV"), SOURCE_FILTER, SRC_FLV, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_MATROSKA
-    {_T("Matroska"), SOURCE_FILTER, SRC_MATROSKA, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_MP4
-    {_T("MP4/MOV"), SOURCE_FILTER, SRC_MP4, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_MPEGAUDIO
-    {_T("MPEG Audio"), SOURCE_FILTER, SRC_MPA, IDS_SRC_MPA, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_MPEG
-    {_T("MPEG PS/TS/PVA"), SOURCE_FILTER, SRC_MPEG, 0, CreateInstance<CMpegSplitterFilter>},
-#endif
-#if INTERNAL_SOURCEFILTER_OGG
-    {_T("Ogg"), SOURCE_FILTER, SRC_OGG, 0, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_REALMEDIA
-    {_T("RealMedia"), SOURCE_FILTER, SRC_REALMEDIA, IDS_SRC_REALMEDIA, NULL},
-#endif
-#if INTERNAL_SOURCEFILTER_SHOUTCAST
-    {_T("SHOUTcast"), SOURCE_FILTER, SRC_SHOUTCAST, 0, NULL},
-#endif
-
-#if INTERNAL_DECODER_AAC
-    {_T("AAC"), DECODER, TRA_AAC, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_AC3
-    {_T("AC3/E-AC3/TrueHD/MLP"), DECODER, TRA_AC3, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_DTS
-    {_T("DTS"), DECODER, TRA_DTS, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_LPCM
-    {_T("LPCM"), DECODER, TRA_LPCM, IDS_TRA_LPCM, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_MPEGAUDIO
-    {_T("MPEG Audio"), DECODER, TRA_MPA, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_VORBIS
-    {_T("Vorbis"), DECODER, TRA_VORBIS, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_FLAC
-    {_T("FLAC"), DECODER, TRA_FLAC, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_NELLYMOSER
-    {_T("Nellymoser"), DECODER, TRA_NELLY, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_ALAC
-    {_T("ALAC"), DECODER, TRA_ALAC, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_ALS
-    {_T("ALS"), DECODER, TRA_ALS, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_AMR
-    {_T("AMR"), DECODER, TRA_AMR, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_REALAUDIO
-    {_T("RealAudio"), DECODER, TRA_RA, IDS_TRA_RA, NULL},
-#endif
-#if INTERNAL_DECODER_PS2AUDIO
-    {_T("PS2 Audio (PCM/ADPCM)"), DECODER, TRA_PS2AUD, IDS_TRA_PS2AUD, CreateInstance<CMpaDecFilter>},
-#endif
-#if INTERNAL_DECODER_PCM
-    {_T("Other PCM/ADPCM"), DECODER, TRA_PCM, IDS_TRA_FFMPEG, CreateInstance<CMpaDecFilter>},
-#endif
-
-#if INTERNAL_DECODER_H264_DXVA
-    {_T("H264/AVC (DXVA)"), DXVA_DECODER, TRA_DXVA_H264, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_VC1_DXVA
-    {_T("VC1 (DXVA)"), DXVA_DECODER, TRA_DXVA_VC1, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_WMV3_DXVA
-    {_T("WMV3 (DXVA)"), DXVA_DECODER, TRA_DXVA_WMV3, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_MPEG2_DXVA
-    {_T("MPEG-2 Video (DXVA)"), DXVA_DECODER, TRA_DXVA_MPEG2, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-
-#if INTERNAL_DECODER_MPEG1
-    {_T("MPEG-1 Video"), DECODER, TRA_MPEG1, IDS_TRA_MPEG1, CreateInstance<CMpeg2DecFilter>},
-#endif
-#if INTERNAL_DECODER_MPEG2
-    {_T("MPEG-2 Video"), DECODER, TRA_MPEG2, IDS_TRA_MPEG2, CreateInstance<CMpeg2DecFilter>},
-#endif
-#if INTERNAL_DECODER_REALVIDEO
-    {_T("RealVideo"), DECODER, TRA_RV, IDS_TRA_RV, NULL},
-#endif
-
-#if INTERNAL_DECODER_H264
-    {_T("H264/AVC (FFmpeg)"), FFMPEG_DECODER, FFM_H264, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_VC1
-    {_T("VC1 (FFmpeg)"), FFMPEG_DECODER, FFM_VC1, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_XVID
-    {_T("Xvid/MPEG-4"), FFMPEG_DECODER, FFM_XVID, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_DIVX
-    {_T("DivX"), FFMPEG_DECODER, FFM_DIVX, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_MSMPEG4
-    {_T("MS MPEG-4"), FFMPEG_DECODER, FFM_MSMPEG4, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_FLV
-    {_T("FLV1/4"), FFMPEG_DECODER, FFM_FLV4, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_VP356
-    {_T("VP3/5/6"), FFMPEG_DECODER, FFM_VP356, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_VP8
-    {_T("VP8"), FFMPEG_DECODER, FFM_VP8, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_WMV
-    {_T("WMV1/2/3"), FFMPEG_DECODER, FFM_WMV, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_SVQ
-    {_T("SVQ1/3"), FFMPEG_DECODER, FFM_SVQ3, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_H263
-    {_T("H263"), FFMPEG_DECODER, FFM_H263, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_AMVV
-    {_T("AMV video"), FFMPEG_DECODER, FFM_AMVV, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_THEORA
-    {_T("Theora"), FFMPEG_DECODER, FFM_THEORA, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_MJPEG
-    {_T("MJPEG"), FFMPEG_DECODER, FFM_MJPEG, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-#if INTERNAL_DECODER_INDEO
-    {_T("Indeo 3/4/5"), FFMPEG_DECODER, FFM_INDEO, IDS_TRA_FFMPEG, CreateInstance<CMPCVideoDecFilter>},
-#endif
-
-    {NULL, 0, 0, 0, NULL}
-};
-
 IMPLEMENT_DYNAMIC(CPPageInternalFiltersListBox, CCheckListBox)
-CPPageInternalFiltersListBox::CPPageInternalFiltersListBox(int n)
+CPPageInternalFiltersListBox::CPPageInternalFiltersListBox(int n, const CArray<filter_t>& filters)
     : CCheckListBox()
     , m_n(n)
+    , m_filters(filters)
 {
     for (int i = 0; i < FILTER_TYPE_NB; i++) {
         m_nbFiltersPerType[i] = m_nbChecked[i] = 0;
@@ -244,46 +76,15 @@ BOOL CPPageInternalFiltersListBox::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESU
         return FALSE;
     }
 
-    ::SendMessage(pNMHDR->hwndFrom, TTM_SETMAXTIPWIDTH, 0, (LPARAM)(int)1000);
+    ::SendMessage(pNMHDR->hwndFrom, TTM_SETMAXTIPWIDTH, 0, 1000);
 
-    static CString m_strTipText; // static string
-
-    m_strTipText.LoadString(f->nHintID);
-
-    pTTT->lpszText = m_strTipText.GetBuffer();
+    static CString strTipText; // static string
+    strTipText.LoadString(f->nHintID);
+    pTTT->lpszText = strTipText.GetBuffer();
 
     *pResult = 0;
 
     return TRUE;    // message was handled
-}
-
-void CPPageInternalFiltersListBox::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
-{
-    CDC* pDC = CDC::FromHandle(lpDrawItemStruct->hDC);
-
-    CFont* pOldFont = NULL;
-
-    if ((lpDrawItemStruct->itemData != 0) && ((filter_t*)lpDrawItemStruct->itemData)->CreateInstance) {
-        if (!(HFONT)m_bold) {
-            CFont* pFont = pDC->GetCurrentFont();
-
-            LOGFONT lf;
-            pFont->GetLogFont(&lf);
-            lf.lfWeight = FW_BOLD;
-
-            m_bold.CreateFontIndirect(&lf);
-        }
-
-        if ((HFONT)m_bold) {
-            pOldFont = pDC->SelectObject(&m_bold);
-        }
-    }
-
-    __super::DrawItem(lpDrawItemStruct);
-
-    if (pOldFont) {
-        pDC->SelectObject(pOldFont);
-    }
 }
 
 int CPPageInternalFiltersListBox::AddFilter(filter_t* filter, bool checked)
@@ -323,10 +124,10 @@ void CPPageInternalFiltersListBox::OnRButtonDown(UINT nFlags, CPoint point)
     enum {
         ENABLE_ALL = 1,
         DISABLE_ALL,
-        ENABLE_FFMPEG,
-        DISABLE_FFMPEG,
-        ENABLE_DXVA,
-        DISABLE_DXVA
+        ENABLE_VIDEO,
+        DISABLE_VIDEO,
+        ENABLE_AUDIO,
+        DISABLE_AUDIO
     };
 
     int totalFilters = 0, totalChecked = 0;
@@ -341,21 +142,17 @@ void CPPageInternalFiltersListBox::OnRButtonDown(UINT nFlags, CPoint point)
     m.AppendMenu(MF_STRING | state, DISABLE_ALL, ResStr(IDS_DISABLE_ALL_FILTERS));
 
     if (m_n == 1) {
-#if HAS_FFMPEG_DECODERS
         m.AppendMenu(MF_SEPARATOR);
-        state = (m_nbChecked[FFMPEG_DECODER] != m_nbFiltersPerType[FFMPEG_DECODER]) ? MF_ENABLED : MF_GRAYED;
-        m.AppendMenu(MF_STRING | state, ENABLE_FFMPEG, ResStr(IDS_ENABLE_FFMPEG_FILTERS));
-        state = (m_nbChecked[FFMPEG_DECODER] != 0) ? MF_ENABLED : MF_GRAYED;
-        m.AppendMenu(MF_STRING | state, DISABLE_FFMPEG, ResStr(IDS_DISABLE_FFMPEG_FILTERS));
+        state = (m_nbChecked[AUDIO_DECODER] != m_nbFiltersPerType[AUDIO_DECODER]) ? MF_ENABLED : MF_GRAYED;
+        m.AppendMenu(MF_STRING | state, ENABLE_AUDIO, ResStr(IDS_ENABLE_AUDIO_FILTERS));
+        state = (m_nbChecked[AUDIO_DECODER] != 0) ? MF_ENABLED : MF_GRAYED;
+        m.AppendMenu(MF_STRING | state, DISABLE_AUDIO, ResStr(IDS_DISABLE_AUDIO_FILTERS));
 
-#endif
-#if HAS_DXVA_VIDEO_DECODERS
         m.AppendMenu(MF_SEPARATOR);
-        state = (m_nbChecked[DXVA_DECODER] != m_nbFiltersPerType[DXVA_DECODER]) ? MF_ENABLED : MF_GRAYED;
-        m.AppendMenu(MF_STRING | state, ENABLE_DXVA, ResStr(IDS_ENABLE_DXVA_FILTERS));
-        state = (m_nbChecked[DXVA_DECODER] != 0) ? MF_ENABLED : MF_GRAYED;
-        m.AppendMenu(MF_STRING | state, DISABLE_DXVA, ResStr(IDS_DISABLE_DXVA_FILTERS));
-#endif
+        state = (m_nbChecked[VIDEO_DECODER] != m_nbFiltersPerType[VIDEO_DECODER]) ? MF_ENABLED : MF_GRAYED;
+        m.AppendMenu(MF_STRING | state, ENABLE_VIDEO, ResStr(IDS_ENABLE_VIDEO_FILTERS));
+        state = (m_nbChecked[VIDEO_DECODER] != 0) ? MF_ENABLED : MF_GRAYED;
+        m.AppendMenu(MF_STRING | state, DISABLE_VIDEO, ResStr(IDS_DISABLE_VIDEO_FILTERS));
     }
 
     CPoint p = point;
@@ -368,16 +165,15 @@ void CPPageInternalFiltersListBox::OnRButtonDown(UINT nFlags, CPoint point)
     }
 
     int index = 0;
-    for (int i = 0; i < _countof(s_filters); i++) {
-        switch (s_filters[i].type) {
+    for (int i = 0; i < m_filters.GetCount(); i++) {
+        switch (m_filters[i].type) {
             case SOURCE_FILTER:
                 if (m_n == 1) {
                     continue;
                 }
                 break;
-            case DECODER:
-            case DXVA_DECODER:
-            case FFMPEG_DECODER:
+            case AUDIO_DECODER:
+            case VIDEO_DECODER:
                 if (m_n == 0) {
                     continue;
                 }
@@ -393,23 +189,23 @@ void CPPageInternalFiltersListBox::OnRButtonDown(UINT nFlags, CPoint point)
             case DISABLE_ALL:
                 SetCheck(index, FALSE);
                 break;
-            case ENABLE_FFMPEG:
-                if (s_filters[i].type == FFMPEG_DECODER) {
+            case ENABLE_AUDIO:
+                if (m_filters[i].type == AUDIO_DECODER) {
                     SetCheck(index, TRUE);
                 }
                 break;
-            case DISABLE_FFMPEG:
-                if (s_filters[i].type == FFMPEG_DECODER) {
+            case DISABLE_AUDIO:
+                if (m_filters[i].type == AUDIO_DECODER) {
                     SetCheck(index, FALSE);
                 }
                 break;
-            case ENABLE_DXVA:
-                if (s_filters[i].type == DXVA_DECODER) {
+            case ENABLE_VIDEO:
+                if (m_filters[i].type == VIDEO_DECODER) {
                     SetCheck(index, TRUE);
                 }
                 break;
-            case DISABLE_DXVA:
-                if (s_filters[i].type == DXVA_DECODER) {
+            case DISABLE_VIDEO:
+                if (m_filters[i].type == VIDEO_DECODER) {
                     SetCheck(index, FALSE);
                 }
                 break;
@@ -425,8 +221,8 @@ void CPPageInternalFiltersListBox::OnRButtonDown(UINT nFlags, CPoint point)
 IMPLEMENT_DYNAMIC(CPPageInternalFilters, CPPageBase)
 CPPageInternalFilters::CPPageInternalFilters()
     : CPPageBase(CPPageInternalFilters::IDD, CPPageInternalFilters::IDD)
-    , m_listSrc(0)
-    , m_listTra(1)
+    , m_listSrc(0, m_filters)
+    , m_listTra(1, m_filters)
 {
 }
 
@@ -442,12 +238,13 @@ void CPPageInternalFilters::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CPPageInternalFilters, CPPageBase)
-    ON_LBN_DBLCLK(IDC_LIST1, OnLbnDblclkList1)
-    ON_LBN_DBLCLK(IDC_LIST2, OnLbnDblclkList2)
     ON_LBN_SELCHANGE(IDC_LIST1, OnSelChange)
     ON_LBN_SELCHANGE(IDC_LIST2, OnSelChange)
     ON_CLBN_CHKCHANGE(IDC_LIST1, OnCheckBoxChange)
     ON_CLBN_CHKCHANGE(IDC_LIST2, OnCheckBoxChange)
+    ON_BN_CLICKED(IDC_SPLITTER_CONF, OnBnClickedSplitterConf)
+    ON_BN_CLICKED(IDC_VIDEO_DEC_CONF, OnBnClickedVideoDecConf)
+    ON_BN_CLICKED(IDC_AUDIO_DEC_CONF, OnBnClickedAudioDecConf)
 END_MESSAGE_MAP()
 
 // CPPageInternalFilters message handlers
@@ -458,34 +255,29 @@ BOOL CPPageInternalFilters::OnInitDialog()
 
     const CAppSettings& s = AfxGetAppSettings();
 
-    for (int i = 0; i < _countof(s_filters) - 1; i++) {
+    InitFiltersList();
+
+    for (int i = 0; i < m_filters.GetCount(); i++) {
         CPPageInternalFiltersListBox* l;
         bool checked;
 
-        switch (s_filters[i].type) {
+        switch (m_filters[i].type) {
             case SOURCE_FILTER:
                 l = &m_listSrc;
-                checked = s.SrcFilters[s_filters[i].flag];
+                checked = s.SrcFilters[m_filters[i].flag];
                 break;
-            case DECODER:
+            case AUDIO_DECODER:
+            case VIDEO_DECODER:
                 l = &m_listTra;
-                checked = s.TraFilters[s_filters[i].flag];
-                break;
-            case DXVA_DECODER:
-                l = &m_listTra;
-                checked = s.DXVAFilters[s_filters[i].flag];
-                break;
-            case FFMPEG_DECODER:
-                l = &m_listTra;
-                checked = s.FFmpegFilters[s_filters[i].flag];
+                checked = s.TraFilters[m_filters[i].flag];
                 break;
             default:
-                l = NULL;
+                l = nullptr;
                 checked = false;
         }
 
         if (l) {
-            l->AddFilter(&s_filters[i], checked);
+            l->AddFilter(&m_filters[i], checked);
         }
     }
 
@@ -496,6 +288,301 @@ BOOL CPPageInternalFilters::OnInitDialog()
 
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE
+}
+
+void CPPageInternalFilters::InitFiltersList()
+{
+    bool bLAVSplitterIsAvailable = CFGFilterLAV::CheckVersion(CFGFilterLAV::GetFilterPath(CFGFilterLAV::SPLITTER));
+    bool bLAVVideoIsAvailable = CFGFilterLAV::CheckVersion(CFGFilterLAV::GetFilterPath(CFGFilterLAV::VIDEO_DECODER));
+    bool bLAVAudioIsAvailable = CFGFilterLAV::CheckVersion(CFGFilterLAV::GetFilterPath(CFGFilterLAV::AUDIO_DECODER));
+
+    GetDlgItem(IDC_SPLITTER_CONF)->EnableWindow(bLAVSplitterIsAvailable);
+    GetDlgItem(IDC_VIDEO_DEC_CONF)->EnableWindow(bLAVVideoIsAvailable);
+    GetDlgItem(IDC_AUDIO_DEC_CONF)->EnableWindow(bLAVAudioIsAvailable);
+
+    m_filters.RemoveAll();
+
+#if INTERNAL_SOURCEFILTER_AVI
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("AVI"), SOURCE_FILTER, SRC_AVI, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_CDDA
+    m_filters.Add(filter_t(_T("CDDA (Audio CD)"), SOURCE_FILTER, SRC_CDDA, 0));
+#endif
+#if INTERNAL_SOURCEFILTER_CDXA
+    m_filters.Add(filter_t(_T("CDXA (VCD/SVCD/XCD)"), SOURCE_FILTER, SRC_CDXA, 0));
+#endif
+#if INTERNAL_SOURCEFILTER_DSM
+    m_filters.Add(filter_t(_T("DirectShow Media"), SOURCE_FILTER, SRC_DSM, 0));
+#endif
+#if INTERNAL_SOURCEFILTER_DTSAC3
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("DTS/AC3"), SOURCE_FILTER, SRC_DTSAC3, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_VTS
+    m_filters.Add(filter_t(_T("DVD Video Title Set"), SOURCE_FILTER, SRC_VTS, IDS_SRC_VTS));
+#endif
+#if INTERNAL_SOURCEFILTER_FLIC
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("FLI/FLC"), SOURCE_FILTER, SRC_FLIC, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_FLAC
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("FLAC"), SOURCE_FILTER, SRC_FLAC, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_FLV
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("FLV"), SOURCE_FILTER, SRC_FLV, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_MATROSKA
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("Matroska"), SOURCE_FILTER, SRC_MATROSKA, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_MP4
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("MP4/MOV"), SOURCE_FILTER, SRC_MP4, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_MPEGAUDIO
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("MPEG Audio"), SOURCE_FILTER, SRC_MPA, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_MPEG
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("MPEG PS/TS/PVA"), SOURCE_FILTER, SRC_MPEG, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_ASF
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("WMV/ASF/DVR-MS"), SOURCE_FILTER, SRC_ASF, IDS_INTERNAL_LAVF_WMV));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_OGG
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("Ogg"), SOURCE_FILTER, SRC_OGG, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_REALMEDIA
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("RealMedia"), SOURCE_FILTER, SRC_REALMEDIA, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_HTTP
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("HTTP"), SOURCE_FILTER, SRC_HTTP, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_RTSP
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("RTSP"), SOURCE_FILTER, SRC_RTSP, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_UDP
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("UDP"), SOURCE_FILTER, SRC_UDP, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_RTP
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("RTP"), SOURCE_FILTER, SRC_RTP, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_MMS
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("MMS"), SOURCE_FILTER, SRC_MMS, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_RFS
+    m_filters.Add(filter_t(_T("RAR"), SOURCE_FILTER, SRC_RFS, IDS_SRC_RFS));
+#endif
+
+#if INTERNAL_DECODER_AAC
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("AAC"), AUDIO_DECODER, TRA_AAC, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_AC3
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("AC3/E-AC3/TrueHD/MLP"), AUDIO_DECODER, TRA_AC3, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_DTS
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("DTS"), AUDIO_DECODER, TRA_DTS, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_LPCM
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("LPCM"), AUDIO_DECODER, TRA_LPCM, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_MPEGAUDIO
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("MPEG Audio"), AUDIO_DECODER, TRA_MPA, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_VORBIS
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("Vorbis"), AUDIO_DECODER, TRA_VORBIS, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_FLAC
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("FLAC"), AUDIO_DECODER, TRA_FLAC, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_NELLYMOSER
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("Nellymoser"), AUDIO_DECODER, TRA_NELLY, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_ALAC
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("ALAC"), AUDIO_DECODER, TRA_ALAC, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_ALS
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("ALS"), AUDIO_DECODER, TRA_ALS, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_AMR
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("AMR"), AUDIO_DECODER, TRA_AMR, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_REALAUDIO
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("RealAudio"), AUDIO_DECODER, TRA_RA, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_PS2AUDIO
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("PS2 Audio (PCM/ADPCM)"), AUDIO_DECODER, TRA_PS2AUD, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_PCM
+    if (bLAVAudioIsAvailable) {
+        m_filters.Add(filter_t(_T("Other PCM/ADPCM"), AUDIO_DECODER, TRA_PCM, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_MPEG1
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("MPEG-1 Video"), VIDEO_DECODER, TRA_MPEG1, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_MPEG2
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("MPEG-2 Video"), VIDEO_DECODER, TRA_MPEG2, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_REALVIDEO
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("RealVideo"), VIDEO_DECODER, TRA_RV, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_H264
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("H264/AVC"), VIDEO_DECODER, TRA_H264, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_HEVC
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("HEVC"), VIDEO_DECODER, TRA_HEVC, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_VC1
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("VC1"), VIDEO_DECODER, TRA_VC1, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_XVID
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("Xvid/MPEG-4"), VIDEO_DECODER, TRA_XVID, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_DIVX
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("DivX"), VIDEO_DECODER, TRA_DIVX, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_MSMPEG4
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("MS MPEG-4"), VIDEO_DECODER, TRA_MSMPEG4, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_FLV
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("FLV1/4"), VIDEO_DECODER, TRA_FLV4, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_VP356
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("VP3/5/6"), VIDEO_DECODER, TRA_VP356, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_VP8
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("VP8"), VIDEO_DECODER, TRA_VP8, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_VP9
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("VP9"), VIDEO_DECODER, TRA_VP9, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_WMV
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("WMV1/2/3"), VIDEO_DECODER, TRA_WMV, IDS_INTERNAL_LAVF_WMV));
+    }
+#endif
+#if INTERNAL_DECODER_SVQ
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("SVQ1/3"), VIDEO_DECODER, TRA_SVQ3, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_H263
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("H263"), VIDEO_DECODER, TRA_H263, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_AMVV
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("AMV video"), VIDEO_DECODER, TRA_AMVV, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_THEORA
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("Theora"), VIDEO_DECODER, TRA_THEORA, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_MJPEG
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("MJPEG"), VIDEO_DECODER, TRA_MJPEG, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_INDEO
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("Indeo 3/4/5"), VIDEO_DECODER, TRA_INDEO, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_SCREEN
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("Screen Capture (TSCC, VMnc)"), VIDEO_DECODER, TRA_SCREEN, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_DECODER_FLIC
+    if (bLAVVideoIsAvailable) {
+        m_filters.Add(filter_t(_T("FLIC"), VIDEO_DECODER, TRA_FLIC, IDS_INTERNAL_LAVF));
+    }
+#endif
 }
 
 BOOL CPPageInternalFilters::OnApply()
@@ -513,14 +600,9 @@ BOOL CPPageInternalFilters::OnApply()
                 case SOURCE_FILTER:
                     s.SrcFilters[f->flag] = !!list->GetCheck(i);
                     break;
-                case DECODER:
+                case AUDIO_DECODER:
+                case VIDEO_DECODER:
                     s.TraFilters[f->flag] = !!list->GetCheck(i);
-                    break;
-                case DXVA_DECODER:
-                    s.DXVAFilters[f->flag] = !!list->GetCheck(i);
-                    break;
-                case FFMPEG_DECODER:
-                    s.FFmpegFilters[f->flag] = !!list->GetCheck(i);
                     break;
             }
         }
@@ -528,45 +610,6 @@ BOOL CPPageInternalFilters::OnApply()
     }
 
     return __super::OnApply();
-}
-
-void CPPageInternalFilters::ShowPPage(CPPageInternalFiltersListBox& l)
-{
-    int i = l.GetCurSel();
-    if (i < 0) {
-        return;
-    }
-
-    filter_t* f = (filter_t*)l.GetItemDataPtr(i);
-    if (!f || !f->CreateInstance) {
-        return;
-    }
-
-    HRESULT hr;
-    CUnknown* pObj = f->CreateInstance(NULL, &hr);
-    if (!pObj) {
-        return;
-    }
-
-    CComPtr<IUnknown> pUnk = (IUnknown*)(INonDelegatingUnknown*)pObj;
-
-    if (SUCCEEDED(hr)) {
-        if (CComQIPtr<ISpecifyPropertyPages> pSPP = pUnk) {
-            CComPropertySheet ps(ResStr(IDS_PROPSHEET_PROPERTIES), this);
-            ps.AddPages(pSPP);
-            ps.DoModal();
-        }
-    }
-}
-
-void CPPageInternalFilters::OnLbnDblclkList1()
-{
-    ShowPPage(m_listSrc);
-}
-
-void CPPageInternalFilters::OnLbnDblclkList2()
-{
-    ShowPPage(m_listTra);
 }
 
 void CPPageInternalFilters::OnSelChange()
@@ -580,4 +623,19 @@ void CPPageInternalFilters::OnCheckBoxChange()
     m_listTra.UpdateCheckState();
 
     SetModified();
+}
+
+void CPPageInternalFilters::OnBnClickedSplitterConf()
+{
+    CFGFilterLAVSplitter::ShowPropertyPages(this);
+}
+
+void CPPageInternalFilters::OnBnClickedVideoDecConf()
+{
+    CFGFilterLAVVideo::ShowPropertyPages(this);
+}
+
+void CPPageInternalFilters::OnBnClickedAudioDecConf()
+{
+    CFGFilterLAVAudio::ShowPropertyPages(this);
 }

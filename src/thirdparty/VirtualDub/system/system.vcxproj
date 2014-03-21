@@ -21,8 +21,10 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C2082189-3ECB-4079-91FA-89D3C8A305C0}</ProjectGuid>
     <RootNamespace>system</RootNamespace>
+    <ProjectName>system</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\..\..\platform.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
@@ -65,7 +67,6 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -83,6 +84,7 @@
       <AdditionalIncludeDirectories>..\h;h;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_LIB;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>Winmm.lib</AdditionalDependencies>
@@ -104,6 +106,7 @@
       <AdditionalIncludeDirectories>..\h;h;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_LIB;NOMINMAX;WIN32_LEAN_AND_MEAN;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <EnablePREfast>false</EnablePREfast>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>Winmm.lib</AdditionalDependencies>
@@ -147,6 +150,7 @@
     <ClCompile Include="source\thunk.cpp" />
     <ClCompile Include="source\time.cpp" />
     <ClCompile Include="source\tls.cpp" />
+    <ClCompile Include="source\vdalloc.cpp" />
     <ClCompile Include="source\VDNamespace.cpp" />
     <ClCompile Include="source\VDScheduler.cpp" />
     <ClCompile Include="source\vdstl.cpp" />

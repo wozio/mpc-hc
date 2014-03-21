@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,10 +23,7 @@
 
 #include "../../../DSUtil/SharedInclude.h"
 
-#ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN    // Exclude rarely-used stuff from Windows headers
-#endif
-#define ResStr(id) CString(MAKEINTRESOURCE(id))
 
 #include <afxdisp.h>
 #include <afxole.h>

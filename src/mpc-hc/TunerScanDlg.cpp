@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -33,6 +33,10 @@ enum TSC_COLUMN {
     TSCC_NAME,
     TSCC_FREQUENCY,
     TSCC_ENCRYPTED,
+    TSCC_VIDEO_FORMAT,
+    TSCC_VIDEO_FPS,
+    TSCC_VIDEO_RES,
+    TSCC_VIDEO_AR,
     TSCC_CHANNEL
 };
 
@@ -40,7 +44,7 @@ enum TSC_COLUMN {
 
 IMPLEMENT_DYNAMIC(CTunerScanDlg, CDialog)
 
-CTunerScanDlg::CTunerScanDlg(CWnd* pParent /*=NULL*/)
+CTunerScanDlg::CTunerScanDlg(CWnd* pParent /*=nullptr*/)
     : CDialog(CTunerScanDlg::IDD, pParent)
     , m_bInProgress(false)
 {
@@ -64,10 +68,14 @@ BOOL CTunerScanDlg::OnInitDialog()
 
     m_OffsetEditBox.EnableWindow(m_bUseOffset);
 
-    m_ChannelList.InsertColumn(TSCC_NUMBER, ResStr(IDS_DVB_CHANNEL_NUMBER), LVCFMT_LEFT, 50);
-    m_ChannelList.InsertColumn(TSCC_NAME, ResStr(IDS_DVB_CHANNEL_NAME), LVCFMT_LEFT, 250);
-    m_ChannelList.InsertColumn(TSCC_FREQUENCY, ResStr(IDS_DVB_CHANNEL_FREQUENCY), LVCFMT_LEFT, 100);
-    m_ChannelList.InsertColumn(TSCC_ENCRYPTED, ResStr(IDS_DVB_CHANNEL_ENCRYPTION), LVCFMT_LEFT, 80);
+    m_ChannelList.InsertColumn(TSCC_NUMBER, ResStr(IDS_DVB_CHANNEL_NUMBER), LVCFMT_LEFT, 35);
+    m_ChannelList.InsertColumn(TSCC_NAME, ResStr(IDS_DVB_CHANNEL_NAME), LVCFMT_LEFT, 190);
+    m_ChannelList.InsertColumn(TSCC_FREQUENCY, ResStr(IDS_DVB_CHANNEL_FREQUENCY), LVCFMT_LEFT, 65);
+    m_ChannelList.InsertColumn(TSCC_ENCRYPTED, ResStr(IDS_DVB_CHANNEL_ENCRYPTION), LVCFMT_LEFT, 55);
+    m_ChannelList.InsertColumn(TSCC_VIDEO_FORMAT, ResStr(IDS_DVB_CHANNEL_FORMAT), LVCFMT_LEFT, 55);
+    m_ChannelList.InsertColumn(TSCC_VIDEO_FPS, ResStr(IDS_DVB_CHANNEL_FPS), LVCFMT_LEFT, 50);
+    m_ChannelList.InsertColumn(TSCC_VIDEO_RES, ResStr(IDS_DVB_CHANNEL_RESOLUTION), LVCFMT_LEFT, 70);
+    m_ChannelList.InsertColumn(TSCC_VIDEO_AR, ResStr(IDS_DVB_CHANNEL_ASPECT_RATIO), LVCFMT_LEFT, 50);
     m_ChannelList.InsertColumn(TSCC_CHANNEL, _T("Channel"), LVCFMT_LEFT, 0);
 
     m_Progress.SetRange(0, 100);
@@ -116,11 +124,13 @@ void CTunerScanDlg::OnBnClickedSave()
     s.m_DVBChannels.RemoveAll();
 
     for (int i = 0; i < m_ChannelList.GetItemCount(); i++) {
-        CDVBChannel     Channel;
-        Channel.FromString(m_ChannelList.GetItemText(i, TSCC_CHANNEL));
-        Channel.SetPrefNumber(i);
-        s.m_DVBChannels.AddTail(Channel);
+        CDVBChannel channel;
+        if (channel.FromString(m_ChannelList.GetItemText(i, TSCC_CHANNEL))) {
+            channel.SetPrefNumber(i);
+            s.m_DVBChannels.AddTail(channel);
+        }
     }
+    ((CMainFrame*)AfxGetMainWnd())->SetChannel(0);
 
     OnOK();
 }
@@ -129,7 +139,7 @@ void CTunerScanDlg::OnBnClickedStart()
 {
     if (!m_bInProgress) {
         UpdateData(true);
-        CAutoPtr<TunerScanData> pTSD(DNew TunerScanData);
+        CAutoPtr<TunerScanData> pTSD(DEBUG_NEW TunerScanData);
         pTSD->Hwnd           = m_hWnd;
         pTSD->FrequencyStart = m_ulFrequencyStart;
         pTSD->FrequencyStop  = m_ulFrequencyEnd;
@@ -151,6 +161,7 @@ void CTunerScanDlg::OnBnClickedCancel()
     if (m_bInProgress) {
         ((CMainFrame*)AfxGetMainWnd())->StopTunerScan();
     }
+    ((CMainFrame*)AfxGetMainWnd())->SetChannel(AfxGetAppSettings().nDVBLastChannel);
 
     OnCancel();
 }
@@ -182,38 +193,55 @@ LRESULT CTunerScanDlg::OnStats(WPARAM wParam, LPARAM lParam)
 
 LRESULT CTunerScanDlg::OnNewChannel(WPARAM wParam, LPARAM lParam)
 {
-    CDVBChannel Channel;
+    CDVBChannel channel;
     CString strTemp;
-    Channel.FromString((LPCTSTR)lParam);
 
-    if (!m_bIgnoreEncryptedChannels || !Channel.IsEncrypted()) {
+    if (channel.FromString((LPCTSTR)lParam) && (!m_bIgnoreEncryptedChannels || !channel.IsEncrypted())) {
         int nItem, nChannelNumber;
 
-        if (Channel.GetOriginNumber() != 0) { // LCN is available
-            nChannelNumber = Channel.GetOriginNumber();
+        if (channel.GetOriginNumber() != 0) { // LCN is available
+            nChannelNumber = channel.GetOriginNumber();
             // Insert new channel so that channels are sorted by their logical number
             for (nItem = 0; nItem < m_ChannelList.GetItemCount(); nItem++) {
-                if ((int)m_ChannelList.GetItemData(nItem) > nChannelNumber) {
+                if ((int)m_ChannelList.GetItemData(nItem) > nChannelNumber || (int)m_ChannelList.GetItemData(nItem) == 0) {
                     break;
                 }
             }
         } else {
-            nChannelNumber = nItem = m_ChannelList.GetItemCount();
+            nChannelNumber = 0;
+            nItem = m_ChannelList.GetItemCount();
         }
 
         strTemp.Format(_T("%d"), nChannelNumber);
         nItem = m_ChannelList.InsertItem(nItem, strTemp);
 
-        m_ChannelList.SetItemData(nItem, Channel.GetOriginNumber());
+        m_ChannelList.SetItemData(nItem, channel.GetOriginNumber());
 
-        m_ChannelList.SetItemText(nItem, TSCC_NAME, Channel.GetName());
+        m_ChannelList.SetItemText(nItem, TSCC_NAME, channel.GetName());
 
-        strTemp.Format(_T("%d"), Channel.GetFrequency());
+        strTemp.Format(_T("%lu"), channel.GetFrequency());
         m_ChannelList.SetItemText(nItem, TSCC_FREQUENCY, strTemp);
 
-        strTemp = Channel.IsEncrypted() ? ResStr(IDS_DVB_CHANNEL_ENCRYPTED) : ResStr(IDS_DVB_CHANNEL_NOT_ENCRYPTED);
+        strTemp = channel.IsEncrypted() ? ResStr(IDS_DVB_CHANNEL_ENCRYPTED) : ResStr(IDS_DVB_CHANNEL_NOT_ENCRYPTED);
         m_ChannelList.SetItemText(nItem, TSCC_ENCRYPTED, strTemp);
-
+        if (channel.GetVideoType() == DVB_H264) {
+            strTemp = _T(" H.264");
+        } else if (channel.GetVideoPID()) {
+            strTemp = _T("MPEG-2");
+        } else {
+            strTemp = _T("   -  ");
+        }
+        m_ChannelList.SetItemText(nItem, TSCC_VIDEO_FORMAT, strTemp);
+        strTemp = channel.GetVideoFpsDesc();
+        m_ChannelList.SetItemText(nItem, TSCC_VIDEO_FPS, strTemp);
+        if (channel.GetVideoWidth() || channel.GetVideoHeight()) {
+            strTemp.Format(_T("%lux%lu"), channel.GetVideoWidth(), channel.GetVideoHeight());
+        } else {
+            strTemp = _T("   -   ");
+        }
+        m_ChannelList.SetItemText(nItem, TSCC_VIDEO_RES, strTemp);
+        strTemp.Format(_T("%lu/%lu"), channel.GetVideoARy(), channel.GetVideoARx());
+        m_ChannelList.SetItemText(nItem, TSCC_VIDEO_AR, strTemp);
         m_ChannelList.SetItemText(nItem, TSCC_CHANNEL, (LPCTSTR) lParam);
     }
 
@@ -223,10 +251,10 @@ LRESULT CTunerScanDlg::OnNewChannel(WPARAM wParam, LPARAM lParam)
 void CTunerScanDlg::SetProgress(bool bState)
 {
     if (bState) {
-        m_btnStart.SetWindowTextW(_T("Stop"));
+        m_btnStart.SetWindowTextW(ResStr(IDS_DVB_CHANNEL_STOP_SCAN));
         m_btnSave.EnableWindow(FALSE);
     } else {
-        m_btnStart.SetWindowTextW(_T("Start"));
+        m_btnStart.SetWindowTextW(ResStr(IDS_DVB_CHANNEL_START_SCAN));
         m_Progress.SetPos(0);
         m_btnSave.EnableWindow(TRUE);
     }

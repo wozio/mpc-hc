@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,18 +30,20 @@ class CDVBStream
 {
 public:
     CDVBStream()
-        : m_ulMappedPID(0)
+        : m_Name(L"")
+        , m_bFindExisting(false)
         , m_pmt(0)
-        , m_bFindExisting(0) {
+        , m_nMsc(MEDIA_TRANSPORT_PACKET)
+        , m_ulMappedPID(0) {
     }
 
-    CDVBStream(LPWSTR strName, const AM_MEDIA_TYPE* pmt, bool bFindExisting = false, MEDIA_SAMPLE_CONTENT nMsc = MEDIA_ELEMENTARY_STREAM) :
-        m_Name(strName),
-        m_bFindExisting(bFindExisting),
-        m_pmt(pmt),
-        m_nMsc(nMsc),
-        m_ulMappedPID(0)
-    {}
+    CDVBStream(LPWSTR strName, const AM_MEDIA_TYPE* pmt, bool bFindExisting = false, MEDIA_SAMPLE_CONTENT nMsc = MEDIA_ELEMENTARY_STREAM)
+        : m_Name(strName)
+        , m_bFindExisting(bFindExisting)
+        , m_pmt(pmt)
+        , m_nMsc(nMsc)
+        , m_ulMappedPID(0) {
+    }
 
     LPWSTR GetName() { return m_Name; };
     const AM_MEDIA_TYPE* GetMediaType() { return m_pmt; };
@@ -85,12 +87,12 @@ private:
     ULONG                   m_ulMappedPID;
 
     void ClearMaps() {
-        HRESULT hr;
         CComPtr<IEnumPIDMap> pEnumMap;
 
-        if (SUCCEEDED(hr = m_pMap->EnumPIDMap(&pEnumMap))) {
+        if (SUCCEEDED(m_pMap->EnumPIDMap(&pEnumMap))) {
             PID_MAP maps[8];
             ULONG   nbPids = 0;
+            ZeroMemory(maps, sizeof(maps));
 
             if (pEnumMap->Next(_countof(maps), maps, &nbPids) == S_OK) {
                 for (ULONG i = 0; i < nbPids; i++) {
@@ -120,7 +122,7 @@ public:
     STDMETHODIMP SetAudio(int nAudioIndex);
     STDMETHODIMP SetFrequency(ULONG freq);
     STDMETHODIMP Scan(ULONG ulFrequency, HWND hWnd);
-    STDMETHODIMP GetStats(BOOLEAN& bPresent, BOOLEAN& bLocked, LONG& lStrength, LONG& lQuality);
+    STDMETHODIMP GetStats(BOOLEAN& bPresent, BOOLEAN& bLocked, LONG& lDbStrength, LONG& lPercentQuality);
 
     // IAMStreamSelect
     STDMETHODIMP Count(DWORD* pcStreams);
@@ -129,28 +131,34 @@ public:
 
     DECLARE_IUNKNOWN;
     STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
-    STDMETHODIMP UpdatePSI(PresentFollowing& NowNext);
+    STDMETHODIMP UpdatePSI(const CDVBChannel* pChannel, EventDescriptor& NowNext);
 
 private:
 
     CComQIPtr<IBDA_DeviceControl>        m_pBDAControl;
     CComPtr<IBDA_FrequencyFilter>        m_pBDAFreq;
-    CComPtr<IBDA_SignalStatistics>       m_pBDAStats;
+    CComQIPtr<IBDA_SignalStatistics>     m_pBDATunerStats;
+    CComPtr<IBDA_DigitalDemodulator>     m_pBDADemodulator;
+    CComQIPtr<IBDA_SignalStatistics>     m_pBDADemodStats;
+    CComPtr<IBDA_AutoDemodulate>         m_pBDAAutoDemulate;
+    DVB_RebuildFilterGraph m_nDVBRebuildFilterGraph;
     CAtlMap<DVB_STREAM_TYPE, CDVBStream> m_DVBStreams;
 
     DVB_STREAM_TYPE m_nCurVideoType;
     DVB_STREAM_TYPE m_nCurAudioType;
-    CString         m_BDANetworkProvider;
     bool            m_fHideWindow;
-    CComPtr<IPin>   m_pPin_h264;
+    CComPtr<IBaseFilter> m_pDemux;
 
     HRESULT         CreateKSFilter(IBaseFilter** ppBF, CLSID KSCategory, const CStringW& DisplayName);
     HRESULT         ConnectFilters(IBaseFilter* pOutFiter, IBaseFilter* pInFilter);
-    HRESULT         CreateMicrosoftDemux(IBaseFilter* pReceiver, CComPtr<IBaseFilter>& pMpeg2Demux);
+    HRESULT         CreateMicrosoftDemux(CComPtr<IBaseFilter>& pMpeg2Demux);
     HRESULT         SetChannelInternal(CDVBChannel* pChannel);
-    HRESULT         SwitchStream(DVB_STREAM_TYPE& nOldType, DVB_STREAM_TYPE nNewType);
+    HRESULT         SwitchStream(DVB_STREAM_TYPE nOldType, DVB_STREAM_TYPE nNewType);
     HRESULT         ChangeState(FILTER_STATE nRequested);
+    HRESULT         ClearMaps();
     FILTER_STATE    GetState();
+    void UpdateMediaType(VIDEOINFOHEADER2* NewVideoHeader, CDVBChannel* pChannel);
+    HRESULT Flush(DVB_STREAM_TYPE nVideoType, DVB_STREAM_TYPE nAudioType);
 
     template <class ITF>
     HRESULT SearchIBDATopology(const CComPtr<IBaseFilter>& pTuner, CComPtr<ITF>& pItf) {
@@ -164,29 +172,35 @@ private:
     }
 
     HRESULT SearchIBDATopology(const CComPtr<IBaseFilter>& pTuner, REFIID iid, CComPtr<IUnknown>& pUnk);
-
-    void Sleep(unsigned int mseconds) {
-        clock_t goal = mseconds + clock();
-        while (goal > clock()) {
-            ;
-        }
-    }
 };
 
 #define LOG_FILE _T("bda.log")
 
 #ifdef _DEBUG
+#include <sys/types.h>
+#include <sys/timeb.h>
+
 static void LOG(LPCTSTR fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    //int nCount = _vsctprintf(fmt, args) + 1;
     TCHAR buff[3000];
     FILE* f;
+    _timeb timebuffer;
+    TCHAR time1[8];
+    TCHAR wbuf[26];
+
+    _ftime_s(&timebuffer);
+    _tctime_s(wbuf, _countof(wbuf), &timebuffer.time);
+
+    for (size_t i = 0; i < _countof(time1); i++) {
+        time1[i] = wbuf[i + 11];
+    }
+
     _vstprintf_s(buff, _countof(buff), fmt, args);
     if (_tfopen_s(&f, LOG_FILE, _T("at")) == 0) {
         fseek(f, 0, 2);
-        _ftprintf_s(f, _T("%s\n"), buff);
+        _ftprintf_s(f, _T("%.8s.%03hu - %s\n"), time1, timebuffer.millitm, buff);
         fclose(f);
     }
 

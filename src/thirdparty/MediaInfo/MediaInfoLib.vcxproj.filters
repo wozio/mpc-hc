@@ -233,9 +233,6 @@
     <ClInclude Include="MediaInfo\Multiple\File_Cdxa.h">
       <Filter>Header Files\Multiple</Filter>
     </ClInclude>
-    <ClInclude Include="MediaInfo\Multiple\File_Dcp.h">
-      <Filter>Header Files\Multiple</Filter>
-    </ClInclude>
     <ClInclude Include="MediaInfo\Multiple\File_Dpg.h">
       <Filter>Header Files\Multiple</Filter>
     </ClInclude>
@@ -365,6 +362,9 @@
     <ClInclude Include="MediaInfo\Tag\File_VorbisCom.h">
       <Filter>Header Files\Tag</Filter>
     </ClInclude>
+    <ClInclude Include="MediaInfo\Text\File_AribStdB24B37.h">
+      <Filter>Header Files\Text</Filter>
+    </ClInclude>
     <ClInclude Include="MediaInfo\Text\File_Cdp.h">
       <Filter>Header Files\Text</Filter>
     </ClInclude>
@@ -407,10 +407,16 @@
     <ClInclude Include="MediaInfo\Video\File_AfdBarData.h">
       <Filter>Header Files\Video</Filter>
     </ClInclude>
+    <ClInclude Include="MediaInfo\Video\File_Aic.h">
+      <Filter>Header Files\Video</Filter>
+    </ClInclude>
     <ClInclude Include="MediaInfo\Video\File_Avc.h">
       <Filter>Header Files\Video</Filter>
     </ClInclude>
     <ClInclude Include="MediaInfo\Video\File_AvsV.h">
+      <Filter>Header Files\Video</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Video\File_Canopus.h">
       <Filter>Header Files\Video</Filter>
     </ClInclude>
     <ClInclude Include="MediaInfo\Video\File_Dirac.h">
@@ -468,9 +474,6 @@
       <Filter>Header Files\Audio</Filter>
     </ClInclude>
     <ClInclude Include="MediaInfo\Audio\File_Adpcm.h">
-      <Filter>Header Files\Audio</Filter>
-    </ClInclude>
-    <ClInclude Include="MediaInfo\Audio\File_Aes3.h">
       <Filter>Header Files\Audio</Filter>
     </ClInclude>
     <ClInclude Include="MediaInfo\Audio\File_Als.h">
@@ -587,14 +590,50 @@
     <ClInclude Include="MediaInfo\Image\File_Tga.h">
       <Filter>Header Files\Image</Filter>
     </ClInclude>
-    <ClInclude Include="MediaInfo\Export\Export_reVTMD.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MediaInfo\Multiple\File_SequenceInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MediaInfo\Audio\File_SmpteSt0302.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_Pmp.h">
+      <Filter>Header Files\Multiple</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Text\File_SubRip.h">
+      <Filter>Header Files\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Text\File_TimedText.h">
+      <Filter>Header Files\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Text\File_Ttml.h">
+      <Filter>Header Files\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Video\File_Hevc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_DashMpd.h">
+      <Filter>Source Files\Multiple</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_DcpAm.h">
+      <Filter>Source Files\Multiple</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_DcpCpl.h">
+      <Filter>Source Files\Multiple</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_DcpPkl.h">
+      <Filter>Source Files\Multiple</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_HdsF4m.h">
+      <Filter>Source Files\Multiple</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Export\Export_EbuCore.h">
+      <Filter>Header Files\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_Aaf.h">
+      <Filter>Header Files\Multiple</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaInfo\Multiple\File_Ptx.h">
+      <Filter>Header Files\Multiple</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -739,9 +778,6 @@
     <ClCompile Include="MediaInfo\Multiple\File_Cdxa.cpp">
       <Filter>Source Files\Multiple</Filter>
     </ClCompile>
-    <ClCompile Include="MediaInfo\Multiple\File_Dcp.cpp">
-      <Filter>Source Files\Multiple</Filter>
-    </ClCompile>
     <ClCompile Include="MediaInfo\Multiple\File_Dpg.cpp">
       <Filter>Source Files\Multiple</Filter>
     </ClCompile>
@@ -865,6 +901,9 @@
     <ClCompile Include="MediaInfo\Video\File_AfdBarData.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
+    <ClCompile Include="MediaInfo\Video\File_Aic.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
     <ClCompile Include="MediaInfo\Video\File_Avc.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
@@ -872,6 +911,9 @@
       <Filter>Source Files\Video</Filter>
     </ClCompile>
     <ClCompile Include="MediaInfo\Video\File_AvsV.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Video\File_Canopus.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
     <ClCompile Include="MediaInfo\Video\File_Dirac.cpp">
@@ -912,6 +954,9 @@
     </ClCompile>
     <ClCompile Include="MediaInfo\Video\File_Y4m.cpp">
       <Filter>Source Files\Video</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Text\File_AribStdB24B37.cpp">
+      <Filter>Source Files\Text</Filter>
     </ClCompile>
     <ClCompile Include="MediaInfo\Text\File_Cdp.cpp">
       <Filter>Source Files\Text</Filter>
@@ -1007,9 +1052,6 @@
       <Filter>Source Files\Audio</Filter>
     </ClCompile>
     <ClCompile Include="MediaInfo\Audio\File_Adpcm.cpp">
-      <Filter>Source Files\Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="MediaInfo\Audio\File_Aes3.cpp">
       <Filter>Source Files\Audio</Filter>
     </ClCompile>
     <ClCompile Include="MediaInfo\Audio\File_Als.cpp">
@@ -1126,14 +1168,50 @@
     <ClCompile Include="MediaInfo\Multiple\File_Ism.cpp">
       <Filter>Source Files\Multiple</Filter>
     </ClCompile>
-    <ClCompile Include="MediaInfo\Export\Export_reVTMD.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MediaInfo\Multiple\File_SequenceInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MediaInfo\Audio\File_SmpteSt0302.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_Pmp.cpp">
+      <Filter>Source Files\Multiple</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Text\File_SubRip.cpp">
+      <Filter>Source Files\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Text\File_TimedText.cpp">
+      <Filter>Source Files\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Text\File_Ttml.cpp">
+      <Filter>Source Files\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Video\File_Hevc.cpp">
+      <Filter>Source Files\Video</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_DashMpd.cpp">
+      <Filter>Source Files\Multiple</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_DcpAm.cpp">
+      <Filter>Source Files\Multiple</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_DcpCpl.cpp">
+      <Filter>Source Files\Multiple</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_DcpPkl.cpp">
+      <Filter>Source Files\Multiple</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_HdsF4m.cpp">
+      <Filter>Source Files\Multiple</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Export\Export_EbuCore.cpp">
+      <Filter>Source Files\Export</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_Aaf.cpp">
+      <Filter>Source Files\Multiple</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaInfo\Multiple\File_Ptx.cpp">
+      <Filter>Source Files\Multiple</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

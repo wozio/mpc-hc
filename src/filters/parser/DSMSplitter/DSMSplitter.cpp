@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -36,18 +36,18 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesIn[] = {
 };
 
 const AMOVIESETUP_PIN sudpPins[] = {
-    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesIn), sudPinTypesIn},
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, 0, NULL}
+    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesIn), sudPinTypesIn},
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, 0, nullptr}
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
     {&__uuidof(CDSMSplitterFilter), DSMSplitterName, MERIT_NORMAL, _countof(sudpPins), sudpPins, CLSID_LegacyAmFilterCategory},
-    {&__uuidof(CDSMSourceFilter), DSMSourceName, MERIT_NORMAL, 0, NULL, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CDSMSourceFilter), DSMSourceName, MERIT_NORMAL, 0, nullptr, CLSID_LegacyAmFilterCategory},
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CDSMSplitterFilter>, NULL, &sudFilter[0]},
-    {sudFilter[1].strName, sudFilter[1].clsID, CreateInstance<CDSMSourceFilter>, NULL, &sudFilter[1]},
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CDSMSplitterFilter>, nullptr, &sudFilter[0]},
+    {sudFilter[1].strName, sudFilter[1].clsID, CreateInstance<CDSMSourceFilter>, nullptr, &sudFilter[1]},
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -61,7 +61,7 @@ STDAPI DllRegisterServer()
     RegisterSourceFilter(
         CLSID_AsyncReader,
         MEDIASUBTYPE_DirectShowMedia,
-        str, NULL);
+        str, nullptr);
 
     return AMovieDllRegisterServer2(TRUE);
 }
@@ -122,7 +122,7 @@ HRESULT CDSMSplitterFilter::CreateOutputs(IAsyncReader* pAsyncReader)
     HRESULT hr = E_FAIL;
 
     m_pFile.Free();
-    m_pFile.Attach(DNew CDSMSplitterFile(pAsyncReader, hr, *this, *this));
+    m_pFile.Attach(DEBUG_NEW CDSMSplitterFile(pAsyncReader, hr, *this, *this));
     if (!m_pFile) {
         return E_OUTOFMEMORY;
     }
@@ -151,12 +151,12 @@ HRESULT CDSMSplitterFilter::CreateOutputs(IAsyncReader* pAsyncReader)
         CMediaType& mt = m_pFile->m_mts[id];
 
         CStringW name, lang;
-        name.Format(L"Output %02d", id);
+        name.Format(L"Output %02u", id);
 
         CAtlArray<CMediaType> mts;
         mts.Add(mt);
 
-        CAutoPtr<CBaseSplitterOutputPin> pPinOut(DNew CBaseSplitterOutputPin(mts, name, this, this, &hr));
+        CAutoPtr<CBaseSplitterOutputPin> pPinOut(DEBUG_NEW CBaseSplitterOutputPin(mts, name, this, this, &hr));
 
         name.Empty();
 
@@ -203,16 +203,16 @@ HRESULT CDSMSplitterFilter::CreateOutputs(IAsyncReader* pAsyncReader)
                 r.mime == "application/x-font-ttf" ||
                 r.mime == "application/vnd.ms-opentype") {
             //m_fontinst.InstallFont(r.data);
-            m_fontinst.InstallFontMemory(r.data.GetData(), r.data.GetCount());
+            m_fontinst.InstallFontMemory(r.data.GetData(), (UINT)r.data.GetCount());
         }
     }
 
-    return m_pOutputs.GetCount() > 0 ? S_OK : E_FAIL;
+    return !m_pOutputs.IsEmpty() ? S_OK : E_FAIL;
 }
 
 bool CDSMSplitterFilter::DemuxInit()
 {
-    SetThreadName((DWORD) - 1, "CDSMSplitterFilter");
+    SetThreadName(DWORD(-1), "CDSMSplitterFilter");
     return true;
 }
 
@@ -225,7 +225,7 @@ bool CDSMSplitterFilter::DemuxLoop()
 {
     HRESULT hr = S_OK;
 
-    while (SUCCEEDED(hr) && !CheckRequest(NULL) && m_pFile->GetRemaining()) {
+    while (SUCCEEDED(hr) && !CheckRequest(nullptr) && m_pFile->GetRemaining()) {
         dsmp_t type;
         UINT64 len;
 
@@ -236,7 +236,7 @@ bool CDSMSplitterFilter::DemuxLoop()
         __int64 pos = m_pFile->GetPos();
 
         if (type == DSMP_SAMPLE) {
-            CAutoPtr<Packet> p(DNew Packet());
+            CAutoPtr<Packet> p(DEBUG_NEW Packet());
             if (m_pFile->Read(len, p)) {
                 if (p->rtStart != Packet::INVALID_TIME) {
                     p->rtStart -= m_pFile->m_rtFirst;
@@ -258,7 +258,7 @@ bool CDSMSplitterFilter::DemuxLoop()
 STDMETHODIMP CDSMSplitterFilter::GetKeyFrameCount(UINT& nKFs)
 {
     CheckPointer(m_pFile, E_UNEXPECTED);
-    nKFs = m_pFile->m_sps.GetCount();
+    nKFs = (UINT)m_pFile->m_sps.GetCount();
     return S_OK;
 }
 

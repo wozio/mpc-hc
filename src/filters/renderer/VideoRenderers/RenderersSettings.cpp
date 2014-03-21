@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,6 +22,7 @@
 #include "stdafx.h"
 #include "RenderersSettings.h"
 #include "../../../mpc-hc/mplayerc.h"
+#include "../../../DSUtil/SysVersion.h"
 #include "version.h"
 #include <d3dx9.h>
 
@@ -32,28 +33,28 @@ void CRenderersSettings::UpdateData(bool fSave)
 
 void CRenderersSettings::CAdvRendererSettings::SetDefault()
 {
-    fVMR9AlterativeVSync              = 0;
+    bVMR9AlterativeVSync              = false;
     iVMR9VSyncOffset                  = 0;
-    iVMR9VSyncAccurate                = 1;
-    iVMR9FullscreenGUISupport         = 0;
-    iVMR9VSync                        = 1;
-    iVMR9FullFloatingPointProcessing  = 0;
-    iVMR9HalfFloatingPointProcessing  = 0;
-    iVMR9ColorManagementEnable        = 0;
+    bVMR9VSyncAccurate                = false;
+    bVMR9FullscreenGUISupport         = false;
+    bVMR9VSync                        = !SysVersion::IsVistaOrLater();
+    bVMR9FullFloatingPointProcessing  = false;
+    bVMR9HalfFloatingPointProcessing  = false;
+    bVMR9ColorManagementEnable        = false;
     iVMR9ColorManagementInput         = VIDEO_SYSTEM_UNKNOWN;
     iVMR9ColorManagementAmbientLight  = AMBIENT_LIGHT_BRIGHT;
     iVMR9ColorManagementIntent        = COLOR_RENDERING_INTENT_PERCEPTUAL;
-    iVMRDisableDesktopComposition     = 0;
-    iVMRFlushGPUBeforeVSync           = 1;
-    iVMRFlushGPUAfterPresent          = 1;
-    iVMRFlushGPUWait                  = 0;
-    iEVRHighColorResolution           = 0;
-    iEVRForceInputHighColorResolution = 0;
-    iEVREnableFrameTimeCorrection     = 0;
+    bVMRDisableDesktopComposition     = false;
+    bVMRFlushGPUBeforeVSync           = true;
+    bVMRFlushGPUAfterPresent          = true;
+    bVMRFlushGPUWait                  = false;
+    bEVRHighColorResolution           = false;
+    bEVRForceInputHighColorResolution = false;
+    bEVREnableFrameTimeCorrection     = false;
     iEVROutputRange                   = 0;
-    bSynchronizeVideo                 = 0;
-    bSynchronizeDisplay               = 0;
-    bSynchronizeNearest               = 1;
+    bSynchronizeVideo                 = false;
+    bSynchronizeDisplay               = false;
+    bSynchronizeNearest               = true;
     iLineDelta                        = 0;
     iColumnDelta                      = 0;
     fCycleDelta                       = 0.0012;
@@ -63,28 +64,28 @@ void CRenderersSettings::CAdvRendererSettings::SetDefault()
 
 void CRenderersSettings::CAdvRendererSettings::SetOptimal()
 {
-    fVMR9AlterativeVSync              = 1;
+    bVMR9AlterativeVSync              = true;
     iVMR9VSyncOffset                  = 0;
-    iVMR9VSyncAccurate                = 1;
-    iVMR9FullscreenGUISupport         = 0;
-    iVMR9VSync                        = 1;
-    iVMR9FullFloatingPointProcessing  = 1;
-    iVMR9HalfFloatingPointProcessing  = 0;
-    iVMR9ColorManagementEnable        = 0;
+    bVMR9VSyncAccurate                = true;
+    bVMR9FullscreenGUISupport         = false;
+    bVMR9VSync                        = true;
+    bVMR9FullFloatingPointProcessing  = true;
+    bVMR9HalfFloatingPointProcessing  = false;
+    bVMR9ColorManagementEnable        = false;
     iVMR9ColorManagementInput         = VIDEO_SYSTEM_UNKNOWN;
     iVMR9ColorManagementAmbientLight  = AMBIENT_LIGHT_BRIGHT;
     iVMR9ColorManagementIntent        = COLOR_RENDERING_INTENT_PERCEPTUAL;
-    iVMRDisableDesktopComposition     = 1;
-    iVMRFlushGPUBeforeVSync           = 1;
-    iVMRFlushGPUAfterPresent          = 1;
-    iVMRFlushGPUWait                  = 0;
-    iEVRHighColorResolution           = 0;
-    iEVRForceInputHighColorResolution = 0;
-    iEVREnableFrameTimeCorrection     = 0;
+    bVMRDisableDesktopComposition     = true;
+    bVMRFlushGPUBeforeVSync           = true;
+    bVMRFlushGPUAfterPresent          = true;
+    bVMRFlushGPUWait                  = false;
+    bEVRHighColorResolution           = false;
+    bEVRForceInputHighColorResolution = false;
+    bEVREnableFrameTimeCorrection     = false;
     iEVROutputRange                   = 0;
-    bSynchronizeVideo                 = 0;
-    bSynchronizeDisplay               = 0;
-    bSynchronizeNearest               = 1;
+    bSynchronizeVideo                 = false;
+    bSynchronizeDisplay               = false;
+    bSynchronizeNearest               = true;
     iLineDelta                        = 0;
     iColumnDelta                      = 0;
     fCycleDelta                       = 0.0012;
@@ -97,10 +98,10 @@ void CRenderersSettings::CAdvRendererSettings::SetOptimal()
 
 CRenderersData::CRenderersData()
 {
-    m_fTearingTest  = false;
-    m_fDisplayStats = false;
+    m_bTearingTest  = false;
+    m_iDisplayStats = 0;
     m_bResetStats   = false;
-    m_hD3DX9Dll     = NULL;
+    m_hD3DX9Dll     = nullptr;
     m_nDXSdkRelease = 0;
 
     // Don't disable hardware features before initializing a renderer
@@ -108,7 +109,7 @@ CRenderersData::CRenderersData()
     m_b10bitSupport = true;
 }
 
-LONGLONG CRenderersData::GetPerfCounter()
+LONGLONG CRenderersData::GetPerfCounter() const
 {
     LARGE_INTEGER i64Ticks100ns;
     LARGE_INTEGER llPerfFrequency;
@@ -119,7 +120,7 @@ LONGLONG CRenderersData::GetPerfCounter()
         return llMulDiv(i64Ticks100ns.QuadPart, 10000000, llPerfFrequency.QuadPart, 0);
     } else {
         // ms to 100ns units
-        return timeGetTime() * 10000;
+        return LONGLONG(timeGetTime()) * 10000;
     }
 }
 
@@ -129,7 +130,7 @@ HINSTANCE CRenderersData::GetD3X9Dll()
 #pragma message("ERROR: DirectX SDK " MPC_DX_SDK_MONTH " " MAKE_STR(MPC_DX_SDK_YEAR) " (v" MAKE_STR(MPC_DX_SDK_NUMBER) ") or newer is required to build MPC-HC")
 #endif
 
-    if (m_hD3DX9Dll == NULL) {
+    if (m_hD3DX9Dll == nullptr) {
         m_nDXSdkRelease = 0;
 
         // load latest compatible version of the DLL that is available

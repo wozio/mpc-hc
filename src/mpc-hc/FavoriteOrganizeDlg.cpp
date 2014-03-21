@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,7 +28,7 @@
 // CFavoriteOrganizeDlg dialog
 
 //IMPLEMENT_DYNAMIC(CFavoriteOrganizeDlg, CResizableDialog)
-CFavoriteOrganizeDlg::CFavoriteOrganizeDlg(CWnd* pParent /*=NULL*/)
+CFavoriteOrganizeDlg::CFavoriteOrganizeDlg(CWnd* pParent /*=nullptr*/)
     : CResizableDialog(CFavoriteOrganizeDlg::IDD, pParent)
 {
 }
@@ -45,10 +45,11 @@ void CFavoriteOrganizeDlg::SetupList(bool fSave)
         CAtlList<CString> sl;
 
         for (int j = 0; j < m_list.GetItemCount(); j++) {
-            CString desc = m_list.GetItemText(j, 0);
-            desc.Remove(';');
-            CString str = m_sl[i].GetAt((POSITION)m_list.GetItemData(j));
-            sl.AddTail(desc + str.Mid(str.Find(';')));
+            CAtlList<CString> args;
+            ExplodeEsc(m_sl[i].GetAt((POSITION)m_list.GetItemData(j)), args, _T(';'));
+            args.RemoveHead();
+            args.AddHead(m_list.GetItemText(j, 0));
+            sl.AddTail(ImplodeEsc(args, _T(';')));
         }
 
         m_sl[i].RemoveAll();
@@ -61,7 +62,7 @@ void CFavoriteOrganizeDlg::SetupList(bool fSave)
             tmp = pos;
 
             CAtlList<CString> sl;
-            Explode(m_sl[i].GetNext(pos), sl, ';', 3);
+            ExplodeEsc(m_sl[i].GetNext(pos), sl, _T(';'), 3);
 
             int n = m_list.InsertItem(m_list.GetItemCount(), sl.RemoveHead());
             m_list.SetItemData(n, (DWORD_PTR)tmp);
@@ -72,7 +73,7 @@ void CFavoriteOrganizeDlg::SetupList(bool fSave)
                     DVD_HMSF_TIMECODE hmsf = RT2HMSF(rt);
 
                     CString str;
-                    str.Format(_T("[%02d:%02d:%02d]"), hmsf.bHours, hmsf.bMinutes, hmsf.bSeconds);
+                    str.Format(_T("[%02u:%02u:%02u]"), hmsf.bHours, hmsf.bMinutes, hmsf.bSeconds);
                     m_list.SetItemText(n, 1, str);
                 }
             }
@@ -135,9 +136,10 @@ BOOL CFavoriteOrganizeDlg::OnInitDialog()
     m_list.InsertColumn(1, _T(""));
     m_list.SetExtendedStyle(m_list.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
 
-    AfxGetAppSettings().GetFav(FAV_FILE, m_sl[0]);
-    AfxGetAppSettings().GetFav(FAV_DVD, m_sl[1]);
-    AfxGetAppSettings().GetFav(FAV_DEVICE, m_sl[2]);
+    const CAppSettings& s = AfxGetAppSettings();
+    s.GetFav(FAV_FILE, m_sl[0]);
+    s.GetFav(FAV_DVD, m_sl[1]);
+    s.GetFav(FAV_DEVICE, m_sl[2]);
 
     SetupList(false);
 
@@ -186,13 +188,14 @@ void CFavoriteOrganizeDlg::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStr
 
     CDC* pDC = CDC::FromHandle(lpDrawItemStruct->hDC);
 
-    CBrush b;
     if (!!m_list.GetItemState(nItem, LVIS_SELECTED)) {
-        b.CreateSolidBrush(0xf1dacc);
-        pDC->FillRect(rcItem, &b);
-        b.CreateSolidBrush(0xc56a31);
-        pDC->FrameRect(rcItem, &b);
+        CBrush b1, b2;
+        b1.CreateSolidBrush(0xf1dacc);
+        pDC->FillRect(rcItem, &b1);
+        b2.CreateSolidBrush(0xc56a31);
+        pDC->FrameRect(rcItem, &b2);
     } else {
+        CBrush b;
         b.CreateSysColorBrush(COLOR_WINDOW);
         pDC->FillRect(rcItem, &b);
     }
@@ -298,7 +301,7 @@ void CFavoriteOrganizeDlg::OnDeleteBnClicked()
     POSITION pos;
     int nItem = -1;
 
-    while ((pos = m_list.GetFirstSelectedItemPosition()) != NULL) {
+    while ((pos = m_list.GetFirstSelectedItemPosition()) != nullptr) {
         nItem = m_list.GetNextSelectedItem(pos);
         if (nItem < 0 || nItem >= m_list.GetItemCount()) {
             return;
@@ -335,10 +338,9 @@ void CFavoriteOrganizeDlg::MoveItem(int nItem, int offset)
 void CFavoriteOrganizeDlg::OnUpBnClicked()
 {
     POSITION pos = m_list.GetFirstSelectedItemPosition();
-    int nItem;
 
     while (pos) {
-        nItem = m_list.GetNextSelectedItem(pos);
+        int nItem = m_list.GetNextSelectedItem(pos);
         if (nItem <= 0 || nItem >= m_list.GetItemCount()) {
             return;
         }
@@ -356,10 +358,9 @@ void CFavoriteOrganizeDlg::OnDownBnClicked()
 {
     CArray<int> selectedItems;
     POSITION pos = m_list.GetFirstSelectedItemPosition();
-    int nItem;
 
     while (pos) {
-        nItem = m_list.GetNextSelectedItem(pos);
+        int nItem = m_list.GetNextSelectedItem(pos);
         if (nItem < 0 || nItem >= m_list.GetItemCount() - 1) {
             return;
         }
@@ -388,9 +389,10 @@ void CFavoriteOrganizeDlg::OnBnClickedOk()
 {
     SetupList(true);
 
-    AfxGetAppSettings().SetFav(FAV_FILE, m_sl[0]);
-    AfxGetAppSettings().SetFav(FAV_DVD, m_sl[1]);
-    AfxGetAppSettings().SetFav(FAV_DEVICE, m_sl[2]);
+    CAppSettings& s = AfxGetAppSettings();
+    s.SetFav(FAV_FILE, m_sl[0]);
+    s.SetFav(FAV_DVD, m_sl[1]);
+    s.SetFav(FAV_DEVICE, m_sl[2]);
 
     OnOK();
 }

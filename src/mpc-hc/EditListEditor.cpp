@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -80,8 +80,8 @@ CString CClip::GetOut()
 
 IMPLEMENT_DYNAMIC(CEditListEditor, CPlayerBar)
 CEditListEditor::CEditListEditor()
-    : m_pDragImage(NULL)
-    , m_CurPos(NULL)
+    : m_pDragImage(nullptr)
+    , m_CurPos(nullptr)
     , m_bDragging(FALSE)
     , m_nDragIndex(-1)
     , m_nDropIndex(-1)
@@ -144,7 +144,7 @@ BOOL CEditListEditor::Create(CWnd* pParentWnd, UINT defDockBarID)
 
 void CEditListEditor::OnSize(UINT nType, int cx, int cy)
 {
-    CSizingControlBarG::OnSize(nType, cx, cy);
+    __super::OnSize(nType, cx, cy);
 
     ResizeListColumn();
 }
@@ -166,7 +166,7 @@ void CEditListEditor::ResizeListColumn()
 
 void CEditListEditor::SaveEditListToFile()
 {
-    if ((m_bFileOpen || m_EditList.GetCount() > 0) && !m_strFileName.IsEmpty()) {
+    if ((m_bFileOpen || !m_EditList.IsEmpty()) && !m_strFileName.IsEmpty()) {
         CStdioFile EditListFile;
         if (EditListFile.Open(m_strFileName, CFile::modeCreate | CFile::modeWrite)) {
             CString strLine;
@@ -204,7 +204,7 @@ void CEditListEditor::CloseFile()
     SaveEditListToFile();
     m_EditList.RemoveAll();
     m_list.DeleteAllItems();
-    m_CurPos = NULL;
+    m_CurPos = nullptr;
     m_strFileName = "";
     m_bFileOpen = false;
     m_cbHotFolders.SetCurSel(0);
@@ -246,7 +246,7 @@ void CEditListEditor::OpenFile(LPCTSTR lpFileName)
                 NewClip.SetOut(strOut);
                 NewClip.SetName(strName);
 
-                InsertClip(NULL, NewClip);
+                InsertClip(nullptr, NewClip);
             }
         }
 
@@ -255,7 +255,7 @@ void CEditListEditor::OpenFile(LPCTSTR lpFileName)
         m_bFileOpen = false;
     }
 
-    if (m_NameList.GetCount() == 0) {
+    if (m_NameList.IsEmpty()) {
         CStdioFile NameFile;
         CString str;
         if (NameFile.Open(_T("EditListNames.txt"), CFile::modeRead)) {
@@ -269,7 +269,7 @@ void CEditListEditor::OpenFile(LPCTSTR lpFileName)
 
 void CEditListEditor::SetIn(REFERENCE_TIME rtIn)
 {
-    if (m_CurPos != NULL) {
+    if (m_CurPos != nullptr) {
         CClip& CurClip = m_EditList.GetAt(m_CurPos);
 
         CurClip.SetIn(rtIn);
@@ -279,7 +279,7 @@ void CEditListEditor::SetIn(REFERENCE_TIME rtIn)
 
 void CEditListEditor::SetOut(REFERENCE_TIME rtOut)
 {
-    if (m_CurPos != NULL) {
+    if (m_CurPos != nullptr) {
         CClip& CurClip = m_EditList.GetAt(m_CurPos);
 
         CurClip.SetOut(rtOut);
@@ -291,7 +291,7 @@ void CEditListEditor::NewClip(REFERENCE_TIME rtVal)
 {
     CClip NewClip;
 
-    if (m_CurPos != NULL) {
+    if (m_CurPos != nullptr) {
         CClip& CurClip = m_EditList.GetAt(m_CurPos);
 
         if (CurClip.HaveIn()) {
@@ -309,7 +309,7 @@ void CEditListEditor::Save()
     SaveEditListToFile();
 }
 
-int CEditListEditor::FindIndex(POSITION pos)
+int CEditListEditor::FindIndex(const POSITION pos)
 {
     int iItem = 0;
     POSITION CurPos = m_EditList.GetHeadPosition();
@@ -325,7 +325,7 @@ POSITION CEditListEditor::InsertClip(POSITION pos, CClip& NewClip)
     LVITEM lv;
     POSITION NewClipPos;
 
-    if (pos == NULL) {
+    if (pos == nullptr) {
         NewClipPos = m_EditList.AddTail(NewClip);
     } else {
         NewClipPos = m_EditList.InsertAfter(pos, NewClip);
@@ -351,7 +351,7 @@ void CEditListEditor::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
     CRect rcItem = lpDrawItemStruct->rcItem;
     POSITION pos = m_EditList.FindIndex(nItem);
 
-    if (pos != NULL) {
+    if (pos != nullptr) {
         bool fSelected = (pos == m_CurPos);
         UNREFERENCED_PARAMETER(fSelected);
         CClip& CurClip = m_EditList.GetAt(pos);
@@ -421,7 +421,7 @@ void CEditListEditor::OnLvnKeyDown(NMHDR* pNMHDR, LRESULT* pResult)
             m_list.DeleteItem(nItem);
         }
         if (nItem != -1) {
-            m_list.SetItemState(min(nItem, m_list.GetItemCount() - 1), LVIS_SELECTED, LVIS_SELECTED);
+            m_list.SetItemState(std::min(nItem, m_list.GetItemCount() - 1), LVIS_SELECTED, LVIS_SELECTED);
         }
         m_list.Invalidate();
     }
@@ -466,13 +466,13 @@ void CEditListEditor::OnMouseMove(UINT nFlags, CPoint point)
             int iBottomItem = m_list.GetBottomIndex();
 
             if (iOverItem == iTopItem && iTopItem != 0) { // top of list
-                SetTimer(1, 100, NULL);
+                SetTimer(1, 100, nullptr);
             } else {
                 KillTimer(1);
             }
 
             if (iOverItem >= iBottomItem && iBottomItem != (m_list.GetItemCount() - 1)) { // bottom of list
-                SetTimer(2, 100, NULL);
+                SetTimer(2, 100, nullptr);
             } else {
                 KillTimer(2);
             }
@@ -520,7 +520,7 @@ void CEditListEditor::OnLButtonUp(UINT nFlags, CPoint point)
         m_pDragImage->EndDrag();
 
         delete m_pDragImage;
-        m_pDragImage = NULL;
+        m_pDragImage = nullptr;
 
         KillTimer(1);
         KillTimer(2);
@@ -545,7 +545,7 @@ void CEditListEditor::DropItemOnList()
 
     POSITION DragPos = m_EditList.FindIndex(m_nDragIndex);
     POSITION DropPos = m_EditList.FindIndex(m_nDropIndex);
-    if ((DragPos != NULL) && (DropPos != NULL)) {
+    if ((DragPos != nullptr) && (DropPos != nullptr)) {
         CClip& DragClip = m_EditList.GetAt(DragPos);
         m_EditList.InsertAfter(DropPos, DragClip);
         m_EditList.RemoveAt(DragPos);
@@ -580,7 +580,7 @@ void CEditListEditor::OnDolabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
         return;
     }
 
-    if (m_CurPos != NULL && pItem->iSubItem == COL_NAME) {
+    if (m_CurPos != nullptr && pItem->iSubItem == COL_NAME) {
         CClip& CurClip = m_EditList.GetAt(m_CurPos);
         int nSel = FindNameIndex(CurClip.GetName());
 
@@ -611,7 +611,7 @@ void CEditListEditor::OnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
 
     CString& CurName = m_NameList.GetAt(pItem->lParam);
 
-    if (m_CurPos != NULL && pItem->iSubItem == COL_NAME) {
+    if (m_CurPos != nullptr && pItem->iSubItem == COL_NAME) {
         CClip& CurClip = m_EditList.GetAt(m_CurPos);
         CurClip.SetName(CurName);
 

@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -42,15 +42,15 @@ public:
     bool  m_forced_on_flag;
     BYTE  m_version_number;
 
-    short m_horizontal_position;
-    short m_vertical_position;
-    short m_width;
-    short m_height;
+    LONG m_horizontal_position;
+    LONG m_vertical_position;
+    LONG m_width;
+    LONG m_height;
 
-    short m_cropping_horizontal_position;
-    short m_cropping_vertical_position;
-    short m_cropping_width;
-    short m_cropping_height;
+    LONG m_cropping_horizontal_position;
+    LONG m_cropping_vertical_position;
+    LONG m_cropping_width;
+    LONG m_cropping_height;
 
     CompositionObject();
     ~CompositionObject();
@@ -63,9 +63,18 @@ public:
     void  RenderHdmv(SubPicDesc& spd);
     void  RenderDvb(SubPicDesc& spd, short nX, short nY);
     void  WriteSeg(SubPicDesc& spd, short nX, short nY, short nCount, short nPaletteIndex);
-    void  SetPalette(int nNbEntry, HDMV_PALETTE* pPalette, bool bIsHD);
-    void  SetPalette(int nNbEntry, DWORD* dwColors);
+    void  SetPalette(int nNbEntry, const HDMV_PALETTE* pPalette, bool BT709, int sourceBlackLevel, int sourceWhiteLevel, int targetBlackLevel, int targetWhiteLevel);
     bool  HavePalette() { return m_nColorNumber > 0; };
+
+    CompositionObject* Copy() {
+        CompositionObject* pCompositionObject = DEBUG_NEW CompositionObject(*this);
+        if (m_pRLEData) {
+            pCompositionObject->m_pRLEData = nullptr;
+            pCompositionObject->SetRLEData(m_pRLEData, m_nRLEDataSize, m_nRLEDataSize);
+        }
+
+        return pCompositionObject;
+    }
 
 private:
     BYTE* m_pRLEData;

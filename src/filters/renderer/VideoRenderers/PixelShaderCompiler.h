@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,44 +21,48 @@
 
 #pragma once
 
-#include <d3dx9shader.h>
-
+#include <d3d9.h>
+#include <D3Dcompiler.h>
 
 class CPixelShaderCompiler
 {
-    typedef HRESULT(WINAPI* D3DXCompileShaderPtr)(
-        LPCSTR pSrcData,
-        UINT SrcDataLen,
-        CONST D3DXMACRO* pDefines,
-        LPD3DXINCLUDE pInclude,
-        LPCSTR pFunctionName,
-        LPCSTR pProfile,
-        DWORD Flags,
-        LPD3DXBUFFER* ppShader,
-        LPD3DXBUFFER* ppErrorMsgs,
-        LPD3DXCONSTANTTABLE* ppConstantTable);
+    HINSTANCE m_hDll;
 
-    typedef HRESULT(WINAPI* D3DXDisassembleShaderPtr)(
-        CONST DWORD* pShader,
-        bool EnableColorCode,
-        LPCSTR pComments,
-        LPD3DXBUFFER* ppDisassembly);
-
-    D3DXCompileShaderPtr m_pD3DXCompileShader;
-    D3DXDisassembleShaderPtr m_pD3DXDisassembleShader;
+    pD3DCompile m_pD3DCompile;
+    pD3DDisassemble m_pD3DDisassemble;
 
     CComPtr<IDirect3DDevice9> m_pD3DDev;
 
-public:
-    CPixelShaderCompiler(IDirect3DDevice9* pD3DDev, bool fStaySilent = false);
-    virtual ~CPixelShaderCompiler();
-
-    HRESULT CompileShader(
+    HRESULT InternalCompile(
         LPCSTR pSrcData,
-        LPCSTR pFunctionName,
+        SIZE_T SrcDataSize,
+        LPCSTR pSourceName,
+        LPCSTR pEntrypoint,
         LPCSTR pProfile,
         DWORD Flags,
         IDirect3DPixelShader9** ppPixelShader,
-        CString* disasm = NULL,
-        CString* errmsg = NULL);
+        CString* pDisasm,
+        CString* pErrMsg);
+
+public:
+    CPixelShaderCompiler(IDirect3DDevice9* pD3DDev, bool fStaySilent = false);
+    ~CPixelShaderCompiler();
+
+    HRESULT CompileShader(
+        LPCSTR pSrcData,
+        LPCSTR pEntrypoint,
+        LPCSTR pProfile,
+        DWORD Flags,
+        IDirect3DPixelShader9** ppPixelShader,
+        CString* pDisasm = nullptr,
+        CString* pErrMsg = nullptr);
+
+    HRESULT CompileShaderFromFile(
+        LPCTSTR pSrcFile,
+        LPCSTR pEntrypoint,
+        LPCSTR pProfile,
+        DWORD Flags,
+        IDirect3DPixelShader9** ppPixelShader,
+        CString* pDisasm = nullptr,
+        CString* pErrMsg = nullptr);
 };

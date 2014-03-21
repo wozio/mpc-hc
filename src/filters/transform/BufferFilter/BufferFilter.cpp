@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "BufferFilter.h"
 #include "../../../DSUtil/DSUtil.h"
 
@@ -34,8 +35,8 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudpPins[] = {
-    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesIn), sudPinTypesIn},
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut}
+    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesIn), sudPinTypesIn},
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut}
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
@@ -43,7 +44,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CBufferFilter>, NULL, &sudFilter[0]}
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CBufferFilter>, nullptr, &sudFilter[0]}
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -75,7 +76,7 @@ CBufferFilter::CBufferFilter(LPUNKNOWN lpunk, HRESULT* phr)
     HRESULT hr = S_OK;
 
     do {
-        m_pInput = DNew CTransformInputPin(NAME("Transform input pin"), this, &hr, L"In");
+        m_pInput = DEBUG_NEW CTransformInputPin(NAME("Transform input pin"), this, &hr, L"In");
         if (!m_pInput) {
             hr = E_OUTOFMEMORY;
         }
@@ -83,12 +84,13 @@ CBufferFilter::CBufferFilter(LPUNKNOWN lpunk, HRESULT* phr)
             break;
         }
 
-        m_pOutput = DNew CBufferFilterOutputPin(this, &hr);
+        m_pOutput = DEBUG_NEW CBufferFilterOutputPin(this, &hr);
         if (!m_pOutput) {
             hr = E_OUTOFMEMORY;
         }
         if (FAILED(hr)) {
-            delete m_pInput, m_pInput = NULL;
+            delete m_pInput;
+            m_pInput = nullptr;
             break;
         }
     } while (false);
@@ -147,6 +149,11 @@ STDMETHODIMP CBufferFilter::SetPriority(DWORD dwPriority)
 
 HRESULT CBufferFilter::Receive(IMediaSample* pSample)
 {
+    ASSERT(pSample);
+    CheckPointer(pSample, E_POINTER);
+    ASSERT(m_pOutput);
+    CheckPointer(m_pOutput, E_POINTER);
+
     /*  Check for other streams and pass them on */
     AM_SAMPLE2_PROPERTIES* const pProps = m_pInput->SampleProps();
     if (pProps->dwStreamId != AM_STREAM_MEDIA) {
@@ -154,10 +161,7 @@ HRESULT CBufferFilter::Receive(IMediaSample* pSample)
     }
 
     HRESULT hr;
-    ASSERT(pSample);
     IMediaSample* pOutSample;
-
-    ASSERT(m_pOutput != NULL);
 
     // Set up the output sample
     hr = InitializeOutputSample(pSample, &pOutSample);
@@ -215,22 +219,20 @@ HRESULT CBufferFilter::Receive(IMediaSample* pSample)
 
 HRESULT CBufferFilter::Transform(IMediaSample* pIn, IMediaSample* pOut)
 {
-    BYTE* pDataIn  = NULL;
-    BYTE* pDataOut = NULL;
-
-    pIn->GetPointer(&pDataIn);
-    pOut->GetPointer(&pDataOut);
+    BYTE* pDataIn  = nullptr;
+    BYTE* pDataOut = nullptr;
 
     long len  = pIn->GetActualDataLength();
     long size = pOut->GetSize();
 
-    if (!pDataIn || !pDataOut || len > size || len <= 0) {
+    if (FAILED(pIn->GetPointer(&pDataIn)) || !pDataIn || FAILED(pOut->GetPointer(&pDataOut)) || !pDataOut
+            || len > size || len <= 0) {
         return S_FALSE;
     }
 
-    memcpy(pDataOut, pDataIn, min(len, size));
+    memcpy(pDataOut, pDataIn, std::min(len, size));
 
-    pOut->SetActualDataLength(min(len, size));
+    pOut->SetActualDataLength(std::min(len, size));
 
     return S_OK;
 }
@@ -259,7 +261,7 @@ HRESULT CBufferFilter::DecideBufferSize(IMemAllocator* pAllocator, ALLOCATOR_PRO
 
     pAllocatorIn->GetProperties(pProperties);
 
-    pProperties->cBuffers = max(m_nSamplesToBuffer, pProperties->cBuffers);
+    pProperties->cBuffers = std::max<long>(m_nSamplesToBuffer, pProperties->cBuffers);
 
     HRESULT hr;
     ALLOCATOR_PROPERTIES Actual;
@@ -319,7 +321,7 @@ HRESULT CBufferFilterOutputPin::Active()
     if (m_Connected && !m_pOutputQueue) {
         HRESULT hr = NOERROR;
 
-        m_pOutputQueue.Attach(DNew CBufferFilterOutputQueue(m_Connected, &hr));
+        m_pOutputQueue.Attach(DEBUG_NEW CBufferFilterOutputQueue(m_Connected, &hr));
         if (!m_pOutputQueue) {
             hr = E_OUTOFMEMORY;
         }

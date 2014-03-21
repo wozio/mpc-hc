@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -31,9 +31,13 @@ CBaseSplitterFile::CBaseSplitterFile(IAsyncReader* pAsyncReader, HRESULT& hr, in
     : m_pAsyncReader(pAsyncReader)
     , m_fStreaming(false)
     , m_fRandomAccess(false)
-    , m_pos(0), m_len(0)
-    , m_bitbuff(0), m_bitlen(0)
-    , m_cachepos(0), m_cachelen(0)
+    , m_pos(0)
+    , m_len(0)
+    , m_bitbuff(0)
+    , m_bitlen(0)
+    , m_cachepos(0)
+    , m_cachelen(0)
+    , m_cachetotal(0)
 {
     if (!m_pAsyncReader) {
         hr = E_UNEXPECTED;
@@ -64,8 +68,7 @@ bool CBaseSplitterFile::SetCacheSize(int cachelen)
 {
     m_pCache.Free();
     m_cachetotal = 0;
-    m_pCache.Allocate((size_t)cachelen);
-    if (!m_pCache) {
+    if (!m_pCache.Allocate((size_t)cachelen)) {
         return false;
     }
     m_cachetotal = cachelen;
@@ -101,7 +104,7 @@ __int64 CBaseSplitterFile::GetLength(bool fUpdate)
 void CBaseSplitterFile::Seek(__int64 pos)
 {
     __int64 len = GetLength();
-    m_pos = min(max(pos, 0), len);
+    m_pos = std::min(std::max(pos, 0ll), len);
     BitFlush();
 }
 
@@ -129,7 +132,7 @@ HRESULT CBaseSplitterFile::Read(BYTE* pData, __int64 len)
     BYTE* pCache = m_pCache;
 
     if (m_cachepos <= m_pos && m_pos < m_cachepos + m_cachelen) {
-        __int64 minlen = min(len, m_cachelen - (m_pos - m_cachepos));
+        __int64 minlen = std::min(len, m_cachelen - (m_pos - m_cachepos));
 
         memcpy(pData, &pCache[m_pos - m_cachepos], (size_t)minlen);
 
@@ -151,8 +154,8 @@ HRESULT CBaseSplitterFile::Read(BYTE* pData, __int64 len)
 
     while (len > 0) {
         __int64 tmplen = GetLength();
-        __int64 maxlen = min(tmplen - m_pos, m_cachetotal);
-        __int64 minlen = min(len, maxlen);
+        __int64 maxlen = std::min(tmplen - m_pos, m_cachetotal);
+        __int64 minlen = std::min(len, maxlen);
         if (minlen <= 0) {
             return S_FALSE;
         }
@@ -189,7 +192,14 @@ UINT64 CBaseSplitterFile::BitRead(int nBits, bool fPeek)
 
     int bitlen = m_bitlen - nBits;
 
-    UINT64 ret = (m_bitbuff >> bitlen) & ((1ui64 << nBits) - 1);
+    UINT64 ret;
+    // The shift to 64 bits can give incorrect results.
+    // "The behavior is undefined if the right operand is negative, or greater than or equal to the length in bits of the promoted left operand."
+    if (nBits == 64) {
+        ret = m_bitbuff;
+    } else {
+        ret = (m_bitbuff >> bitlen) & ((1ui64 << nBits) - 1);
+    }
 
     if (!fPeek) {
         m_bitbuff &= ((1ui64 << bitlen) - 1);

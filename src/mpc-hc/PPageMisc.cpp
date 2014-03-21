@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -53,6 +53,7 @@ void CPPageMisc::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_SLI_CONTRAST, m_SliContrast);
     DDX_Control(pDX, IDC_SLI_HUE, m_SliHue);
     DDX_Control(pDX, IDC_SLI_SATURATION, m_SliSaturation);
+    DDX_Control(pDX, IDC_EXPORT_KEYS, m_ExportKeys);
     DDX_Text(pDX, IDC_STATIC1, m_sBrightness);
     DDX_Text(pDX, IDC_STATIC2, m_sContrast);
     DDX_Text(pDX, IDC_STATIC3, m_sHue);
@@ -77,8 +78,11 @@ BEGIN_MESSAGE_MAP(CPPageMisc, CPPageBase)
     ON_BN_CLICKED(IDC_RESET, OnBnClickedReset)
     ON_BN_CLICKED(IDC_RESET_SETTINGS, OnResetSettings)
     ON_BN_CLICKED(IDC_EXPORT_SETTINGS, OnExportSettings)
+    ON_BN_CLICKED(IDC_EXPORT_KEYS, OnExportKeys)
     ON_UPDATE_COMMAND_UI(IDC_EDIT1, OnUpdateDelayEditBox)
     ON_UPDATE_COMMAND_UI(IDC_SPIN1, OnUpdateDelayEditBox)
+    ON_UPDATE_COMMAND_UI(IDC_STATIC5, OnUpdateDelayEditBox)
+    ON_UPDATE_COMMAND_UI(IDC_STATIC6, OnUpdateDelayEditBox)
 END_MESSAGE_MAP()
 
 
@@ -116,6 +120,10 @@ BOOL CPPageMisc::OnInitDialog()
     m_SliSaturation.SetRange(-100, 100, true);
     m_SliSaturation.SetTic(0);
     m_SliSaturation.SetPos(m_iSaturation);
+
+    if (AfxGetMyApp()->IsIniValid()) {
+        m_ExportKeys.EnableWindow(FALSE);
+    }
 
     m_iBrightness ? m_sBrightness.Format(_T("%+d"), m_iBrightness) : m_sBrightness = _T("0");
     m_iContrast ? m_sContrast.Format(_T("%+d"), m_iContrast) : m_sContrast = _T("0");
@@ -210,7 +218,7 @@ void CPPageMisc::OnResetSettings()
     if (MessageBox(ResStr(IDS_RESET_SETTINGS_WARNING), ResStr(IDS_RESET_SETTINGS), MB_ICONEXCLAMATION | MB_YESNO | MB_DEFBUTTON2) == IDYES) {
         ((CMainFrame*)AfxGetMyApp()->GetMainWnd())->SendMessage(WM_CLOSE);
 
-        ShellExecute(NULL, _T("open"), GetProgramPath(true), _T("/reset"), NULL, SW_SHOWNORMAL);
+        ShellExecute(nullptr, _T("open"), GetProgramPath(true), _T("/reset"), nullptr, SW_SHOWNORMAL);
     }
 }
 
@@ -226,7 +234,43 @@ void CPPageMisc::OnExportSettings()
         }
     }
 
-    AfxGetMyApp()->ExportSettings();
+    CString ext = AfxGetMyApp()->IsIniValid() ? _T("ini") : _T("reg");
+    CFileDialog fileSaveDialog(FALSE, ext, _T("mpc-hc-settings.") + ext);
+
+    if (fileSaveDialog.DoModal() == IDOK) {
+        if (AfxGetMyApp()->ExportSettings(fileSaveDialog.GetPathName())) {
+            MessageBox(ResStr(IDS_EXPORT_SETTINGS_SUCCESS), ResStr(IDS_EXPORT_SETTINGS), MB_ICONINFORMATION | MB_OK);
+        } else {
+            MessageBox(ResStr(IDS_EXPORT_SETTINGS_FAILED), ResStr(IDS_EXPORT_SETTINGS), MB_ICONERROR | MB_OK);
+        }
+    }
+}
+
+void CPPageMisc::OnExportKeys()
+{
+    if (GetParent()->GetDlgItem(ID_APPLY_NOW)->IsWindowEnabled()) {
+        int ret = MessageBox(ResStr(IDS_EXPORT_SETTINGS_WARNING), ResStr(IDS_EXPORT_SETTINGS), MB_ICONEXCLAMATION | MB_YESNOCANCEL);
+
+        if (ret == IDCANCEL) {
+            return;
+        } else if (ret == IDYES) {
+            GetParent()->PostMessage(PSM_APPLY);
+        }
+    }
+
+    CFileDialog fileSaveDialog(FALSE, _T("reg"), _T("mpc-hc-keys.reg"));
+
+    if (fileSaveDialog.DoModal() == IDOK) {
+        if (AfxGetMyApp()->ExportSettings(fileSaveDialog.GetPathName(), _T("Commands2"))) {
+            MessageBox(ResStr(IDS_EXPORT_SETTINGS_SUCCESS), ResStr(IDS_EXPORT_SETTINGS), MB_ICONINFORMATION | MB_OK);
+        } else {
+            if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+                MessageBox(ResStr(IDS_EXPORT_SETTINGS_NO_KEYS), ResStr(IDS_EXPORT_SETTINGS), MB_ICONINFORMATION | MB_OK);
+            } else {
+                MessageBox(ResStr(IDS_EXPORT_SETTINGS_FAILED), ResStr(IDS_EXPORT_SETTINGS), MB_ICONERROR | MB_OK);
+            }
+        }
+    }
 }
 
 void CPPageMisc::OnCancel()

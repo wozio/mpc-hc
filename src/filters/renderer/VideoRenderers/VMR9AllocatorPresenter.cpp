@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -19,6 +19,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "RenderersSettings.h"
 #include "VMR9AllocatorPresenter.h"
 #include "OuterVMR.h"
@@ -53,6 +54,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::NonDelegatingQueryInterface(REFIID riid, v
         QI(IVMRSurfaceAllocator9)
         QI(IVMRImagePresenter9)
         QI(IVMRWindowlessControl9)
+        QI(ID3DFullscreenControl)
         __super::NonDelegatingQueryInterface(riid, ppv);
 }
 
@@ -87,73 +89,69 @@ void CVMR9AllocatorPresenter::DeleteSurfaces()
 STDMETHODIMP CVMR9AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
 {
     CheckPointer(ppRenderer, E_POINTER);
-    *ppRenderer = NULL;
+    *ppRenderer = nullptr;
     HRESULT hr;
 
-    do {
-        CMacrovisionKicker* pMK = DNew CMacrovisionKicker(NAME("CMacrovisionKicker"), NULL);
-        CComPtr<IUnknown> pUnk = (IUnknown*)(INonDelegatingUnknown*)pMK;
+    CMacrovisionKicker* pMK = DEBUG_NEW CMacrovisionKicker(NAME("CMacrovisionKicker"), nullptr);
+    CComPtr<IUnknown> pUnk = (IUnknown*)(INonDelegatingUnknown*)pMK;
 
-        COuterVMR9* pOuter = DNew COuterVMR9(NAME("COuterVMR9"), pUnk, &m_VMR9AlphaBitmap, this);
+    COuterVMR9* pOuter = DEBUG_NEW COuterVMR9(NAME("COuterVMR9"), pUnk, &m_VMR9AlphaBitmap, this);
 
-        pMK->SetInner((IUnknown*)(INonDelegatingUnknown*)pOuter);
-        CComQIPtr<IBaseFilter> pBF = pUnk;
+    pMK->SetInner((IUnknown*)(INonDelegatingUnknown*)pOuter);
+    CComQIPtr<IBaseFilter> pBF = pUnk;
 
-        CComPtr<IPin> pPin = GetFirstPin(pBF);
-        CComQIPtr<IMemInputPin> pMemInputPin = pPin;
-        m_fUseInternalTimer = HookNewSegmentAndReceive((IPinC*)(IPin*)pPin, (IMemInputPinC*)(IMemInputPin*)pMemInputPin);
+    CComPtr<IPin> pPin = GetFirstPin(pBF);
+    CComQIPtr<IMemInputPin> pMemInputPin = pPin;
+    m_fUseInternalTimer = HookNewSegmentAndReceive((IPinC*)(IPin*)pPin, (IMemInputPinC*)(IMemInputPin*)pMemInputPin);
 
-        if (CComQIPtr<IAMVideoAccelerator> pAMVA = pPin) {
-            HookAMVideoAccelerator((IAMVideoAcceleratorC*)(IAMVideoAccelerator*)pAMVA);
+    if (CComQIPtr<IAMVideoAccelerator> pAMVA = pPin) {
+        HookAMVideoAccelerator((IAMVideoAcceleratorC*)(IAMVideoAccelerator*)pAMVA);
+    }
+
+    CComQIPtr<IVMRFilterConfig9> pConfig = pBF;
+    if (!pConfig) {
+        return E_FAIL;
+    }
+
+    const CRenderersSettings& r = GetRenderersSettings();
+
+    if (r.fVMR9MixerMode) {
+        if (FAILED(hr = pConfig->SetNumberOfStreams(1))) {
+            return E_FAIL;
         }
 
-        CComQIPtr<IVMRFilterConfig9> pConfig = pBF;
-        if (!pConfig) {
-            break;
-        }
+        if (CComQIPtr<IVMRMixerControl9> pMC = pBF) {
+            DWORD dwPrefs;
+            pMC->GetMixingPrefs(&dwPrefs);
 
-        CRenderersSettings& s = GetRenderersSettings();
-
-        if (s.fVMR9MixerMode) {
-            if (FAILED(hr = pConfig->SetNumberOfStreams(1))) {
-                break;
+            // See http://msdn.microsoft.com/en-us/library/dd390928(VS.85).aspx
+            dwPrefs |= MixerPref9_NonSquareMixing;
+            dwPrefs |= MixerPref9_NoDecimation;
+            if (r.fVMR9MixerYUV && !SysVersion::IsVistaOrLater()) {
+                dwPrefs &= ~MixerPref9_RenderTargetMask;
+                dwPrefs |= MixerPref9_RenderTargetYUV;
             }
-
-            if (CComQIPtr<IVMRMixerControl9> pMC = pBF) {
-                DWORD dwPrefs;
-                pMC->GetMixingPrefs(&dwPrefs);
-
-                // See http://msdn.microsoft.com/en-us/library/dd390928(VS.85).aspx
-                dwPrefs |= MixerPref9_NonSquareMixing;
-                dwPrefs |= MixerPref9_NoDecimation;
-                if (s.fVMR9MixerYUV && !SysVersion::IsVistaOrLater()) {
-                    dwPrefs &= ~MixerPref9_RenderTargetMask;
-                    dwPrefs |= MixerPref9_RenderTargetYUV;
-                }
-                pMC->SetMixingPrefs(dwPrefs);
-            }
+            pMC->SetMixingPrefs(dwPrefs);
         }
+    }
 
-        if (FAILED(hr = pConfig->SetRenderingMode(VMR9Mode_Renderless))) {
-            break;
-        }
+    if (FAILED(hr = pConfig->SetRenderingMode(VMR9Mode_Renderless))) {
+        return E_FAIL;
+    }
 
-        CComQIPtr<IVMRSurfaceAllocatorNotify9> pSAN = pBF;
-        if (!pSAN) {
-            break;
-        }
+    CComQIPtr<IVMRSurfaceAllocatorNotify9> pSAN = pBF;
+    if (!pSAN) {
+        return E_FAIL;
+    }
 
-        if (FAILED(hr = pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator9*>(this)))
-                || FAILED(hr = AdviseNotify(pSAN))) {
-            break;
-        }
+    if (FAILED(hr = pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator9*>(this)))
+            || FAILED(hr = AdviseNotify(pSAN))) {
+        return E_FAIL;
+    }
 
-        *ppRenderer = (IUnknown*)pBF.Detach();
+    *ppRenderer = (IUnknown*)pBF.Detach();
 
-        return S_OK;
-    } while (0);
-
-    return E_FAIL;
+    return S_OK;
 }
 
 STDMETHODIMP_(void) CVMR9AllocatorPresenter::SetTime(REFERENCE_TIME rtNow)
@@ -231,18 +229,18 @@ STDMETHODIMP CVMR9AllocatorPresenter::InitializeDevice(DWORD_PTR dwUserID, VMR9A
 
     if (!(lpAllocInfo->dwFlags & VMR9AllocFlag_TextureSurface)) {
         // test if the colorspace is acceptable
-        if (FAILED(hr = m_pD3DDev->StretchRect(m_pSurfaces[0], NULL, m_pVideoSurface[m_nCurSurface], NULL, D3DTEXF_NONE))) {
+        if (FAILED(hr = m_pD3DDev->StretchRect(m_pSurfaces[0], nullptr, m_pVideoSurface[m_nCurSurface], nullptr, D3DTEXF_NONE))) {
             DeleteSurfaces();
             return E_FAIL;
         }
     }
 
-    hr = m_pD3DDev->ColorFill(m_pVideoSurface[m_nCurSurface], NULL, 0);
+    hr = m_pD3DDev->ColorFill(m_pVideoSurface[m_nCurSurface], nullptr, 0);
 
     if (m_nVMR9Surfaces && m_nVMR9Surfaces != (int)*lpNumBuffers) {
         m_nVMR9Surfaces = *lpNumBuffers;
     }
-    *lpNumBuffers = min(nOriginal, *lpNumBuffers);
+    *lpNumBuffers = std::min(nOriginal, *lpNumBuffers);
     m_iVMR9Surface = 0;
 
     return hr;
@@ -330,6 +328,13 @@ STDMETHODIMP CVMR9AllocatorPresenter::StartPresenting(DWORD_PTR dwUserID)
     CAutoLock cAutoLock(this);
     CAutoLock cRenderLock(&m_RenderLock);
 
+    CComPtr<IBaseFilter> pVMR9;
+    CComPtr<IPin> pPin;
+    if (SUCCEEDED(m_pIVMRSurfAllocNotify->QueryInterface(IID_PPV_ARGS(&pVMR9))) &&
+            SUCCEEDED(pVMR9->FindPin(L"VMR Input0", &pPin))) {
+        pPin->ConnectionMediaType(&m_InputMediaType);
+    }
+
     return m_pD3DDev ? S_OK : E_FAIL;
 }
 
@@ -340,7 +345,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::StopPresenting(DWORD_PTR dwUserID)
 
 STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9PresentationInfo* lpPresInfo)
 {
-    SetThreadName((DWORD) - 1, "CVMR9AllocatorPresenter");
+    SetThreadName(DWORD(-1), "CVMR9AllocatorPresenter");
     CheckPointer(m_pIVMRSurfAllocNotify, E_UNEXPECTED);
 
     if (m_rtTimePerFrame == 0 || m_bNeedCheckSample) {
@@ -349,7 +354,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
         CComPtr<IPin> pPin;
         CMediaType mt;
 
-        if (SUCCEEDED(m_pIVMRSurfAllocNotify->QueryInterface(__uuidof(IBaseFilter), (void**)&pVMR9)) &&
+        if (SUCCEEDED(m_pIVMRSurfAllocNotify->QueryInterface(IID_PPV_ARGS(&pVMR9))) &&
                 SUCCEEDED(pVMR9->FindPin(L"VMR Input0", &pPin)) &&
                 SUCCEEDED(pPin->ConnectionMediaType(&mt))) {
             ExtractAvgTimePerFrame(&mt, m_rtTimePerFrame);
@@ -405,8 +410,6 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
         m_fps = 10000000.0 / m_rtTimePerFrame;
     }
 
-    HRESULT hr;
-
     if (!lpPresInfo || !lpPresInfo->lpSurf) {
         return E_POINTER;
     }
@@ -414,13 +417,16 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
     CAutoLock cAutoLock(this);
     CAutoLock cRenderLock(&m_RenderLock);
 
-    if (lpPresInfo->rtEnd > lpPresInfo->rtStart) {
-        if (m_pSubPicQueue) {
-            m_pSubPicQueue->SetFPS(m_fps);
+    if (lpPresInfo->rtEnd <= lpPresInfo->rtStart) {
+        TRACE(_T("VMR9: Invalid timestamps (%s - %s). The timestamp from the pin hook will be used anyway (%s).\n"),
+              ReftimeToString(lpPresInfo->rtStart), ReftimeToString(lpPresInfo->rtEnd), ReftimeToString(g_tSampleStart));
+    }
 
-            if (m_fUseInternalTimer && !g_bExternalSubtitleTime) {
-                __super::SetTime(g_tSegmentStart + g_tSampleStart);
-            }
+    if (m_pSubPicQueue) {
+        m_pSubPicQueue->SetFPS(m_fps);
+
+        if (m_fUseInternalTimer && !g_bExternalSubtitleTime) {
+            __super::SetTime(g_tSegmentStart + g_tSampleStart);
         }
     }
 
@@ -439,7 +445,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
 
     if (!m_bPendingResetDevice) {
         CComPtr<IDirect3DTexture9> pTexture;
-        lpPresInfo->lpSurf->GetContainer(IID_IDirect3DTexture9, (void**)&pTexture);
+        lpPresInfo->lpSurf->GetContainer(IID_PPV_ARGS(&pTexture));
 
         if (pTexture) {
             m_pVideoSurface[m_nCurSurface] = lpPresInfo->lpSurf;
@@ -447,11 +453,11 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
                 m_pVideoTexture[m_nCurSurface] = pTexture;
             }
         } else {
-            hr = m_pD3DDev->StretchRect(lpPresInfo->lpSurf, NULL, m_pVideoSurface[m_nCurSurface], NULL, D3DTEXF_NONE);
+            m_pD3DDev->StretchRect(lpPresInfo->lpSurf, nullptr, m_pVideoSurface[m_nCurSurface], nullptr, D3DTEXF_NONE);
         }
 
         // Tear test bars
-        if (GetRenderersData()->m_fTearingTest) {
+        if (GetRenderersData()->m_bTearingTest) {
             RECT rcTearing;
 
             rcTearing.left = m_nTearingPos;
@@ -533,7 +539,15 @@ STDMETHODIMP CVMR9AllocatorPresenter::SetAspectRatioMode(DWORD AspectRatioMode)
 
 STDMETHODIMP CVMR9AllocatorPresenter::SetVideoClippingWindow(HWND hwnd)
 {
-    return E_NOTIMPL;
+    if (m_hWnd != hwnd) {
+        CAutoLock cAutoLock(this);
+        CAutoLock cRenderLock(&m_RenderLock);
+
+        m_hWnd = hwnd;
+        m_bPendingResetDevice = true;
+        SendResetRequest();
+    }
+    return S_OK;
 }
 
 STDMETHODIMP CVMR9AllocatorPresenter::RepaintVideo(HWND hwnd, HDC hdc)

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "../../../DeCSS/VobFile.h"
 #include "VTSReader.h"
 #include "../../../DSUtil/DSUtil.h"
@@ -31,7 +32,7 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudOpPin[] = {
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut}
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut}
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
@@ -39,7 +40,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CVTSReader>, NULL, &sudFilter[0]}
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CVTSReader>, nullptr, &sudFilter[0]}
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -177,29 +178,29 @@ STDMETHODIMP_(BSTR) CVTSReader::GetTrackName(UINT aTrackIdx)
 
 STDMETHODIMP_(BSTR) CVTSReader::GetTrackCodecID(UINT aTrackIdx)
 {
-    return NULL; // Not implemented yet
+    return nullptr; // Not implemented yet
 }
 
 STDMETHODIMP_(BSTR) CVTSReader::GetTrackCodecName(UINT aTrackIdx)
 {
-    return NULL; // Not implemented yet
+    return nullptr; // Not implemented yet
 }
 
 STDMETHODIMP_(BSTR) CVTSReader::GetTrackCodecInfoURL(UINT aTrackIdx)
 {
-    return NULL; // Not implemented yet
+    return nullptr; // Not implemented yet
 }
 
 STDMETHODIMP_(BSTR) CVTSReader::GetTrackCodecDownloadURL(UINT aTrackIdx)
 {
-    return NULL; // Not implemented yet
+    return nullptr; // Not implemented yet
 }
 
 // CVTSStream
 
 CVTSStream::CVTSStream() : m_off(0)
 {
-    m_vob.Attach(DNew CVobFile());
+    m_vob.Attach(DEBUG_NEW CVobFile());
 }
 
 CVTSStream::~CVTSStream()
@@ -233,7 +234,7 @@ HRESULT CVTSStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWO
             break;
         }
 
-        int size = min(2048 - m_off, (int)min(len, 2048));
+        int size = std::min(2048 - m_off, (int)std::min(len, 2048ul));
 
         memcpy(ptr, &buff[m_off], size);
 
@@ -248,7 +249,7 @@ HRESULT CVTSStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWO
     }
 
     if (pdwBytesRead) {
-        *pdwBytesRead = ptr - pbBuffer;
+        *pdwBytesRead = DWORD(ptr - pbBuffer);
     }
 
     return S_OK;

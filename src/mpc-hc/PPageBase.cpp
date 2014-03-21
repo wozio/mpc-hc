@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include "MainFrm.h"
 #include "mplayerc.h"
 #include "PPageBase.h"
 #include "SettingsDefines.h"
@@ -43,7 +44,7 @@ void CPPageBase::DoDataExchange(CDataExchange* pDX)
 
 void CPPageBase::CreateToolTip()
 {
-    m_wndToolTip.Create(this);
+    m_wndToolTip.Create(this, TTS_NOPREFIX);
     m_wndToolTip.Activate(TRUE);
     m_wndToolTip.SetMaxTipWidth(300);
     m_wndToolTip.SetDelayTime(TTDT_AUTOPOP, 10000);
@@ -86,6 +87,15 @@ BOOL CPPageBase::OnSetActive()
 {
     AfxGetAppSettings().nLastUsedPage = (UINT)m_pPSP->pszTemplate;
     return __super::OnSetActive();
+}
+
+BOOL CPPageBase::OnApply()
+{
+    // There is no main frame when the option dialog is displayed stand-alone
+    if (CMainFrame* pMainFrame = AfxGetMainFrame()) {
+        pMainFrame->PostMessage(WM_SAVESETTINGS);
+    }
+    return __super::OnApply();
 }
 
 void CPPageBase::OnDestroy()

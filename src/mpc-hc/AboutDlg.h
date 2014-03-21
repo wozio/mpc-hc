@@ -1,5 +1,5 @@
 /*
- * (C) 2012 see Authors.txt
+ * (C) 2012-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,13 +28,20 @@ class CAboutDlg : public CDialog
     CStatic m_icon;
 
     CString m_appname;
-    CString m_strBuildNumber;
-    CString m_MPCCompiler;
-#ifndef MPCHC_LITE
-    CString m_FFmpegCompiler;
-#endif
     CString m_credits;
     CString m_AuthorsPath;
+    CString m_homepage;
+
+    CString m_strBuildNumber;
+    CString m_MPCCompiler;
+    CString m_LAVFilters;
+#ifndef MPCHC_LITE
+    CString m_LAVFiltersVersion;
+#endif
+    CString m_buildDate;
+
+    CString m_OSName;
+    CString m_OSVersion;
 
 public:
     CAboutDlg();
@@ -61,4 +68,6 @@ protected:
     // No message handlers
     //}}AFX_MSG
     DECLARE_MESSAGE_MAP()
+
+    afx_msg void OnCopyToClipboard();
 };

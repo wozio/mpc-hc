@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,7 +28,7 @@
 // CAuthDlg dialog
 
 IMPLEMENT_DYNAMIC(CAuthDlg, CDialog)
-CAuthDlg::CAuthDlg(CWnd* pParent /*=NULL*/)
+CAuthDlg::CAuthDlg(CWnd* pParent /*=nullptr*/)
     : CDialog(CAuthDlg::IDD, pParent)
     , m_username(_T(""))
     , m_password(_T(""))
@@ -93,21 +93,20 @@ BOOL CAuthDlg::OnInitDialog()
         }
     } else {
         CAutoVectorPtr<TCHAR> buff;
-        buff.Allocate(32767 / sizeof(TCHAR));
+        if (buff.Allocate(SHORT_MAX)) {
+            DWORD len = GetPrivateProfileSection(IDS_R_LOGINS, buff, SHORT_MAX, pApp->m_pszProfileName);
 
-        DWORD len = GetPrivateProfileSection(
-                        IDS_R_LOGINS, buff, 32767 / sizeof(TCHAR), pApp->m_pszProfileName);
-
-        TCHAR* p = buff;
-        while (*p && len > 0) {
-            CString str = p;
-            p += str.GetLength() + 1;
-            len -= str.GetLength() + 1;
-            CAtlList<CString> sl;
-            Explode(str, sl, '=', 2);
-            if (sl.GetCount() == 2) {
-                m_logins[sl.GetHead()] = DEncrypt(sl.GetTail());
-                m_usernamectrl.AddString(sl.GetHead());
+            TCHAR* p = buff;
+            while (*p && len > 0) {
+                CString str = p;
+                p += str.GetLength() + 1;
+                len -= str.GetLength() + 1;
+                CAtlList<CString> sl;
+                Explode(str, sl, '=', 2);
+                if (sl.GetCount() == 2) {
+                    m_logins[sl.GetHead()] = DEncrypt(sl.GetTail());
+                    m_usernamectrl.AddString(sl.GetHead());
+                }
             }
         }
     }

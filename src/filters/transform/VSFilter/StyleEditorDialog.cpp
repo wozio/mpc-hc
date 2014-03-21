@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -24,6 +24,7 @@
 
 #include "stdafx.h"
 #include <math.h>
+#include <algorithm>
 #include <afxdlgs.h>
 #include "StyleEditorDialog.h"
 
@@ -35,8 +36,10 @@ END_MESSAGE_MAP()
 
 // CStyleEditorDialog dialog
 
+#pragma warning(push)
+#pragma warning(disable: 4351) // new behavior: elements of array 'array' will be default initialized
 IMPLEMENT_DYNAMIC(CStyleEditorDialog, CDialog)
-CStyleEditorDialog::CStyleEditorDialog(CString title, STSStyle* pstss, CWnd* pParent /*=NULL*/)
+CStyleEditorDialog::CStyleEditorDialog(CString title, STSStyle* pstss, CWnd* pParent /*=nullptr*/)
     : CDialog(CStyleEditorDialog::IDD, pParent)
     , m_title(title)
     , m_stss(*pstss)
@@ -52,8 +55,10 @@ CStyleEditorDialog::CStyleEditorDialog(CString title, STSStyle* pstss, CWnd* pPa
     , m_screenalignment(0)
     , m_margin(0, 0, 0, 0)
     , m_linkalphasliders(FALSE)
+    , m_alpha()
 {
 }
+#pragma warning(pop)
 
 CStyleEditorDialog::~CStyleEditorDialog()
 {
@@ -108,7 +113,7 @@ void CStyleEditorDialog::UpdateControlData(bool fSave)
         UpdateData();
 
         if (m_iCharset >= 0) {
-            m_stss.charSet = m_charset.GetItemData(m_iCharset);
+            m_stss.charSet = (int)m_charset.GetItemData(m_iCharset);
         }
         m_stss.fontSpacing = m_spacing;
         m_stss.fontAngleZ = m_angle;
@@ -128,7 +133,7 @@ void CStyleEditorDialog::UpdateControlData(bool fSave)
     } else {
         m_font.SetWindowText(m_stss.fontName);
         m_iCharset = -1;
-        for (ptrdiff_t i = 0; i < CharSetLen; i++) {
+        for (int i = 0; i < CharSetLen; i++) {
             CString str;
             str.Format(_T("%s (%d)"), CharSetNames[i], CharSetList[i]);
             m_charset.AddString(str);
@@ -151,9 +156,9 @@ void CStyleEditorDialog::UpdateControlData(bool fSave)
         m_scaleyspin.SetRange32(-10000, 10000);
 
         m_borderstyle = m_stss.borderStyle;
-        m_borderwidth = (int)min(m_stss.outlineWidthX, m_stss.outlineWidthY);
+        m_borderwidth = (int)std::min(m_stss.outlineWidthX, m_stss.outlineWidthY);
         m_borderwidthspin.SetRange32(0, 10000);
-        m_shadowdepth = (int)min(m_stss.shadowDepthX, m_stss.shadowDepthY);
+        m_shadowdepth = (int)std::min(m_stss.shadowDepthX, m_stss.shadowDepthY);
         m_shadowdepthspin.SetRange32(0, 10000);
 
         m_screenalignment = m_stss.scrAlignment - 1;

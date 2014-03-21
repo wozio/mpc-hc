@@ -23,10 +23,10 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Last changed  : $Date$
+// Last changed  : $Date: 2014-01-07 18:25:40 +0000 (Tue, 07 Jan 2014) $
 // File revision : $Revision: 4 $
 //
-// $Id$
+// $Id: sse_optimized.cpp 184 2014-01-07 18:25:40Z oparviai $
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -71,7 +71,7 @@ using namespace soundtouch;
 #include <math.h>
 
 // Calculates cross correlation of two buffers
-double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2) const
+double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2, double &norm) const
 {
     int i;
     const float *pVec1;
@@ -93,7 +93,7 @@ double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2) const
 
     #define _MM_LOAD    _mm_load_ps
 
-    if (((ulong)pV1) & 15) return -1e50;    // skip unaligned locations
+    if (((ulongptr)pV1) & 15) return -1e50;    // skip unaligned locations
 
 #else
     // No cheating allowed, use unaligned load & take the resulting
@@ -141,11 +141,10 @@ double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2) const
 
     // return value = vSum[0] + vSum[1] + vSum[2] + vSum[3]
     float *pvNorm = (float*)&vNorm;
-    double norm = sqrt(pvNorm[0] + pvNorm[1] + pvNorm[2] + pvNorm[3]);
-    if (norm < 1e-9) norm = 1.0;    // to avoid div by zero
+    norm = (pvNorm[0] + pvNorm[1] + pvNorm[2] + pvNorm[3]);
 
     float *pvSum = (float*)&vSum;
-    return (double)(pvSum[0] + pvSum[1] + pvSum[2] + pvSum[3]) / norm;
+    return (double)(pvSum[0] + pvSum[1] + pvSum[2] + pvSum[3]) / sqrt(norm < 1e-9 ? 1.0 : norm);
 
     /* This is approximately corresponding routine in C-language yet without normalization:
     double corr, norm;
@@ -179,6 +178,16 @@ double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2) const
     }
     return corr / sqrt(norm);
     */
+}
+
+
+
+double TDStretchSSE::calcCrossCorrAccumulate(const float *pV1, const float *pV2, double &norm) const
+{
+    // call usual calcCrossCorr function because SSE does not show big benefit of 
+    // accumulating "norm" value, and also the "norm" rolling algorithm would get 
+    // complicated due to SSE-specific alignment-vs-nonexact correlation rules.
+    return calcCrossCorr(pV1, pV2, norm);
 }
 
 
@@ -218,7 +227,7 @@ void FIRFilterSSE::setCoefficients(const float *coeffs, uint newLength, uint uRe
     // Ensure that filter coeffs array is aligned to 16-byte boundary
     delete[] filterCoeffsUnalign;
     filterCoeffsUnalign = new float[2 * newLength + 4];
-    filterCoeffsAlign = (float *)(((unsigned long)filterCoeffsUnalign + 15) & (ulong)-16);
+    filterCoeffsAlign = (float *)SOUNDTOUCH_ALIGN_POINTER_16(filterCoeffsUnalign);
 
     fDivider = (float)resultDivider;
 
@@ -246,7 +255,7 @@ uint FIRFilterSSE::evaluateFilterStereo(float *dest, const float *source, uint n
     assert(dest != NULL);
     assert((length % 8) == 0);
     assert(filterCoeffsAlign != NULL);
-    assert(((ulong)filterCoeffsAlign) % 16 == 0);
+    assert(((ulongptr)filterCoeffsAlign) % 16 == 0);
 
     // filter is evaluated for two stereo samples with each iteration, thus use of 'j += 2'
     for (j = 0; j < count; j += 2)

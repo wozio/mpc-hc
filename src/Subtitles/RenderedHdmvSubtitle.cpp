@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2008-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -24,24 +24,26 @@
 #include "RenderedHdmvSubtitle.h"
 
 CRenderedHdmvSubtitle::CRenderedHdmvSubtitle(CCritSec* pLock, SUBTITLE_TYPE nType, const CString& name, LCID lcid)
-    : CSubPicProviderImpl(pLock), m_name(name), m_lcid(lcid)
+    : CSubPicProviderImpl(pLock)
+    , m_name(name)
+    , m_lcid(lcid)
 {
     switch (nType) {
         case ST_DVB:
-            m_pSub = DNew CDVBSub();
+            m_pSub = DEBUG_NEW CDVBSub();
             if (name.IsEmpty() || (name == _T("Unknown"))) {
                 m_name = "DVB Embedded Subtitle";
             }
             break;
         case ST_HDMV:
-            m_pSub = DNew CHdmvSub();
+            m_pSub = DEBUG_NEW CHdmvSub();
             if (name.IsEmpty() || (name == _T("Unknown"))) {
                 m_name = "HDMV Embedded Subtitle";
             }
             break;
         default:
             ASSERT(FALSE);
-            m_pSub = NULL;
+            m_pSub = nullptr;
     }
     m_rtStart = 0;
 }
@@ -54,7 +56,7 @@ CRenderedHdmvSubtitle::~CRenderedHdmvSubtitle()
 STDMETHODIMP CRenderedHdmvSubtitle::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 {
     CheckPointer(ppv, E_POINTER);
-    *ppv = NULL;
+    *ppv = nullptr;
 
     return
         QI(IPersist)
@@ -107,7 +109,41 @@ STDMETHODIMP CRenderedHdmvSubtitle::GetTextureSize(POSITION pos, SIZE& MaxTextur
     CAutoLock cAutoLock(&m_csCritSec);
     HRESULT hr = m_pSub->GetTextureSize(pos, MaxTextureSize, VideoSize, VideoTopLeft);
     return hr;
-};
+}
+
+STDMETHODIMP CRenderedHdmvSubtitle::GetRelativeTo(POSITION pos, RelativeTo& relativeTo)
+{
+    relativeTo = BEST_FIT;
+    return S_OK;
+}
+
+STDMETHODIMP CRenderedHdmvSubtitle::SetSourceTargetInfo(CString yuvMatrix, int targetBlackLevel, int targetWhiteLevel)
+{
+    int nPos = 0;
+    CString range = yuvMatrix.Tokenize(_T("."), nPos);
+    CString matrix = yuvMatrix.Mid(nPos);
+
+    int sourceBlackLevel = 16;
+    int sourceWhiteLevel = 235;
+    if (range == _T("PC")) {
+        sourceBlackLevel = 0;
+        sourceWhiteLevel = 255;
+    }
+
+    SOURCE_MATRIX sourceMatrix;
+    if (matrix == _T("709")) {
+        sourceMatrix = BT_709;
+    } else if (matrix == _T("240M")) {
+        sourceMatrix = BT_709;
+    } else if (matrix == _T("601")) {
+        sourceMatrix = BT_601;
+    } else {
+        sourceMatrix = NONE;
+    }
+
+    m_pSub->SetSourceTargetInfo(sourceBlackLevel, sourceWhiteLevel, targetBlackLevel, targetWhiteLevel, sourceMatrix);
+    return S_OK;
+}
 
 // IPersist
 
@@ -176,4 +212,10 @@ HRESULT CRenderedHdmvSubtitle::NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME 
     m_pSub->Reset();
     m_rtStart = tStart;
     return S_OK;
+}
+
+void CRenderedHdmvSubtitle::EndOfStream()
+{
+    CAutoLock cAutoLock(&m_csCritSec);
+    m_pSub->EndOfStream();
 }

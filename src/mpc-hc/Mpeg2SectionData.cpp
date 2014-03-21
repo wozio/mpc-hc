@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -24,20 +24,21 @@
 
 #include "GolombBuffer.h"
 #include "Mpeg2SectionData.h"
+#include "FreeviewEPGDecode.h"
+#include "resource.h"
 
 
-#define BeginEnumDescriptors(gb, nType, nLength)                   \
-{                                                                  \
-    BYTE DescBuffer[256];                                          \
-    int nLimit = ((int)gb.BitRead(12)) + gb.GetPos();              \
-    while (gb.GetPos() < nLimit)                                   \
-    {                                                              \
-        MPEG2_DESCRIPTOR nType = (MPEG2_DESCRIPTOR)gb.BitRead(8);  \
+#define BeginEnumDescriptors(gb, nType, nLength)                    \
+{                                                                   \
+    BYTE DescBuffer[256];                                           \
+    int nLimit = (int)gb.BitRead(12) + gb.GetPos();                 \
+    while (gb.GetPos() < nLimit) {                                  \
+        MPEG2_DESCRIPTOR nType = (MPEG2_DESCRIPTOR)gb.BitRead(8);   \
         WORD nLength = (WORD)gb.BitRead(8);
 
-#define SkipDescriptor(gb, nType, nLength)                         \
-    gb.ReadBuffer(DescBuffer, nLength);                            \
-    TRACE(_T("Skipped descriptor : 0x%02x\n"), nType);             \
+#define SkipDescriptor(gb, nType, nLength)                          \
+    gb.ReadBuffer(DescBuffer, nLength);                             \
+    TRACE(_T("Skipped descriptor : 0x%02x\n"), nType);              \
     UNREFERENCED_PARAMETER(nType);
 
 #define EndEnumDescriptors }}
@@ -47,16 +48,16 @@ CMpeg2DataParser::CMpeg2DataParser(IBaseFilter* pFilter)
 {
     m_pData = pFilter;
 
-    memset(&m_Filter, 0, sizeof(m_Filter));
+    ZeroMemory(&m_Filter, sizeof(m_Filter));
     m_Filter.bVersionNumber = 1;
     m_Filter.wFilterSize = MPEG2_FILTER_VERSION_1_SIZE;
     m_Filter.fSpecifySectionNumber = TRUE;
 }
 
-CString CMpeg2DataParser::ConvertString(BYTE* pBuffer, int nLength)
+CStringW CMpeg2DataParser::ConvertString(BYTE* pBuffer, size_t uLength)
 {
     static const UINT16 codepages[0x20] = {
-        28591,  // 00 - ISO 8859-1 Latin I
+        20269,  // 00 - Default ISO/IEC 6937
         28595,  // 01 - ISO 8859-5 Cyrillic
         28596,  // 02 - ISO 8859-6 Arabic
         28597,  // 03 - ISO 8859-7 Greek
@@ -111,14 +112,14 @@ CString CMpeg2DataParser::ConvertString(BYTE* pBuffer, int nLength)
         // 0x10 to 0xFF - reserved for future use
     };
 
-    UINT cp = CP_ACP;
-    int nDestSize;
-    CString strResult;
+    CStringW strResult;
+    if (uLength > 0) {
+        UINT cp = CP_ACP;
+        int nDestSize;
 
-    if (nLength > 0) {
         if (pBuffer[0] == 0x10) {
             pBuffer++;
-            nLength--;
+            uLength--;
             if (pBuffer[0] == 0x00) {
                 cp = codepages10[pBuffer[1]];
             } else { // if (pBuffer[0] > 0x00)
@@ -126,23 +127,78 @@ CString CMpeg2DataParser::ConvertString(BYTE* pBuffer, int nLength)
                 cp = codepages[0];
             }
             pBuffer += 2;
-            nLength -= 2;
+            uLength -= 2;
         } else if (pBuffer[0] < 0x20) {
             cp = codepages[pBuffer[0]];
             pBuffer++;
-            nLength--;
+            uLength--;
         } else { // No code page indication, use the default
             cp = codepages[0];
         }
-    }
 
-    nDestSize = MultiByteToWideChar(cp, MB_PRECOMPOSED, (LPCSTR)pBuffer, nLength, NULL, 0);
-    if (nDestSize < 0) {
-        return strResult;
-    }
+        // Work around a bug in MS MultiByteToWideChar with ISO/IEC 6937 and take care of the Euro symbol special case (step 1/2)...
+        CArray<size_t> euroSymbolPos;
+        if (cp == 20269) {
+            BYTE tmp;
+            for (size_t i = 0; i < uLength - 1; i++) {
+                if (pBuffer[i] >= 0xC1 && pBuffer[i] <= 0xCF && pBuffer[i] != 0xC9 && pBuffer[i] != 0xCC) {
+                    // Swap the current char with the next one
+                    tmp = pBuffer[i];
+                    pBuffer[i] = pBuffer[i + 1];
+                    pBuffer[++i] = tmp;
+                } else if (pBuffer[i] == 0xA4) { // € was added as 0xA4 in the DVB spec
+                    euroSymbolPos.Add(i);
+                }
+            }
+            // Handle last symbol if it's a €
+            if (pBuffer[uLength - 1] == 0xA4) {
+                euroSymbolPos.Add(uLength - 1);
+            }
+        }
 
-    MultiByteToWideChar(cp, MB_PRECOMPOSED, (LPCSTR)pBuffer, nLength, strResult.GetBuffer(nLength), nDestSize);
-    strResult.ReleaseBuffer();
+        nDestSize = MultiByteToWideChar(cp, MB_PRECOMPOSED, (LPCSTR)pBuffer, (int)uLength, nullptr, 0);
+        if (nDestSize > 0) {
+            LPWSTR strResultBuff = strResult.GetBuffer(nDestSize);
+            MultiByteToWideChar(cp, MB_PRECOMPOSED, (LPCSTR)pBuffer, (int)uLength, strResultBuff, nDestSize);
+
+            // Work around a bug in MS MultiByteToWideChar with ISO/IEC 6937 and take care of the Euro symbol special case (step 2/2)...
+            if (cp == 20269) {
+                for (size_t i = 0, len = (size_t)nDestSize; i < len; i++) {
+                    switch (strResultBuff[i]) {
+                        case 0x60: // grave accent
+                            strResultBuff[i] = 0x0300;
+                            break;
+                        case 0xb4: // acute accent
+                            strResultBuff[i] = 0x0301;
+                            break;
+                        case 0x5e: // circumflex accent
+                            strResultBuff[i] = 0x0302;
+                            break;
+                        case 0x7e: // tilde
+                            strResultBuff[i] = 0x0303;
+                            break;
+                        case 0xaf: // macron
+                            strResultBuff[i] = 0x0304;
+                            break;
+                        case 0xf8f8: // dot
+                            strResultBuff[i] = 0x0307;
+                            break;
+                    }
+                }
+
+                for (INT_PTR i = 0, len = euroSymbolPos.GetCount(); i < len; i++) {
+                    strResultBuff[euroSymbolPos[i]] = _T('€');
+                }
+            }
+
+            // Some strings seems to be null-terminated, we need to take that into account.
+            while (nDestSize > 0 && strResultBuff[nDestSize - 1] == L'\0') {
+                nDestSize--;
+            }
+
+            strResult.ReleaseBuffer(nDestSize);
+        }
+    }
 
     return strResult;
 }
@@ -162,6 +218,8 @@ DVB_STREAM_TYPE CMpeg2DataParser::ConvertToDVBType(PES_STREAM_TYPE nType)
             return DVB_AC3;
         case AUDIO_STREAM_AC3_PLUS:
             return DVB_EAC3;
+        case AUDIO_STREAM_AAC_LATM:
+            return DVB_LATM;
         case SUBTITLE_STREAM:
             return DVB_SUBTITLE;
     }
@@ -198,7 +256,7 @@ HRESULT CMpeg2DataParser::ParseSDT(ULONG ulFreq)
     WORD wONID;
     WORD wSectionLength;
 
-    CheckNoLog(m_pData->GetSection(PID_SDT, SI_SDT, &m_Filter, 5000, &pSectionList));
+    CheckNoLog(m_pData->GetSection(PID_SDT, SI_SDT, &m_Filter, 15000, &pSectionList));
     CheckNoLog(pSectionList->GetSectionData(0, &dwLength, &data));
 
     CGolombBuffer gb((BYTE*)data, dwLength);
@@ -233,7 +291,7 @@ HRESULT CMpeg2DataParser::ParseSDT(ULONG ulFreq)
                     gb.ReadBuffer(DescBuffer, nLength);         // service_name
                     DescBuffer[nLength] = 0;
                     Channel.SetName(ConvertString(DescBuffer, nLength));
-                    TRACE(_T("%15S %d\n"), Channel.GetName(), Channel.GetSID());
+                    TRACE(_T("%-20s %lu\n"), Channel.GetName(), Channel.GetSID());
                     break;
                 default:
                     SkipDescriptor(gb, nType, nLength);         // descriptor()
@@ -260,7 +318,7 @@ HRESULT CMpeg2DataParser::ParsePAT()
     WORD wTSID;
     WORD wSectionLength;
 
-    CheckNoLog(m_pData->GetSection(PID_PAT, SI_PAT, &m_Filter, 5000, &pSectionList));
+    CheckNoLog(m_pData->GetSection(PID_PAT, SI_PAT, &m_Filter, 15000, &pSectionList));
     CheckNoLog(pSectionList->GetSectionData(0, &dwLength, &data));
 
     CGolombBuffer gb((BYTE*)data, dwLength);
@@ -271,7 +329,7 @@ HRESULT CMpeg2DataParser::ParsePAT()
         WORD program_number = (WORD)gb.BitRead(16);         // program_number
         gb.BitRead(3);                                      // reserved
         if (program_number == 0) {
-            gb.BitRead(13);    // network_PID
+            gb.BitRead(13);                                 // network_PID
         } else {
             WORD program_map_PID = (WORD)gb.BitRead(13);    // program_map_PID
             if (Channels.Lookup(program_number)) {
@@ -293,7 +351,10 @@ HRESULT CMpeg2DataParser::ParsePMT(CDVBChannel& Channel)
     WORD wTSID;
     WORD wSectionLength;
 
-    CheckNoLog(m_pData->GetSection(Channel.GetPMT(), SI_PMT, &m_Filter, 5000, &pSectionList));
+    Channel.SetVideoFps(DVB_FPS_NONE);
+    Channel.SetVideoChroma(DVB_Chroma_NONE);
+
+    CheckNoLog(m_pData->GetSection((PID)Channel.GetPMT(), SI_PMT, &m_Filter, 15000, &pSectionList));
     CheckNoLog(pSectionList->GetSectionData(0, &dwLength, &data));
 
     CGolombBuffer gb((BYTE*)data, dwLength);
@@ -335,12 +396,34 @@ HRESULT CMpeg2DataParser::ParsePMT(CDVBChannel& Channel)
                     pes_stream_type = AUDIO_STREAM_AC3_PLUS;
                     SkipDescriptor(gb, nType, nLength);
                     break;
-                case DT_SUBTITLING: {
+                case DT_AAC_AUDIO:
+                    pes_stream_type = AUDIO_STREAM_AAC_LATM;
+                    SkipDescriptor(gb, nType, nLength);
+                    break;
+                case DT_SUBTITLING:
                     gb.ReadBuffer(DescBuffer, nLength);
                     strLanguage = ConvertString(DescBuffer, 3);
                     pes_stream_type = SUBTITLE_STREAM;
+                    break;
+                case DT_VIDEO_STREAM: {
+                    gb.BitRead(1);                      // multiple_frame_rate_flag
+                    Channel.SetVideoFps((DVB_FPS_TYPE) gb.BitRead(4));
+                    UINT MPEG_1_only_flag  = (UINT) gb.BitRead(1);
+                    gb.BitRead(1);                      // constrained_parameter_flag
+                    gb.BitRead(1);                      // still_picture_flag
+                    if (!MPEG_1_only_flag) {
+                        gb.BitRead(8);                  // profile_and_level_indicator
+                        Channel.SetVideoChroma((DVB_CHROMA_TYPE) gb.BitRead(2));
+                        gb.BitRead(1);                  // frame_rate_extension_flag
+                        gb.BitRead(5);                  // Reserved
+                    }
                 }
                 break;
+                case DT_TARGET_BACKGROUND_GRID:
+                    Channel.SetVideoWidth((ULONG) gb.BitRead(14));
+                    Channel.SetVideoHeight((ULONG) gb.BitRead(14));
+                    Channel.SetVideoAR((DVB_AspectRatio_TYPE) gb.BitRead(4));
+                    break;
                 default:
                     SkipDescriptor(gb, nType, nLength);
                     break;
@@ -351,16 +434,29 @@ HRESULT CMpeg2DataParser::ParsePMT(CDVBChannel& Channel)
             Channel.AddStreamInfo(wPID, dvb_stream_type, pes_stream_type, strLanguage);
         }
     }
+    if ((Channel.GetVideoType() == DVB_MPV) && (Channel.GetVideoPID())) {
+        if (Channel.GetVideoFps() == DVB_FPS_NONE) {
+            Channel.SetVideoFps(DVB_FPS_25_0);
+        }
+        if ((Channel.GetVideoWidth() == 0) && (Channel.GetVideoHeight() == 0)) {
+            Channel.SetVideoWidth(720);
+            Channel.SetVideoHeight(576);
+        }
+    } else if ((Channel.GetVideoType() == DVB_H264) && (Channel.GetVideoPID())) {
+        if (Channel.GetVideoFps() == DVB_FPS_NONE) {
+            Channel.SetVideoFps(DVB_FPS_25_0);
+        }
+    }
+
 
     return S_OK;
 }
 
-HRESULT CMpeg2DataParser::SetTime(CGolombBuffer& gb, PresentFollowing& NowNext)
+HRESULT CMpeg2DataParser::SetTime(CGolombBuffer& gb, EventDescriptor& NowNext)
 {
     char    descBuffer[10];
     time_t  tTime1, tTime2;
     tm      tmTime1, tmTime2;
-    long    nDuration;
     long    timezone;
     int     daylight;
 
@@ -369,7 +465,7 @@ HRESULT CMpeg2DataParser::SetTime(CGolombBuffer& gb, PresentFollowing& NowNext)
     localtime_s(&tmTime1, &tTime1);
     _tzset();
     _get_timezone(&timezone); // The difference in seconds between UTC and local time.
-    if (!_get_daylight(&daylight)) {
+    if (tmTime1.tm_isdst && !_get_daylight(&daylight)) {
         timezone -= daylight * 3600;
     }
 
@@ -380,31 +476,31 @@ HRESULT CMpeg2DataParser::SetTime(CGolombBuffer& gb, PresentFollowing& NowNext)
     tmTime1.tm_min  += (int)gb.BitRead(4);
     tmTime1.tm_sec   = (int)(gb.BitRead(4) * 10);
     tmTime1.tm_sec  += (int)gb.BitRead(4);
-    tTime1 = mktime(&tmTime1) - timezone;
+    NowNext.startTime = tTime1 = mktime(&tmTime1) - timezone;
     localtime_s(&tmTime2, &tTime1);
     tTime1 = mktime(&tmTime2);
     strftime(descBuffer, 6, "%H:%M", &tmTime2);
     descBuffer[6] = '\0';
-    NowNext.StartTime = descBuffer;
+    NowNext.strStartTime = descBuffer;
 
     // Duration:
-    nDuration = (long)(36000 * gb.BitRead(4));
-    nDuration += (long)(3600 * gb.BitRead(4));
-    nDuration += (long)(600 * gb.BitRead(4));
-    nDuration += (long)(60 * gb.BitRead(4));
-    nDuration += (long)(10 * gb.BitRead(4));
-    nDuration += (long)gb.BitRead(4);
+    NowNext.duration  = (time_t)(36000 * gb.BitRead(4));
+    NowNext.duration += (time_t)(3600 * gb.BitRead(4));
+    NowNext.duration += (time_t)(600 * gb.BitRead(4));
+    NowNext.duration += (time_t)(60 * gb.BitRead(4));
+    NowNext.duration += (time_t)(10 * gb.BitRead(4));
+    NowNext.duration += (time_t)gb.BitRead(4);
 
-    tTime2 = tTime1 + nDuration;
+    tTime2 = tTime1 + NowNext.duration;
     localtime_s(&tmTime2, &tTime2);
     strftime(descBuffer, 6, "%H:%M", &tmTime2);
     descBuffer[6] = '\0';
-    NowNext.Duration = descBuffer;
+    NowNext.strEndTime = descBuffer;
 
     return S_OK;
 }
 
-HRESULT CMpeg2DataParser::ParseEIT(ULONG ulSID, PresentFollowing& NowNext)
+HRESULT CMpeg2DataParser::ParseEIT(ULONG ulSID, EventDescriptor& NowNext)
 {
     HRESULT hr;
     CComPtr<ISectionList> pSectionList;
@@ -419,7 +515,7 @@ HRESULT CMpeg2DataParser::ParseEIT(ULONG ulSID, PresentFollowing& NowNext)
     CString text;
 
     do {
-        CheckNoLog(m_pData->GetSection(PID_EIT, SI_EIT_act, NULL, 5000, &pSectionList));
+        CheckNoLog(m_pData->GetSection(PID_EIT, SI_EIT_act, nullptr, 5000, &pSectionList));
 
         CheckNoLog(pSectionList->GetSectionData(0, &dwLength, &data));
         CGolombBuffer gb((BYTE*)data, dwLength);
@@ -450,51 +546,109 @@ HRESULT CMpeg2DataParser::ParseEIT(ULONG ulSID, PresentFollowing& NowNext)
         InfoEvent.RunninStatus = (WORD)gb.BitRead(3);
         InfoEvent.FreeCAMode   = (WORD)gb.BitRead(1);
 
-        NowNext.ExtendedDescriptorsItems.RemoveAll();
-        NowNext.ExtendedDescriptorsTexts.RemoveAll();
+        NowNext.extendedDescriptorsItemsDesc.RemoveAll();
+        NowNext.extendedDescriptorsItemsContent.RemoveAll();
+        NowNext.extendedDescriptorsTexts.RemoveAll();
+        NowNext.parentalRating = -1;
+        NowNext.content.Empty();
 
         if ((InfoEvent.ServiceId == ulSID) && (InfoEvent.CurrentNextIndicator == 1) && (InfoEvent.RunninStatus == 4)) {
             //  Descriptors:
             BeginEnumDescriptors(gb, nType, nLength) {
                 switch (nType) {
                     case DT_SHORT_EVENT:
-                        gb.BitRead(24); // ISO_639_language_code
+                        gb.BitRead(24);                         // ISO_639_language_code
 
-                        nLen = (UINT8)gb.BitRead(8); // event_name_length
+                        nLen = (UINT8)gb.BitRead(8);            // event_name_length
                         gb.ReadBuffer(DescBuffer, nLen);
-                        NowNext.cPresent = ConvertString(DescBuffer, nLen);
+                        if (IsFreeviewEPG(InfoEvent.OriginalNetworkID, DescBuffer, nLen)) {
+                            NowNext.eventName = DecodeFreeviewEPG(DescBuffer, nLen);
+                        } else {
+                            NowNext.eventName = ConvertString(DescBuffer, nLen);
+                        }
 
-                        nLen = (UINT8)gb.BitRead(8); // text_length
+                        nLen = (UINT8)gb.BitRead(8);            // text_length
                         gb.ReadBuffer(DescBuffer, nLen);
-                        NowNext.SummaryDesc = ConvertString(DescBuffer, nLen);
+                        if (IsFreeviewEPG(InfoEvent.OriginalNetworkID, DescBuffer, nLen)) {
+                            NowNext.eventDesc = DecodeFreeviewEPG(DescBuffer, nLen);
+                        } else {
+                            NowNext.eventDesc = ConvertString(DescBuffer, nLen);
+                        }
                         break;
                     case DT_EXTENDED_EVENT:
                         descriptorNumber = (UINT8)gb.BitRead(4); // descriptor_number
-                        gb.BitRead(4);  // last_descriptor_number
-                        gb.BitRead(24); // ISO_639_language_code
+                        gb.BitRead(4);                          // last_descriptor_number
+                        gb.BitRead(24);                         // ISO_639_language_code
 
-                        itemsLength = (UINT8)gb.BitRead(8); // length_of_items
+                        itemsLength = (UINT8)gb.BitRead(8);     // length_of_items
                         while (itemsLength > 0) {
-                            nLen = (UINT8)gb.BitRead(8);    // item_description_length
+                            nLen = (UINT8)gb.BitRead(8);        // item_description_length
                             gb.ReadBuffer(DescBuffer, nLen);
                             itemDesc = ConvertString(DescBuffer, nLen);
+                            NowNext.extendedDescriptorsItemsDesc.Add(itemDesc);
                             itemsLength -= nLen + 1;
 
-                            nLen = (UINT8)gb.BitRead(8);    // item_length
+                            nLen = (UINT8)gb.BitRead(8);        // item_length
                             gb.ReadBuffer(DescBuffer, nLen);
                             itemText = ConvertString(DescBuffer, nLen);
+                            NowNext.extendedDescriptorsItemsContent.Add(itemText);
                             itemsLength -= nLen + 1;
-
-                            NowNext.ExtendedDescriptorsItems.SetAt(itemDesc, itemText);
                         }
 
-                        nLen = (UINT8)gb.BitRead(8);    // text_length
-                        gb.ReadBuffer(DescBuffer, nLen);
-                        text = ConvertString(DescBuffer, nLen);
-                        if (descriptorNumber == 0) {    // new descriptor set
-                            NowNext.ExtendedDescriptorsTexts.AddTail(text);
-                        } else {
-                            NowNext.ExtendedDescriptorsTexts.GetTail().Append(text);
+                        nLen = (UINT8)gb.BitRead(8);            // text_length
+                        if (nLen > 0) {
+                            gb.ReadBuffer(DescBuffer, nLen);
+                            text = ConvertString(DescBuffer, nLen);
+                            if (descriptorNumber == 0) {        // new descriptor set
+                                NowNext.extendedDescriptorsTexts.AddTail(text.TrimLeft());
+                            } else {
+                                NowNext.extendedDescriptorsTexts.GetTail().Append(text);
+                            }
+                        }
+                        break;
+                    case DT_PARENTAL_RATING: {
+                        ASSERT(nLength % 4 == 0);
+                        int rating = -1;
+                        while (nLength >= 4) {
+                            gb.BitRead(24);                         // ISO 3166 country_code
+                            rating = (int)gb.BitRead(8);            // rating
+                            nLength -= 4;
+                        }
+                        if (rating >= 0 && rating <= 0x0f) {
+                            if (rating > 0) {                       // 0x00 undefined
+                                rating += 3;                        // 0x01 to 0x0F minimum age = rating + 3 years
+                            }
+                            NowNext.parentalRating = rating;
+                        }
+                    }
+                    break;
+                    case DT_CONTENT:
+                        ASSERT(nLength % 2 == 0);
+                        while (nLength >= 2) {
+                            BYTE content = (BYTE)gb.BitRead(4);     // content_nibble_level_1
+                            gb.BitRead(4);                          // content_nibble_level_2
+                            gb.BitRead(8);                          // user_byte
+                            if (1 <= content && content <= 10) {
+                                if (!NowNext.content.IsEmpty()) {
+                                    NowNext.content.Append(_T(", "));
+                                }
+
+                                static UINT contents[] = {
+                                    IDS_CONTENT_MOVIE_DRAMA,
+                                    IDS_CONTENT_NEWS_CURRENTAFFAIRS,
+                                    IDS_CONTENT_SHOW_GAMESHOW,
+                                    IDS_CONTENT_SPORTS,
+                                    IDS_CONTENT_CHILDREN_YOUTH_PROG,
+                                    IDS_CONTENT_MUSIC_BALLET_DANCE,
+                                    IDS_CONTENT_MUSIC_ART_CULTURE,
+                                    IDS_CONTENT_SOCIAL_POLITICAL_ECO,
+                                    IDS_CONTENT_LEISURE
+
+                                };
+
+                                NowNext.content.Append(ResStr(contents[content - 1]));
+                            }
+                            nLength -= 2;
                         }
                         break;
                     default:
@@ -510,11 +664,13 @@ HRESULT CMpeg2DataParser::ParseEIT(ULONG ulSID, PresentFollowing& NowNext)
              (m_Filter.SectionNumber <= 22));
 
     if (InfoEvent.ServiceId != ulSID) {
-        NowNext.StartTime = _T("");
-        NowNext.Duration = _T("");
-        NowNext.cPresent = _T(" Info not available.");
-        NowNext.SummaryDesc = _T("");
-        NowNext.cFollowing = _T("");
+        NowNext.startTime = 0;
+        NowNext.duration = 0;
+        NowNext.strStartTime.Empty();
+        NowNext.strEndTime.Empty();
+        NowNext.eventName.Empty();
+        NowNext.eventDesc.Empty();
+        return E_FAIL;
     }
 
     return S_OK;
@@ -530,7 +686,7 @@ HRESULT CMpeg2DataParser::ParseNIT()
     WORD wSectionLength;
     WORD transport_stream_loop_length;
 
-    CheckNoLog(m_pData->GetSection(PID_NIT, SI_NIT, &m_Filter, 5000, &pSectionList));
+    CheckNoLog(m_pData->GetSection(PID_NIT, SI_NIT, &m_Filter, 15000, &pSectionList));
     CheckNoLog(pSectionList->GetSectionData(0, &dwLength, &data));
 
     CGolombBuffer gb((BYTE*)data, dwLength);

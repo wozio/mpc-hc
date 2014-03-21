@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,14 +27,8 @@
 
 using namespace DSObjects;
 
-
-interface __declspec(uuid("D6EE8031-214E-4E9E-A3A7-458925F933AB"))
-IMadVRExclusiveModeInfo :
-public IUnknown {
-    STDMETHOD_(BOOL, IsExclusiveModeActive)() = 0;
-    STDMETHOD_(BOOL, IsMadVRSeekbarEnabled)() = 0;
-};
-
+#define ShaderStage_PreScale 0
+#define ShaderStage_PostScale 1
 
 //
 // CmadVRAllocatorPresenter
@@ -43,6 +37,7 @@ public IUnknown {
 CmadVRAllocatorPresenter::CmadVRAllocatorPresenter(HWND hWnd, HRESULT& hr, CString& _Error)
     : CSubPicAllocatorPresenterImpl(hWnd, hr, &_Error)
     , m_ScreenSize(0, 0)
+    , m_bIsFullscreen(false)
 {
     if (FAILED(hr)) {
         _Error += L"ISubPicAllocatorPresenterImpl failed\n";
@@ -56,13 +51,13 @@ CmadVRAllocatorPresenter::~CmadVRAllocatorPresenter()
 {
     if (m_pSRCB) {
         // nasty, but we have to let it know about our death somehow
-        ((CSubRenderCallback*)(ISubRenderCallback2*)m_pSRCB)->SetDXRAP(NULL);
+        ((CSubRenderCallback*)(ISubRenderCallback2*)m_pSRCB)->SetDXRAP(nullptr);
     }
 
     // the order is important here
-    m_pSubPicQueue = NULL;
-    m_pAllocator = NULL;
-    m_pDXR = NULL;
+    m_pSubPicQueue = nullptr;
+    m_pAllocator = nullptr;
+    m_pDXR = nullptr;
 }
 
 STDMETHODIMP CmadVRAllocatorPresenter::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -93,8 +88,8 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
 {
     if (!pD3DDev) {
         // release all resources
-        m_pSubPicQueue = NULL;
-        m_pAllocator = NULL;
+        m_pSubPicQueue = nullptr;
+        m_pAllocator = nullptr;
         return S_OK;
     }
 
@@ -136,17 +131,22 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
     if (m_pAllocator) {
         m_pAllocator->ChangeDevice(pD3DDev);
     } else {
-        m_pAllocator = DNew CDX9SubPicAllocator(pD3DDev, size, GetRenderersSettings().fSPCPow2Tex, true);
+        m_pAllocator = DEBUG_NEW CDX9SubPicAllocator(pD3DDev, size, GetRenderersSettings().fSPCPow2Tex, true);
         if (!m_pAllocator) {
             return E_FAIL;
         }
     }
 
     HRESULT hr = S_OK;
+    if (!m_pSubPicQueue) {
+        CAutoLock(this);
+        m_pSubPicQueue = GetRenderersSettings().nSPCSize > 0
+                         ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(GetRenderersSettings().nSPCSize, !GetRenderersSettings().fSPCAllowAnimationWhenBuffering, m_pAllocator, &hr)
+                         : (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(m_pAllocator, &hr);
+    } else {
+        m_pSubPicQueue->Invalidate();
+    }
 
-    m_pSubPicQueue = GetRenderersSettings().nSPCSize > 0
-                     ? (ISubPicQueue*)DNew CSubPicQueue(GetRenderersSettings().nSPCSize, !GetRenderersSettings().fSPCAllowAnimationWhenBuffering, m_pAllocator, &hr)
-                     : (ISubPicQueue*)DNew CSubPicQueueNoThread(m_pAllocator, &hr);
     if (!m_pSubPicQueue || FAILED(hr)) {
         return E_FAIL;
     }
@@ -162,13 +162,15 @@ HRESULT CmadVRAllocatorPresenter::Render(
     REFERENCE_TIME rtStart, REFERENCE_TIME rtStop, REFERENCE_TIME atpf,
     int left, int top, int right, int bottom, int width, int height)
 {
-    __super::SetPosition(CRect(0, 0, width, height), CRect(left, top, right, bottom)); // needed? should be already set by the player
+    CRect wndRect(0, 0, width, height);
+    CRect videoRect(left, top, right, bottom);
+    __super::SetPosition(wndRect, videoRect); // needed? should be already set by the player
     SetTime(rtStart);
     if (atpf > 0 && m_pSubPicQueue) {
-        m_fps = (double)(10000000.0 / atpf);
+        m_fps = 10000000.0 / atpf;
         m_pSubPicQueue->SetFPS(m_fps);
     }
-    AlphaBltSubPic(CSize(width, height));
+    AlphaBltSubPic(wndRect, videoRect);
     return S_OK;
 }
 
@@ -188,17 +190,17 @@ STDMETHODIMP CmadVRAllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
 
     CComQIPtr<ISubRender> pSR = m_pDXR;
     if (!pSR) {
-        m_pDXR = NULL;
+        m_pDXR = nullptr;
         return E_FAIL;
     }
 
-    m_pSRCB = DNew CSubRenderCallback(this);
+    m_pSRCB = DEBUG_NEW CSubRenderCallback(this);
     if (FAILED(pSR->SetCallback(m_pSRCB))) {
-        m_pDXR = NULL;
+        m_pDXR = nullptr;
         return E_FAIL;
     }
 
-    (*ppRenderer = this)->AddRef();
+    (*ppRenderer = (IUnknown*)(INonDelegatingUnknown*)(this))->AddRef();
 
     MONITORINFO mi;
     mi.cbSize = sizeof(MONITORINFO);
@@ -254,5 +256,26 @@ STDMETHODIMP CmadVRAllocatorPresenter::GetDIB(BYTE* lpDib, DWORD* size)
 
 STDMETHODIMP CmadVRAllocatorPresenter::SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget)
 {
-    return E_NOTIMPL; // TODO
+    HRESULT hr = E_NOTIMPL;
+    if (CComQIPtr<IMadVRExternalPixelShaders> pEPS = m_pDXR) {
+        if (!pSrcData && !pTarget) {
+            hr = pEPS->ClearPixelShaders(false);
+        } else {
+            hr = pEPS->AddPixelShader(pSrcData, pTarget, ShaderStage_PreScale, nullptr);
+        }
+    }
+    return hr;
+}
+
+STDMETHODIMP CmadVRAllocatorPresenter::SetPixelShader2(LPCSTR pSrcData, LPCSTR pTarget, bool bScreenSpace)
+{
+    HRESULT hr = E_NOTIMPL;
+    if (CComQIPtr<IMadVRExternalPixelShaders> pEPS = m_pDXR) {
+        if (!pSrcData && !pTarget) {
+            hr = pEPS->ClearPixelShaders(bScreenSpace);
+        } else {
+            hr = pEPS->AddPixelShader(pSrcData, pTarget, bScreenSpace ? ShaderStage_PostScale : ShaderStage_PreScale, nullptr);
+        }
+    }
+    return hr;
 }

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -34,9 +34,9 @@ void DSObjects::ExtractRects(REGION* pRegion)
 {
     LPRGNDATA lpRgnData;
 
-    DWORD sizeNeeed = GetRegionData((HRGN)pRegion->pOSRegion, 0, NULL);
+    DWORD sizeNeeed = GetRegionData((HRGN)pRegion->pOSRegion, 0, nullptr);
 
-    lpRgnData = (LPRGNDATA)DNew char[sizeNeeed];
+    lpRgnData = (LPRGNDATA)DEBUG_NEW char[sizeNeeed];
     DWORD returnValue = GetRegionData((HRGN)pRegion->pOSRegion, sizeNeeed, lpRgnData);
     UNREFERENCED_PARAMETER(returnValue);
 
@@ -49,7 +49,7 @@ void DSObjects::ExtractRects(REGION* pRegion)
     pRegion->extents.bottom = lpRgnData->rdh.rcBound.bottom;
 
     if (lpRgnData->rdh.nCount) {
-        pRegion->rects = DNew PNxRect[lpRgnData->rdh.nCount];
+        pRegion->rects = DEBUG_NEW PNxRect[lpRgnData->rdh.nCount];
 
         // now extract the information.
 
@@ -67,7 +67,7 @@ void DSObjects::ExtractRects(REGION* pRegion)
 
 REGION* DSObjects::RMACreateRectRegion(int left, int top, int right, int bottom)
 {
-    REGION* retVal = DNew REGION;
+    REGION* retVal = DEBUG_NEW REGION;
     retVal->pOSRegion = (void*)CreateRectRgn(left, top, right, bottom);
     ExtractRects(retVal);
     return retVal;
@@ -99,8 +99,10 @@ BOOL DSObjects::RMAEqualRegion(REGION* reg1, REGION* reg2)
 
 void DSObjects::RMADestroyRegion(REGION* reg)
 {
-    if (reg) DeleteObject((HRGN)reg->pOSRegion),
-           PN_VECTOR_DELETE(reg->rects);
+    if (reg) {
+        DeleteObject((HRGN)reg->pOSRegion);
+        PN_VECTOR_DELETE(reg->rects);
+    }
     PN_DELETE(reg);
 }
 
@@ -122,13 +124,13 @@ CRealMediaWindowlessSite::CRealMediaWindowlessSite(HRESULT& hr, IUnknown* pConte
     , m_fInRedraw(false)
     , m_fIsVisible(true)
     , m_lZOrder(0)
-    , m_pRegion(NULL)
-    , m_pRegionWithoutChildren(NULL)
+    , m_pRegion(nullptr)
+    , m_pRegionWithoutChildren(nullptr)
 {
-    m_size.cx = m_size.cy = 0;
-    m_position.x = m_position.y = 0;
-
-    memset(&m_lastBitmapInfo, 0, sizeof(m_lastBitmapInfo));
+    ZeroMemory(&m_size, sizeof(m_size));
+    ZeroMemory(&m_position, sizeof(m_position));
+    ZeroMemory(&m_bitmapInfo, sizeof(m_bitmapInfo));
+    ZeroMemory(&m_lastBitmapInfo, sizeof(m_lastBitmapInfo));
 
     hr = S_OK;
 
@@ -205,7 +207,7 @@ void CRealMediaWindowlessSite::InternalRecomputeRegion()
 
 void CRealMediaWindowlessSite::ComputeRegion()
 {
-    REGION* pTempRegion = NULL;
+    REGION* pTempRegion = nullptr;
 
     if (m_pRegion) {
         pTempRegion = RMACreateRegion();
@@ -265,7 +267,7 @@ void CRealMediaWindowlessSite::ComputeRegion()
 void CRealMediaWindowlessSite::SubtractSite(REGION* pRegion)
 {
     PNxPoint topLeft;
-    memset(&topLeft, 0, sizeof(PNxPoint));
+    ZeroMemory(&topLeft, sizeof(PNxPoint));
     GetTopLeft(&topLeft);
 
     REGION* pTempRegion = RMACreateRectRegion(topLeft.x, topLeft.y, topLeft.x + m_size.cx, topLeft.y + m_size.cy);
@@ -274,7 +276,7 @@ void CRealMediaWindowlessSite::SubtractSite(REGION* pRegion)
     RMADestroyRegion(pTempRegion);
 }
 
-void CRealMediaWindowlessSite::UpdateZOrder(CRealMediaWindowlessSite* pUpdatedChildSite, INT32 lOldZOrder, INT32 lNewZOrder)
+void CRealMediaWindowlessSite::UpdateZOrder(const CRealMediaWindowlessSite* pUpdatedChildSite, INT32 lOldZOrder, INT32 lNewZOrder)
 {
     POSITION pos = m_pChildren.GetHeadPosition();
     while (pos) {
@@ -313,7 +315,7 @@ STDMETHODIMP CRealMediaWindowlessSite::EventOccurred(PNxEvent* /*IN*/ pEvent)
 
 STDMETHODIMP_(PNxWindow*) CRealMediaWindowlessSite::GetParentWindow()
 {
-    return NULL;
+    return nullptr;
 }
 
 // IRMASite
@@ -348,7 +350,7 @@ STDMETHODIMP CRealMediaWindowlessSite::DetachUser()
     hr = m_pUser->DetachSite();
 
     if (PNR_OK == hr) {
-        m_pUser = NULL;
+        m_pUser = nullptr;
     }
 
     return hr;
@@ -372,7 +374,7 @@ STDMETHODIMP CRealMediaWindowlessSite::CreateChild(REF(IRMASite*) /*OUT*/ pChild
     HRESULT hr = PNR_OK;
 
     CComPtr<IRMASite> pSite =
-        (IRMASite*)DNew CRealMediaWindowlessSite(hr, m_pContext, this);
+        (IRMASite*)DEBUG_NEW CRealMediaWindowlessSite(hr, m_pContext, this);
 
     if (FAILED(hr) || !pSite) {
         return E_FAIL;
@@ -415,7 +417,7 @@ STDMETHODIMP CRealMediaWindowlessSite::DetachWatcher()
     }
 
     m_pWatcher->DetachSite();
-    m_pWatcher = NULL;
+    m_pWatcher = nullptr;
 
     return PNR_OK;
 }
@@ -494,7 +496,7 @@ STDMETHODIMP CRealMediaWindowlessSite::ForceRedraw()
     if (!m_fInRedraw && m_fDamaged && m_fIsVisible) {
         m_fInRedraw = TRUE;
 
-        PNxEvent event = {RMA_SURFACE_UPDATE, NULL, (IRMAVideoSurface*)this, NULL, 0, 0};
+        PNxEvent event = {RMA_SURFACE_UPDATE, nullptr, (IRMAVideoSurface*)this, nullptr, 0, 0};
         m_pUser->HandleEvent(&event);
 
         m_fInRedraw = FALSE;
@@ -597,12 +599,12 @@ STDMETHODIMP CRealMediaWindowlessSite::SetCursor(PNxCursor cursor, REF(PNxCursor
 
 // private
 
-void CRealMediaWindowlessSite::IntersectRect(PNxRect* pRect, PNxRect* pBox, PNxRect* pRetVal)
+void CRealMediaWindowlessSite::IntersectRect(const PNxRect* pRect, const PNxRect* pBox, PNxRect* pRetVal)
 {
-    pRetVal->left   = max(pRect->left, pBox->left);
-    pRetVal->top    = max(pRect->top, pBox->top);
-    pRetVal->right  = min(pRect->right, pBox->right);
-    pRetVal->bottom = min(pRect->bottom, pBox->bottom);
+    pRetVal->left   = std::max(pRect->left, pBox->left);
+    pRetVal->top    = std::max(pRect->top, pBox->top);
+    pRetVal->right  = std::min(pRect->right, pBox->right);
+    pRetVal->bottom = std::min(pRect->bottom, pBox->bottom);
 }
 
 // protected
@@ -672,7 +674,7 @@ STDMETHODIMP CRealMediaWindowlessSite::OptimizedBlt(UCHAR* /*IN*/ pImageBits, RE
     }
 
     PNxPoint origin;
-    memset(&origin, 0, sizeof(PNxPoint));
+    ZeroMemory(&origin, sizeof(PNxPoint));
     GetTopLeft(&origin);
     PNxRect adjustedDestRect;
     adjustedDestRect.left   = rDestRect.left + origin.x;
@@ -706,13 +708,13 @@ STDMETHODIMP CRealMediaWindowlessSite::OptimizedBlt(UCHAR* /*IN*/ pImageBits, RE
 
 STDMETHODIMP CRealMediaWindowlessSite::EndOptimizedBlt()
 {
-    memset(&m_bitmapInfo, 0, sizeof(m_bitmapInfo));
+    ZeroMemory(&m_bitmapInfo, sizeof(m_bitmapInfo));
     return PNR_OK;
 }
 
 STDMETHODIMP CRealMediaWindowlessSite::GetOptimizedFormat(REF(RMA_COMPRESSION_TYPE) /*OUT*/ ulType)
 {
-    ulType =  m_bitmapInfo.biCompression;
+    ulType = m_bitmapInfo.biCompression;
     return PNR_OK;
 }
 

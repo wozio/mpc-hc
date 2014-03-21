@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -47,13 +47,13 @@ CDXRAllocatorPresenter::~CDXRAllocatorPresenter()
 {
     if (m_pSRCB) {
         // nasty, but we have to let it know about our death somehow
-        ((CSubRenderCallback*)(ISubRenderCallback*)m_pSRCB)->SetDXRAP(NULL);
+        ((CSubRenderCallback*)(ISubRenderCallback*)m_pSRCB)->SetDXRAP(nullptr);
     }
 
     // the order is important here
-    m_pSubPicQueue = NULL;
-    m_pAllocator = NULL;
-    m_pDXR = NULL;
+    m_pSubPicQueue = nullptr;
+    m_pAllocator = nullptr;
+    m_pDXR = nullptr;
 }
 
 STDMETHODIMP CDXRAllocatorPresenter::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -122,17 +122,22 @@ HRESULT CDXRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
     if (m_pAllocator) {
         m_pAllocator->ChangeDevice(pD3DDev);
     } else {
-        m_pAllocator = DNew CDX9SubPicAllocator(pD3DDev, size, GetRenderersSettings().fSPCPow2Tex, true);
+        m_pAllocator = DEBUG_NEW CDX9SubPicAllocator(pD3DDev, size, GetRenderersSettings().fSPCPow2Tex, true);
         if (!m_pAllocator) {
             return E_FAIL;
         }
     }
 
     HRESULT hr = S_OK;
+    if (!m_pSubPicQueue) {
+        CAutoLock(this);
+        m_pSubPicQueue = GetRenderersSettings().nSPCSize > 0
+                         ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(GetRenderersSettings().nSPCSize, !GetRenderersSettings().fSPCAllowAnimationWhenBuffering, m_pAllocator, &hr)
+                         : (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(m_pAllocator, &hr);
+    } else {
+        m_pSubPicQueue->Invalidate();
+    }
 
-    m_pSubPicQueue = GetRenderersSettings().nSPCSize > 0
-                     ? (ISubPicQueue*)DNew CSubPicQueue(GetRenderersSettings().nSPCSize, !GetRenderersSettings().fSPCAllowAnimationWhenBuffering, m_pAllocator, &hr)
-                     : (ISubPicQueue*)DNew CSubPicQueueNoThread(m_pAllocator, &hr);
     if (!m_pSubPicQueue || FAILED(hr)) {
         return E_FAIL;
     }
@@ -148,12 +153,14 @@ HRESULT CDXRAllocatorPresenter::Render(
     REFERENCE_TIME rtStart, REFERENCE_TIME rtStop, REFERENCE_TIME atpf,
     int left, int top, int right, int bottom, int width, int height)
 {
-    __super::SetPosition(CRect(0, 0, width, height), CRect(left, top, right, bottom)); // needed? should be already set by the player
+    CRect wndRect(0, 0, width, height);
+    CRect videoRect(left, top, right, bottom);
+    __super::SetPosition(wndRect, videoRect); // needed? should be already set by the player
     SetTime(rtStart);
     if (atpf > 0 && m_pSubPicQueue) {
         m_pSubPicQueue->SetFPS(10000000.0 / atpf);
     }
-    AlphaBltSubPic(CSize(width, height));
+    AlphaBltSubPic(wndRect, videoRect);
     return S_OK;
 }
 
@@ -173,17 +180,17 @@ STDMETHODIMP CDXRAllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
 
     CComQIPtr<ISubRender> pSR = m_pDXR;
     if (!pSR) {
-        m_pDXR = NULL;
+        m_pDXR = nullptr;
         return E_FAIL;
     }
 
-    m_pSRCB = DNew CSubRenderCallback(this);
+    m_pSRCB = DEBUG_NEW CSubRenderCallback(this);
     if (FAILED(pSR->SetCallback(m_pSRCB))) {
-        m_pDXR = NULL;
+        m_pDXR = nullptr;
         return E_FAIL;
     }
 
-    (*ppRenderer = this)->AddRef();
+    (*ppRenderer = (IUnknown*)(INonDelegatingUnknown*)(this))->AddRef();
 
     MONITORINFO mi;
     mi.cbSize = sizeof(MONITORINFO);

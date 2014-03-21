@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,7 +21,7 @@
 
 #pragma once
 
-// CCmdUIDialog dialog
+// CCmdUI dialog
 
 #include <afxdlgs.h>
 
@@ -31,8 +31,8 @@ class CCmdUIDialog : public CDialog
 
 public:
     CCmdUIDialog();
-    CCmdUIDialog(UINT nIDTemplate, CWnd* pParent = NULL);
-    CCmdUIDialog(LPCTSTR lpszTemplateName, CWnd* pParent = NULL);
+    CCmdUIDialog(UINT nIDTemplate, CWnd* pParent = nullptr);
+    CCmdUIDialog(LPCTSTR lpszTemplateName, CWnd* pParent = nullptr);
     virtual ~CCmdUIDialog();
 
 protected:

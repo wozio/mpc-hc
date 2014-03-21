@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -59,7 +59,7 @@ STDMETHODIMP CDX7SubPic::GetDesc(SubPicDesc& spd)
     spd.h = m_size.cy;
     spd.bpp = (WORD)ddsd.ddpfPixelFormat.dwRGBBitCount;
     spd.pitch = ddsd.lPitch;
-    spd.bits = ddsd.lpSurface; // should be NULL
+    spd.bits = (BYTE*)ddsd.lpSurface; // should be NULL
     spd.vidrect = m_vidrect;
 
     return S_OK;
@@ -87,7 +87,7 @@ STDMETHODIMP CDX7SubPic::ClearDirtyRect(DWORD color)
     DDBLTFX fx;
     INITDDSTRUCT(fx);
     fx.dwFillColor = color;
-    m_pSurface->Blt(&m_rcDirty, NULL, NULL, DDBLT_WAIT | DDBLT_COLORFILL, &fx);
+    m_pSurface->Blt(&m_rcDirty, nullptr, nullptr, DDBLT_WAIT | DDBLT_COLORFILL, &fx);
 
     m_rcDirty.SetRectEmpty();
 
@@ -98,7 +98,7 @@ STDMETHODIMP CDX7SubPic::Lock(SubPicDesc& spd)
 {
     DDSURFACEDESC2 ddsd;
     INITDDSTRUCT(ddsd);
-    if (FAILED(m_pSurface->Lock(NULL, &ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT, NULL))) {
+    if (FAILED(m_pSurface->Lock(nullptr, &ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT, nullptr))) {
         return E_FAIL;
     }
 
@@ -107,7 +107,7 @@ STDMETHODIMP CDX7SubPic::Lock(SubPicDesc& spd)
     spd.h = m_size.cy;
     spd.bpp = (WORD)ddsd.ddpfPixelFormat.dwRGBBitCount;
     spd.pitch = ddsd.lPitch;
-    spd.bits = ddsd.lpSurface;
+    spd.bits = (BYTE*)ddsd.lpSurface;
     spd.vidrect = m_vidrect;
 
     return S_OK;
@@ -115,7 +115,7 @@ STDMETHODIMP CDX7SubPic::Lock(SubPicDesc& spd)
 
 STDMETHODIMP CDX7SubPic::Unlock(RECT* pDirtyRect)
 {
-    m_pSurface->Unlock(NULL);
+    m_pSurface->Unlock(nullptr);
 
     if (pDirtyRect) {
         m_rcDirty = *pDirtyRect;
@@ -130,7 +130,7 @@ STDMETHODIMP CDX7SubPic::Unlock(RECT* pDirtyRect)
 
 STDMETHODIMP CDX7SubPic::AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget)
 {
-    ASSERT(pTarget == NULL);
+    ASSERT(pTarget == nullptr);
 
     if (!m_pD3DDev || !m_pSurface || !pSrc || !pDst) {
         return E_POINTER;
@@ -140,81 +140,83 @@ STDMETHODIMP CDX7SubPic::AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget)
 
     HRESULT hr;
 
-    do {
-        DDSURFACEDESC2 ddsd;
-        INITDDSTRUCT(ddsd);
-        if (FAILED(hr = m_pSurface->GetSurfaceDesc(&ddsd))) {
-            break;
-        }
+    DDSURFACEDESC2 ddsd;
+    INITDDSTRUCT(ddsd);
+    if (FAILED(hr = m_pSurface->GetSurfaceDesc(&ddsd))) {
+        return E_FAIL;
+    }
 
-        float w = (float)ddsd.dwWidth;
-        float h = (float)ddsd.dwHeight;
+    float w = (float)ddsd.dwWidth;
+    float h = (float)ddsd.dwHeight;
 
-        struct {
-            float x, y, z, rhw;
-            float tu, tv;
-        }
-        pVertices[] = {
-            {(float)dst.left, (float)dst.top, 0.5f, 2.0f, (float)src.left / w, (float)src.top / h},
-            {(float)dst.right, (float)dst.top, 0.5f, 2.0f, (float)src.right / w, (float)src.top / h},
-            {(float)dst.left, (float)dst.bottom, 0.5f, 2.0f, (float)src.left / w, (float)src.bottom / h},
-            {(float)dst.right, (float)dst.bottom, 0.5f, 2.0f, (float)src.right / w, (float)src.bottom / h},
-        };
-        /*
-        for (ptrdiff_t i = 0; i < _countof(pVertices); i++)
-        {
-            pVertices[i].x -= 0.5;
-            pVertices[i].y -= 0.5;
-        }
-        */
-        hr = m_pD3DDev->SetTexture(0, m_pSurface);
+    // Be careful with the code that follows. Some compilers (e.g. Visual Studio 2012) used to miscompile
+    // it in some cases (namely x64 with optimizations /O2 /Ot). This bug led pVertices not to be correctly
+    // initialized and thus the subtitles weren't shown.
+    struct {
+        float x, y, z, rhw;
+        float tu, tv;
+    } pVertices[] = {
+        {(float)dst.left, (float)dst.top, 0.5f, 2.0f, (float)src.left / w, (float)src.top / h},
+        {(float)dst.right, (float)dst.top, 0.5f, 2.0f, (float)src.right / w, (float)src.top / h},
+        {(float)dst.left, (float)dst.bottom, 0.5f, 2.0f, (float)src.left / w, (float)src.bottom / h},
+        {(float)dst.right, (float)dst.bottom, 0.5f, 2.0f, (float)src.right / w, (float)src.bottom / h},
+    };
 
-        m_pD3DDev->SetRenderState(D3DRENDERSTATE_CULLMODE, D3DCULL_NONE);
-        m_pD3DDev->SetRenderState(D3DRENDERSTATE_LIGHTING, FALSE);
-        m_pD3DDev->SetRenderState(D3DRENDERSTATE_BLENDENABLE, TRUE);
-        m_pD3DDev->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ONE); // pre-multiplied src and ...
-        m_pD3DDev->SetRenderState(D3DRENDERSTATE_DESTBLEND, D3DBLEND_SRCALPHA); // ... inverse alpha channel for dst
+    for (size_t i = 0; i < _countof(pVertices); i++) {
+        pVertices[i].x -= 0.5f;
+        pVertices[i].y -= 0.5f;
+    }
 
-        m_pD3DDev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-        m_pD3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-        m_pD3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+    hr = m_pD3DDev->SetTexture(0, m_pSurface);
 
+    m_pD3DDev->SetRenderState(D3DRENDERSTATE_CULLMODE, D3DCULL_NONE);
+    m_pD3DDev->SetRenderState(D3DRENDERSTATE_LIGHTING, FALSE);
+    m_pD3DDev->SetRenderState(D3DRENDERSTATE_BLENDENABLE, TRUE);
+    m_pD3DDev->SetRenderState(D3DRENDERSTATE_SRCBLEND, D3DBLEND_ONE); // pre-multiplied src and ...
+    m_pD3DDev->SetRenderState(D3DRENDERSTATE_DESTBLEND, m_invAlpha ? D3DBLEND_INVSRCALPHA : D3DBLEND_SRCALPHA); // ... inverse alpha channel for dst
+
+    m_pD3DDev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+    m_pD3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    m_pD3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+
+    if (src == dst) {
+        m_pD3DDev->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTFG_POINT);
+        m_pD3DDev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFG_POINT);
+    } else {
         m_pD3DDev->SetTextureStageState(0, D3DTSS_MAGFILTER, D3DTFG_LINEAR);
-        m_pD3DDev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFN_LINEAR);
-        m_pD3DDev->SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTFP_LINEAR);
+        m_pD3DDev->SetTextureStageState(0, D3DTSS_MINFILTER, D3DTFG_LINEAR);
+    }
+    m_pD3DDev->SetTextureStageState(0, D3DTSS_MIPFILTER, D3DTFP_NONE);
 
-        m_pD3DDev->SetTextureStageState(0, D3DTSS_ADDRESS, D3DTADDRESS_CLAMP);
+    m_pD3DDev->SetTextureStageState(0, D3DTSS_ADDRESS, D3DTADDRESS_CLAMP);
 
-        /*//
+    /*//
 
-        D3DDEVICEDESC7 d3ddevdesc;
-        m_pD3DDev->GetCaps(&d3ddevdesc);
-        if (d3ddevdesc.dpcTriCaps.dwAlphaCmpCaps & D3DPCMPCAPS_LESS)
-        {
-            m_pD3DDev->SetRenderState(D3DRENDERSTATE_ALPHAREF, (DWORD)0x000000FE);
-            m_pD3DDev->SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, TRUE);
-            m_pD3DDev->SetRenderState(D3DRENDERSTATE_ALPHAFUNC, D3DPCMPCAPS_LESS);
-        }
+    D3DDEVICEDESC7 d3ddevdesc;
+    m_pD3DDev->GetCaps(&d3ddevdesc);
+    if (d3ddevdesc.dpcTriCaps.dwAlphaCmpCaps & D3DPCMPCAPS_LESS)
+    {
+        m_pD3DDev->SetRenderState(D3DRENDERSTATE_ALPHAREF, (DWORD)0x000000FE);
+        m_pD3DDev->SetRenderState(D3DRENDERSTATE_ALPHATESTENABLE, TRUE);
+        m_pD3DDev->SetRenderState(D3DRENDERSTATE_ALPHAFUNC, D3DPCMPCAPS_LESS);
+    }
 
-        *///
+    *///
 
-        if (FAILED(hr = m_pD3DDev->BeginScene())) {
-            break;
-        }
+    if (FAILED(hr = m_pD3DDev->BeginScene())) {
+        return E_FAIL;
+    }
 
-        hr = m_pD3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,
-                                      D3DFVF_XYZRHW | D3DFVF_TEX1,
-                                      pVertices, 4, D3DDP_WAIT);
-        m_pD3DDev->EndScene();
+    hr = m_pD3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,
+                                  D3DFVF_XYZRHW | D3DFVF_TEX1,
+                                  pVertices, 4, D3DDP_WAIT);
+    m_pD3DDev->EndScene();
 
-        //
+    //
 
-        m_pD3DDev->SetTexture(0, NULL);
+    m_pD3DDev->SetTexture(0, nullptr);
 
-        return S_OK;
-    } while (0);
-
-    return E_FAIL;
+    return S_OK;
 }
 
 //
@@ -293,11 +295,11 @@ bool CDX7SubPicAllocator::Alloc(bool fStatic, ISubPic** ppSubPic)
     }
 
     CComPtr<IDirectDrawSurface7> pSurface;
-    if (FAILED(pDD->CreateSurface(&ddsd, &pSurface, NULL))) {
+    if (FAILED(pDD->CreateSurface(&ddsd, &pSurface, nullptr))) {
         return false;
     }
 
-    *ppSubPic = DNew CDX7SubPic(m_pD3DDev, pSurface);
+    *ppSubPic = DEBUG_NEW CDX7SubPic(m_pD3DDev, pSurface);
     if (!(*ppSubPic)) {
         return false;
     }

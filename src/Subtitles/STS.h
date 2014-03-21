@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -26,7 +26,7 @@
 #include "TextFile.h"
 #include "GFN.h"
 
-typedef enum { TIME, FRAME } tmode; // the meaning of STSEntry::start/end
+enum tmode { TIME, FRAME }; // the meaning of STSEntry::start/end
 
 class STSStyle
 {
@@ -44,9 +44,9 @@ public:
     double   fontScaleX, fontScaleY; // percent
     double   fontSpacing;    // +/- pixels
     LONG     fontWeight;
-    BYTE     fItalic;
-    BYTE     fUnderline;
-    BYTE     fStrikeOut;
+    int      fItalic;
+    int      fUnderline;
+    int      fStrikeOut;
     int      fBlur;
     double   fGaussianBlur;
     double   fontAngleZ, fontAngleX, fontAngleY;
@@ -57,19 +57,22 @@ public:
 
     void SetDefault();
 
-    bool operator == (STSStyle& s);
-    bool IsFontStyleEqual(STSStyle& s);
+    bool operator == (const STSStyle& s) const;
+    bool operator != (const STSStyle& s) const {
+        return !(*this == s);
+    };
+    bool IsFontStyleEqual(const STSStyle& s) const;
 
     STSStyle& operator = (LOGFONT& lf);
 
     friend LOGFONTA& operator <<= (LOGFONTA& lfa, STSStyle& s);
     friend LOGFONTW& operator <<= (LOGFONTW& lfw, STSStyle& s);
 
-    friend CString& operator <<= (CString& style, STSStyle& s);
-    friend STSStyle& operator <<= (STSStyle& s, CString& style);
+    friend CString& operator <<= (CString& style, const STSStyle& s);
+    friend STSStyle& operator <<= (STSStyle& s, const CString& style);
 };
 
-class CSTSStyleMap : public CAtlMap<CString, STSStyle*, CStringElementTraits<CString> >
+class CSTSStyleMap : public CAtlMap<CString, STSStyle*, CStringElementTraits<CString>>
 {
 public:
     CSTSStyleMap() {}
@@ -77,7 +80,7 @@ public:
     void Free();
 };
 
-typedef struct {
+struct STSEntry {
     CStringW str;
     bool fUnicode;
     CString style, actor, effect;
@@ -85,7 +88,7 @@ typedef struct {
     int layer;
     int start, end;
     int readorder;
-} STSEntry;
+};
 
 class STSSegment
 {
@@ -158,12 +161,12 @@ public:
 
     void Append(CSimpleTextSubtitle& sts, int timeoff = -1);
 
-    bool Open(CString fn, int CharSet, CString name = _T(""));
+    bool Open(CString fn, int CharSet, CString name = _T(""), CString videoName = _T(""));
     bool Open(CTextFile* f, int CharSet, CString name);
     bool Open(BYTE* data, int len, int CharSet, CString name);
-    bool SaveAs(CString fn, exttype et, double fps = -1, CTextFile::enc = CTextFile::DEFAULT_ENCODING);
+    bool SaveAs(CString fn, exttype et, double fps = -1, int delay = 0, CTextFile::enc = CTextFile::DEFAULT_ENCODING);
 
-    void Add(CStringW str, bool fUnicode, int start, int end, CString style = _T("Default"), CString actor = _T(""), CString effect = _T(""), CRect marginRect = CRect(0, 0, 0, 0), int layer = 0, int readorder = -1);
+    void Add(CStringW str, bool fUnicode, int start, int end, CString style = _T("Default"), CString actor = _T(""), CString effect = _T(""), const CRect& marginRect = CRect(0, 0, 0, 0), int layer = 0, int readorder = -1);
     STSStyle* CreateDefaultStyle(int CharSet);
     void ChangeUnknownStylesToDefault();
     void AddStyle(CString name, STSStyle* style); // style will be stored and freed in Empty() later
@@ -181,13 +184,14 @@ public:
 
     int TranslateSegmentStart(int i, double fps);
     int TranslateSegmentEnd(int i, double fps);
-    const STSSegment* SearchSubs(int t, double fps, /*[out]*/ int* iSegment = NULL, int* nSegments = NULL);
+    const STSSegment* SearchSubs(int t, double fps, /*[out]*/ int* iSegment = nullptr, int* nSegments = nullptr);
     const STSSegment* GetSegment(int iSegment) {
-        return iSegment >= 0 && iSegment < (int)m_segments.GetCount() ? &m_segments[iSegment] : NULL;
+        return iSegment >= 0 && iSegment < (int)m_segments.GetCount() ? &m_segments[iSegment] : nullptr;
     }
 
     STSStyle* GetStyle(int i);
     bool GetStyle(int i, STSStyle& stss);
+    bool GetStyle(CString styleName, STSStyle& stss);
     int GetCharSet(int i);
     bool IsEntryUnicode(int i);
     void ConvertUnicode(int i, bool fUnicode);
@@ -195,8 +199,6 @@ public:
     CStringA GetStrA(int i, bool fSSA = false);
     CStringW GetStrW(int i, bool fSSA = false);
     CStringW GetStrWA(int i, bool fSSA = false);
-
-#define GetStr GetStrW
 
     void SetStr(int i, CStringA str, bool fUnicode /* ignored */);
     void SetStr(int i, CStringW str, bool fUnicode);
@@ -206,7 +208,7 @@ extern BYTE CharSetList[];
 extern TCHAR* CharSetNames[];
 extern int CharSetLen;
 
-class CHtmlColorMap : public CAtlMap<CString, DWORD, CStringElementTraits<CString> >
+class CHtmlColorMap : public CAtlMap<CString, DWORD, CStringElementTraits<CString>>
 {
 public:
     CHtmlColorMap();

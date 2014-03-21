@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,6 +21,7 @@
 
 #include "stdafx.h"
 #include <atlbase.h>
+#include <algorithm>
 #include "BaseClasses/streams.h"
 #include <dvdmedia.h>
 #include <ks.h>
@@ -39,12 +40,13 @@
 
 CDeCSSInputPin::CDeCSSInputPin(TCHAR* pObjectName, CTransformFilter* pFilter, HRESULT* phr, LPWSTR pName)
     : CTransformInputPin(pObjectName, pFilter, phr, pName)
+    , m_varient(-1)
 {
-    m_varient = -1;
-    memset(m_Challenge, 0, sizeof(m_Challenge));
-    memset(m_KeyCheck, 0, sizeof(m_KeyCheck));
-    memset(m_DiscKey, 0, sizeof(m_DiscKey));
-    memset(m_TitleKey, 0, sizeof(m_TitleKey));
+    ZeroMemory(m_Challenge, sizeof(m_Challenge));
+    ZeroMemory(m_KeyCheck, sizeof(m_KeyCheck));
+    ZeroMemory(m_Key, sizeof(m_Key));
+    ZeroMemory(m_DiscKey, sizeof(m_DiscKey));
+    ZeroMemory(m_TitleKey, sizeof(m_TitleKey));
 }
 
 STDMETHODIMP CDeCSSInputPin::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -62,7 +64,7 @@ STDMETHODIMP CDeCSSInputPin::Receive(IMediaSample* pSample)
 {
     long len = pSample->GetActualDataLength();
 
-    BYTE* p = NULL;
+    BYTE* p = nullptr;
     if (SUCCEEDED(pSample->GetPointer(&p)) && len > 0) {
         if (m_mt.majortype == MEDIATYPE_DVD_ENCRYPTED_PACK && len == 2048 && (p[0x14] & 0x30)) {
             CSSdescramble(p, m_TitleKey);
@@ -70,7 +72,7 @@ STDMETHODIMP CDeCSSInputPin::Receive(IMediaSample* pSample)
 
             if (CComQIPtr<IMediaSample2> pMS2 = pSample) {
                 AM_SAMPLE2_PROPERTIES props;
-                memset(&props, 0, sizeof(props));
+                ZeroMemory(&props, sizeof(props));
                 if (SUCCEEDED(pMS2->GetProperties(sizeof(props), (BYTE*)&props))
                         && (props.dwTypeSpecificFlags & AM_UseNewCSSKey)) {
                     props.dwTypeSpecificFlags &= ~AM_UseNewCSSKey;
@@ -90,7 +92,7 @@ void CDeCSSInputPin::StripPacket(BYTE*& p, long& len)
 {
     GUID majortype = m_mt.majortype;
 
-    if (majortype == MEDIATYPE_MPEG2_PACK || majortype == MEDIATYPE_DVD_ENCRYPTED_PACK)
+    if (majortype == MEDIATYPE_MPEG2_PACK || majortype == MEDIATYPE_DVD_ENCRYPTED_PACK) {
         if (len > 0 && *(DWORD*)p == 0xba010000) { // MEDIATYPE_*_PACK
             len -= 14;
             p += 14;
@@ -100,8 +102,9 @@ void CDeCSSInputPin::StripPacket(BYTE*& p, long& len)
             }
             majortype = MEDIATYPE_MPEG2_PES;
         }
+    }
 
-    if (majortype == MEDIATYPE_MPEG2_PES)
+    if (majortype == MEDIATYPE_MPEG2_PES) {
         if (len > 0 && *(DWORD*)p == 0xbb010000) {
             len -= 4;
             p += 4;
@@ -110,7 +113,6 @@ void CDeCSSInputPin::StripPacket(BYTE*& p, long& len)
             p += hdrlen;
         }
 
-    if (majortype == MEDIATYPE_MPEG2_PES)
         if (len > 0
                 && ((*(DWORD*)p & 0xf0ffffff) == 0xe0010000
                     || (*(DWORD*)p & 0xe0ffffff) == 0xc0010000
@@ -119,7 +121,7 @@ void CDeCSSInputPin::StripPacket(BYTE*& p, long& len)
 
             len -= 4;
             p += 4;
-            int expected = ((p[0] << 8) | p[1]);
+            long expected = ((p[0] << 8) | p[1]);
             len -= 2;
             p += 2;
             BYTE* p0 = p;
@@ -170,10 +172,11 @@ void CDeCSSInputPin::StripPacket(BYTE*& p, long& len)
             }
 
             if (expected > 0) {
-                expected -= (p - p0);
-                len = min(expected, len);
+                expected -= (long)(p - p0);
+                len = std::min(expected, len);
             }
         }
+    }
 
     if (len < 0) {
         ASSERT(0);
@@ -243,7 +246,7 @@ STDMETHODIMP CDeCSSInputPin::Set(REFGUID PropSet, ULONG Id, LPVOID pInstanceData
         case AM_PROPERTY_DVDCOPY_DVD_KEY1: { // 2. auth: receive our drive-encrypted nonce word and decrypt it for verification
             AM_DVDCOPY_BUSKEY* pKey1 = (AM_DVDCOPY_BUSKEY*)pPropertyData;
             for (int i = 0; i < 5; i++) {
-                m_Key[i] =  pKey1->BusKey[4 - i];
+                m_Key[i] = pKey1->BusKey[4 - i];
             }
 
             m_varient = -1;

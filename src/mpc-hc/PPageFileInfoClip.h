@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -31,25 +31,24 @@ class CPPageFileInfoClip : public CPropertyPage
     DECLARE_DYNAMIC(CPPageFileInfoClip)
 
 private:
-    CComPtr<IFilterGraph> m_pFG;
     HICON m_hIcon;
-
     CToolTipCtrl m_tooltip;
 
 public:
-    CPPageFileInfoClip(CString fn, IFilterGraph* pFG);
+    CPPageFileInfoClip(CString path, IFilterGraph* pFG, IFileSourceFilter* pFSF);
     virtual ~CPPageFileInfoClip();
 
     // Dialog Data
     enum { IDD = IDD_FILEPROPCLIP };
 
     CStatic m_icon;
-    CString m_fn;
+    CString m_fn, m_path;
     CString m_clip;
     CString m_author;
     CString m_copyright;
     CString m_rating;
     CString m_location_str;
+    CString m_desctext;
     CEdit   m_location;
     CEdit   m_desc;
 

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,18 +29,18 @@
 // CPPageFileInfoSheet
 
 IMPLEMENT_DYNAMIC(CPPageFileInfoSheet, CPropertySheet)
-CPPageFileInfoSheet::CPPageFileInfoSheet(CString fn, CMainFrame* pMainFrame, CWnd* pParentWnd)
+CPPageFileInfoSheet::CPPageFileInfoSheet(CString path, CMainFrame* pMainFrame, CWnd* pParentWnd)
     : CPropertySheet(ResStr(IDS_PROPSHEET_PROPERTIES), pParentWnd, 0)
-    , m_clip(fn, pMainFrame->pGB)
-    , m_details(fn, pMainFrame->pGB, pMainFrame->m_pCAP)
-    , m_res(fn, pMainFrame->pGB)
-    , m_mi(fn, pMainFrame->pGB)
-    , m_fn(fn)
+    , m_clip(path, pMainFrame->m_pGB, pMainFrame->m_pFSF)
+    , m_details(path, pMainFrame->m_pGB, pMainFrame->m_pCAP, pMainFrame->m_pFSF)
+    , m_res(path, pMainFrame->m_pGB, pMainFrame->m_pFSF)
+    , m_mi(path, pMainFrame->m_pFSF)
+    , m_path(path)
 {
     AddPage(&m_details);
     AddPage(&m_clip);
 
-    BeginEnumFilters(pMainFrame->pGB, pEF, pBF) {
+    BeginEnumFilters(pMainFrame->m_pGB, pEF, pBF) {
         if (CComQIPtr<IDSMResourceBag> pRB = pBF)
             if (pRB && pRB->ResGetCount() > 0) {
                 AddPage(&m_res);
@@ -49,10 +49,12 @@ CPPageFileInfoSheet::CPPageFileInfoSheet(CString fn, CMainFrame* pMainFrame, CWn
     }
     EndEnumFilters;
 
-#ifndef USE_MEDIAINFO_STATIC
+#if !USE_STATIC_MEDIAINFO
     if (CPPageFileMediaInfo::HasMediaInfo())
 #endif
-        AddPage(&m_mi);
+        if (m_mi.HasInfo()) {
+            AddPage(&m_mi);
+        }
 }
 
 CPPageFileInfoSheet::~CPPageFileInfoSheet()
@@ -69,13 +71,6 @@ END_MESSAGE_MAP()
 BOOL CPPageFileInfoSheet::OnInitDialog()
 {
     __super::OnInitDialog();
-
-    m_fn.TrimRight('/');
-    int i = max(m_fn.ReverseFind('\\'), m_fn.ReverseFind('/'));
-    if (i >= 0 && i < m_fn.GetLength() - 1) {
-        m_fn = m_fn.Mid(i + 1);
-    }
-    m_fn = m_fn + _T(".MediaInfo.txt");
 
     GetDlgItem(IDCANCEL)->ShowWindow(SW_HIDE);
     GetDlgItem(ID_APPLY_NOW)->ShowWindow(SW_HIDE);
@@ -99,7 +94,16 @@ BOOL CPPageFileInfoSheet::OnInitDialog()
 
 void CPPageFileInfoSheet::OnSaveAs()
 {
-    CFileDialog filedlg(FALSE, _T("*.txt"), m_fn,
+    CString fn = m_mi.m_fn;
+
+    fn.TrimRight('/');
+    int i = max(fn.ReverseFind('\\'), fn.ReverseFind('/'));
+    if (i >= 0 && i < fn.GetLength() - 1) {
+        fn = fn.Mid(i + 1);
+    }
+    fn.Append(_T(".MediaInfo.txt"));
+
+    CFileDialog filedlg(FALSE, _T("*.txt"), fn,
                         OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR,
                         _T("Text Files (*.txt)|*.txt|All Files (*.*)|*.*||"), this, 0);
 

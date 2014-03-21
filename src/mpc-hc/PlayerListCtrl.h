@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -147,6 +147,7 @@ class CPlayerListCtrl : public CListCtrl
 private:
     int m_nItemClicked, m_nSubItemClicked;
     int m_tStartEditingDelay;
+    UINT_PTR m_nTimerID;
 
     bool PrepareInPlaceControl(int nRow, int nCol, CRect& rect);
 
@@ -154,7 +155,7 @@ public:
     CPlayerListCtrl(int tStartEditingDelay = 500);
     virtual ~CPlayerListCtrl();
 
-    int HitTestEx(CPoint& point, int* col) const;
+    int HitTestEx(const CPoint& point, int* col) const;
     CImageList* CreateDragImageEx(LPPOINT lpPoint);
 
     int GetBottomIndex() const;
@@ -190,4 +191,7 @@ public:
     afx_msg void OnLbnSelChangeList1();
     afx_msg BOOL OnHdnItemchanging(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnXButtonDown(UINT nFlags, UINT nButton, CPoint point);
+    afx_msg void OnXButtonUp(UINT nFlags, UINT nButton, CPoint point);
+    afx_msg void OnXButtonDblClk(UINT nFlags, UINT nButton, CPoint point);
 };

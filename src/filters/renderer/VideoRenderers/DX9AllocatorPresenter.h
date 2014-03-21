@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,22 +25,23 @@
 
 #define VMRBITMAP_UPDATE    0x80000000
 #define NB_JITTER           126
-#define PCIV_ATI            0x1002
 
 extern bool g_bNoDuration;
 extern bool g_bExternalSubtitleTime;
+
+class CFocusThread;
 
 namespace DSObjects
 {
 
     class CDX9AllocatorPresenter
         : public CDX9RenderingEngine
+        , public ID3DFullscreenControl
     {
     public:
         CCritSec m_VMR9AlphaBitmapLock;
         void     UpdateAlphaBitmap();
     protected:
-        UINT    m_RefreshRate;
         bool    m_bAlternativeVSync;
         bool    m_bCompositionEnabled;
         bool    m_bIsEVR;
@@ -102,14 +103,6 @@ namespace DSObjects
         virtual HRESULT CreateDevice(CString& _Error);
         virtual HRESULT AllocSurfaces();
         virtual void DeleteSurfaces();
-
-        // Thread stuff
-        HANDLE m_hEvtQuit;         // Stop rendering thread event
-        HANDLE m_hVSyncThread;
-        static DWORD WINAPI VSyncThreadStatic(LPVOID lpParam);
-        void VSyncThread();
-        void StartWorkerThreads();
-        void StopWorkerThreads();
 
         LONGLONG m_LastAdapterCheck;
         UINT GetAdapter(IDirect3D9* pD3D, bool bGetAdapter = true);
@@ -290,10 +283,10 @@ namespace DSObjects
         CString                 m_strStatsMsg[10];
 
         CString                 m_D3D9Device;
-        DWORD                   m_nPCIVendor;
 
         CString                 m_Decoder;
 
+        CFocusThread*           m_FocusThread;
     public:
         CDX9AllocatorPresenter(HWND hWnd, bool bFullscreen, HRESULT& hr, bool bIsEVR, CString& _Error);
         ~CDX9AllocatorPresenter();
@@ -306,5 +299,9 @@ namespace DSObjects
         STDMETHODIMP SetPixelShader2(LPCSTR pSrcData, LPCSTR pTarget, bool bScreenSpace);
         STDMETHODIMP_(bool) ResetDevice();
         STDMETHODIMP_(bool) DisplayChange();
+
+        // ID3DFullscreenControl
+        STDMETHODIMP SetD3DFullscreen(bool fEnabled);
+        STDMETHODIMP GetD3DFullscreen(bool* pfEnabled);
     };
 }

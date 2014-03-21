@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2010-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,11 +25,12 @@
 #include <afxwin.h>
 
 
-// CPlayerCaptureBar
+// CPlayerNavigationBar
 
 IMPLEMENT_DYNAMIC(CPlayerNavigationBar, CPlayerBar)
-CPlayerNavigationBar::CPlayerNavigationBar()
-    : m_pParent(NULL)
+CPlayerNavigationBar::CPlayerNavigationBar(CMainFrame* pMainFrame)
+    : m_pParent(nullptr)
+    , m_navdlg(pMainFrame)
 {
 }
 
@@ -58,8 +59,29 @@ BOOL CPlayerNavigationBar::Create(CWnd* pParentWnd, UINT defDockBarID)
     return TRUE;
 }
 
+static WNDPROC g_parentFrameOrigWndProc = nullptr;
+LRESULT CALLBACK ParentFrameSubclassWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    ASSERT(g_parentFrameOrigWndProc);
+    if (message == WM_SYSCOMMAND && wParam == SC_CLOSE) {
+        AfxGetAppSettings().fHideNavigation = true;
+    }
+    return CallWindowProc(g_parentFrameOrigWndProc, hwnd, message, wParam, lParam);
+}
+
 BOOL CPlayerNavigationBar::PreTranslateMessage(MSG* pMsg)
 {
+    if (CWnd* pParent1 = GetParent()) {
+        CWnd* pParent2 = pParent1->GetParent();
+        if (pParent2 != m_pParent) {
+            if (!g_parentFrameOrigWndProc) {
+                g_parentFrameOrigWndProc = SubclassWindow(pParent2->m_hWnd, ParentFrameSubclassWndProc);
+            }
+        } else {
+            g_parentFrameOrigWndProc = nullptr;
+        }
+    }
+
     if (IsWindow(pMsg->hwnd) && IsVisible() && pMsg->message >= WM_KEYFIRST && pMsg->message <= WM_KEYLAST) {
         if (IsDialogMessage(pMsg)) {
             return TRUE;
@@ -74,37 +96,16 @@ BEGIN_MESSAGE_MAP(CPlayerNavigationBar, CPlayerBar)
     ON_WM_NCLBUTTONUP()
 END_MESSAGE_MAP()
 
-// CPlayerShaderEditorBar message handlers
+// CPlayerNavigationBar message handlers
 
 void CPlayerNavigationBar::OnSize(UINT nType, int cx, int cy)
 {
     __super::OnSize(nType, cx, cy);
-
     if (::IsWindow(m_navdlg.m_hWnd)) {
-        CRect r, rectComboAudio, rectButtonInfo, rectButtonScan;
-        LONG totalsize, separation, sizeComboAudio, sizeButtonInfo, sizeButtonScan;
+        CRect r;
         GetClientRect(r);
         m_navdlg.MoveWindow(r);
-        r.DeflateRect(8, 8, 8, 50);
-        m_navdlg.m_ChannelList.MoveWindow(r);
-
-        m_navdlg.m_ComboAudio.GetClientRect(rectComboAudio);
-        m_navdlg.m_ButtonInfo.GetClientRect(rectButtonInfo);
-        m_navdlg.m_ButtonScan.GetClientRect(rectButtonScan);
-        sizeComboAudio = rectComboAudio.right - rectComboAudio.left;
-        sizeButtonInfo = rectButtonInfo.right - rectButtonInfo.left;
-        sizeButtonScan = rectButtonScan.right - rectButtonScan.left;
-        totalsize = r.right - r.left;
-        separation = (totalsize - sizeComboAudio - sizeButtonInfo - sizeButtonScan) / 2;
-        if (separation < 0) {
-            separation = 0;
-        }
-        m_navdlg.m_ComboAudio.SetWindowPos(NULL, r.left, r.bottom + 6, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-        m_navdlg.m_ButtonInfo.SetWindowPos(NULL, r.left + sizeComboAudio + separation, r.bottom + 5, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-        m_navdlg.m_ButtonScan.SetWindowPos(NULL, r.left + sizeComboAudio + sizeButtonInfo + 2 * separation, r.bottom + 5, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-        m_navdlg.m_ButtonFilterStations.SetWindowPos(NULL, r.left, r.bottom + 30, totalsize, 20, SWP_NOZORDER);
     }
-
 }
 
 void CPlayerNavigationBar::OnNcLButtonUp(UINT nHitTest, CPoint point)
@@ -114,16 +115,4 @@ void CPlayerNavigationBar::OnNcLButtonUp(UINT nHitTest, CPoint point)
     if (nHitTest == HTCLOSE) {
         AfxGetAppSettings().fHideNavigation = true;
     }
-}
-
-void CPlayerNavigationBar::ShowControls(CWnd* pMainfrm, bool bShow)
-{
-    CSize s = this->CalcFixedLayout(FALSE, TRUE);
-    ((CMainFrame*) pMainfrm) ->ShowControlBar(this, bShow, TRUE);
-
-    WINDOWPLACEMENT wp;
-    wp.length = sizeof(wp);
-    GetWindowPlacement(&wp);
-
-    ((CMainFrame*) pMainfrm)->RecalcLayout();
 }

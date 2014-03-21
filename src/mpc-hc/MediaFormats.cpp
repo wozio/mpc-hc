@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -31,12 +31,14 @@
 
 CMediaFormatCategory::CMediaFormatCategory()
     : m_fAudioOnly(false)
+    , m_fAssociable(true)
+    , m_engine(DirectShow)
 {
 }
 
 CMediaFormatCategory::CMediaFormatCategory(
     CString label, CString description, CAtlList<CString>& exts, bool fAudioOnly,
-    CString specreqnote, engine_t engine)
+    CString specreqnote, engine_t engine, bool fAssociable)
 {
     m_label = label;
     m_description = description;
@@ -45,11 +47,12 @@ CMediaFormatCategory::CMediaFormatCategory(
     m_specreqnote = specreqnote;
     m_fAudioOnly = fAudioOnly;
     m_engine = engine;
+    m_fAssociable = fAssociable;
 }
 
 CMediaFormatCategory::CMediaFormatCategory(
     CString label, CString description, CString exts, bool fAudioOnly,
-    CString specreqnote, engine_t engine)
+    CString specreqnote, engine_t engine, bool fAssociable)
 {
     m_label = label;
     m_description = description;
@@ -63,6 +66,7 @@ CMediaFormatCategory::CMediaFormatCategory(
     m_specreqnote = specreqnote;
     m_fAudioOnly = fAudioOnly;
     m_engine = engine;
+    m_fAssociable = fAssociable;
 }
 
 CMediaFormatCategory::~CMediaFormatCategory()
@@ -95,6 +99,7 @@ CMediaFormatCategory& CMediaFormatCategory::operator = (const CMediaFormatCatego
         m_backupexts.AddTailList(&mfc.m_backupexts);
         m_fAudioOnly = mfc.m_fAudioOnly;
         m_engine = mfc.m_engine;
+        m_fAssociable = mfc.m_fAssociable;
     }
     return *this;
 }
@@ -120,7 +125,7 @@ void CMediaFormatCategory::SetExts(CString exts)
         POSITION cur = pos;
         CString& ext = m_exts.GetNext(pos);
         if (ext[0] == '\\') {
-            m_engine = (engine_t)_tcstol(ext.TrimLeft('\\'), NULL, 10);
+            m_engine = (engine_t)_tcstol(ext.TrimLeft('\\'), nullptr, 10);
             m_exts.RemoveAt(cur);
         } else {
             ext.TrimLeft('.');
@@ -181,6 +186,8 @@ CString CMediaFormatCategory::GetBackupExtsWithPeriod(bool fAppendEngine) const
 //
 
 CMediaFormats::CMediaFormats()
+    : m_iRtspHandler((engine_t)(int)RealMedia)
+    , m_fRtspFileExtFirst(1)
 {
 }
 
@@ -191,7 +198,7 @@ CMediaFormats::~CMediaFormats()
 void CMediaFormats::UpdateData(bool fSave)
 {
     if (fSave) {
-        AfxGetApp()->WriteProfileString(_T("FileFormats"), NULL, NULL);
+        AfxGetApp()->WriteProfileString(_T("FileFormats"), nullptr, nullptr);
 
         AfxGetApp()->WriteProfileInt(_T("FileFormats"), _T("RtspHandler"), m_iRtspHandler);
         AfxGetApp()->WriteProfileInt(_T("FileFormats"), _T("RtspFileExtFirst"), m_fRtspFileExtFirst);
@@ -221,14 +228,13 @@ void CMediaFormats::UpdateData(bool fSave)
         ADDFMT((_T("rt"),          ResStr(IDS_MFMT_RT),          _T("rt rp smi smil")));
 #else
         ADDFMT((_T("rm"),          ResStr(IDS_MFMT_RM),          _T("rm ram rmm"), false, _T("RealPlayer or Real Alternative"), RealMedia));
-        ADDFMT((_T("rt"),          ResStr(IDS_MFMT_RT),          _T("rt rp smi smil"), false, _T("RealPlayer or Real Alternative"), RealMedia));
+        ADDFMT((_T("rt"),          ResStr(IDS_MFMT_RT),          _T("rt rp smil"), false, _T("RealPlayer or Real Alternative"), RealMedia));
 #endif
         ADDFMT((_T("wmv"),         ResStr(IDS_MFMT_WMV),         _T("wmv wmp wm asf")));
         ADDFMT((_T("bink"),        ResStr(IDS_MFMT_BINK),        _T("smk bik"), false, _T("smackw32/binkw32.dll in dll path")));
         ADDFMT((_T("flic"),        ResStr(IDS_MFMT_FLIC),        _T("fli flc flic")));
         ADDFMT((_T("dsm"),         ResStr(IDS_MFMT_DSM),         _T("dsm dsv dsa dss")));
         ADDFMT((_T("ivf"),         ResStr(IDS_MFMT_IVF),         _T("ivf")));
-        ADDFMT((_T("dvd2avi"),     ResStr(IDS_MFMT_D2V),         _T("d2v")));
         ADDFMT((_T("swf"),         ResStr(IDS_MFMT_SWF),         _T("swf"), false, _T("ShockWave ActiveX control"), ShockWave));
         ADDFMT((_T("other"),       ResStr(IDS_MFMT_OTHER),       _T("divx rmvb amv")));
         ADDFMT((_T("ac3dts"),      ResStr(IDS_MFMT_AC3),         _T("ac3 dts"), true));
@@ -265,10 +271,11 @@ void CMediaFormats::UpdateData(bool fSave)
         ADDFMT((_T("other_audio"), ResStr(IDS_MFMT_OTHER_AUDIO), _T("aob mlp"), true));
         ADDFMT((_T("pls"),         ResStr(IDS_MFMT_PLS),         _T("asx m3u m3u8 pls wvx wax wmx mpcpl")));
         ADDFMT((_T("bdpls"),       ResStr(IDS_MFMT_BDPLS),       _T("mpls bdmv")));
+        ADDFMT((_T("rar"),         ResStr(IDS_MFMT_RAR),         _T("rar"), false, _T("RARFileSource"), DirectShow, false));
 #undef ADDFMT
 
         m_iRtspHandler = (engine_t)AfxGetApp()->GetProfileInt(_T("FileFormats"), _T("RtspHandler"), (int)RealMedia);
-        m_fRtspFileExtFirst = !!AfxGetApp()->GetProfileInt(_T("FileFormats"), _T("RtspFileExtFirst"), 1);
+        m_fRtspFileExtFirst = !!AfxGetApp()->GetProfileInt(_T("FileFormats"), _T("RtspFileExtFirst"), TRUE);
     }
 
     for (size_t i = 0; i < GetCount(); i++) {
@@ -328,32 +335,32 @@ engine_t CMediaFormats::GetEngine(CString path) const
     return DirectShow;
 }
 
-bool CMediaFormats::FindExt(CString ext, bool fAudioOnly) const
+bool CMediaFormats::FindExt(CString ext, bool fAudioOnly, bool fAssociableOnly) const
 {
-    return (FindMediaByExt(ext, fAudioOnly) != NULL);
+    return (FindMediaByExt(ext, fAudioOnly, fAssociableOnly) != nullptr);
 }
 
-const CMediaFormatCategory* CMediaFormats::FindMediaByExt(CString ext, bool fAudioOnly) const
+const CMediaFormatCategory* CMediaFormats::FindMediaByExt(CString ext, bool fAudioOnly, bool fAssociableOnly) const
 {
     ext.TrimLeft(_T('.'));
 
     if (!ext.IsEmpty()) {
         for (size_t i = 0; i < GetCount(); i++) {
             const CMediaFormatCategory& mfc = GetAt(i);
-            if ((!fAudioOnly || mfc.IsAudioOnly()) && mfc.FindExt(ext)) {
+            if ((!fAudioOnly || mfc.IsAudioOnly()) && (!fAssociableOnly || mfc.IsAssociable()) && mfc.FindExt(ext)) {
                 return &mfc;
             }
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 void CMediaFormats::GetFilter(CString& filter, CAtlArray<CString>& mask) const
 {
     CString strTemp;
 
-    filter += ResStr(IDS_AG_MEDIAFILES);
+    filter.AppendFormat(IsExtHidden() ? _T("%s|") : _T("%s (*.avi;*.mp4;*.mkv;...)|"), ResStr(IDS_AG_MEDIAFILES));
     mask.Add(_T(""));
 
     for (size_t i = 0; i < GetCount(); i++) {
@@ -381,7 +388,7 @@ void CMediaFormats::GetAudioFilter(CString& filter, CAtlArray<CString>& mask) co
 {
     CString strTemp;
 
-    filter += ResStr(IDS_AG_AUDIOFILES);
+    filter.AppendFormat(IsExtHidden() ? _T("%s|") : _T("%s (*.mp3;*.aac;*.wav;...)|"), ResStr(IDS_AG_AUDIOFILES));
     mask.Add(_T(""));
 
     for (size_t i = 0; i < GetCount(); i++) {
@@ -411,4 +418,16 @@ void CMediaFormats::GetAudioFilter(CString& filter, CAtlArray<CString>& mask) co
     mask.Add(_T("*.*"));
 
     filter += _T("|");
+}
+
+bool CMediaFormats::IsExtHidden()
+{
+    CRegKey key;
+    if (ERROR_SUCCESS == key.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced"), KEY_READ)) {
+        DWORD value;
+        if (ERROR_SUCCESS == key.QueryDWORDValue(_T("HideFileExt"), value)) {
+            return !!value;
+        }
+    }
+    return false;
 }

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,6 +21,7 @@
 
 #include "stdafx.h"
 #include "mplayerc.h"
+#include "PlayerBar.h"
 #include "PlayerListCtrl.h"
 #include "WinHotkeyCtrl.h"
 
@@ -77,7 +78,7 @@ void CInPlaceWinHotkey::OnKillFocus(CWnd* pNewWnd)
     dispinfo.item.mask = LVIF_TEXT;
     dispinfo.item.iItem = m_iItem;
     dispinfo.item.iSubItem = m_iSubItem;
-    dispinfo.item.pszText = m_bESC ? NULL : LPTSTR((LPCTSTR)str);
+    dispinfo.item.pszText = m_bESC ? nullptr : LPTSTR((LPCTSTR)str);
     dispinfo.item.cchTextMax = str.GetLength();
     GetParent()->GetParent()->SendMessage(WM_NOTIFY, GetParent()->GetDlgCtrlID(), (LPARAM)&dispinfo);
 
@@ -176,7 +177,7 @@ void CInPlaceEdit::OnKillFocus(CWnd* pNewWnd)
     dispinfo.item.mask = LVIF_TEXT;
     dispinfo.item.iItem = m_iItem;
     dispinfo.item.iSubItem = m_iSubItem;
-    dispinfo.item.pszText = m_bESC ? NULL : LPTSTR((LPCTSTR)str);
+    dispinfo.item.pszText = m_bESC ? nullptr : LPTSTR((LPCTSTR)str);
     dispinfo.item.cchTextMax = str.GetLength();
     GetParent()->GetParent()->SendMessage(WM_NOTIFY, GetParent()->GetDlgCtrlID(), (LPARAM)&dispinfo);
 
@@ -308,7 +309,7 @@ int CInPlaceComboBox::OnCreate(LPCREATESTRUCT lpCreateStruct)
     CFont* font = GetParent()->GetFont();
     SetFont(font);
 
-    for (POSITION pos = m_lstItems.GetHeadPosition(); pos != NULL;) {
+    for (POSITION pos = m_lstItems.GetHeadPosition(); pos != nullptr;) {
         AddString((LPCTSTR)(m_lstItems.GetNext(pos)));
     }
 
@@ -345,7 +346,7 @@ void CInPlaceComboBox::OnKillFocus(CWnd* pNewWnd)
     dispinfo.item.mask = LVIF_TEXT | LVIF_PARAM;
     dispinfo.item.iItem = m_iItem;
     dispinfo.item.iSubItem = m_iSubItem;
-    dispinfo.item.pszText = m_bESC ? NULL : LPTSTR((LPCTSTR)str);
+    dispinfo.item.pszText = m_bESC ? nullptr : LPTSTR((LPCTSTR)str);
     dispinfo.item.cchTextMax = str.GetLength();
     dispinfo.item.lParam = GetCurSel();
     GetParent()->GetParent()->SendMessage(WM_NOTIFY, GetParent()->GetDlgCtrlID(), (LPARAM)&dispinfo);
@@ -415,7 +416,7 @@ int CInPlaceListBox::OnCreate(LPCREATESTRUCT lpCreateStruct)
     CFont* font = GetParent()->GetFont();
     SetFont(font);
 
-    for (POSITION pos = m_lstItems.GetHeadPosition(); pos != NULL;) {
+    for (POSITION pos = m_lstItems.GetHeadPosition(); pos != nullptr;) {
         AddString((LPCTSTR)(m_lstItems.GetNext(pos)));
     }
     SetCurSel(m_nSel);
@@ -451,7 +452,7 @@ void CInPlaceListBox::OnKillFocus(CWnd* pNewWnd)
     dispinfo.item.mask = LVIF_TEXT | LVIF_PARAM;
     dispinfo.item.iItem = m_iItem;
     dispinfo.item.iSubItem = m_iSubItem;
-    dispinfo.item.pszText = m_bESC ? NULL : LPTSTR((LPCTSTR)str);
+    dispinfo.item.pszText = m_bESC ? nullptr : LPTSTR((LPCTSTR)str);
     dispinfo.item.cchTextMax = str.GetLength();
     dispinfo.item.lParam = GetCurSel();
     GetParent()->GetParent()->SendMessage(WM_NOTIFY, GetParent()->GetDlgCtrlID(), (LPARAM)&dispinfo);
@@ -485,6 +486,7 @@ void CInPlaceListBox::OnNcDestroy()
 IMPLEMENT_DYNAMIC(CPlayerListCtrl, CListCtrl)
 CPlayerListCtrl::CPlayerListCtrl(int tStartEditingDelay)
     : m_tStartEditingDelay(tStartEditingDelay)
+    , m_nTimerID(0)
     , m_nItemClicked(-1)
     , m_nSubItemClicked(-1)
     , m_fInPlaceDirty(false)
@@ -502,13 +504,13 @@ void CPlayerListCtrl::PreSubclassWindow()
     CListCtrl::PreSubclassWindow();
 }
 
-int CPlayerListCtrl::HitTestEx(CPoint& point, int* col) const
+int CPlayerListCtrl::HitTestEx(const CPoint& point, int* col) const
 {
     if (col) {
         *col = 0;
     }
 
-    int row = HitTest(CPoint(0, point.y), NULL);
+    int row = HitTest(CPoint(0, point.y), nullptr);
 
     if ((GetWindowLongPtr(m_hWnd, GWL_STYLE) & LVS_TYPEMASK) != LVS_REPORT) {
         return row;
@@ -563,7 +565,7 @@ int CPlayerListCtrl::GetBottomIndex() const
 CImageList* CPlayerListCtrl::CreateDragImageEx(LPPOINT lpPoint)
 {
     if (GetSelectedCount() <= 0) {
-        return NULL;
+        return nullptr;
     }
 
     CRect cSingleRect, cCompleteRect(0, 0, 0, 0);
@@ -601,11 +603,11 @@ CImageList* CPlayerListCtrl::CreateDragImageEx(LPPOINT lpPoint)
     CBitmap cBitmap;
 
     if (!cMemDC.CreateCompatibleDC(&cDc)) {
-        return NULL;
+        return nullptr;
     }
 
     if (!cBitmap.CreateCompatibleBitmap(&cDc, cCompleteRect.Width(), cCompleteRect.Height())) {
-        return NULL;
+        return nullptr;
     }
 
     CBitmap* pOldMemDCBitmap = cMemDC.SelectObject(&cBitmap);
@@ -636,7 +638,7 @@ CImageList* CPlayerListCtrl::CreateDragImageEx(LPPOINT lpPoint)
     //
     // Create the image list with the merged drag images
     //
-    CImageList* pCompleteImageList = DNew CImageList;
+    CImageList* pCompleteImageList = DEBUG_NEW CImageList;
 
     pCompleteImageList->Create(cCompleteRect.Width(),
                                cCompleteRect.Height(),
@@ -660,43 +662,46 @@ CImageList* CPlayerListCtrl::CreateDragImageEx(LPPOINT lpPoint)
 
 bool CPlayerListCtrl::PrepareInPlaceControl(int nRow, int nCol, CRect& rect)
 {
-    if (!EnsureVisible(nRow, TRUE)) {
+    CHeaderCtrl* pHeaderCtrl = GetHeaderCtrl();
+    if (!pHeaderCtrl || nCol >= pHeaderCtrl->GetItemCount() || GetColumnWidth(nCol) < 5) {
         return false;
     }
 
-    int nColumnCount = ((CHeaderCtrl*)GetDlgItem(0))->GetItemCount();
-    if (nCol >= nColumnCount || GetColumnWidth(nCol) < 5) {
-        return false;
-    }
-
-    int offset = 0;
-    for (int i = 0; i < nCol; i++) {
-        offset += GetColumnWidth(i);
-    }
+    // Compute the position of the cell
+    CRect rcColHeader;
+    pHeaderCtrl->GetItemRect(nCol, &rcColHeader);
 
     GetItemRect(nRow, &rect, LVIR_BOUNDS);
 
+    rect.left += rcColHeader.left;
+    rect.right = rect.left + rcColHeader.Width();
+
+    // Ensure the cell is visible by scrolling if necessary
     CRect rcClient;
     GetClientRect(&rcClient);
-    if (offset + rect.left < 0 || offset + rect.left > rcClient.right) {
-        CSize size(offset + rect.left, 0);
-        Scroll(size);
-        rect.left -= size.cx;
+    rcClient.TopLeft().Offset(0, rcColHeader.Height());
+
+    CSize scroll;
+    if (rect.left >= rcClient.right) {
+        scroll.cx = rcClient.right - rect.right;
+    } else if (rect.right <= rect.left) {
+        scroll.cx = rcClient.left - rect.left;
+    }
+    if (rect.top >= rcClient.bottom) {
+        scroll.cy = rcClient.bottom - rect.bottom;
+    } else if (rect.bottom <= rcClient.top) {
+        scroll.cy = rcClient.top - rect.top;
     }
 
-    rect.left += offset;
-    rect.right = rect.left + GetColumnWidth(nCol);
-    if (rect.right > rcClient.right) {
-        rect.right = rcClient.right;
+    if (scroll.cx || scroll.cy) {
+        rect.OffsetRect(scroll);
+        Scroll(-scroll);
     }
+
+    // The cell can be partially shown so we crop what is outside of the visible part
+    rect &= rcClient;
 
     rect.DeflateRect(1, 0, 0, 1);
-
-    if (nCol == 0) {
-        CRect r;
-        GetItemRect(nRow, r, LVIR_LABEL);
-        rect.left = r.left - 1;
-    }
 
     return true;
 }
@@ -705,12 +710,12 @@ CWinHotkeyCtrl* CPlayerListCtrl::ShowInPlaceWinHotkey(int nItem, int nCol)
 {
     CRect rect;
     if (!PrepareInPlaceControl(nItem, nCol, rect)) {
-        return NULL;
+        return nullptr;
     }
 
     DWORD dwStyle = /*WS_BORDER|*/WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_LEFT;
 
-    CWinHotkeyCtrl* pWinHotkey = DNew CInPlaceWinHotkey(nItem, nCol, GetItemText(nItem, nCol));
+    CWinHotkeyCtrl* pWinHotkey = DEBUG_NEW CInPlaceWinHotkey(nItem, nCol, GetItemText(nItem, nCol));
     pWinHotkey->Create(dwStyle, rect, this, IDC_WINHOTKEY1);
 
     m_fInPlaceDirty = false;
@@ -727,7 +732,7 @@ CEdit* CPlayerListCtrl::ShowInPlaceEdit(int nItem, int nCol)
 {
     CRect rect;
     if (!PrepareInPlaceControl(nItem, nCol, rect)) {
-        return NULL;
+        return nullptr;
     }
 
     DWORD dwStyle = /*WS_BORDER|*/WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL;
@@ -739,7 +744,7 @@ CEdit* CPlayerListCtrl::ShowInPlaceEdit(int nItem, int nCol)
                : (lvcol.fmt & LVCFMT_JUSTIFYMASK) == LVCFMT_RIGHT ? ES_RIGHT
                : ES_CENTER;
 
-    CEdit* pEdit = DNew CInPlaceEdit(nItem, nCol, GetItemText(nItem, nCol));
+    CEdit* pEdit = DEBUG_NEW CInPlaceEdit(nItem, nCol, GetItemText(nItem, nCol));
     pEdit->Create(dwStyle, rect, this, IDC_EDIT1);
 
     m_fInPlaceDirty = false;
@@ -751,12 +756,12 @@ CEdit* CPlayerListCtrl::ShowInPlaceFloatEdit(int nItem, int nCol)
 {
     CRect rect;
     if (!PrepareInPlaceControl(nItem, nCol, rect)) {
-        return NULL;
+        return nullptr;
     }
 
     DWORD dwStyle = /*WS_BORDER|*/WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_RIGHT;
 
-    CEdit* pFloatEdit = DNew CInPlaceFloatEdit(nItem, nCol, GetItemText(nItem, nCol));
+    CEdit* pFloatEdit = DEBUG_NEW CInPlaceFloatEdit(nItem, nCol, GetItemText(nItem, nCol));
     pFloatEdit->Create(dwStyle, rect, this, IDC_EDIT1);
 
     m_fInPlaceDirty = false;
@@ -768,12 +773,12 @@ CComboBox* CPlayerListCtrl::ShowInPlaceComboBox(int nItem, int nCol, CAtlList<CS
 {
     CRect rect;
     if (!PrepareInPlaceControl(nItem, nCol, rect)) {
-        return NULL;
+        return nullptr;
     }
 
     DWORD dwStyle = /*WS_BORDER|*/WS_CHILD | WS_VISIBLE | WS_VSCROLL /*|WS_HSCROLL*/
                                   | CBS_DROPDOWNLIST | CBS_DISABLENOSCROLL/*|CBS_NOINTEGRALHEIGHT*/;
-    CComboBox* pComboBox = DNew CInPlaceComboBox(nItem, nCol, lstItems, nSel);
+    CComboBox* pComboBox = DEBUG_NEW CInPlaceComboBox(nItem, nCol, lstItems, nSel);
     pComboBox->Create(dwStyle, rect, this, IDC_COMBO1);
 
     CorrectComboListWidth(*pComboBox);
@@ -796,11 +801,11 @@ CListBox* CPlayerListCtrl::ShowInPlaceListBox(int nItem, int nCol, CAtlList<CStr
 {
     CRect rect;
     if (!PrepareInPlaceControl(nItem, nCol, rect)) {
-        return NULL;
+        return nullptr;
     }
 
     DWORD dwStyle = WS_BORDER | WS_CHILD | WS_VISIBLE | WS_VSCROLL/*|WS_HSCROLL*/ | LBS_NOTIFY;
-    CListBox* pListBox = DNew CInPlaceListBox(nItem, nCol, lstItems, nSel);
+    CListBox* pListBox = DEBUG_NEW CInPlaceListBox(nItem, nCol, lstItems, nSel);
     pListBox->Create(dwStyle, rect, this, IDC_LIST1);
 
     CRect ir;
@@ -852,6 +857,9 @@ BEGIN_MESSAGE_MAP(CPlayerListCtrl, CListCtrl)
     ON_NOTIFY_EX(HDN_ITEMCHANGINGA, 0, OnHdnItemchanging)
     ON_NOTIFY_EX(HDN_ITEMCHANGINGW, 0, OnHdnItemchanging)
     ON_NOTIFY_EX_RANGE(TTN_NEEDTEXT, 0, 0xFFFF, OnToolTipNotify)
+    ON_WM_XBUTTONDOWN()
+    ON_WM_XBUTTONUP()
+    ON_WM_XBUTTONDBLCLK()
 END_MESSAGE_MAP()
 
 // CPlayerListCtrl message handlers
@@ -888,7 +896,10 @@ void CPlayerListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
         SetFocus();
     }
 
-    KillTimer(1);
+    if (m_nTimerID) {
+        KillTimer(m_nTimerID);
+        m_nTimerID = 0;
+    }
 
     int m_nItemClickedNow, m_nSubItemClickedNow;
 
@@ -906,7 +917,7 @@ void CPlayerListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
         dispinfo.item.iSubItem = m_nSubItemClicked;
         if (GetParent()->SendMessage(WM_NOTIFY, GetDlgCtrlID(), (LPARAM)&dispinfo)) {
             if (m_tStartEditingDelay > 0) {
-                SetTimer(1, m_tStartEditingDelay, NULL);
+                m_nTimerID = SetTimer(1, m_tStartEditingDelay, nullptr);
             } else {
                 dispinfo.hdr.code = LVN_DOLABELEDIT;
                 GetParent()->SendMessage(WM_NOTIFY, GetDlgCtrlID(), (LPARAM)&dispinfo);
@@ -922,8 +933,9 @@ void CPlayerListCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CPlayerListCtrl::OnTimer(UINT_PTR nIDEvent)
 {
-    if (nIDEvent == 1) {
-        KillTimer(1);
+    if (nIDEvent == m_nTimerID) {
+        KillTimer(m_nTimerID);
+        m_nTimerID = 0;
 
         UINT flag = LVIS_FOCUSED;
         if ((GetItemState(m_nItemClicked, flag) & flag) == flag && m_nSubItemClicked >= 0) {
@@ -936,12 +948,23 @@ void CPlayerListCtrl::OnTimer(UINT_PTR nIDEvent)
             dispinfo.item.iSubItem = m_nSubItemClicked;
             GetParent()->SendMessage(WM_NOTIFY, GetDlgCtrlID(), (LPARAM)&dispinfo);
         }
+    } else if (nIDEvent == 43) {
+        // CListCtrl does really strange things on this timer.
+        // For example, when using mouse scroll right after mouse left button was clicked,
+        // this timer scrolls the control back to the clicked item after a while.
+        // There is no known problems with simply killing this timer.
+        VERIFY(KillTimer(nIDEvent));
+    } else {
+        __super::OnTimer(nIDEvent);
     }
 }
 
 void CPlayerListCtrl::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
-    KillTimer(1);
+    if (m_nTimerID) {
+        KillTimer(m_nTimerID);
+        m_nTimerID = 0;
+    }
 
     CListCtrl::OnLButtonDblClk(nFlags, point);
 }
@@ -1061,4 +1084,28 @@ BOOL CPlayerListCtrl::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult)
     *pResult = 0;
 
     return !!GetParent()->SendMessage(WM_NOTIFY, id, (LPARAM)pNMHDR);
+}
+
+void CPlayerListCtrl::OnXButtonDown(UINT nFlags, UINT nButton, CPoint point)
+{
+    if (CWnd* pParent = GetParent()) {
+        MapWindowPoints(pParent, &point, 1);
+        pParent->SendMessage(WM_XBUTTONDOWN, MAKEWPARAM(nFlags, nButton), MAKELPARAM(point.x, point.y));
+    }
+}
+
+void CPlayerListCtrl::OnXButtonUp(UINT nFlags, UINT nButton, CPoint point)
+{
+    if (CWnd* pParent = GetParent()) {
+        MapWindowPoints(pParent, &point, 1);
+        pParent->SendMessage(WM_XBUTTONUP, MAKEWPARAM(nFlags, nButton), MAKELPARAM(point.x, point.y));
+    }
+}
+
+void CPlayerListCtrl::OnXButtonDblClk(UINT nFlags, UINT nButton, CPoint point)
+{
+    if (CWnd* pParent = GetParent()) {
+        MapWindowPoints(pParent, &point, 1);
+        pParent->SendMessage(WM_XBUTTONDBLCLK, MAKEWPARAM(nFlags, nButton), MAKELPARAM(point.x, point.y));
+    }
 }

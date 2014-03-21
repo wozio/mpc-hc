@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -36,7 +36,7 @@ BOOL CPlayerWindow::PreCreateWindow(CREATESTRUCT& cs)
 
     cs.style &= ~WS_BORDER;
     cs.lpszClass = AfxRegisterWndClass(CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS,
-                                       ::LoadCursor(NULL, IDC_HAND), NULL, NULL);
+                                       ::LoadCursor(nullptr, IDC_HAND), nullptr, nullptr);
 
     return TRUE;
 }
@@ -70,7 +70,7 @@ BOOL CPlayerWindow::OnEraseBkgnd(CDC* pDC)
 //
 
 CBaseGraph::CBaseGraph()
-    : CUnknown(NAME("CBaseGraph"), NULL)
+    : CUnknown(NAME("CBaseGraph"), nullptr)
     , m_hNotifyWnd(NULL)
     , m_lNotifyMsg(0)
     , m_lNotifyInstData(0)
@@ -204,8 +204,8 @@ STDMETHODIMP CBaseGraph::RenderFile(LPCWSTR lpcwstrFile, LPCWSTR lpcwstrPlayList
 
 STDMETHODIMP CBaseGraph::AddSourceFilter(LPCWSTR lpcwstrFileName, LPCWSTR lpcwstrFilterName, IBaseFilter** ppFilter)
 {
-    *ppFilter = NULL;
-    return RenderFile(lpcwstrFileName, NULL);
+    *ppFilter = nullptr;
+    return RenderFile(lpcwstrFileName, nullptr);
 }//E_NOTIMPL;}
 
 STDMETHODIMP CBaseGraph::SetLogFile(DWORD_PTR hFile)
@@ -411,7 +411,11 @@ STDMETHODIMP CBaseGraph::GetNotifyFlags(long* lplNoNotifyFlags)
 // IMediaSeeking
 STDMETHODIMP CBaseGraph::GetCapabilities(DWORD* pCapabilities)
 {
-    return pCapabilities ? *pCapabilities = AM_SEEKING_CanSeekAbsolute | AM_SEEKING_CanGetCurrentPos | AM_SEEKING_CanGetDuration, S_OK : E_POINTER;
+    CheckPointer(pCapabilities, E_POINTER);
+
+    *pCapabilities = AM_SEEKING_CanSeekAbsolute | AM_SEEKING_CanGetCurrentPos | AM_SEEKING_CanGetDuration;
+
+    return S_OK;
 }
 
 STDMETHODIMP CBaseGraph::CheckCapabilities(DWORD* pCapabilities)
@@ -442,7 +446,11 @@ STDMETHODIMP CBaseGraph::QueryPreferredFormat(GUID* pFormat)
 
 STDMETHODIMP CBaseGraph::GetTimeFormat(GUID* pFormat)
 {
-    return pFormat ? *pFormat = TIME_FORMAT_MEDIA_TIME, S_OK : E_POINTER;
+    CheckPointer(pFormat, E_POINTER);
+
+    *pFormat = TIME_FORMAT_MEDIA_TIME;
+
+    return S_OK;
 }
 
 STDMETHODIMP CBaseGraph::IsUsingTimeFormat(const GUID* pFormat)

@@ -21,11 +21,6 @@
 
 #pragma once
 
-#include <Windows.h>
-#include <MMReg.h>
-#include <mmsystem.h>
-#include <msacm.h>
-
 typedef long(*AudioPointSampler)(void*, void*, long, long, long);
 typedef long(*AudioDownSampler)(void*, void*, long*, int, long, long, long);
 
@@ -39,7 +34,6 @@ private:
     int holdover;
     long* filter_bank;
     int filter_width;
-    bool fHighQuality;
 
     enum { BUFFER_SIZE = 512 };
     BYTE cbuffer[4 * BUFFER_SIZE];

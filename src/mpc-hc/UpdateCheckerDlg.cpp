@@ -1,5 +1,5 @@
 /*
- * (C) 2012 see Authors.txt
+ * (C) 2012-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,11 +21,12 @@
 
 #include "stdafx.h"
 #include "UpdateCheckerDlg.h"
+#include "mpc-hc_config.h"
 #include <afxdialogex.h>
 
 IMPLEMENT_DYNAMIC(UpdateCheckerDlg, CDialog)
 
-UpdateCheckerDlg::UpdateCheckerDlg(Update_Status updateStatus, const Version& latestVersion, CWnd* pParent /*=NULL*/)
+UpdateCheckerDlg::UpdateCheckerDlg(Update_Status updateStatus, const Version& latestVersion, CWnd* pParent /*=nullptr*/)
     : CDialog(UpdateCheckerDlg::IDD, pParent)
     , m_updateStatus(updateStatus)
 {
@@ -33,16 +34,16 @@ UpdateCheckerDlg::UpdateCheckerDlg(Update_Status updateStatus, const Version& la
         case UPDATER_UPDATE_AVAILABLE:
         case UPDATER_UPDATE_AVAILABLE_IGNORED:
             m_text.Format(IDS_NEW_UPDATE_AVAILABLE,
-                          latestVersion.major, latestVersion.minor, latestVersion.patch, latestVersion.revision,
-                          UpdateChecker::MPC_HC_VERSION.major, UpdateChecker::MPC_HC_VERSION.minor, UpdateChecker::MPC_HC_VERSION.patch, UpdateChecker::MPC_HC_VERSION.revision);
+                          latestVersion.ToString(),
+                          UpdateChecker::MPC_HC_VERSION.ToString());
             break;
         case UPDATER_LATEST_STABLE:
             m_text.LoadString(IDS_USING_LATEST_STABLE);
             break;
         case UPDATER_NEWER_VERSION:
             m_text.Format(IDS_USING_NEWER_VERSION,
-                          UpdateChecker::MPC_HC_VERSION.major, UpdateChecker::MPC_HC_VERSION.minor, UpdateChecker::MPC_HC_VERSION.patch, UpdateChecker::MPC_HC_VERSION.revision,
-                          latestVersion.major, latestVersion.minor, latestVersion.patch, latestVersion.revision);
+                          UpdateChecker::MPC_HC_VERSION.ToString(),
+                          latestVersion.ToString());
             break;
         case UPDATER_ERROR:
             m_text.LoadString(IDS_UPDATE_ERROR);
@@ -80,12 +81,12 @@ BOOL UpdateCheckerDlg::OnInitDialog()
     switch (m_updateStatus) {
         case UPDATER_UPDATE_AVAILABLE:
         case UPDATER_UPDATE_AVAILABLE_IGNORED:
-            m_icon.SetIcon(LoadIcon(NULL, IDI_QUESTION));
+            m_icon.SetIcon(LoadIcon(nullptr, IDI_QUESTION));
             break;
         case UPDATER_LATEST_STABLE:
         case UPDATER_NEWER_VERSION:
         case UPDATER_ERROR: {
-            m_icon.SetIcon(LoadIcon(NULL, (m_updateStatus == UPDATER_ERROR) ? IDI_WARNING : IDI_INFORMATION));
+            m_icon.SetIcon(LoadIcon(nullptr, (m_updateStatus == UPDATER_ERROR) ? IDI_WARNING : IDI_INFORMATION));
             m_dlButton.ShowWindow(SW_HIDE);
             m_laterButton.ShowWindow(SW_HIDE);
             m_ignoreButton.SetWindowText(ResStr(IDS_UPDATE_CLOSE));
@@ -114,7 +115,7 @@ BOOL UpdateCheckerDlg::OnInitDialog()
 
 void UpdateCheckerDlg::OnOpenDownloadPage()
 {
-    ShellExecute(NULL, _T("open"), _T("http://mpc-hc.sourceforge.net/downloads/"), NULL, NULL, SW_SHOWNORMAL);
+    ShellExecute(nullptr, _T("open"), DOWNLOAD_URL, nullptr, nullptr, SW_SHOWNORMAL);
 
     EndDialog(IDC_UPDATE_DL_BUTTON);
 }

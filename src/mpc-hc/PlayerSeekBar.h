@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,86 +22,94 @@
 #pragma once
 
 #include "DSMPropertyBag.h"
+#include <memory>
 
-#define SHOW_DELAY 100
-#define AUTOPOP_DELAY 1000
-
-// CPlayerSeekBar
+class CMainFrame;
 
 class CPlayerSeekBar : public CDialogBar
 {
     DECLARE_DYNAMIC(CPlayerSeekBar)
 
+public:
+    CPlayerSeekBar(CMainFrame* pMainFrame);
+    virtual ~CPlayerSeekBar();
+    virtual BOOL Create(CWnd* pParentWnd);
+
 private:
-    enum tooltip_state_t {
-        TOOLTIP_HIDDEN,
-        TOOLTIP_TRIGGERED,
-        TOOLTIP_VISIBLE
-    };
+    enum { TIMER_SHOWHIDE_TOOLTIP = 1, TIMER_HOVER_CAPTURED };
 
-    __int64 m_start, m_stop, m_pos, m_posreal;
-    bool m_fEnabled;
+    CMainFrame* m_pMainFrame;
+    REFERENCE_TIME m_rtStart, m_rtStop, m_rtPos;
+    bool m_bEnabled;
+    bool m_bHasDuration;
+    REFERENCE_TIME m_rtHoverPos;
+    bool m_bHovered;
+    CPoint m_hoverPoint;
+    HCURSOR m_cursor;
+    bool m_bDraggingThumb;
+
     CToolTipCtrl m_tooltip;
+    enum { TOOLTIP_HIDDEN, TOOLTIP_TRIGGERED, TOOLTIP_VISIBLE } m_tooltipState;
     TOOLINFO m_ti;
-    tooltip_state_t m_tooltipState;
-    __int64 m_tooltipPos, m_tooltipLastPos;
+    CPoint m_tooltipPoint;
+    bool m_bIgnoreLastTooltipPoint;
     CString m_tooltipText;
-    UINT_PTR m_tooltipTimer;
+
     CComPtr<IDSMChapterBag> m_pChapterBag;
-    CCritSec m_CBLock;
+    CCritSec m_csChapterBag; // Graph thread sets the chapter bag
 
-    void MoveThumb(CPoint point);
-    __int64 CalculatePosition(REFERENCE_TIME rt);
-    __int64 CalculatePosition(CPoint point);
-    void SetPosInternal(__int64 pos);
+    std::unique_ptr<CDC> m_pEnabledThumb;
+    std::unique_ptr<CDC> m_pDisabledThumb;
+    CRect m_lastThumbRect;
 
-    void UpdateTooltip(CPoint point);
+    virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+    virtual CSize CalcFixedLayout(BOOL bStretch, BOOL bHorz) override;
 
+    void MoveThumb(const CPoint& point);
+    void SyncVideoToThumb();
+    long ChannelPointFromPosition(REFERENCE_TIME rtPos) const;
+    REFERENCE_TIME PositionFromClientPoint(const CPoint& point) const;
+    void SyncThumbToVideo(REFERENCE_TIME rtPos);
+
+    void CreateThumb(bool bEnabled, CDC& parentDC);
     CRect GetChannelRect() const;
     CRect GetThumbRect() const;
-    CRect GetInnerThumbRect() const;
+    CRect GetInnerThumbRect(bool bEnabled, const CRect& thumbRect) const;
 
-public:
-    CPlayerSeekBar();
-    virtual ~CPlayerSeekBar();
-
-    void Enable(bool fEnable);
-
-    void GetRange(__int64& start, __int64& stop) const;
-    void SetRange(__int64 start, __int64 stop);
-    __int64 GetPos() const;
-    __int64 GetPosReal() const;
-    void SetPos(__int64 pos);
-
-    void HideToolTip();
-    void UpdateToolTipPosition(CPoint& point);
+    void UpdateTooltip(const CPoint& point);
+    void UpdateToolTipPosition();
     void UpdateToolTipText();
 
-    void SetChapterBag(CComPtr<IDSMChapterBag>& pCB);
+public:
+    void Enable(bool bEnable);
+    void HideToolTip();
+
+    void GetRange(REFERENCE_TIME& rtStart, REFERENCE_TIME& rtStop) const;
+    void SetRange(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop);
+    REFERENCE_TIME GetPos() const;
+    void SetPos(REFERENCE_TIME rtPos);
+    bool HasDuration() const;
+
+    void SetChapterBag(IDSMChapterBag* pCB);
     void RemoveChapters();
 
-    // Overrides
-    // ClassWizard generated virtual function overrides
-    //{{AFX_VIRTUAL(CPlayerSeekBar)
-    virtual BOOL Create(CWnd* pParentWnd);
-    virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-    virtual BOOL PreTranslateMessage(MSG* pMsg);
-    //}}AFX_VIRTUAL
+    bool DraggingThumb();
 
-    // Generated message map functions
-protected:
-    //{{AFX_MSG(CPlayerSeekBar)
+private:
+    DECLARE_MESSAGE_MAP()
+
     afx_msg void OnPaint();
-    afx_msg void OnSize(UINT nType, int cx, int cy);
     afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+    afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
     afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+    afx_msg void OnXButtonDown(UINT nFlags, UINT nButton, CPoint point);
+    afx_msg void OnXButtonUp(UINT nFlags, UINT nButton, CPoint point);
+    afx_msg void OnXButtonDblClk(UINT nFlags, UINT nButton, CPoint point);
     afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-    afx_msg LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
     afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
     afx_msg void OnTimer(UINT_PTR nIDEvent);
-    //}}AFX_MSG
-    DECLARE_MESSAGE_MAP()
-public:
-    afx_msg BOOL OnPlayStop(UINT nID);
+    afx_msg void OnMouseLeave();
+    afx_msg LRESULT OnThemeChanged();
+    afx_msg void OnCaptureChanged(CWnd* pWnd);
 };

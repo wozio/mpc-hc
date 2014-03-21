@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -119,6 +119,7 @@ CPPageAccelTbl::CPPageAccelTbl()
     , m_WinLircLink(_T("http://winlirc.sourceforge.net/"))
     , m_fUIce(FALSE)
     , m_UIceLink(_T("http://www.mediatexx.com/"))
+    , m_nStatusTimerID(0)
     , m_fGlobalMedia(FALSE)
 {
 }
@@ -149,7 +150,7 @@ void CPPageAccelTbl::SetupList()
         m_list.SetItemText(row, COL_KEY, hotkey);
 
         CString id;
-        id.Format(_T("%d"), wc.cmd);
+        id.Format(_T("%u"), wc.cmd);
         m_list.SetItemText(row, COL_ID, id);
 
         m_list.SetItemText(row, COL_MOUSE, MakeMouseButtonLabel(wc.mouse));
@@ -165,10 +166,9 @@ void CPPageAccelTbl::SetupList()
         m_list.SetItemText(row, COL_RMREPCNT, repcnt);
     }
 
-    int contentSize;
     for (int nCol = COL_CMD; nCol <= COL_RMREPCNT; nCol++) {
         m_list.SetColumnWidth(nCol, LVSCW_AUTOSIZE);
-        contentSize = m_list.GetColumnWidth(nCol);
+        int contentSize = m_list.GetColumnWidth(nCol);
         m_list.SetColumnWidth(nCol, LVSCW_AUTOSIZE_USEHEADER);
         if (contentSize > m_list.GetColumnWidth(nCol)) {
             m_list.SetColumnWidth(nCol, LVSCW_AUTOSIZE);
@@ -254,8 +254,8 @@ CString CPPageAccelTbl::MakeAccelVkeyLabel(WORD key, bool fVirtKey)
         case VK_CAPITAL:
             str = _T("VK_CAPITAL");
             break;
-            //  case VK_KANA: str = _T("VK_KANA"); break;
-            //  case VK_HANGEUL: str = _T("VK_HANGEUL"); break;
+        //  case VK_KANA: str = _T("VK_KANA"); break;
+        //  case VK_HANGEUL: str = _T("VK_HANGEUL"); break;
         case VK_HANGUL:
             str = _T("VK_HANGUL");
             break;
@@ -265,7 +265,7 @@ CString CPPageAccelTbl::MakeAccelVkeyLabel(WORD key, bool fVirtKey)
         case VK_FINAL:
             str = _T("VK_FINAL");
             break;
-            //  case VK_HANJA: str = _T("VK_HANJA"); break;
+        //  case VK_HANJA: str = _T("VK_HANJA"); break;
         case VK_KANJI:
             str = _T("VK_KANJI");
             break;
@@ -470,7 +470,7 @@ CString CPPageAccelTbl::MakeAccelVkeyLabel(WORD key, bool fVirtKey)
         case VK_SCROLL:
             str = _T("VK_SCROLL");
             break;
-            //  case VK_OEM_NEC_EQUAL: str = _T("VK_OEM_NEC_EQUAL"); break;
+        //  case VK_OEM_NEC_EQUAL: str = _T("VK_OEM_NEC_EQUAL"); break;
         case VK_OEM_FJ_JISHO:
             str = _T("VK_OEM_FJ_JISHO");
             break;
@@ -775,7 +775,7 @@ CString CPPageAccelTbl::MakeAccelShortcutLabel(UINT id)
     return _T("");
 }
 
-CString CPPageAccelTbl::MakeAccelShortcutLabel(ACCEL& a)
+CString CPPageAccelTbl::MakeAccelShortcutLabel(const ACCEL& a)
 {
     // Reference page for Virtual-Key Codes: http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731%28v=vs.100%29.aspx
     CString str;
@@ -826,8 +826,8 @@ CString CPPageAccelTbl::MakeAccelShortcutLabel(ACCEL& a)
         case VK_CAPITAL:
             str = _T("Capital");
             break;
-            //  case VK_KANA: str = _T("Kana"); break;
-            //  case VK_HANGEUL: str = _T("Hangeul"); break;
+        //  case VK_KANA: str = _T("Kana"); break;
+        //  case VK_HANGEUL: str = _T("Hangeul"); break;
         case VK_HANGUL:
             str = _T("Hangul");
             break;
@@ -837,7 +837,7 @@ CString CPPageAccelTbl::MakeAccelShortcutLabel(ACCEL& a)
         case VK_FINAL:
             str = _T("Final");
             break;
-            //  case VK_HANJA: str = _T("Hanja"); break;
+        //  case VK_HANJA: str = _T("Hanja"); break;
         case VK_KANJI:
             str = _T("Kanji");
             break;
@@ -1042,7 +1042,7 @@ CString CPPageAccelTbl::MakeAccelShortcutLabel(ACCEL& a)
         case VK_SCROLL:
             str = _T("Scroll");
             break;
-            //  case VK_OEM_NEC_EQUAL: str = _T("OEM NEC Equal"); break;
+        //  case VK_OEM_NEC_EQUAL: str = _T("OEM NEC Equal"); break;
         case VK_OEM_FJ_JISHO:
             str = _T("OEM FJ Jisho");
             break;
@@ -1427,11 +1427,11 @@ void CPPageAccelTbl::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CPPageAccelTbl, CPPageBase)
-    ON_NOTIFY(LVN_BEGINLABELEDIT, IDC_LIST1, OnBeginlabeleditList)
-    ON_NOTIFY(LVN_DOLABELEDIT, IDC_LIST1, OnDolabeleditList)
-    ON_NOTIFY(LVN_ENDLABELEDIT, IDC_LIST1, OnEndlabeleditList)
-    ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedButton1)
-    ON_BN_CLICKED(IDC_BUTTON2, OnBnClickedButton2)
+    ON_NOTIFY(LVN_BEGINLABELEDIT, IDC_LIST1, OnBeginListLabelEdit)
+    ON_NOTIFY(LVN_DOLABELEDIT, IDC_LIST1, OnDoListLabelEdit)
+    ON_NOTIFY(LVN_ENDLABELEDIT, IDC_LIST1, OnEndListLabelEdit)
+    ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedSelectAll)
+    ON_BN_CLICKED(IDC_BUTTON2, OnBnClickedReset)
     ON_WM_TIMER()
     ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()
@@ -1470,6 +1470,12 @@ BOOL CPPageAccelTbl::OnInitDialog()
     m_fUIce = s.fUIce;
     m_UIceAddr = s.strUIceAddr;
     m_fGlobalMedia = s.fGlobalMedia;
+
+    CString text;
+    text.Format(IDS_STRING_COLON, _T("WinLIRC"));
+    m_WinLircLink.SetWindowText(text);
+    text.Format(IDS_STRING_COLON, _T("uICE"));
+    m_UIceLink.SetWindowText(text);
 
     UpdateData(FALSE);
 
@@ -1556,7 +1562,7 @@ BOOL CPPageAccelTbl::OnApply()
     return __super::OnApply();
 }
 
-void CPPageAccelTbl::OnBnClickedButton1()
+void CPPageAccelTbl::OnBnClickedSelectAll()
 {
     m_list.SetFocus();
 
@@ -1565,7 +1571,7 @@ void CPPageAccelTbl::OnBnClickedButton1()
     }
 }
 
-void CPPageAccelTbl::OnBnClickedButton2()
+void CPPageAccelTbl::OnBnClickedReset()
 {
     m_list.SetFocus();
 
@@ -1586,7 +1592,7 @@ void CPPageAccelTbl::OnBnClickedButton2()
     SetModified();
 }
 
-void CPPageAccelTbl::OnBeginlabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
+void CPPageAccelTbl::OnBeginListLabelEdit(NMHDR* pNMHDR, LRESULT* pResult)
 {
     LV_DISPINFO* pDispInfo = (LV_DISPINFO*)pNMHDR;
     LV_ITEM* pItem = &pDispInfo->item;
@@ -1606,7 +1612,7 @@ void CPPageAccelTbl::OnBeginlabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
 
 static BYTE s_mods[] = {0, FALT, FCONTROL, FSHIFT, FCONTROL | FALT, FCONTROL | FSHIFT, FALT | FSHIFT, FCONTROL | FALT | FSHIFT};
 
-void CPPageAccelTbl::OnDolabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
+void CPPageAccelTbl::OnDoListLabelEdit(NMHDR* pNMHDR, LRESULT* pResult)
 {
     LV_DISPINFO* pDispInfo = (LV_DISPINFO*)pNMHDR;
     LV_ITEM* pItem = &pDispInfo->item;
@@ -1684,7 +1690,7 @@ void CPPageAccelTbl::OnDolabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
     }
 }
 
-void CPPageAccelTbl::OnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
+void CPPageAccelTbl::OnEndListLabelEdit(NMHDR* pNMHDR, LRESULT* pResult)
 {
     LV_DISPINFO* pDispInfo = (LV_DISPINFO*)pNMHDR;
     LV_ITEM* pItem = &pDispInfo->item;
@@ -1738,10 +1744,12 @@ void CPPageAccelTbl::OnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
         case COL_MOUSE:
             wc.mouse = (UINT)pItem->lParam;
             m_list.SetItemText(pItem->iItem, COL_MOUSE, pItem->pszText);
+            *pResult = TRUE;
             break;
         case COL_MOUSE_FS:
             wc.mouseFS = (UINT)pItem->lParam;
             m_list.SetItemText(pItem->iItem, COL_MOUSE_FS, pItem->pszText);
+            *pResult = TRUE;
             break;
         case COL_RMCMD:
             wc.rmcmd = CStringA(CString(pItem->pszText)).Trim();
@@ -1751,7 +1759,7 @@ void CPPageAccelTbl::OnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
             break;
         case COL_RMREPCNT:
             CString str = CString(pItem->pszText).Trim();
-            wc.rmrepcnt = _tcstol(str, NULL, 10);
+            wc.rmrepcnt = _tcstol(str, nullptr, 10);
             str.Format(_T("%d"), wc.rmrepcnt);
             m_list.SetItemText(pItem->iItem, pItem->iSubItem, str);
             *pResult = TRUE;
@@ -1765,39 +1773,44 @@ void CPPageAccelTbl::OnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult)
 
 void CPPageAccelTbl::OnTimer(UINT_PTR nIDEvent)
 {
-    UpdateData();
+    if (nIDEvent == m_nStatusTimerID) {
+        UpdateData();
 
-    if (m_fWinLirc) {
-        CString addr;
-        m_WinLircEdit.GetWindowText(addr);
-        AfxGetAppSettings().WinLircClient.Connect(addr);
+        CAppSettings& s = AfxGetAppSettings();
+
+        if (m_fWinLirc) {
+            CString addr;
+            m_WinLircEdit.GetWindowText(addr);
+            s.WinLircClient.Connect(addr);
+        }
+
+        m_WinLircEdit.Invalidate();
+
+        if (m_fUIce) {
+            CString addr;
+            m_UIceEdit.GetWindowText(addr);
+            s.UIceClient.Connect(addr);
+        }
+
+        m_UIceEdit.Invalidate();
+
+        m_counter++;
+    } else {
+        __super::OnTimer(nIDEvent);
     }
-
-    m_WinLircEdit.Invalidate();
-
-    if (m_fUIce) {
-        CString addr;
-        m_UIceEdit.GetWindowText(addr);
-        AfxGetAppSettings().UIceClient.Connect(addr);
-    }
-
-    m_UIceEdit.Invalidate();
-
-    m_counter++;
-
-    __super::OnTimer(nIDEvent);
 }
 
 HBRUSH CPPageAccelTbl::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
     HBRUSH hbr = __super::OnCtlColor(pDC, pWnd, nCtlColor);
 
+    const CAppSettings& s = AfxGetAppSettings();
     int status = -1;
 
     if (*pWnd == m_WinLircEdit) {
-        status = AfxGetAppSettings().WinLircClient.GetStatus();
+        status = s.WinLircClient.GetStatus();
     } else if (*pWnd == m_UIceEdit) {
-        status = AfxGetAppSettings().UIceClient.GetStatus();
+        status = s.UIceClient.GetStatus();
     }
 
     if (status == 0 || status == 2 && (m_counter & 1)) {
@@ -1811,14 +1824,15 @@ HBRUSH CPPageAccelTbl::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
 BOOL CPPageAccelTbl::OnSetActive()
 {
-    SetTimer(1, 1000, NULL);
+    m_nStatusTimerID = SetTimer(1, 1000, nullptr);
 
     return CPPageBase::OnSetActive();
 }
 
 BOOL CPPageAccelTbl::OnKillActive()
 {
-    KillTimer(1);
+    KillTimer(m_nStatusTimerID);
+    m_nStatusTimerID = 0;
 
     return CPPageBase::OnKillActive();
 }

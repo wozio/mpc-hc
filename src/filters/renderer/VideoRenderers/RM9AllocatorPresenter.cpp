@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,6 +30,8 @@ using namespace DSObjects;
 CRM9AllocatorPresenter::CRM9AllocatorPresenter(HWND hWnd, bool bFullscreen, HRESULT& hr, CString& _Error)
     : CDX9AllocatorPresenter(hWnd, bFullscreen, hr, false, _Error)
 {
+    ZeroMemory(&m_bitmapInfo, sizeof(m_bitmapInfo));
+    ZeroMemory(&m_lastBitmapInfo, sizeof(m_lastBitmapInfo));
 }
 
 STDMETHODIMP CRM9AllocatorPresenter::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -46,27 +48,27 @@ HRESULT CRM9AllocatorPresenter::AllocSurfaces()
     CAutoLock cAutoLock(this);
     CAutoLock cRenderLock(&m_RenderLock);
 
-    m_pVideoSurfaceOff  = NULL;
-    m_pVideoSurfaceYUY2 = NULL;
+    m_pVideoSurfaceOff  = nullptr;
+    m_pVideoSurfaceYUY2 = nullptr;
 
     HRESULT hr;
 
     if (FAILED(hr = m_pD3DDev->CreateOffscreenPlainSurface(
                         m_NativeVideoSize.cx, m_NativeVideoSize.cy, D3DFMT_X8R8G8B8,
-                        D3DPOOL_DEFAULT, &m_pVideoSurfaceOff, NULL))) {
+                        D3DPOOL_DEFAULT, &m_pVideoSurfaceOff, nullptr))) {
         return hr;
     }
 
-    m_pD3DDev->ColorFill(m_pVideoSurfaceOff, NULL, 0);
+    m_pD3DDev->ColorFill(m_pVideoSurfaceOff, nullptr, 0);
 
     if (FAILED(hr = m_pD3DDev->CreateOffscreenPlainSurface(
                         m_NativeVideoSize.cx, m_NativeVideoSize.cy, D3DFMT_YUY2,
-                        D3DPOOL_DEFAULT, &m_pVideoSurfaceYUY2, NULL))) {
-        m_pVideoSurfaceYUY2 = NULL;
+                        D3DPOOL_DEFAULT, &m_pVideoSurfaceYUY2, nullptr))) {
+        m_pVideoSurfaceYUY2 = nullptr;
     }
 
     if (m_pVideoSurfaceYUY2) {
-        m_pD3DDev->ColorFill(m_pVideoSurfaceOff, NULL, 0x80108010);
+        m_pD3DDev->ColorFill(m_pVideoSurfaceOff, nullptr, 0x80108010);
     }
 
     return __super::AllocSurfaces();
@@ -76,8 +78,8 @@ void CRM9AllocatorPresenter::DeleteSurfaces()
 {
     CAutoLock cAutoLock(this);
     CAutoLock cRenderLock(&m_RenderLock);
-    m_pVideoSurfaceOff = NULL;
-    m_pVideoSurfaceYUY2 = NULL;
+    m_pVideoSurfaceOff = nullptr;
+    m_pVideoSurfaceYUY2 = nullptr;
     __super::DeleteSurfaces();
 }
 
@@ -85,7 +87,7 @@ void CRM9AllocatorPresenter::DeleteSurfaces()
 
 STDMETHODIMP CRM9AllocatorPresenter::Blt(UCHAR* pImageData, RMABitmapInfoHeader* pBitmapInfo, REF(PNxRect) inDestRect, REF(PNxRect) inSrcRect)
 {
-    if (!m_pVideoSurface || !m_pVideoSurfaceOff) {
+    if (!m_pVideoSurface[m_nCurSurface] || !m_pVideoSurfaceOff) {
         return E_FAIL;
     }
 
@@ -97,15 +99,15 @@ STDMETHODIMP CRM9AllocatorPresenter::Blt(UCHAR* pImageData, RMABitmapInfoHeader*
         return E_FAIL;
     }
 
-    D3DSURFACE_DESC d3dsd;
-    ZeroMemory(&d3dsd, sizeof(d3dsd));
-    if (FAILED(m_pVideoSurfaceOff->GetDesc(&d3dsd))) {
+    D3DSURFACE_DESC desc;
+    ZeroMemory(&desc, sizeof(desc));
+    if (FAILED(m_pVideoSurfaceOff->GetDesc(&desc))) {
         return E_FAIL;
     }
 
     int dbpp =
-        d3dsd.Format == D3DFMT_R8G8B8 || d3dsd.Format == D3DFMT_X8R8G8B8 || d3dsd.Format == D3DFMT_A8R8G8B8 ? 32 :
-        d3dsd.Format == D3DFMT_R5G6B5 ? 16 : 0;
+        desc.Format == D3DFMT_R8G8B8 || desc.Format == D3DFMT_X8R8G8B8 || desc.Format == D3DFMT_A8R8G8B8 ? 32 :
+        desc.Format == D3DFMT_R5G6B5 ? 16 : 0;
 
     if (pBitmapInfo->biCompression == '024I') {
         DWORD pitch = pBitmapInfo->biWidth;
@@ -178,7 +180,7 @@ STDMETHODIMP CRM9AllocatorPresenter::Blt(UCHAR* pImageData, RMABitmapInfoHeader*
     }
 
     if (!fRGB && !fYUY2) {
-        m_pD3DDev->ColorFill(m_pVideoSurfaceOff, NULL, 0);
+        m_pD3DDev->ColorFill(m_pVideoSurfaceOff, nullptr, 0);
 
         HDC hDC;
         if (SUCCEEDED(m_pVideoSurfaceOff->GetDC(&hDC))) {

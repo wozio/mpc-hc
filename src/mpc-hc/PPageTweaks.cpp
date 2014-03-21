@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -34,15 +34,16 @@ CPPageTweaks::CPPageTweaks()
     , m_nJumpDistS(0)
     , m_nJumpDistM(0)
     , m_nJumpDistL(0)
-    , m_OSD_Size(0)
-    , m_fNotifyMSN(TRUE)
+    , m_nOSDSize(0)
+    , m_fNotifySkype(TRUE)
     , m_fPreventMinimize(FALSE)
     , m_fUseWin7TaskBar(TRUE)
     , m_fUseSearchInFolder(FALSE)
     , m_fLCDSupport(FALSE)
     , m_fFastSeek(FALSE)
-	, m_fShowChapters(TRUE)
+    , m_fShowChapters(TRUE)
     , m_fUseTimeTooltip(TRUE)
+    , m_bHideWindowedMousePointer(TRUE)
 {
 }
 
@@ -56,7 +57,7 @@ void CPPageTweaks::DoDataExchange(CDataExchange* pDX)
     DDX_Text(pDX, IDC_EDIT1, m_nJumpDistS);
     DDX_Text(pDX, IDC_EDIT2, m_nJumpDistM);
     DDX_Text(pDX, IDC_EDIT3, m_nJumpDistL);
-    DDX_Check(pDX, IDC_CHECK4, m_fNotifyMSN);
+    DDX_Check(pDX, IDC_CHECK4, m_fNotifySkype);
     DDX_Check(pDX, IDC_CHECK6, m_fPreventMinimize);
     DDX_Check(pDX, IDC_CHECK_WIN7, m_fUseWin7TaskBar);
     DDX_Check(pDX, IDC_CHECK7, m_fUseSearchInFolder);
@@ -64,9 +65,11 @@ void CPPageTweaks::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_COMBO3, m_TimeTooltipPosition);
     DDX_Control(pDX, IDC_COMBO1, m_FontType);
     DDX_Control(pDX, IDC_COMBO2, m_FontSize);
+    DDX_Control(pDX, IDC_COMBO4, m_FastSeekMethod);
     DDX_Check(pDX, IDC_CHECK1, m_fFastSeek);
     DDX_Check(pDX, IDC_CHECK2, m_fShowChapters);
     DDX_Check(pDX, IDC_CHECK_LCD, m_fLCDSupport);
+    DDX_Check(pDX, IDC_CHECK3, m_bHideWindowedMousePointer);
 }
 
 int CALLBACK EnumFontProc(ENUMLOGFONT FAR* lf, NEWTEXTMETRIC FAR* tm, int FontType, LPARAM dwData)
@@ -75,7 +78,7 @@ int CALLBACK EnumFontProc(ENUMLOGFONT FAR* lf, NEWTEXTMETRIC FAR* tm, int FontTy
     if (FontType == TRUETYPE_FONTTYPE) {
         fntl->Add(lf->elfFullName);
     }
-    return true;
+    return 1; /* Continue the enumeration */
 }
 
 BOOL CPPageTweaks::OnInitDialog()
@@ -89,7 +92,7 @@ BOOL CPPageTweaks::OnInitDialog()
     m_nJumpDistS = s.nJumpDistS;
     m_nJumpDistM = s.nJumpDistM;
     m_nJumpDistL = s.nJumpDistL;
-    m_fNotifyMSN = s.fNotifyMSN;
+    m_fNotifySkype = s.bNotifySkype;
 
     m_fPreventMinimize = s.fPreventMinimize;
 
@@ -106,19 +109,25 @@ BOOL CPPageTweaks::OnInitDialog()
     m_TimeTooltipPosition.SetCurSel(s.nTimeTooltipPosition);
     m_TimeTooltipPosition.EnableWindow(m_fUseTimeTooltip);
 
-    m_OSD_Size = s.nOSDSize;
-    m_OSD_Font = s.strOSDFont;
+    m_nOSDSize = s.nOSDSize;
+    m_strOSDFont = s.strOSDFont;
 
-    m_fFastSeek = s.fFastSeek;
+    m_fFastSeek = s.bFastSeek;
+    m_FastSeekMethod.AddString(ResStr(IDS_FASTSEEK_LATEST));
+    m_FastSeekMethod.AddString(ResStr(IDS_FASTSEEK_NEAREST));
+    m_FastSeekMethod.SetCurSel(s.eFastSeekMethod);
+
     m_fShowChapters = s.fShowChapters;
+
+    m_bHideWindowedMousePointer = s.bHideWindowedMousePointer;
 
     m_fLCDSupport = s.fLCDSupport;
 
     m_FontType.Clear();
     m_FontSize.Clear();
-    HDC dc = CreateDC(_T("DISPLAY"), NULL, NULL, NULL);
+    HDC dc = CreateDC(_T("DISPLAY"), nullptr, nullptr, nullptr);
     CAtlArray<CString> fntl;
-    EnumFontFamilies(dc, NULL, (FONTENUMPROC)EnumFontProc, (LPARAM)&fntl);
+    EnumFontFamilies(dc, nullptr, (FONTENUMPROC)EnumFontProc, (LPARAM)&fntl);
     DeleteDC(dc);
     for (size_t i = 0; i < fntl.GetCount(); ++i) {
         if (i > 0 && fntl[i - 1] == fntl[i]) {
@@ -127,7 +136,7 @@ BOOL CPPageTweaks::OnInitDialog()
         m_FontType.AddString(fntl[i]);
     }
     CorrectComboListWidth(m_FontType);
-    int iSel = m_FontType.FindStringExact(0, m_OSD_Font);
+    int iSel = m_FontType.FindStringExact(0, m_strOSDFont);
     if (iSel == CB_ERR) {
         iSel = 0;
     }
@@ -137,7 +146,7 @@ BOOL CPPageTweaks::OnInitDialog()
     for (int i = 10; i < 26; ++i) {
         str.Format(_T("%d"), i);
         m_FontSize.AddString(str);
-        if (m_OSD_Size == i) {
+        if (m_nOSDSize == i) {
             iSel = i;
         }
     }
@@ -160,17 +169,21 @@ BOOL CPPageTweaks::OnApply()
     s.nJumpDistS = m_nJumpDistS;
     s.nJumpDistM = m_nJumpDistM;
     s.nJumpDistL = m_nJumpDistL;
-    s.fNotifyMSN = !!m_fNotifyMSN;
+    s.bNotifySkype = !!m_fNotifySkype;
 
     s.fPreventMinimize = !!m_fPreventMinimize;
     s.fUseWin7TaskBar = !!m_fUseWin7TaskBar;
     s.fUseSearchInFolder = !!m_fUseSearchInFolder;
     s.fUseTimeTooltip = !!m_fUseTimeTooltip;
     s.nTimeTooltipPosition = m_TimeTooltipPosition.GetCurSel();
-    s.nOSDSize = m_OSD_Size;
+    s.nOSDSize = m_nOSDSize;
     m_FontType.GetLBText(m_FontType.GetCurSel(), s.strOSDFont);
 
-    s.fFastSeek = !!m_fFastSeek;
+    s.bFastSeek = !!m_fFastSeek;
+    s.eFastSeekMethod = static_cast<decltype(s.eFastSeekMethod)>(m_FastSeekMethod.GetCurSel());
+
+    s.bHideWindowedMousePointer = !!m_bHideWindowedMousePointer;
+
     s.fShowChapters = !!m_fShowChapters;
 
     s.fLCDSupport = !!m_fLCDSupport;
@@ -181,11 +194,17 @@ BOOL CPPageTweaks::OnApply()
     }
     pFrame->UpdateThumbarButton();
 
+    // There is no main frame when the option dialog is displayed stand-alone
+    if (CMainFrame* pMainFrame = AfxGetMainFrame()) {
+        pMainFrame->UpdateControlState(CMainFrame::UPDATE_SKYPE);
+        pMainFrame->UpdateControlState(CMainFrame::UPDATE_SEEKBAR_CHAPTERS);
+    }
+
     return __super::OnApply();
 }
 
 BEGIN_MESSAGE_MAP(CPPageTweaks, CPPageBase)
-    ON_UPDATE_COMMAND_UI(IDC_CHECK3, OnUpdateCheck3)
+    ON_UPDATE_COMMAND_UI(IDC_COMBO4, OnUpdateFastSeek)
     ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedButton1)
     ON_BN_CLICKED(IDC_CHECK8, OnUseTimeTooltipClicked)
     ON_CBN_SELCHANGE(IDC_COMBO1, OnChngOSDCombo)
@@ -196,8 +215,9 @@ END_MESSAGE_MAP()
 
 // CPPageTweaks message handlers
 
-void CPPageTweaks::OnUpdateCheck3(CCmdUI* pCmdUI)
+void CPPageTweaks::OnUpdateFastSeek(CCmdUI* pCmdUI)
 {
+    pCmdUI->Enable(IsDlgButtonChecked(IDC_CHECK1));
 }
 
 void CPPageTweaks::OnBnClickedButton1()
@@ -213,9 +233,9 @@ void CPPageTweaks::OnBnClickedButton1()
 void CPPageTweaks::OnChngOSDCombo()
 {
     CString str;
-    m_OSD_Size = m_FontSize.GetCurSel() + 10;
+    m_nOSDSize = m_FontSize.GetCurSel() + 10;
     m_FontType.GetLBText(m_FontType.GetCurSel(), str);
-    ((CMainFrame*)AfxGetMainWnd())->m_OSD.DisplayMessage(OSD_TOPLEFT, _T("Test"), 2000, m_OSD_Size, str);
+    ((CMainFrame*)AfxGetMainWnd())->m_OSD.DisplayMessage(OSD_TOPLEFT, _T("Test"), 2000, m_nOSDSize, str);
     SetModified();
 }
 
@@ -250,7 +270,7 @@ BOOL CPPageTweaks::OnToolTipNotify(UINT id, NMHDR* pNMH, LRESULT* pResult)
         str = str.Left(_countof(pTTT->szText));
         if (sz.cx > rc.Width()) {
             _tcscpy_s(pTTT->szText, str);
-            pTTT->hinst = NULL;
+            pTTT->hinst = nullptr;
         }
 
         return TRUE;

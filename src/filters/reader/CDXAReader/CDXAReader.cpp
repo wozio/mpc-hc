@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "CDXAReader.h"
 #include "../../../DSUtil/DSUtil.h"
 #ifdef STANDALONE_FILTER
@@ -118,7 +119,7 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudOpPin[] = {
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut}
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut}
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
@@ -126,7 +127,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CCDXAReader>, NULL, &sudFilter[0]}
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CCDXAReader>, nullptr, &sudFilter[0]}
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -180,6 +181,20 @@ STDMETHODIMP CCDXAReader::NonDelegatingQueryInterface(REFIID riid, void** ppv)
         __super::NonDelegatingQueryInterface(riid, ppv);
 }
 
+STDMETHODIMP CCDXAReader::QueryFilterInfo(FILTER_INFO* pInfo)
+{
+    CheckPointer(pInfo, E_POINTER);
+    ValidateReadWritePtr(pInfo, sizeof(FILTER_INFO));
+
+    wcscpy_s(pInfo->achName, CCDXAReaderName);
+    pInfo->pGraph = m_pGraph;
+    if (m_pGraph) {
+        m_pGraph->AddRef();
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP CCDXAReader::Load(LPCOLESTR pszFileName, const AM_MEDIA_TYPE* pmt)
 {
     CMediaType mt;
@@ -225,6 +240,7 @@ CCDXAStream::CCDXAStream()
     m_llPosition = m_llLength = 0;
     m_nFirstSector = 0;
     m_nBufferedSector = -1;
+    ZeroMemory(m_sector, sizeof(m_sector));
 }
 
 CCDXAStream::~CCDXAStream()
@@ -242,15 +258,15 @@ bool CCDXAStream::Load(const WCHAR* fnw)
         m_hFile = INVALID_HANDLE_VALUE;
     }
 
-    m_hFile = CreateFile(CString(fnw), GENERIC_READ, FILE_SHARE_READ, NULL,
-                         OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN, (HANDLE)NULL);
+    m_hFile = CreateFile(CString(fnw), GENERIC_READ, FILE_SHARE_READ, nullptr,
+                         OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN, (HANDLE)nullptr);
     if (m_hFile == INVALID_HANDLE_VALUE) {
         return false;
     }
 
     BYTE hdr[RIFFCDXA_HEADER_SIZE];
     DWORD NumberOfBytesRead;
-    if (!ReadFile(m_hFile, (LPVOID)hdr, RIFFCDXA_HEADER_SIZE, &NumberOfBytesRead, NULL)
+    if (!ReadFile(m_hFile, (LPVOID)hdr, RIFFCDXA_HEADER_SIZE, &NumberOfBytesRead, nullptr)
             || *((DWORD*)&hdr[0]) != 'FFIR' || *((DWORD*)&hdr[8]) != 'AXDC'
             || *((DWORD*)&hdr[4]) != (*((DWORD*)&hdr[0x28]) + 0x24)) {
         CloseHandle(m_hFile);
@@ -279,7 +295,14 @@ bool CCDXAStream::Load(const WCHAR* fnw)
 
 HRESULT CCDXAStream::SetPointer(LONGLONG llPos)
 {
-    return (llPos >= 0 && llPos < m_llLength) ? m_llPosition = llPos, S_OK : S_FALSE;
+    HRESULT hr = S_FALSE;
+
+    if (llPos >= 0 && llPos < m_llLength) {
+        m_llPosition = llPos;
+        hr = S_OK;
+    }
+
+    return hr;
 }
 
 HRESULT CCDXAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead)
@@ -298,14 +321,14 @@ HRESULT CCDXAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDW
             FilePointer.QuadPart = RIFFCDXA_HEADER_SIZE + sector * RAW_SECTOR_SIZE;
             SetFilePointerEx(m_hFile, FilePointer, &FilePointer, FILE_BEGIN);
 
-            memset(m_sector, 0, sizeof(m_sector));
+            ZeroMemory(m_sector, sizeof(m_sector));
 
             DWORD NumberOfBytesRead = 0;
 
             int nRetries = 3;
             while (nRetries--) {
                 NumberOfBytesRead = 0;
-                if (!ReadFile(m_hFile, m_sector, RAW_SECTOR_SIZE, &NumberOfBytesRead, NULL)
+                if (!ReadFile(m_hFile, m_sector, RAW_SECTOR_SIZE, &NumberOfBytesRead, nullptr)
                         || NumberOfBytesRead != RAW_SECTOR_SIZE) {
                     break;
                 }
@@ -324,7 +347,7 @@ HRESULT CCDXAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDW
             m_nBufferedSector = sector;
         }
 
-        DWORD l = (DWORD)min(dwBytesToRead, min(RAW_DATA_SIZE - offset, m_llLength - pos));
+        DWORD l = std::min(dwBytesToRead, (DWORD)std::min(RAW_DATA_SIZE - offset, m_llLength - pos));
         memcpy(pbBuffer, &m_sector[RAW_SYNC_SIZE + RAW_HEADER_SIZE + RAW_SUBHEADER_SIZE + offset], l);
 
         pbBuffer += l;
@@ -333,7 +356,7 @@ HRESULT CCDXAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDW
     }
 
     if (pdwBytesRead) {
-        *pdwBytesRead = pbBuffer - pbBufferOrg;
+        *pdwBytesRead = DWORD(pbBuffer - pbBufferOrg);
     }
     m_llPosition += pbBuffer - pbBufferOrg;
 
@@ -378,7 +401,7 @@ bool CCDXAStream::LookForMediaSubType()
     m_llPosition = 0;
 
     for (int iSectorsRead = 0;
-            Read(buff, RAW_DATA_SIZE, 1, NULL) == S_OK && iSectorsRead < 1000;
+            Read(buff, RAW_DATA_SIZE, 1, nullptr) == S_OK && iSectorsRead < 1000;
             iSectorsRead++) {
         if (*((DWORD*)&buff[0]) == 0xba010000) {
             m_llPosition = 0;
@@ -418,7 +441,7 @@ bool CCDXAStream::LookForMediaSubType()
             return true;
         } else if (*((DWORD*)&buff[0]) == 'FFIR' && *((DWORD*)&buff[8]) == ' IVA') {
             m_llPosition = 0;
-            m_llLength = min(m_llLength, *((DWORD*)&buff[4]) + 8);
+            m_llLength = std::min(m_llLength, LONGLONG(*((DWORD*)&buff[4])) + 8);
             m_nFirstSector = iSectorsRead;
 
             m_subtype = MEDIASUBTYPE_Avi;
@@ -472,7 +495,7 @@ bool CCDXAStream::LookForMediaSubType()
                     CString s = p.Mid(k, l - k);
                     TRACE(s + '\n');
 
-                    TCHAR* end = NULL;
+                    TCHAR* end = nullptr;
 
                     switch (nTries & 3) {
                         case 0:
@@ -488,12 +511,13 @@ bool CCDXAStream::LookForMediaSubType()
                             CStringToBin(s, val);
                             break;
                         default:
+                            ASSERT(FALSE); // Shouldn't happen
                             nTries = -1;
                             break;
                     }
 
                     if (nTries >= 0 && (nTries & 3) == 3) {
-                        if (cb > 0 && val.GetCount() > 0 && cb == val.GetCount()) {
+                        if (cb > 0 && !val.IsEmpty() && cb == val.GetCount()) {
                             if (offset >= 0 && S_OK == SetPointer(offset)
                                     || S_OK == SetPointer(m_llLength + offset)) {
                                 CAutoVectorPtr<BYTE> pData;

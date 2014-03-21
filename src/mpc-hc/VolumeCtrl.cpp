@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -41,10 +41,12 @@ bool CVolumeCtrl::Create(CWnd* pParentWnd)
     if (!CSliderCtrl::Create(WS_CHILD | WS_VISIBLE | TBS_NOTICKS | TBS_HORZ | TBS_TOOLTIPS, CRect(0, 0, 0, 0), pParentWnd, IDC_SLIDER1)) {
         return false;
     }
+
+    const CAppSettings& s = AfxGetAppSettings();
     EnableToolTips(TRUE);
     SetRange(0, 100);
-    SetPosInternal(AfxGetAppSettings().nVolume);
-    SetPageSize(5);
+    SetPos(s.nVolume);
+    SetPageSize(s.nVolumeStep);
     SetLineSize(0);
 
     return true;
@@ -98,10 +100,12 @@ void CVolumeCtrl::OnNMCustomdraw(NMHDR* pNMHDR, LRESULT* pResult)
                     CDC dc;
                     dc.Attach(pNMCD->hdc);
 
-                    CRect r;
-                    GetClientRect(r);
-                    r.DeflateRect(8, 4, 10, 6);
-                    CopyRect(&pNMCD->rc, &r);
+                    CRect channelRect;
+                    GetChannelRect(channelRect);
+                    CRect thumbRect;
+                    GetThumbRect(thumbRect);
+
+                    CopyRect(&pNMCD->rc, CRect(channelRect.left, thumbRect.top + 2, channelRect.right - 2, thumbRect.bottom - 2));
                     CPen shadow(PS_SOLID, 1, GetSysColor(COLOR_3DSHADOW));
                     CPen light(PS_SOLID, 1, GetSysColor(COLOR_3DHILIGHT));
                     CPen* old = dc.SelectObject(&light);
@@ -198,9 +202,9 @@ BOOL CVolumeCtrl::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult)
 {
     TOOLTIPTEXT* pTTT = reinterpret_cast<LPTOOLTIPTEXT>(pNMHDR);
     CString str;
-    str.Format(_T("%d%%"), GetPos());
+    str.Format(ResStr(IDS_VOLUME), GetPos());
     _tcscpy_s(pTTT->szText, str);
-    pTTT->hinst = NULL;
+    pTTT->hinst = nullptr;
 
     *pResult = 0;
 

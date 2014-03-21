@@ -1,6 +1,5 @@
 /*
- * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2010-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +19,7 @@
  */
 
 #pragma once
+
 #include "../../../SubPic/ISubPic.h"
 #include "RenderersSettings.h"
 #include "SyncAllocatorPresenter.h"
@@ -32,6 +32,8 @@
 
 extern bool g_bNoDuration; // Defined in MainFrm.cpp
 extern bool g_bExternalSubtitleTime;
+
+class CFocusThread;
 
 // Possible messages to the PowerStrip API. PowerStrip is used to control
 // the display frequency in one of the video - display synchronization modes.
@@ -72,11 +74,11 @@ static const GUID GUID_SURFACE_INDEX = { 0x30c8e9f6, 0x415, 0x4b81, { 0xa3, 0x15
 
 namespace GothSync
 {
-    typedef enum {
+    enum EVR_STATS_MSG {
         MSG_MIXERIN,
         MSG_MIXEROUT,
         MSG_ERROR
-    } EVR_STATS_MSG;
+    };
 
 #pragma pack(push, 1)
 
@@ -162,7 +164,6 @@ namespace GothSync
         virtual HRESULT AllocSurfaces(D3DFORMAT Format = D3DFMT_A8R8G8B8);
         virtual void DeleteSurfaces();
 
-        HANDLE m_hEvtQuit; // Stop rendering thread event
         LONGLONG m_LastAdapterCheck;
         UINT m_CurrentAdapter;
 
@@ -186,10 +187,10 @@ namespace GothSync
         HRESULT DrawRectBase(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<0> v[4]);
         HRESULT DrawRect(DWORD _Color, DWORD _Alpha, const CRect& _Rect);
         HRESULT TextureCopy(IDirect3DTexture9* pTexture);
-        HRESULT TextureResize(IDirect3DTexture9* pTexture, Vector dst[4], D3DTEXTUREFILTERTYPE filter, const CRect& SrcRect);
-        HRESULT TextureResizeBilinear(IDirect3DTexture9* pTexture, Vector dst[4], const CRect& SrcRect);
-        HRESULT TextureResizeBicubic1pass(IDirect3DTexture9* pTexture, Vector dst[4], const CRect& SrcRect);
-        HRESULT TextureResizeBicubic2pass(IDirect3DTexture9* pTexture, Vector dst[4], const CRect& SrcRect);
+        HRESULT TextureResize(IDirect3DTexture9* pTexture, const Vector dst[4], D3DTEXTUREFILTERTYPE filter, const CRect& SrcRect);
+        HRESULT TextureResizeBilinear(IDirect3DTexture9* pTexture, const Vector dst[4], const CRect& SrcRect);
+        HRESULT TextureResizeBicubic1pass(IDirect3DTexture9* pTexture, const Vector dst[4], const CRect& SrcRect);
+        HRESULT TextureResizeBicubic2pass(IDirect3DTexture9* pTexture, const Vector dst[4], const CRect& SrcRect);
 
         typedef HRESULT(WINAPI* D3DXLoadSurfaceFromMemoryPtr)(
             LPDIRECT3DSURFACE9 pDestSurface,
@@ -221,7 +222,7 @@ namespace GothSync
             LPCWSTR pFaceName,
             LPD3DXFONT* ppFont);
 
-        HRESULT AlphaBlt(RECT* pSrc, RECT* pDst, IDirect3DTexture9* pTexture);
+        HRESULT AlphaBlt(RECT* pSrc, const RECT* pDst, IDirect3DTexture9* pTexture);
 
         virtual void OnResetDevice() {};
 
@@ -266,7 +267,6 @@ namespace GothSync
 
         // Display and frame rates and cycles
         double m_dDetectedScanlineTime; // Time for one (horizontal) scan line. Extracted at stream start and used to calculate vsync time
-        UINT m_uD3DRefreshRate;         // As got when creating the d3d device
         double m_dD3DRefreshCycle;      // Display refresh cycle ms
         double m_dEstRefreshCycle;      // As estimated from scan lines
         double m_dFrameCycle;           // Average sample time, extracted from the samples themselves
@@ -293,10 +293,7 @@ namespace GothSync
         UINT m_uSyncGlitches;
 
         LONGLONG m_llSampleTime, m_llLastSampleTime; // Present time for the current sample
-        LONG m_lSampleLatency, m_lLastSampleLatency; // Time between intended and actual presentation time
-        LONG m_lMinSampleLatency, m_lLastMinSampleLatency;
         LONGLONG m_llHysteresis;
-        LONG m_lHysteresis;
         LONG m_lShiftToNearest, m_lShiftToNearestPrev;
         bool m_bVideoSlowerThanDisplay;
 
@@ -317,6 +314,7 @@ namespace GothSync
         void EstimateRefreshTimings();        // Estimate the times for one scan line and one frame respectively from the actual refresh data
         bool ExtractInterlaced(const AM_MEDIA_TYPE* pmt);
 
+        CFocusThread* m_FocusThread;
     public:
         CBaseAP(HWND hWnd, bool bFullscreen, HRESULT& hr, CString& _Error);
         ~CBaseAP();
@@ -347,8 +345,8 @@ namespace GothSync
         public IMFRateSupport,
         public IMFVideoDisplayControl,
         public IEVRTrustedVideoPlugin,
-        public ISyncClockAdviser
-
+        public ISyncClockAdviser,
+        public ID3DFullscreenControl
     {
     public:
         CSyncAP(HWND hWnd, bool bFullscreen, HRESULT& hr, CString& _Error);
@@ -438,6 +436,10 @@ namespace GothSync
         STDMETHODIMP UnlockDevice(HANDLE hDevice, BOOL fSaveState);
         STDMETHODIMP GetVideoService(HANDLE hDevice, REFIID riid, void** ppService);
 
+        // ID3DFullscreenControl
+        STDMETHODIMP SetD3DFullscreen(bool fEnabled);
+        STDMETHODIMP GetD3DFullscreen(bool* pfEnabled);
+
     protected:
         void OnResetDevice();
         MFCLOCK_STATE m_LastClockState;
@@ -456,12 +458,12 @@ namespace GothSync
         typedef BOOL (__stdcall* PTR_AvSetMmThreadPriority)(HANDLE AvrtHandle, AVRT_PRIORITY Priority);
         typedef BOOL (__stdcall* PTR_AvRevertMmThreadCharacteristics)(HANDLE AvrtHandle);
 
-        typedef enum {
+        enum RENDER_STATE {
             Started  = State_Running,
             Stopped  = State_Stopped,
             Paused   = State_Paused,
             Shutdown = State_Running + 1
-        } RENDER_STATE;
+        };
 
         CComPtr<IMFClock> m_pClock;
         CComPtr<IDirect3DDeviceManager9> m_pD3DManager;
@@ -526,7 +528,11 @@ namespace GothSync
         HRESULT CreateProposedOutputType(IMFMediaType* pMixerType, IMFMediaType** pType);
         HRESULT SetMediaType(IMFMediaType* pType);
 
-        // Functions pointers for Vista/.NET3 specific library
+        // Functions pointers for Vista+ / .NET Framework 3.5 specific library
+        HMODULE m_hDXVA2Lib;
+        HMODULE m_hEVRLib;
+        HMODULE m_hAVRTLib;
+
         PTR_DXVA2CreateDirect3DDeviceManager9 pfDXVA2CreateDirect3DDeviceManager9;
         PTR_MFCreateDXSurfaceBuffer pfMFCreateDXSurfaceBuffer;
         PTR_MFCreateVideoSampleFromSurface pfMFCreateVideoSampleFromSurface;

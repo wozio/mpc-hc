@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,6 +21,7 @@
 
 #include "stdafx.h"
 #include <atlbase.h>
+#include <algorithm>
 #include "DeCSSFilter.h"
 #include "../../../DeCSS/DeCSSInputPin.h"
 #include "../../../DSUtil/DSUtil.h"
@@ -37,8 +38,8 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudpPins[] = {
-    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesIn), sudPinTypesIn},
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut}
+    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesIn), sudPinTypesIn},
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut}
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
@@ -46,7 +47,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CDeCSSFilter>, NULL, &sudFilter[0]},
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CDeCSSFilter>, nullptr, &sudFilter[0]},
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -102,11 +103,13 @@ public:
 CDeCSSFilter::CDeCSSFilter(LPUNKNOWN lpunk, HRESULT* phr)
     : CTransformFilter(NAME("CDeCSSFilter"), lpunk, __uuidof(this))
 {
-    if (phr) {
-        *phr = S_OK;
+    HRESULT hr;
+    if (!phr) {
+        phr = &hr;
     }
+    *phr = S_OK;
 
-    m_pInput = DNew CKsPSInputPin(NAME("CKsPSInputPin"), this, phr, L"In");
+    m_pInput = DEBUG_NEW CKsPSInputPin(NAME("CKsPSInputPin"), this, phr, L"In");
     if (!m_pInput) {
         *phr = E_OUTOFMEMORY;
     }
@@ -114,12 +117,13 @@ CDeCSSFilter::CDeCSSFilter(LPUNKNOWN lpunk, HRESULT* phr)
         return;
     }
 
-    m_pOutput = DNew CTransformOutputPin(NAME("CTransformOutputPin"), this, phr, L"Out");
+    m_pOutput = DEBUG_NEW CTransformOutputPin(NAME("CTransformOutputPin"), this, phr, L"Out");
     if (!m_pOutput) {
         *phr = E_OUTOFMEMORY;
     }
     if (FAILED(*phr))  {
-        delete m_pInput, m_pInput = NULL;
+        delete m_pInput;
+        m_pInput = nullptr;
         return;
     }
 }
@@ -140,16 +144,18 @@ HRESULT CDeCSSFilter::Transform(IMediaSample* pIn, IMediaSample* pOut)
         DeleteMediaType(pmt);
     }
 
-    BYTE* pDataIn = NULL;
-    BYTE* pDataOut = NULL;
+    BYTE* pDataIn = nullptr;
+    BYTE* pDataOut = nullptr;
 
-    pIn->GetPointer(&pDataIn);
-    pOut->GetPointer(&pDataOut);
+    HRESULT hr;
+    if (FAILED(hr = pIn->GetPointer(&pDataIn)) || FAILED(hr = pOut->GetPointer(&pDataOut))) {
+        return hr;
+    }
 
     long len = pIn->GetActualDataLength();
     long size = pOut->GetSize();
 
-    if (len == 0 || pDataIn == NULL) { // format changes do not carry any data
+    if (len == 0 || pDataIn == nullptr) { // format changes do not carry any data
         pOut->SetActualDataLength(0);
         return S_OK;
     }
@@ -182,8 +188,8 @@ HRESULT CDeCSSFilter::Transform(IMediaSample* pIn, IMediaSample* pOut)
         return S_FALSE;
     }
 
-    memcpy(pDataOut, pDataIn, min(len, size));
-    pOut->SetActualDataLength(min(len, size));
+    memcpy(pDataOut, pDataIn, std::min(len, size));
+    pOut->SetActualDataLength(std::min(len, size));
 
     return S_OK;
 }

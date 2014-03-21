@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -35,6 +35,13 @@ class CPPageFullscreen : public CPPageBase
     CAtlArray<CString> sl;
     CStringArray m_MonitorDisplayNames;
 
+    BOOL m_bHideFullscreenControls;
+    CComboBox m_hidePolicy;
+    unsigned m_uHideFullscreenControlsDelay;
+    BOOL m_bHideFullscreenDockedPanels;
+
+    CSpinButtonCtrl m_delaySpinner;
+
 public:
     CPPageFullscreen();
     virtual ~CPPageFullscreen();
@@ -52,18 +59,17 @@ public:
     };
 
     AChFR m_AutoChangeFullscrRes;
+    unsigned m_uAutoChangeFullscrResDelay;
+
     CStringW m_f_hmonitor;
     int m_iMonitorType;
     CComboBox m_iMonitorTypeCtrl;
 
-    BOOL m_iShowBarsWhenFullScreen;
-    int m_nShowBarsWhenFullScreenTimeOut;
     BOOL m_fExitFullScreenAtTheEnd;
-    CSpinButtonCtrl m_nTimeOutCtrl;
     BOOL m_fRestoreResAfterExit;
 
     int m_iSel;
-    int m_iSeldm[MaxFpsCount];
+    int m_iSeldm[MAX_FPS_COUNT];
 
     // Dialog Data
     enum { IDD = IDD_PPAGEFULLSCREEN };
@@ -75,8 +81,11 @@ protected:
 
     DECLARE_MESSAGE_MAP()
 
+    void OnUpdateHideDelay(CCmdUI* pCmdUI);
+    void OnHideControlsPolicyChange();
+    void OnUpdateHideControls(CCmdUI* pCmdUI);
+
 public:
-    afx_msg void OnUpdateList(CCmdUI* pCmdUI);
     afx_msg void OnNMClickList1(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnLvnItemchangedList1(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnBeginlabeleditList(NMHDR* pNMHDR, LRESULT* pResult);
@@ -84,21 +93,18 @@ public:
     afx_msg void OnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnCustomdrawList(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnCheckChangeList();
-    afx_msg void OnUpdateApplyDefault(CCmdUI* pCmdUI);
     afx_msg void OnUpdateFullScrCombo();
-    afx_msg void OnUpdateTimeout(CCmdUI* pCmdUI);
-    afx_msg void OnUpdateRestoreRes(CCmdUI* pCmdUI);
     afx_msg void OnRemove();
     afx_msg void OnUpdateRemove(CCmdUI* pCmdUI);
     afx_msg void OnAdd();
-    afx_msg void OnUpdateAdd(CCmdUI* pCmdUI);
     afx_msg void OnMoveUp();
     afx_msg void OnMoveDown();
     afx_msg void OnUpdateUp(CCmdUI* pCmdUI);
     afx_msg void OnUpdateDown(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateAutoChangeFullscrRes(CCmdUI* pCmdUI);
 
     void ReindexList();
     void ReindexListSubItem();
-    void GetCurDispModeString(CString& strMode);
+    bool GetCurDispModeString(CString& strMode);
     void ModesUpdate();
 };

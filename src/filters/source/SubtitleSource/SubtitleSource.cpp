@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "SubtitleSource.h"
 #include "../../../DSUtil/DSUtil.h"
 
@@ -41,27 +42,27 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudOpPin[] = {
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut},
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut},
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
-    {&__uuidof(CSubtitleSourceASCII), L"MPC SubtitleSource (S_TEXT/ASCII)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
-    {&__uuidof(CSubtitleSourceUTF8), L"MPC SubtitleSource (S_TEXT/UTF8)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
-    {&__uuidof(CSubtitleSourceSSA), L"MPC SubtitleSource (S_TEXT/SSA)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
-    {&__uuidof(CSubtitleSourceASS), L"MPC SubtitleSource (S_TEXT/ASS)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
-    {&__uuidof(CSubtitleSourceUSF), L"MPC SubtitleSource (S_TEXT/USF)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
-    {&__uuidof(CSubtitleSourcePreview), L"MPC SubtitleSource (Preview)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
-    {&__uuidof(CSubtitleSourceARGB), L"MPC SubtitleSource (ARGB)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CSubtitleSourceASCII), L"MPC-HC SubtitleSource (S_TEXT/ASCII)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CSubtitleSourceUTF8), L"MPC-HC SubtitleSource (S_TEXT/UTF8)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CSubtitleSourceSSA), L"MPC-HC SubtitleSource (S_TEXT/SSA)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CSubtitleSourceASS), L"MPC-HC SubtitleSource (S_TEXT/ASS)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CSubtitleSourceUSF), L"MPC-HC SubtitleSource (S_TEXT/USF)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CSubtitleSourcePreview), L"MPC-HC SubtitleSource (Preview)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
+    {&__uuidof(CSubtitleSourceARGB), L"MPC-HC SubtitleSource (ARGB)", MERIT_NORMAL, _countof(sudOpPin), sudOpPin, CLSID_LegacyAmFilterCategory},
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CSubtitleSourceASCII>, NULL, &sudFilter[0]},
-    {sudFilter[1].strName, sudFilter[1].clsID, CreateInstance<CSubtitleSourceUTF8>, NULL, &sudFilter[1]},
-    {sudFilter[2].strName, sudFilter[2].clsID, CreateInstance<CSubtitleSourceSSA>, NULL, &sudFilter[2]},
-    {sudFilter[3].strName, sudFilter[3].clsID, CreateInstance<CSubtitleSourceASS>, NULL, &sudFilter[3]},
-    //  {sudFilter[4].strName, sudFilter[4].clsID, CreateInstance<CSubtitleSourceUSF>, NULL, &sudFilter[4]},
-    {sudFilter[5].strName, sudFilter[5].clsID, CreateInstance<CSubtitleSourcePreview>, NULL, &sudFilter[5]},
-    {sudFilter[6].strName, sudFilter[6].clsID, CreateInstance<CSubtitleSourceARGB>, NULL, &sudFilter[6]},
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CSubtitleSourceASCII>, nullptr, &sudFilter[0]},
+    {sudFilter[1].strName, sudFilter[1].clsID, CreateInstance<CSubtitleSourceUTF8>, nullptr, &sudFilter[1]},
+    {sudFilter[2].strName, sudFilter[2].clsID, CreateInstance<CSubtitleSourceSSA>, nullptr, &sudFilter[2]},
+    {sudFilter[3].strName, sudFilter[3].clsID, CreateInstance<CSubtitleSourceASS>, nullptr, &sudFilter[3]},
+    //  {sudFilter[4].strName, sudFilter[4].clsID, CreateInstance<CSubtitleSourceUSF>, nullptr, &sudFilter[4]},
+    {sudFilter[5].strName, sudFilter[5].clsID, CreateInstance<CSubtitleSourcePreview>, nullptr, &sudFilter[5]},
+    {sudFilter[6].strName, sudFilter[6].clsID, CreateInstance<CSubtitleSourceARGB>, nullptr, &sudFilter[6]},
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -173,7 +174,7 @@ STDMETHODIMP CSubtitleSource::Load(LPCOLESTR pszFileName, const AM_MEDIA_TYPE* p
     }
 
     HRESULT hr = S_OK;
-    if (!(DNew CSubtitleStream(pszFileName, this, &hr))) {
+    if (!(DEBUG_NEW CSubtitleStream(pszFileName, this, &hr))) {
         return E_OUTOFMEMORY;
     }
 
@@ -231,16 +232,14 @@ CSubtitleStream::CSubtitleStream(const WCHAR* wfn, CSubtitleSource* pParent, HRE
     , CSourceSeeking(NAME("SubtitleStream"), (IPin*)this, phr, &m_cSharedState)
     , m_bDiscontinuity(FALSE), m_bFlushing(FALSE)
     , m_nPosition(0)
-    , m_rts(NULL)
+    , m_rts(nullptr)
 {
     CAutoLock cAutoLock(&m_cSharedState);
 
     CString fn(wfn);
 
     if (!m_rts.Open(fn, DEFAULT_CHARSET)) {
-        if (phr) {
-            *phr = E_FAIL;
-        }
+        *phr = E_FAIL;
         return;
     }
 
@@ -250,14 +249,12 @@ CSubtitleStream::CSubtitleStream(const WCHAR* wfn, CSubtitleSource* pParent, HRE
 
     m_rtDuration = 0;
     for (size_t i = 0, cnt = m_rts.GetCount(); i < cnt; i++) {
-        m_rtDuration = max(m_rtDuration, 10000i64 * m_rts[i].end);
+        m_rtDuration = std::max(m_rtDuration, 10000i64 * m_rts[i].end);
     }
 
     m_rtStop = m_rtDuration;
 
-    if (phr) {
-        *phr = m_rtDuration > 0 ? S_OK : E_FAIL;
-    }
+    *phr = m_rtDuration > 0 ? S_OK : E_FAIL;
 }
 
 CSubtitleStream::~CSubtitleStream()
@@ -415,13 +412,11 @@ HRESULT CSubtitleStream::DecideBufferSize(IMemAllocator* pAlloc, ALLOCATOR_PROPE
 
 HRESULT CSubtitleStream::FillBuffer(IMediaSample* pSample)
 {
-    HRESULT hr;
-
     {
         CAutoLock cAutoLockShared(&m_cSharedState);
 
-        BYTE* pData = NULL;
-        if (FAILED(hr = pSample->GetPointer(&pData)) || !pData) {
+        BYTE* pData = nullptr;
+        if (FAILED(pSample->GetPointer(&pData)) || !pData) {
             return S_FALSE;
         }
 
@@ -490,7 +485,7 @@ HRESULT CSubtitleStream::FillBuffer(IMediaSample* pSample)
                 }
                 DWORD* p = (DWORD*)(pData + spd.pitch * y);
                 for (int x = 0; x < spd.w; x += 32, p += 32) {
-                    memsetd(p, (x & 32) ? c1 : c2, min(spd.w - x, 32) * 4);
+                    memsetd(p, (x & 32) ? c1 : c2, std::min(spd.w - x, 32) * 4);
                 }
             }
 
@@ -613,7 +608,7 @@ HRESULT CSubtitleSourceUTF8::GetMediaType(CMediaType* pmt)
     pmt->SetSubtype(&MEDIASUBTYPE_UTF8);
     pmt->SetFormatType(&FORMAT_SubtitleInfo);
     SUBTITLEINFO* psi = (SUBTITLEINFO*)pmt->AllocFormatBuffer(sizeof(SUBTITLEINFO));
-    memset(psi, 0, pmt->FormatLength());
+    ZeroMemory(psi, pmt->FormatLength());
     strcpy_s(psi->IsoLang, "eng");
 
     return NOERROR;
@@ -642,8 +637,8 @@ HRESULT CSubtitleSourceSSA::GetMediaType(CMediaType* pmt)
     sts.RemoveAll();
 
     CFile f;
-    TCHAR path[_MAX_PATH], fn[_MAX_PATH];
-    if (!GetTempPath(_MAX_PATH, path) || !GetTempFileName(path, _T("mpc_sts"), 0, fn)) {
+    TCHAR path[MAX_PATH], fn[MAX_PATH];
+    if (!GetTempPath(MAX_PATH, path) || !GetTempFileName(path, _T("mpc_sts"), 0, fn)) {
         return E_FAIL;
     }
 
@@ -659,7 +654,7 @@ HRESULT CSubtitleSourceSSA::GetMediaType(CMediaType* pmt)
     f.Seek(3, CFile::begin);
 
     SUBTITLEINFO* psi = (SUBTITLEINFO*)pmt->AllocFormatBuffer(sizeof(SUBTITLEINFO) + len);
-    memset(psi, 0, pmt->FormatLength());
+    ZeroMemory(psi, pmt->FormatLength());
     psi->dwOffset = sizeof(SUBTITLEINFO);
     strcpy_s(psi->IsoLang, "eng");
     f.Read(pmt->pbFormat + psi->dwOffset, len);
@@ -693,8 +688,8 @@ HRESULT CSubtitleSourceASS::GetMediaType(CMediaType* pmt)
     sts.RemoveAll();
 
     CFile f;
-    TCHAR path[_MAX_PATH], fn[_MAX_PATH];
-    if (!GetTempPath(_MAX_PATH, path) || !GetTempFileName(path, _T("mpc_sts"), 0, fn)) {
+    TCHAR path[MAX_PATH], fn[MAX_PATH];
+    if (!GetTempPath(MAX_PATH, path) || !GetTempFileName(path, _T("mpc_sts"), 0, fn)) {
         return E_FAIL;
     }
 
@@ -709,7 +704,7 @@ HRESULT CSubtitleSourceASS::GetMediaType(CMediaType* pmt)
     int len = (int)f.GetLength();
 
     SUBTITLEINFO* psi = (SUBTITLEINFO*)pmt->AllocFormatBuffer(sizeof(SUBTITLEINFO) + len);
-    memset(psi, 0, pmt->FormatLength());
+    ZeroMemory(psi, pmt->FormatLength());
     psi->dwOffset = sizeof(SUBTITLEINFO);
     strcpy_s(psi->IsoLang, "eng");
     f.Read(pmt->pbFormat + psi->dwOffset, len);
@@ -738,7 +733,7 @@ HRESULT CSubtitleSourceUSF::GetMediaType(CMediaType* pmt)
     pmt->SetSubtype(&MEDIASUBTYPE_USF);
     pmt->SetFormatType(&FORMAT_SubtitleInfo);
     SUBTITLEINFO* psi = (SUBTITLEINFO*)pmt->AllocFormatBuffer(sizeof(SUBTITLEINFO));
-    memset(psi, 0, pmt->FormatLength());
+    ZeroMemory(psi, pmt->FormatLength());
     strcpy_s(psi->IsoLang, "eng");
     // TODO: ...
 
@@ -763,7 +758,7 @@ HRESULT CSubtitleSourcePreview::GetMediaType(CMediaType* pmt)
     pmt->SetSubtype(&MEDIASUBTYPE_RGB32);
     pmt->SetFormatType(&FORMAT_VideoInfo);
     VIDEOINFOHEADER* pvih = (VIDEOINFOHEADER*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER));
-    memset(pvih, 0, pmt->FormatLength());
+    ZeroMemory(pvih, pmt->FormatLength());
     pvih->bmiHeader.biSize = sizeof(pvih->bmiHeader);
     pvih->bmiHeader.biWidth = _WIDTH;
     pvih->bmiHeader.biHeight = _HEIGHT;
@@ -793,7 +788,7 @@ HRESULT CSubtitleSourceARGB::GetMediaType(CMediaType* pmt)
     pmt->SetSubtype(&MEDIASUBTYPE_ARGB32);
     pmt->SetFormatType(&FORMAT_VideoInfo);
     VIDEOINFOHEADER* pvih = (VIDEOINFOHEADER*)pmt->AllocFormatBuffer(sizeof(VIDEOINFOHEADER));
-    memset(pvih, 0, pmt->FormatLength());
+    ZeroMemory(pvih, pmt->FormatLength());
     pvih->bmiHeader.biSize = sizeof(pvih->bmiHeader);
     // TODO: read w,h,fps from a config file or registry
     pvih->bmiHeader.biWidth = _WIDTH;

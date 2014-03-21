@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -26,22 +26,19 @@ class CPPageFileMediaInfo : public CPropertyPage
 {
     DECLARE_DYNAMIC(CPPageFileMediaInfo)
 
-private:
-    CComPtr<IFilterGraph> m_pFG;
-
 public:
-    CPPageFileMediaInfo(CString fn, IFilterGraph* pFG);
+    CPPageFileMediaInfo(CString path, IFileSourceFilter* pFSF);
     virtual ~CPPageFileMediaInfo();
 
     // Dialog Data
     enum { IDD = IDD_FILEMEDIAINFO };
 
     CEdit m_mediainfo;
-    CString m_fn;
+    CString m_fn, m_path;
     CFont* m_pCFont;
     CString MI_Text;
 
-#ifndef USE_MEDIAINFO_STATIC
+#if !USE_STATIC_MEDIAINFO
     static bool HasMediaInfo();
 #endif
 protected:
@@ -52,4 +49,6 @@ protected:
 
 public:
     afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
+
+    bool HasInfo() const { return !MI_Text.IsEmpty(); };
 };

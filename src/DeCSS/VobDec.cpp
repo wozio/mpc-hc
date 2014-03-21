@@ -23,6 +23,8 @@ static BYTE reverse[0x100], table[0x100] = {
 CVobDec::CVobDec()
 {
     m_fFoundKey = false;
+    m_lfsr0 = 0;
+    m_lfsr1 = 0;
 
     for (DWORD loop0 = 0; loop0 < 0x100; loop0++) {
         BYTE value = 0;
@@ -124,15 +126,12 @@ bool CVobDec::FindKey(BYTE* buff)
             if (0x80 <= offset && offset <= 0x7F9) {
                 BYTE plain[7] = { 0x00, 0x00, 0x01, 0xBE, 0x00, 0x00, 0xFF };
                 int count;
-                //flag |= 0x02;
                 int left = 0x800 - offset - 6;
                 plain[4] = (char)(left >> 8);
                 plain[5] = (char)left;
                 if ((count = FindLfsr(buff + 0x80, offset - 0x80, plain)) == 1) {
                     Salt(buff + 0x54, m_lfsr0, m_lfsr1);
                     m_fFoundKey = true;
-                } else if (count) {
-                    //printf(_T("\rblock %d reported %d possible keys, skipping\n"), block, count);
                 }
             }
         }

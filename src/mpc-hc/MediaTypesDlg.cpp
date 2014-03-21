@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,7 +29,7 @@
 // CMediaTypesDlg dialog
 
 //IMPLEMENT_DYNAMIC(CMediaTypesDlg, CResizableDialog)
-CMediaTypesDlg::CMediaTypesDlg(IGraphBuilderDeadEnd* pGBDE, CWnd* pParent /*=NULL*/)
+CMediaTypesDlg::CMediaTypesDlg(IGraphBuilderDeadEnd* pGBDE, CWnd* pParent /*=nullptr*/)
     : CResizableDialog(CMediaTypesDlg::IDD, pParent)
     , m_pGBDE(pGBDE)
     , m_subtype(GUID_NULL)
@@ -56,7 +56,7 @@ void CMediaTypesDlg::AddLine(CString str)
     m_report.ReplaceSel(str);
 }
 
-void CMediaTypesDlg::AddMediaType(AM_MEDIA_TYPE* pmt)
+void CMediaTypesDlg::AddMediaType(const AM_MEDIA_TYPE* pmt)
 {
     m_subtype = pmt->subtype;
     if (pmt->majortype == MEDIATYPE_Video) {

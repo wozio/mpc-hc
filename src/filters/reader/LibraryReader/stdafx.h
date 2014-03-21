@@ -22,9 +22,13 @@
 #pragma once
 
 #include "../../../DSUtil/SharedInclude.h"
-#include "../../../../include/stdafx_common.h"
-#include "../../../../include/stdafx_common_afx.h"
-#include "../../../../include/stdafx_common_dshow.h"
+
+#define WIN32_LEAN_AND_MEAN                 // Exclude rarely-used stuff from Windows headers
+#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS  // some CString constructors will be explicit
+#define VC_EXTRALEAN                        // Exclude rarely-used stuff from Windows headers
+
+#include <afx.h>
+#include <afxwin.h>                         // MFC core and standard components
 
 #include <afxsock.h>
 #include <atlcoll.h>

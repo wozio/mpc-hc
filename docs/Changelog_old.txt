@@ -4,6 +4,328 @@ Legend:
 ! Fixed
 
 
+1.7.1 - 17 November 2013
+========================
++ Ticket #2655, Internal filters: Support WMV/ASF/DVR-MS splitting
++ Ticket #3548, Add British English translation
++ Ticket #3590, Internal filters: Support for HEVC and VP9
++ Ticket #3605, Support playlists using UTF8 encoding without BOM
++ Ticket #3643, Add Slovenian translation
+* Ticket #3569/#3679/#3680, Disable internal WMV/ASF/DVR-MS splitting and WMV decoding by default
+  since Microsoft filters are generally more stable
+* Updated French, German, Polish, Portuguese (Brazil) and Simplified Chinese translations
+* Updated LAV Filters to 0.59.1.26:
+    - Ticket #3576, LAV Video: Support H264 Annex B format in MP4 files
+    - Ticket #3601, LAV Video: Fix a crash with DXVA on AMD cards when stopping playback
+    - Ticket #3676, LAV Audio: Fix a crash when using old versions of the ArcSoft DTS Decoder
+      to handle DTS decoding internally
+    - Ticket #3688, LAV Audio: Fix a freeze when changing the bitstreaming settings when paused
+* Updated VirtualDub to v1.10.4
+* Updated Unrar to v5.0.0.12
+* Updated Little CMS to v2.6b (git 69ecafd)
+! DVD: The chapter marks could be wrong for some titles
+! Ticket #1478, Slightly improve the precision of the frame number in the "Go To" dialog.
+  The frame number was sometimes off by 1. This was easily noticeable when doing frame-stepping
+! Ticket #1555, Use elapsed/remaining time for the chapter change OSD depending on what is selected
+  for the time display. Also prevent the OSD from blinking when changing the chapter
+! Ticket #3518, Improve the reliability of the [DXVA] indicator in the status bar. Sometimes
+  the indicator wasn't shown when hardware acceleration was used
+! Ticket #3523/#3533/#3551, Improve the stability of MPC-HC on buggy systems
+! Ticket #3530, Internal LAV Splitter: the advanced subtitle selection modes were ignored
+! Ticket #3564, If "Keep history of recently opened file" option was enabled, MPC-HC crashed
+  when opening very long URLs
+! Ticket #3672, "Output" property page: "Shader" and "Rotation" were sometimes wrongly displayed
+  as unavailable for "Sync renderer"
+! Ticket #3702, External audio was not synced on open if restarting from the last remembered position
+! Ticket #3720, DVB: Obey the Auto-zoom option when opening a channel
+
+
+1.7.0 - 29 September 2013
+=========================
++ Replace the internal filters with LAV Filters.
+  LAV Filters are modern open source DirectShow filters based on FFmpeg. They are known
+  to be reliable and fast and overall should be more stable than the old filters.
+  MPC-HC integrates LAV Filters directly and no extra installation steps are required.
+  The embedded version of LAV Filters doesn't interfere at all with other installed
+  DirectShow filters (including the standalone versions of LAV Filters).
+  Note to XP users: hardware decoding is only supported on nVidia graphic adapters. If you
+  really need a DXVA decoder, you can use a standalone version of MPC Video Decoder.
++ Support loading HTTP/RTSP/UDP/RTP streams using embedded source filters
++ D3DFullscreen can now switch to windowed mode (just like regular fullscreen mode)
++ Audio Switcher: Show all audio tracks available, including all the embedded tracks
+  exhibited by the source filter and the external tracks
++ Playlist: Add a "Move to Recycle Bin" right click option, with optional keyboard shortcut
++ Ticket #533, Add a command line switch (/device) to open the default video device
++ Ticket #3107, Add support for playing from standard input.
+  Use "-" as a special filename to designate the standard input.
+  Examples:
+    > mpc-hc.exe - < sample.ts
+    > a_prog.exe | mpc-hc.exe -
++ Improved RAR File Source integration:
+  - Added support for subtitle database
+  - Added support for file properties and MediaInfo
+  - "File -> Save a copy" now extracts the file from the RAR archive
++ Windows 8.1 support
+* All track selection sub-menus are now centralized in the Play menu, the similar sub-menus
+  have been removed from the Navigate menu
+* The naming of external subtitles item in Play -> Subtitles menu has been improved to get rid
+  of the uninformative "Undetermined" name
+* When "Prefer external subtitles over embedded subtitles" is enabled, an external track is
+  always selected by default even if an embedded track matches a preferred language
+* The "Go To" menu entry has been moved to the "Navigate" menu
+* D3DFullscreen changes:
+  - toggle hotkey is now disabled by default
+  - support for madVR has been removed (it already has exclusive mode)
+  - 10-bit RBG output now falls back to 8-bit output if the display does not support it
+* Remove D2VSource; it's unmaintained and basically unused
+* WebUI: Switched to HTML5 and improved the cross browser support
+  (IE8 or newer is needed, other browsers should work fine)
+* Updated Armenian, Basque, Czech, French, German, Greek, Japanese, Polish, Romanian,
+  Simplified and Traditional Chinese, Slovak, Turkish and Ukrainian translations
+* Updated Little CMS to v2.5 (git ad2cb04)
+* Updated Unrar to v5.0.0
+* Updated MediaInfoLib to v0.7.64
+* Updated ZenLib to v0.4.29 r444
+* Updated VirtualDub to v1.10.4-test11
+! D3DFullscreen fixes:
+  - fixed strange focus behavior when always on top is enabled
+  - fixed VMR9 D3DFS minimizing when losing focus
+  - fixed thumb mouse buttons not working when D3DFS has focus
+! Various fixes for better playlist support
+! Fixed creation date in file properties always being shown as "Not known"
+! Ticket #2109/#2975, Fix the handling of aspect ratio changes when using EVR-CP or
+  Sync Renderer with DXVA decoding
+! Ticket #2189/#3300, Fix graph objects not being properly released when opening another file while
+  Properties or Options window is visible
+! Ticket #3304, Fix remembering file position when double-clicking on a playlist item.
+  If a position was previously saved, it will be restored unless the file is already playing
+! Ticket #3425, Audio Switcher: Fix a crash with audio resampling and channel remapping enabled
+! Ticket #3440, Disable the "Explore to" feature when the file isn't local in the Properties dialog
+  and the playlist context menu
+! Ticket #3455, Hide MediaInfo tab when no information is available
+! Ticket #3456, Don't show the progress in the taskbar when no duration is available
+! Ticket #3478, The "File" menu was slow to open when a drive was unavailable
+
+
+1.6.8 - 15 June 2013
+====================
++ DVB: Show the parental rating and the content type within the EPG information when available
++ Ticket #2872, Add support for DVB-T2 and improve channel switching (new options are available to
+  have a finer control on switching process)
++ Ticket #3179, DVB: Support EPG information for Freeview broadcast (UK DVB-T2)
+* Updated Basque, Czech, French, German, Greek, Japanese, Romanian, Russian,
+  Simplified / Traditional Chinese, Turkish and Ukrainian translations
+* Updated Little CMS to v2.5-rc1
+* Updated zlib to v1.2.8
+* Updated Unrar to v5.0.6
+* Updated MediaInfoLib to v0.7.63
+* Updated ZenLib to v0.4.29
+* Audio Switcher improvements:
+  - Ticket #1936, Improve the normalization algorithm to avoid huge volume variations
+  - Use percentage for the boost setting since it is easier to understand for most people
+  - Add a setting to change the max normalization factor and use a default max normalization
+    factor of 4 instead of 10
+* Ticket #2567, New About dialog with more detailed information and a "Copy to clipboard"
+  feature to ease support
+! PGS and DVB subtitles: Fix missing subtitles after resizing the window when using
+  the subpicture queue
+! Open dialog: if a URL was previously enterer in the "Open" or "Dub" fields an error message
+  was shown when clicking the "Browse" button
+! Vobsub files with language/title in their filenames weren't auto-loaded
+! Fix a memory leak: the memory consumption would increase noticeably until the file was closed
+  when the file had chapters and the chapter marks on seekbar were enabled
+! Capture mode: Fix reseting the renderer. When reseting the renderer in capture mode playback
+  was stopped and never restarted
+! Ticket #3110, DVB: Improve compatibility with some drivers for which MPC-HC failed to find
+  any channel during the channel scan
+! Ticket #3113, MPC-HC was sometimes slow to close (audio kept playing for a few seconds)
+! Ticket #3175, DVB: Changing the channel was exiting fullscreen or maximized mode
+! Ticket #3176, EVR renderers: Fix high CPU and memory usage when switching the user account
+
+
+1.6.7 - 25 April 2013
+=====================
++ DVB capture: Improve channel switching
++ Subtitle downloader improvements:
+  - Ticket #2144, Sort by language and then by filename by default. Subtitles matching a language
+    set as preferred in the options are now displayed first in the result list
+  - Ticket #2926, Double-clicking or pressing the "Enter" key will download the selected subtitle(s)
++ Ticket #2837, New INI parser: the accesses are now cached for faster settings loading/saving.
+  Using the INI file should now be as fast as using the registry
++ Ticket #2987, Playlist improvements:
+  - Scroll and select the first newly added item
+  - Put MPC-HC on top and give the focus to the playlist after a drag and drop
+* Updated Basque, Catalan, Czech, French, German, Greek, Simplified Chinese, Slovak,
+  Turkish and Ukrainian translations
+* Updated Little CMS to v2.5 (git cde00fd)
+* Updated VirtualDub to v1.10.4-test6
+* Ticket #2689, Replace "On top -> Never" by "On top -> Default". In most of the
+  cases "On top -> Default" will have the exact same behavior than "On top -> Never"
+  but it won't try to override the "On top" flag if an external tool sets it
+* Ticket #3049, Re-enable VSync by default for Windows XP users
+! Fix a crash when VMR-7 (renderless) renderer failed to load
+! SSA subtitles rendering: Improve error checking to avoid possible crashes when the SSA script
+  was using obviously wrong values
+! Ticket #1392, DVD subtitles: Improve rendering in case of overlapping. Ensure that both subtitles
+  will be shown.
+! Ticket #2991, Fix loading of MicroDVD subtitles
+! Ticket #3001, "After Playback": Always give "Once" events a higher priority than "Always" events
+! Ticket #3023, "File -> Load Subtitle" didn't work anymore for DVD
+! Ticket #3045, Go to dialog: Fix frame rate detection for DVDs
+
+
+1.6.6 - 17 March 2013
+=====================
++ Formats: The space key can now be used to enable/disable formats
++ Miscellaneous: Add button to export key bindings
++ Add the ability to choose the scale factor (relative to the screen size) for
+  the auto-fit zoom
++ Internal Subtitles Renderer: Show all subtitles tracks in the Play -> Subtitles menu.
+  That includes all the embedded tracks exhibited by the source filter and the external tracks.
++ Add a new shader that over brightens with gradient from the bottom to the top of the screen.
+  It needs LCD monitors with low viewing angle (~170/160).
++ DVB: Remember audio and subtitle track selection.
++ Add an OSD reminder when Escape is pressed in D3D Fullscreen
++ Ticket #649, Add RARFileSource as an internal filter. Allows rar files without compression to
+  be played without unpacking them.
++ Ticket #899, DVB: Add signal statistic to the status bar
++ Ticket #1025/#1054, Add the ability to select the default track directly by its number
+  in MPC-HC and the standalone MPEG Splitter
++ Ticket #2050, Add Romanian translation
++ Ticket #2905, Support DTS-HD and E-AC3 passthrough
++ Ticket #2935, Add support for sending "Now playing" information to Skype
+* UI: Use a more native look and feel for the options dialog tree
+* More resilient support for MPL2 and SRT subtitles formats:
+  - Ticket #2779, Support MicroDVD tags in MPL2 subtitles files. This is normally not
+    supported but MPL2 files that use MicroDVD tags for formatting are quite common.
+  - Support SRT files with missing millisecond part in the timecodes.
+* Re-enable the option to bypass the DVD/BD path selection. The user won't be asked to choose
+  the location of the DVD/BD player (or folder) when this option is enabled.
+* Changed default D3D Fullscreen hotkey to Ctrl+Alt+F
+* Disabled Frame Time Correction hotkey by default
+* DVB: Some filters that are known to be incompatible with the BDA source filters are now blacklisted
+* External filters: Use two separated lists for x86 and x64 since x86 filters only work with MPC-HC x86
+  and vice versa
+* Ticket #978, Apply the "Repeat" option after "Play next in the folder": the option will now take
+  effect after the next file in the folder was played (similarly to what happens for playlist items)
+* Ticket #1620, UI: Use the new styled radio bullet for menu's items
+* Ticket #2878, Removed obsolete MSN Messenger support
+* Ticket #2924, Use the current file directory as default folder for the "Load Subtitles" dialog
+* Ticket #2947, VSync is now disabled in the default renderer settings
+* Updated FFmpeg (n0.8-19080-g2bac153)
+* Updated Little CMS to v2.4 (git 4ba0259)
+* Updated Logitech SDK to v3.01 (driver 8.00.100)
+* Updated SoundTouch to v1.7.1 r170
+* Updated VirtualDub to v1.10.4-test1
+* Updated MediaInfoLib to v0.7.62
+* Updated ZenLib to v0.4.28 r430
+* Updated Basque, Catalan, Czech, German, French, Greek, Japanese, Polish, Russian,
+  Traditional and Simplified Chinese, Slovak, Swedish and Ukrainian translations
+! Various WebUI fixes:
+  - Fix seeking
+  - Fix volume slider going out of bounds with IE in player.html
+  - Fix incorrect encoding of the parent directory's path in browser.html
+! MPCVideoDecoder: Fix low merit internal filter
+! MPCVideoDecoder: The "Read Aspect Ratio from stream" option didn't always work right
+! DVB EPG: Some strings weren't correctly displayed in some cases
+! PGS Subtitles: Some subtitles were displayed with wrong colors or even not displayed at all
+! EVR-CP renderer: Fix some cases where VSync breaks smooth playback
+! The external filters list was lost when switching from registry to ini or vice-versa
+! Ticket #84, WebServer: The filenames weren't correctly URL decoded
+! Ticket #593, Fix EVR-CP using the CPU while the player is paused when VSync is on
+! Ticket #890, DVB: Disable pause for capture mode to avoid accidental playback stop
+! Ticket #1554, The OSD was looking bad when using the EVR Sync renderer
+! Ticket #1600, Improve the naming of subtitles tracks (avoid showing a useless and ugly comma)
+! Ticket #2396, DVB: Fix default audio track selection when its type is different than
+  the first audio track
+! Ticket #2423, Fix wrong rounding leading to small black bars when resizing the window.
+  This was mostly visible when using the "auto-fit" zoom or when resizing manually.
+! Ticket #2783, Fix crash when generating the chapter marks
+! Ticket #2805, AviSplitter: Fix a crash when closing the file while re-indexing
+! Ticket #2838, The window wasn't draggable anymore by clicking on the information panel
+! Ticket #2839, Post-resize shaders didn't work with VMR-9 (renderless)
+! Ticket #2855, The filename could be wrong when saving a screenshot or thumbnails
+! Ticket #2859, FLACSource: Improve timestamps accuracy. This fixes some cases where the
+  end of the file wasn't played.
+! Ticket #2863, The OSD was incorrect when restarting the playback of a file after it ended
+! Ticket #2864, VobSub subtitles were auto-loaded twice
+! Ticket #2881, "Auto-fit" and "Auto-fit (Larger Only)" zooms gave different results
+  depending on if they were used in windowed or fullscreen mode
+! Ticket #2889, Fix incorrectly displayed OSD when using EVR and VRM-9 (windowed) renderers
+! Ticket #2902, DVB: Some old channels weren't deleted when redoing the scan
+! Ticket #2913, Fix DXVA1 MPEG2 decoder
+! Ticket #2931, DVB Subtitles: Fix a crash with some subtitles streams
+! Ticket #2934, MPEG Splitter: Some files couldn't be opened
+! Ticket #2939, Some fields of the renderer statistics were wrong
+! Ticket #2971, Fix a rare crash on startup
+! Ticket #2984, SSA subtitles: Fix outline background with \frx or \fry tags
+! Ticket #2985, Prevent the volume OSD message from erasing the filename OSD message on startup
+
+
+1.6.5 - 16 December 2012
+========================
++ Add a hotkey to open the subtitles downloader dialog
++ Web server: various performance improvements
++ VobSub subtitles can now also be loaded by selecting or draging and dropping the .sub file
++ FLACSource: Basic support for embedded metadata
++ Take currently applied delay into account when saving subtitles using File > Save subtitle
++ The volume steps can now be changed on the playback options page
++ Ticket #439, External subtitles: support UTF-8 without BOM
++ Ticket #728, Show tooltips in the information panel so that truncated lines can be read completely
++ Ticket #888, Show the information about the current DVB program in the information bar
++ Ticket #1004, The playing speed steps can now be changed on the playback options page
++ Ticket #1617, Use MPC-HC's icon when registering the context menu entries
++ Ticket #1673, FLACSource: Basic support for embedded CUE sheet
++ Ticket #1680, Add Greek translation
++ Ticket #2425, Improve the "Remember file/DVD position" feature: when a file/DVD that was already
+  in the list is reopened, it now goes at the top the list. This way files/DVDs that are often
+  used will stay in the list instead of being inexorably pushed out of it.
++ Ticket #2647, Add .3ga to known formats
++ Ticket #2712, MPCVideoDec: Add the ability to force the interlaced flag
++ Ticket #2737, Improve file associations on Windows 8. The system dialog will be used to set
+  MPC-HC as default handler since it is not possible anymore to do that programmatically.
++ Ticket #2739, Support custom pixel shaders with madVR v0.85.0
+* Updated FFmpeg (n0.8-16738-gcef28b5)
+* Updated MediaInfoLib to v0.7.61
+* Updated ZenLib to v0.4.28 r411
+* Updated Little CMS to v2.4 (git 026ba4f)
+* Updated SoundTouch to v1.7.0 r160
+* Updated VirtualDub to v1.10.3-test11
+* Updated Armenian, Basque, Czech, French, German, Japanese, Russian, Polish, Simplified and
+  Traditional Chinese, Slovak and Ukrainian translations
+* Removed hotkeys to change the volume by 1%
+* VSFilter: Allow floating-point values for \fscx and \fscy
+* Increase default subpic buffer size to 10
+* Ticket #2698, Allow the App key to be used as a hotkey which opens the player menu by default
+! API: CMD_PAUSE was acting as CMD_PLAY and vice versa
+! MpaDecFilter: updated CMixer, avoid possible memory leaks
+! MPEG Splitter: Fix parsing of some malformed TS files
+! VSFilter (auto-loading version) didn't load on Windows 7
+! VSFilter: Fix and update the blacklist
+! Internal Subtitle Renderer/VSFilter: Fix high RAM usage with some complex subtitles
+! DVB EPG: Fix the start time of the current program being off by one hour because of incorrect DST
+! Internal Subtitle Renderer/VSFilter: Fix most cases where rotating/shearing is not properly scaled
+! Ticket #376, Fix subtitles when switching from animated subs to non-animated subs.
+  The subtitles' timings were not correctly respected after switching from an
+  animated subtitles track to a non-animated subtitles track.
+! Ticket #1782, Correctly empty the "Recent" jump list when erasing the history
+  and ensure that no item is added to Windows recent documents menu or to the
+  "Recent" jump list when the history is disabled
+! Ticket #1953, DVB EPG: Fix default encoding
+! Ticket #2105, Fix some crashes when opening the Capture option page
+! Ticket #2326, Fix a crash when closing the player with the player menu open
+! Ticket #2537, #2554, Fix the "Attempted an unsupported operation" error in the
+  Save dialogs on Vista and newer systems
+! Ticket #2572, FLACSource: Fix playback for some files
+! Ticket #2619, FLVSplitter: PCM audio doesn't play
+! Ticket #2658, DVB: Improved channel switching
+! Ticket #2673, MPEGSplitter: Fix playback for some TS files
+! Ticket #2685, FLACSource: Fix a crash with some corrupted file
+! Ticket #2699, AviSplitter: Fix a potential crash with PCM tracks
+! Ticket #2703, Fix a crash that could happen when auto-loading some subtitles
+! Ticket #2751, Improve DVBSub parsing: some subtitles could have been missing
+
+
 1.6.4 - 01 October 2012
 =======================
 + MPCVideoDec: Add support for 4K for Intel HD Graphics 4000
@@ -133,7 +455,7 @@ Legend:
   running when VSFilter is active since that's a job for players not for filters
 * Ticket #1733/#2029, Include subfolders when opening a folder using the command
   line or via the explorer context menu
-* Ticket #2144,2277, Improve the subtitles downloader dialog:
+* Ticket #2144/2277, Improve the subtitles downloader dialog:
     - the dialog's size and position are now saved
     - the columns' sizes are saved
     - the subtitle list is now fetched from a worker thread (this way the player won't

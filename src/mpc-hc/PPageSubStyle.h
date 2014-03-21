@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,7 +30,7 @@ class CColorStatic : public CStatic
     COLORREF* m_pColor;
 
 public:
-    CColorStatic(CWnd* pParent = NULL) : m_pColor(NULL) {}
+    CColorStatic(CWnd* pParent = nullptr) : m_pColor(nullptr) {}
     virtual ~CColorStatic() {}
 
     void SetColorPtr(COLORREF* pColor) { m_pColor = pColor; }
@@ -62,7 +62,7 @@ public:
     CPPageSubStyle();
     virtual ~CPPageSubStyle();
 
-    void InitStyle(CString title, STSStyle& stss);
+    void InitStyle(CString title, const STSStyle& stss);
     void GetStyle(STSStyle& stss) { stss = m_stss; }
 
     // Dialog Data
@@ -93,7 +93,7 @@ public:
     int m_alpha[4];
     CSliderCtrl m_alphasliders[4];
     BOOL m_linkalphasliders;
-    BOOL m_relativeTo;
+    int m_iRelativeTo;
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support

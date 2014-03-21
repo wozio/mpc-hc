@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -24,93 +24,117 @@
 #include "ISDb.h"
 #include "mplayerc.h"
 
+#define PROBE_SIZE (64 * 1024)
 
-bool mpc_filehash(LPCTSTR fn, filehash& fh)
+namespace ISDb
 {
-    CFile f;
-    CFileException fe;
-    if (!f.Open(fn, CFile::modeRead | CFile::osSequentialScan | CFile::shareDenyNone, &fe)) {
-        return false;
-    }
-
-    CPath p(fn);
-    p.StripPath();
-    fh.name = (LPCTSTR)p;
-
-    fh.size = f.GetLength();
-
-    fh.mpc_filehash = fh.size;
-    for (UINT64 tmp = 0, i = 0; i < 65536 / sizeof(tmp) && f.Read(&tmp, sizeof(tmp)); fh.mpc_filehash += tmp, i++) {
-        ;
-    }
-    f.Seek(max(0, (INT64)fh.size - 65536), CFile::begin);
-    for (UINT64 tmp = 0, i = 0; i < 65536 / sizeof(tmp) && f.Read(&tmp, sizeof(tmp)); fh.mpc_filehash += tmp, i++) {
-        ;
-    }
-
-    return true;
-}
-
-void mpc_filehash(CPlaylist& pl, CList<filehash>& fhs)
-{
-    fhs.RemoveAll();
-
-    POSITION pos = pl.GetHeadPosition();
-    while (pos) {
-        CString fn = pl.GetNext(pos).m_fns.GetHead();
-        if (AfxGetAppSettings().m_Formats.FindExt(CPath(fn).GetExtension().MakeLower(), true)) {
-            continue;
+    bool mpc_filehash(IFileSourceFilter* pFSF, filehash& fh)
+    {
+        CComQIPtr<IAsyncReader> pAR;
+        if (CComQIPtr<IBaseFilter> pBF = pFSF) {
+            BeginEnumPins(pBF, pEP, pPin)
+            if (pAR = pPin) {
+                break;
+            }
+            EndEnumPins;
         }
 
-        filehash fh;
-        if (!mpc_filehash(fn, fh)) {
-            continue;
+        if (!pAR || !pFSF) {
+            return false;
         }
 
-        fhs.AddTail(fh);
-    }
-}
+        LPOLESTR name;
+        if (FAILED(pFSF->GetCurFile(&name, nullptr))) {
+            return false;
+        }
+        fh.name = name;
+        CoTaskMemFree(name);
 
-CStringA makeargs(CPlaylist& pl)
-{
-    CList<filehash> fhs;
-    mpc_filehash(pl, fhs);
+        LONGLONG size, available;
+        if (pAR->Length(&size, &available) != S_OK) { // Don't accept estimates
+            return false;
+        }
+        fh.size = size;
 
-    CAtlList<CStringA> args;
-
-    POSITION pos = fhs.GetHeadPosition();
-    for (int i = 0; pos; i++) {
-        filehash& fh = fhs.GetNext(pos);
-
-        CStringA str;
-        str.Format("name[%d]=%s&size[%d]=%016I64x&hash[%d]=%016I64x",
-                   i, UrlEncode(CStringA(fh.name), true),
-                   i, fh.size,
-                   i, fh.mpc_filehash);
-
-        args.AddTail(str);
-    }
-
-    return Implode(args, '&');
-}
-
-bool OpenUrl(CInternetSession& is, CString url, CStringA& str)
-{
-    str.Empty();
-
-    try {
-        CAutoPtr<CStdioFile> f(is.OpenURL(url, 1, INTERNET_FLAG_TRANSFER_BINARY | INTERNET_FLAG_EXISTING_CONNECT));
-
-        char buff[1024];
-        for (int len; (len = f->Read(buff, sizeof(buff))) > 0; str += CStringA(buff, len)) {
+        fh.mpc_filehash = fh.size;
+        LONGLONG position = 0;
+        for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && SUCCEEDED(pAR->SyncRead(position, sizeof(tmp), (BYTE*)&tmp)); fh.mpc_filehash += tmp, position += sizeof(tmp), i++) {
+            ;
+        }
+        position = std::max(0ll, (INT64)fh.size - PROBE_SIZE);
+        for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && SUCCEEDED(pAR->SyncRead(position, sizeof(tmp), (BYTE*)&tmp)); fh.mpc_filehash += tmp, position += sizeof(tmp), i++) {
             ;
         }
 
-        f->Close(); // must close it because the destructor doesn't seem to do it and we will get an exception when "is" is destroying
-    } catch (CInternetException* ie) {
-        ie->Delete();
-        return false;
+        return true;
     }
 
-    return true;
+    bool mpc_filehash(LPCTSTR fn, filehash& fh)
+    {
+        CFile f;
+        CFileException fe;
+        if (!f.Open(fn, CFile::modeRead | CFile::osSequentialScan | CFile::shareDenyNone, &fe)) {
+            return false;
+        }
+
+        CPath p(fn);
+        p.StripPath();
+        fh.name = (LPCTSTR)p;
+
+        fh.size = f.GetLength();
+
+        fh.mpc_filehash = fh.size;
+        for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && f.Read(&tmp, sizeof(tmp)); fh.mpc_filehash += tmp, i++) {
+            ;
+        }
+        f.Seek(std::max(0ll, (INT64)fh.size - PROBE_SIZE), CFile::begin);
+        for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && f.Read(&tmp, sizeof(tmp)); fh.mpc_filehash += tmp, i++) {
+            ;
+        }
+
+        return true;
+    }
+
+    void mpc_filehash(CPlaylist& pl, CList<filehash>& fhs)
+    {
+        fhs.RemoveAll();
+
+        POSITION pos = pl.GetHeadPosition();
+        while (pos) {
+            CString fn = pl.GetNext(pos).m_fns.GetHead();
+            if (AfxGetAppSettings().m_Formats.FindExt(CPath(fn).GetExtension().MakeLower(), true)) {
+                continue;
+            }
+
+            filehash fh;
+            if (!mpc_filehash(fn, fh)) {
+                continue;
+            }
+
+            fhs.AddTail(fh);
+        }
+    }
+
+    CStringA makeargs(CPlaylist& pl)
+    {
+        CList<filehash> fhs;
+        mpc_filehash(pl, fhs);
+
+        CAtlList<CStringA> args;
+
+        POSITION pos = fhs.GetHeadPosition();
+        for (int i = 0; pos; i++) {
+            filehash& fh = fhs.GetNext(pos);
+
+            CStringA str;
+            str.Format("name[%d]=%s&size[%d]=%016I64x&hash[%d]=%016I64x",
+                       i, UrlEncode(CStringA(fh.name), true),
+                       i, fh.size,
+                       i, fh.mpc_filehash);
+
+            args.AddTail(str);
+        }
+
+        return Implode(args, '&');
+    }
 }

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -186,7 +186,6 @@ CPPageDVD::CPPageDVD()
     , m_idAudioLang(0)
     , m_idSubtitlesLang(0)
     , m_dvdpath(_T(""))
-    , m_fAutoSpeakerConf(FALSE)
     , m_fClosedCaptions(FALSE)
 {
 }
@@ -204,7 +203,6 @@ void CPPageDVD::DoDataExchange(CDataExchange* pDX)
     DDX_Text(pDX, IDC_DVDPATH, m_dvdpath);
     DDX_Control(pDX, IDC_DVDPATH, m_dvdpathctrl);
     DDX_Control(pDX, IDC_BUTTON1, m_dvdpathselctrl);
-    DDX_Check(pDX, IDC_CHECK1, m_fAutoSpeakerConf);
     DDX_Check(pDX, IDC_CHECK2, m_fClosedCaptions);
 }
 
@@ -249,7 +247,6 @@ BOOL CPPageDVD::OnInitDialog()
     m_idMenuLang = s.idMenuLang;
     m_idAudioLang = s.idAudioLang;
     m_idSubtitlesLang = s.idSubtitlesLang;
-    m_fAutoSpeakerConf = s.fAutoSpeakerConf;
     m_fClosedCaptions = s.fClosedCaptions;
 
     UpdateData(FALSE);
@@ -276,7 +273,6 @@ BOOL CPPageDVD::OnApply()
     s.idMenuLang = m_idMenuLang;
     s.idAudioLang = m_idAudioLang;
     s.idSubtitlesLang = m_idSubtitlesLang;
-    s.fAutoSpeakerConf = !!m_fAutoSpeakerConf;
     s.fClosedCaptions = !!m_fClosedCaptions;
 
     ((CMainFrame*)AfxGetMyApp()->GetMainWnd())->SetClosedCaptions(s.fClosedCaptions);
@@ -293,7 +289,7 @@ void CPPageDVD::OnBnClickedButton1()
         CFileDialog dlg(TRUE);
         IFileOpenDialog* openDlgPtr = dlg.GetIFileOpenDialog();
 
-        if (openDlgPtr != NULL) {
+        if (openDlgPtr != nullptr) {
             openDlgPtr->SetTitle(strTitle);
             openDlgPtr->SetOptions(FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST);
             if (FAILED(openDlgPtr->Show(m_hWnd))) {
@@ -305,19 +301,19 @@ void CPPageDVD::OnBnClickedButton1()
             path = dlg.GetFolderPath();
         }
     } else {
-        TCHAR _path[_MAX_PATH];
+        TCHAR _path[MAX_PATH];
 
         BROWSEINFO bi;
         bi.hwndOwner = m_hWnd;
-        bi.pidlRoot = NULL;
+        bi.pidlRoot = nullptr;
         bi.pszDisplayName = _path;
         bi.lpszTitle = strTitle;
         bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_VALIDATE | BIF_USENEWUI | BIF_NONEWFOLDERBUTTON;
-        bi.lpfn = NULL;
+        bi.lpfn = nullptr;
         bi.lParam = 0;
         bi.iImage = 0;
 
-        LPITEMIDLIST iil = SHBrowseForFolder(&bi);
+        PIDLIST_ABSOLUTE iil = SHBrowseForFolder(&bi);
         if (iil) {
             SHGetPathFromIDList(iil, _path);
             path = _path;

@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2008-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -19,6 +19,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "GolombBuffer.h"
 
 CGolombBuffer::CGolombBuffer(BYTE* pBuffer, int nSize)
@@ -49,7 +50,14 @@ UINT64 CGolombBuffer::BitRead(int nBits, bool fPeek)
 
     int bitlen = m_bitlen - nBits;
 
-    UINT64 ret = (m_bitbuff >> bitlen) & ((1ui64 << nBits) - 1);
+    UINT64 ret;
+    // The shift to 64 bits can give incorrect results.
+    // "The behavior is undefined if the right operand is negative, or greater than or equal to the length in bits of the promoted left operand."
+    if (nBits == 64) {
+        ret = m_bitbuff;
+    } else {
+        ret = (m_bitbuff >> bitlen) & ((1ui64 << nBits) - 1);
+    }
 
     if (!fPeek) {
         m_bitbuff &= ((1ui64 << bitlen) - 1);
@@ -88,7 +96,7 @@ void CGolombBuffer::ReadBuffer(BYTE* pDest, int nSize)
 {
     ASSERT(m_nBitPos + nSize <= m_nSize);
     ASSERT(m_bitlen == 0);
-    nSize = min(nSize, m_nSize - m_nBitPos);
+    nSize = std::min(nSize, m_nSize - m_nBitPos);
 
     memcpy(pDest, m_pBuffer + m_nBitPos, nSize);
     m_nBitPos += nSize;

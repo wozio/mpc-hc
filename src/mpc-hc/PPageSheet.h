@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "mplayerc.h"
 #include "PPagePlayer.h"
 #include "PPageFormats.h"
 #include "PPageAccelTbl.h"
@@ -40,6 +41,7 @@
 #include "PPageTweaks.h"
 #include "PPageMisc.h"
 #include "PPageCapture.h"
+#include "PPageShaders.h"
 #include "TreePropSheet/TreePropSheet.h"
 
 
@@ -75,6 +77,7 @@ private:
     CPPagePlayback m_playback;
     CPPageDVD m_dvd;
     CPPageOutput m_output;
+    CPPageShaders m_shaders;
     CPPageFullscreen m_fullscreen;
     CPPageSync m_sync;
     CPPageCapture m_tuner;
@@ -98,6 +101,8 @@ public:
 
     void LockPage() { m_bLockPage = true; };
 protected:
+    DPI m_dpi;
+
     DECLARE_MESSAGE_MAP()
 public:
     virtual BOOL OnInitDialog();

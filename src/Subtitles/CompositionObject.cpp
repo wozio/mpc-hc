@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -24,12 +24,25 @@
 
 
 CompositionObject::CompositionObject()
-    : m_pRLEData(NULL)
+    : m_pRLEData(nullptr)
     , m_nRLEDataSize(0)
     , m_nRLEPos(0)
     , m_nColorNumber(0)
+    , m_object_id_ref(0)
+    , m_window_id_ref(0)
+    , m_object_cropped_flag(false)
+    , m_forced_on_flag(false)
+    , m_version_number(0)
+    , m_horizontal_position(0)
+    , m_vertical_position(0)
+    , m_width(0)
+    , m_height(0)
+    , m_cropping_horizontal_position(0)
+    , m_cropping_vertical_position(0)
+    , m_cropping_width(0)
+    , m_cropping_height(0)
 {
-    memsetd(m_Colors, 0xFF000000, sizeof(m_Colors));
+    memsetd(m_Colors, 0xff000000, sizeof(m_Colors));
 }
 
 CompositionObject::~CompositionObject()
@@ -37,14 +50,14 @@ CompositionObject::~CompositionObject()
     delete [] m_pRLEData;
 }
 
-void CompositionObject::SetPalette(int nNbEntry, HDMV_PALETTE* pPalette, bool bIsHD)
+void CompositionObject::SetPalette(int nNbEntry, const HDMV_PALETTE* pPalette, bool BT709, int sourceBlackLevel, int sourceWhiteLevel, int targetBlackLevel, int targetWhiteLevel)
 {
     m_nColorNumber = nNbEntry;
     for (int i = 0; i < nNbEntry; i++) {
-        if (bIsHD) {
-            m_Colors[pPalette[i].entry_id] = YCrCbToRGB_Rec709(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb);
+        if (BT709) {
+            m_Colors[pPalette[i].entry_id] = YCrCbToRGB_Rec709(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb, sourceBlackLevel, sourceWhiteLevel, targetBlackLevel, targetWhiteLevel);
         } else {
-            m_Colors[pPalette[i].entry_id] = YCrCbToRGB_Rec601(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb);
+            m_Colors[pPalette[i].entry_id] = YCrCbToRGB_Rec601(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb, sourceBlackLevel, sourceWhiteLevel, targetBlackLevel, targetWhiteLevel);
         }
     }
 }
@@ -52,19 +65,27 @@ void CompositionObject::SetPalette(int nNbEntry, HDMV_PALETTE* pPalette, bool bI
 void CompositionObject::SetRLEData(const BYTE* pBuffer, int nSize, int nTotalSize)
 {
     delete [] m_pRLEData;
-    m_pRLEData     = DNew BYTE[nTotalSize];
-    m_nRLEDataSize = nTotalSize;
-    m_nRLEPos      = nSize;
 
-    memcpy(m_pRLEData, pBuffer, nSize);
+    if (nTotalSize > 0 && nSize <= nTotalSize) {
+        m_pRLEData     = DEBUG_NEW BYTE[nTotalSize];
+        m_nRLEDataSize = nTotalSize;
+        m_nRLEPos      = nSize;
+
+        memcpy(m_pRLEData, pBuffer, nSize);
+    } else {
+        m_pRLEData     = nullptr;
+        m_nRLEDataSize = m_nRLEPos = 0;
+        ASSERT(FALSE); // This shouldn't happen in normal operation
+    }
 }
 
 void CompositionObject::AppendRLEData(const BYTE* pBuffer, int nSize)
 {
-    ASSERT(m_nRLEPos + nSize <= m_nRLEDataSize);
     if (m_nRLEPos + nSize <= m_nRLEDataSize) {
         memcpy(m_pRLEData + m_nRLEPos, pBuffer, nSize);
         m_nRLEPos += nSize;
+    } else {
+        ASSERT(FALSE); // This shouldn't happen in normal operation
     }
 }
 
@@ -75,15 +96,14 @@ void CompositionObject::RenderHdmv(SubPicDesc& spd)
     }
 
     CGolombBuffer GBuffer(m_pRLEData, m_nRLEDataSize);
-    BYTE  bTemp;
     BYTE  bSwitch;
     BYTE  nPaletteIndex = 0;
-    short nCount;
-    short nX = m_horizontal_position;
-    short nY = m_vertical_position;
+    LONG nCount;
+    LONG nX = m_horizontal_position;
+    LONG nY = m_vertical_position;
 
     while ((nY < (m_vertical_position + m_height)) && !GBuffer.IsEOF()) {
-        bTemp = GBuffer.ReadByte();
+        BYTE bTemp = GBuffer.ReadByte();
         if (bTemp != 0) {
             nPaletteIndex = bTemp;
             nCount = 1;
@@ -111,7 +131,7 @@ void CompositionObject::RenderHdmv(SubPicDesc& spd)
         }
 
         if (nCount > 0) {
-            if (nPaletteIndex != 0xFF) {    // Fully transparent (§9.14.4.2.2.1.1)
+            if (nPaletteIndex != 0xFF) {    // Fully transparent (section 9.14.4.2.2.1.1)
                 FillSolidRect(spd, nX, nY, nCount, 1, m_Colors[nPaletteIndex]);
             }
             nX += nCount;
@@ -183,15 +203,12 @@ void CompositionObject::DvbRenderField(SubPicDesc& spd, CGolombBuffer& gb, short
 
 void CompositionObject::Dvb2PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb, short& nX, short& nY)
 {
-    BYTE  bTemp;
-    BYTE  nPaletteIndex = 0;
-    short nCount;
-    bool  bQuit = false;
+    bool bQuit = false;
 
     while (!bQuit && !gb.IsEOF()) {
-        nCount = 0;
-        nPaletteIndex = 0;
-        bTemp = (BYTE)gb.BitRead(2);
+        short nCount = 0;
+        BYTE nPaletteIndex = 0;
+        BYTE bTemp = (BYTE)gb.BitRead(2);
         if (bTemp != 0) {
             nPaletteIndex = bTemp;
             nCount = 1;
@@ -239,21 +256,18 @@ void CompositionObject::Dvb2PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb,
 
 void CompositionObject::Dvb4PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb, short& nX, short& nY)
 {
-    BYTE  bTemp;
-    BYTE  nPaletteIndex = 0;
-    short nCount;
-    bool  bQuit = false;
+    bool bQuit = false;
 
     while (!bQuit && !gb.IsEOF()) {
-        nCount = 0;
-        nPaletteIndex = 0;
-        bTemp = (BYTE)gb.BitRead(4);
+        short nCount = 0;
+        BYTE nPaletteIndex = 0;
+        BYTE bTemp = (BYTE)gb.BitRead(4);
         if (bTemp != 0) {
             nPaletteIndex = bTemp;
             nCount = 1;
         } else {
-            if (gb.BitRead(1) == 0) {                           // switch_1
-                nCount = (short)gb.BitRead(3);                  // run_length_3-9
+            if (gb.BitRead(1) == 0) {                               // switch_1
+                nCount = (short)gb.BitRead(3);                      // run_length_3-9
                 if (nCount != 0) {
                     nCount += 2;
                 } else {
@@ -302,15 +316,12 @@ void CompositionObject::Dvb4PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb,
 
 void CompositionObject::Dvb8PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb, short& nX, short& nY)
 {
-    BYTE  bTemp;
-    BYTE  nPaletteIndex = 0;
-    short nCount;
-    bool  bQuit = false;
+    bool bQuit = false;
 
     while (!bQuit && !gb.IsEOF()) {
-        nCount = 0;
-        nPaletteIndex = 0;
-        bTemp = gb.ReadByte();
+        short nCount = 0;
+        BYTE nPaletteIndex = 0;
+        BYTE bTemp = gb.ReadByte();
         if (bTemp != 0) {
             nPaletteIndex = bTemp;
             nCount = 1;

@@ -1,5 +1,5 @@
 /*
- * (C) 2008-2012 see Authors.txt
+ * (C) 2008-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,21 +30,21 @@
 LPCTSTR GetMPCCommandName(MPCAPI_COMMAND nCmd)
 {
     switch (nCmd) {
-        case CMD_CONNECT :
+        case CMD_CONNECT:
             return _T("CMD_CONNECT");
-        case CMD_STATE :
+        case CMD_STATE:
             return _T("CMD_STATE");
-        case CMD_PLAYMODE :
+        case CMD_PLAYMODE:
             return _T("CMD_PLAYMODE");
-        case CMD_NOWPLAYING :
+        case CMD_NOWPLAYING:
             return _T("CMD_NOWPLAYING");
-        case CMD_LISTSUBTITLETRACKS :
+        case CMD_LISTSUBTITLETRACKS:
             return _T("CMD_LISTSUBTITLETRACKS");
-        case CMD_LISTAUDIOTRACKS :
+        case CMD_LISTAUDIOTRACKS:
             return _T("CMD_LISTAUDIOTRACKS");
-        case CMD_PLAYLIST :
+        case CMD_PLAYLIST:
             return _T("CMD_PLAYLIST");
-        default :
+        default:
             return _T("CMD_UNK");
     }
 }
@@ -75,13 +75,11 @@ protected:
     DECLARE_MESSAGE_MAP()
 };
 
-
 CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
 {
     //{{AFX_DATA_INIT(CAboutDlg)
     //}}AFX_DATA_INIT
 }
-
 
 void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
@@ -97,17 +95,16 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
 END_MESSAGE_MAP()
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 // CRegisterCopyDataDlg dialog
 
-CRegisterCopyDataDlg::CRegisterCopyDataDlg(CWnd* pParent /*=NULL*/)
+CRegisterCopyDataDlg::CRegisterCopyDataDlg(CWnd* pParent /*=nullptr*/)
     : CDialog(CRegisterCopyDataDlg::IDD, pParent)
     , m_strMPCPath(_T(""))
     , m_txtCommand(_T(""))
     , m_nCommandType(0)
-    , m_hWndMPC(NULL)
-    , m_RemoteWindow(NULL)
+    , m_hWndMPC(nullptr)
+    , m_RemoteWindow(nullptr)
 {
     //{{AFX_DATA_INIT(CRegisterCopyDataDlg)
     // NOTE: the ClassWizard will add member initialization here
@@ -115,7 +112,6 @@ CRegisterCopyDataDlg::CRegisterCopyDataDlg(CWnd* pParent /*=NULL*/)
     // Note that LoadIcon does not require a subsequent DestroyIcon in Win32
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
-
 
 void CRegisterCopyDataDlg::DoDataExchange(CDataExchange* pDX)
 {
@@ -155,7 +151,7 @@ BOOL CRegisterCopyDataDlg::OnInitDialog()
     ASSERT(IDM_ABOUTBOX < 0xF000);
 
     CMenu* pSysMenu = GetSystemMenu(FALSE);
-    if (pSysMenu != NULL) {
+    if (pSysMenu != nullptr) {
         CString strAboutMenu;
         strAboutMenu.LoadString(IDS_ABOUTBOX);
         if (!strAboutMenu.IsEmpty()) {
@@ -165,13 +161,13 @@ BOOL CRegisterCopyDataDlg::OnInitDialog()
     }
 
     // Set the icon for this dialog.  The framework does this automatically
-    //  when the application's main window is not a dialog
+    // when the application's main window is not a dialog
     SetIcon(m_hIcon, TRUE);         // Set big icon
     SetIcon(m_hIcon, FALSE);        // Set small icon
 
     // TODO: Add extra initialization here
-    m_strMPCPath = _T("..\\..\\..\\..\\bin\\");
 
+    m_strMPCPath = _T("..\\..\\..\\..\\bin\\");
 #if defined(_WIN64)
     m_strMPCPath += _T("mpc-hc_x64");
 #else
@@ -194,7 +190,6 @@ BOOL CRegisterCopyDataDlg::OnInitDialog()
 
     return TRUE;  // return TRUE unless you set the focus to a control
 }
-
 
 void CRegisterCopyDataDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
@@ -232,7 +227,6 @@ void CRegisterCopyDataDlg::OnPaint()
     }
 }
 
-
 // The system calls this to obtain the cursor to display while the user drags
 //  the minimized window.
 HCURSOR CRegisterCopyDataDlg::OnQueryDragIcon()
@@ -240,22 +234,23 @@ HCURSOR CRegisterCopyDataDlg::OnQueryDragIcon()
     return (HCURSOR) m_hIcon;
 }
 
-
 void CRegisterCopyDataDlg::OnButtonFindwindow()
 {
     CString             strExec;
     STARTUPINFO         StartupInfo;
     PROCESS_INFORMATION ProcessInfo;
 
-    strExec.Format(_T("%s /slave %d"), m_strMPCPath, GetSafeHwnd());
+    strExec.Format(_T("%s /slave %d"), m_strMPCPath, PtrToInt(GetSafeHwnd()));
     UpdateData(TRUE);
 
-    memset(&StartupInfo, 0, sizeof(StartupInfo));
+    ZeroMemory(&StartupInfo, sizeof(StartupInfo));
     StartupInfo.cb = sizeof(StartupInfo);
     GetStartupInfo(&StartupInfo);
-    CreateProcess(NULL, (LPTSTR)(LPCTSTR)strExec, NULL, NULL, FALSE, 0, NULL, NULL, &StartupInfo, &ProcessInfo);
+    if (CreateProcess(nullptr, (LPTSTR)(LPCTSTR)strExec, nullptr, nullptr, FALSE, 0, nullptr, nullptr, &StartupInfo, &ProcessInfo)) {
+        CloseHandle(ProcessInfo.hProcess);
+        CloseHandle(ProcessInfo.hThread);
+    }
 }
-
 
 void CRegisterCopyDataDlg::Senddata(MPCAPI_COMMAND nCmd, LPCTSTR strCommand)
 {
@@ -270,13 +265,12 @@ void CRegisterCopyDataDlg::Senddata(MPCAPI_COMMAND nCmd, LPCTSTR strCommand)
     }
 }
 
-
 BOOL CRegisterCopyDataDlg::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruct)
 {
     CString strMsg;
 
     if (pCopyDataStruct->dwData == CMD_CONNECT) {
-        m_hWndMPC = (HWND)_wtol((LPCTSTR)pCopyDataStruct->lpData);
+        m_hWndMPC = (HWND)IntToPtr(_ttoi((LPCTSTR)pCopyDataStruct->lpData));
     }
 
     strMsg.Format(_T("%s : %s"), GetMPCCommandName((MPCAPI_COMMAND)pCopyDataStruct->dwData), (LPCTSTR)pCopyDataStruct->lpData);
@@ -284,80 +278,79 @@ BOOL CRegisterCopyDataDlg::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruc
     return CDialog::OnCopyData(pWnd, pCopyDataStruct);
 }
 
-
 void CRegisterCopyDataDlg::OnBnClickedButtonSendcommand()
 {
     CString strEmpty(_T(""));
     UpdateData(TRUE);
 
     switch (m_nCommandType) {
-        case 0 :
+        case 0:
             Senddata(CMD_OPENFILE, m_txtCommand);
             break;
-        case 1 :
+        case 1:
             Senddata(CMD_STOP, strEmpty);
             break;
-        case 2 :
+        case 2:
             Senddata(CMD_CLOSEFILE, strEmpty);
             break;
-        case 3 :
+        case 3:
             Senddata(CMD_PLAYPAUSE, strEmpty);
             break;
-        case 4 :
+        case 4:
             Senddata(CMD_ADDTOPLAYLIST, m_txtCommand);
             break;
-        case 5 :
+        case 5:
             Senddata(CMD_STARTPLAYLIST, strEmpty);
             break;
-        case 6 :
+        case 6:
             Senddata(CMD_CLEARPLAYLIST, strEmpty);
             break;
-        case 7 :
+        case 7:
             Senddata(CMD_SETPOSITION, m_txtCommand);
             break;
-        case 8 :
+        case 8:
             Senddata(CMD_SETAUDIODELAY, m_txtCommand);
             break;
-        case 9 :
+        case 9:
             Senddata(CMD_SETSUBTITLEDELAY, m_txtCommand);
             break;
-        case 10 :
+        case 10:
             Senddata(CMD_GETAUDIOTRACKS, strEmpty);
             break;
-        case 11 :
+        case 11:
             Senddata(CMD_GETSUBTITLETRACKS, strEmpty);
             break;
-        case 12 :
+        case 12:
             Senddata(CMD_GETPLAYLIST, strEmpty);
             break;
-        case 13 :
+        case 13:
             Senddata(CMD_SETINDEXPLAYLIST, m_txtCommand);
             break;
-        case 14 :
+        case 14:
             Senddata(CMD_SETAUDIOTRACK, m_txtCommand);
             break;
-        case 15 :
+        case 15:
             Senddata(CMD_SETSUBTITLETRACK, m_txtCommand);
             break;
-        case 16 :
+        case 16:
             Senddata(CMD_TOGGLEFULLSCREEN, m_txtCommand);
             break;
-        case 17 :
+        case 17:
             Senddata(CMD_JUMPFORWARDMED, m_txtCommand);
             break;
-        case 18 :
+        case 18:
             Senddata(CMD_JUMPBACKWARDMED, m_txtCommand);
             break;
-        case 19 :
+        case 19:
             Senddata(CMD_INCREASEVOLUME, m_txtCommand);
             break;
-        case 20 :
+        case 20:
             Senddata(CMD_DECREASEVOLUME, m_txtCommand);
             break;
-        case 21 :
-            Senddata(CMD_SHADER_TOGGLE, m_txtCommand);
+        case 21:
+            //Senddata(CMD_SHADER_TOGGLE, m_txtCommand);
             break;
-        case 22 :
+        case 22:
             Senddata(CMD_CLOSEAPP, m_txtCommand);
             break;
     }

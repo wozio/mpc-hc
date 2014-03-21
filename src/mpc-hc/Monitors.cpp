@@ -36,7 +36,7 @@ CMonitors::CMonitors()
     addMonitor.pMonitors = &m_MonitorArray;
     addMonitor.currentIndex = 0;
 
-    ::EnumDisplayMonitors(NULL, NULL, AddMonitorsCallBack, (LPARAM)&addMonitor);
+    ::EnumDisplayMonitors(nullptr, nullptr, AddMonitorsCallBack, (LPARAM)&addMonitor);
 }
 
 CMonitors::~CMonitors()
@@ -53,7 +53,7 @@ BOOL CALLBACK CMonitors::AddMonitorsCallBack(HMONITOR hMonitor, HDC hdcMonitor, 
 {
     LPADDMONITOR pAddMonitor = (LPADDMONITOR)dwData;
 
-    CMonitor* pMonitor = DNew CMonitor;
+    CMonitor* pMonitor = DEBUG_NEW CMonitor;
     pMonitor->Attach(hMonitor);
 
     pAddMonitor->pMonitors->Add(pMonitor);
@@ -80,7 +80,7 @@ CMonitor CMonitors::GetPrimaryMonitor()
 // is the given handle a valid monitor handle
 BOOL CMonitors::IsMonitor(const HMONITOR hMonitor)
 {
-    if (hMonitor == NULL) {
+    if (hMonitor == nullptr) {
         return FALSE;
     }
 
@@ -88,7 +88,7 @@ BOOL CMonitors::IsMonitor(const HMONITOR hMonitor)
     match.target = hMonitor;
     match.foundMatch = FALSE;
 
-    ::EnumDisplayMonitors(NULL, NULL, FindMatchingMonitorHandle, (LPARAM)&match);
+    ::EnumDisplayMonitors(nullptr, nullptr, FindMatchingMonitorHandle, (LPARAM)&match);
 
     return match.foundMatch;
 }
@@ -143,14 +143,14 @@ void CMonitors::GetVirtualDesktopRect(LPRECT lprc)
 }
 
 //
-// these methods determine wheter the given item is
+// these methods determine whether the given item is
 // visible on any monitor
 BOOL CMonitors::IsOnScreen(const LPRECT lprc)
 {
     return ::MonitorFromRect(lprc, MONITOR_DEFAULTTONULL) != NULL;
 }
 
-BOOL CMonitors::IsOnScreen(const POINT pt)
+BOOL CMonitors::IsOnScreen(const POINT& pt)
 {
     return ::MonitorFromPoint(pt, MONITOR_DEFAULTTONULL) != NULL;
 }
@@ -169,7 +169,7 @@ CMonitor CMonitors::GetNearestMonitor(const LPRECT lprc)
 
 }
 
-CMonitor CMonitors::GetNearestMonitor(const POINT pt)
+CMonitor CMonitors::GetNearestMonitor(const POINT& pt)
 {
     CMonitor monitor;
     monitor.Attach(::MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST));

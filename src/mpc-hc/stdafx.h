@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,22 +21,41 @@
 
 #pragma once
 
-#include "SharedInclude.h"
-#include "../../include/stdafx_common.h"
-#undef _ATL_CSTRING_EXPLICIT_CONSTRUCTORS
-#include "../../include/stdafx_common_afx2.h"
-#include "../../include/stdafx_common_dshow.h"
+#define VC_EXTRALEAN                        // Exclude rarely-used stuff from Windows headers
 
-#include <Windows.h>
+#ifndef STRICT_TYPED_ITEMIDS
+#define STRICT_TYPED_ITEMIDS
+#endif
+
+#include <afxwin.h>                         // MFC core and standard components
+#include <afxext.h>                         // MFC extensions
+#include <afxdisp.h>                        // MFC Automation classes
+#include <afxdtctl.h>                       // MFC support for Internet Explorer 4 Common Controls
+#ifndef _AFX_NO_AFXCMN_SUPPORT
+#include <afxcmn.h>                         // MFC support for Windows Common Controls
+#endif // _AFX_NO_AFXCMN_SUPPORT
+#include <afxdlgs.h>
+
+
+#include "SharedInclude.h"
+#include "mpc-hc_config.h"
+#include "DSUtil.h"
+
 #include <algorithm>
-#include <afxadv.h>
-#include <afxcview.h>
-#include <afxcmn.h>
-#include <afxpriv.h>
-#include <afxsock.h>
-#include <afxwin.h>
-#include <afxinet.h>
-#include <atlbase.h>
+#include <cmath>
+#include <functional>
+#include <map>
+#include <set>
+#include <vector>
+
+// Workaround compilation errors when including GDI+ with NOMINMAX defined
+namespace Gdiplus
+{
+    using std::min;
+    using std::max;
+};
+
+#include <afxole.h>
 #include <atlcoll.h>
 #include <atlconv.h>
 #include <atlimage.h>
@@ -68,20 +87,14 @@
 
 #include "../Subtitles/RTS.h"
 #include "../Subtitles/STS.h"
-
-#include "DSUtil.h"
-
-#define ResStr(id) CString(MAKEINTRESOURCE(id))
+#include "../Subtitles/RenderedHdmvSubtitle.h"
 
 template <class T = CString, class S = CString>
-class CAtlStringMap : public CAtlMap<S, T, CStringElementTraits<S> > {};
+class CAtlStringMap : public CAtlMap<S, T, CStringElementTraits<S>> {};
 
 #define CheckAndLog(x, msg)  hr = ##x; if (FAILED(hr)) { TRACE(msg _T(": 0x%08x\n"), hr); return hr; }
 #define CheckNoLog(x)        hr = ##x; if (FAILED(hr)) { return hr; }
-
-#if !defined(USE_MEDIAINFO_STATIC) && !defined(MPCHC_LITE)
-#define USE_MEDIAINFO_STATIC
-#endif
+#define CheckNoLogBool(x)    if (FAILED(x)) { return false; }
 
 #include "resource.h"
 #include "FakeFilterMapper2.h"

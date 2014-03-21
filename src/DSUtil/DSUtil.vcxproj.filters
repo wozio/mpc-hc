@@ -56,13 +56,16 @@
     <ClCompile Include="vd_asm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AudioParser.cpp">
+    <ClCompile Include="AudioTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WinAPIUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FileVersionInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PathUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -100,9 +103,6 @@
     <ClInclude Include="SharedInclude.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="simd_common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -118,13 +118,16 @@
     <ClInclude Include="vd_asm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AudioParser.h">
+    <ClInclude Include="AudioTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WinAPIUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FileVersionInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PathUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include <atlbase.h>
 #include "AVI2AC3Filter.h"
 #include "../../../DSUtil/DSUtil.h"
@@ -41,8 +42,8 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudpPins[] = {
-    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesIn), sudPinTypesIn},
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut}
+    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesIn), sudPinTypesIn},
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut}
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
@@ -50,7 +51,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CAVI2AC3Filter>, NULL, &sudFilter[0]}
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CAVI2AC3Filter>, nullptr, &sudFilter[0]}
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -91,7 +92,7 @@ HRESULT CAVI2AC3Filter::Transform(IMediaSample* pSample, IMediaSample* pOutSampl
 {
     HRESULT hr;
 
-    BYTE* pIn = NULL;
+    BYTE* pIn = nullptr;
     if (FAILED(hr = pSample->GetPointer(&pIn))) {
         return hr;
     }
@@ -102,13 +103,13 @@ HRESULT CAVI2AC3Filter::Transform(IMediaSample* pSample, IMediaSample* pOutSampl
         return S_FALSE;
     }
 
-    BYTE* pOut = NULL;
+    BYTE* pOut = nullptr;
     if (FAILED(hr = pOutSample->GetPointer(&pOut))) {
         return hr;
     }
     BYTE* pOutOrg = pOut;
 
-    int size = pOutSample->GetSize();
+    long size = pOutSample->GetSize();
 
     if ((CheckAC3(&m_pInput->CurrentMediaType()) || CheckDTS(&m_pInput->CurrentMediaType()))
             && (CheckWAVEAC3(&m_pOutput->CurrentMediaType()) || CheckWAVEDTS(&m_pOutput->CurrentMediaType()))) {
@@ -120,7 +121,7 @@ HRESULT CAVI2AC3Filter::Transform(IMediaSample* pSample, IMediaSample* pOutSampl
             pIn += 8 + 1 + pIn[8] + 1 + 3;
         }
 
-        len -= (pInOrg - pIn);
+        len -= long(pInOrg - pIn);
 
         if (size < len) {
             return E_FAIL;
@@ -138,9 +139,9 @@ HRESULT CAVI2AC3Filter::Transform(IMediaSample* pSample, IMediaSample* pOutSampl
 
             bool fDiscontinuity = (S_OK == pOutSample->IsDiscontinuity());
 
-            int pos = 0;
+            long pos = 0;
             while (pos < len) {
-                int curlen = min(len - pos, 2013);
+                int curlen = std::min(len - pos, 2013l);
                 pos += 2013;
 
                 CComPtr<IMediaSample> pOutSample;
@@ -154,17 +155,17 @@ HRESULT CAVI2AC3Filter::Transform(IMediaSample* pSample, IMediaSample* pOutSampl
 
                     fDiscontinuity = false;
                 } else {
-                    pOutSample->SetTime(NULL, NULL);
+                    pOutSample->SetTime(nullptr, nullptr);
                     pOutSample->SetDiscontinuity(FALSE);
                 }
 
-                BYTE* pOut = NULL;
+                BYTE* pOut = nullptr;
                 if (FAILED(hr = pOutSample->GetPointer(&pOut))) {
                     return hr;
                 }
                 BYTE* pOutOrg = pOut;
 
-                int size = pOutSample->GetSize();
+                long size = pOutSample->GetSize();
 
                 const GUID* majortype = &m_pOutput->CurrentMediaType().majortype;
                 const GUID* subtype = &m_pOutput->CurrentMediaType().subtype;
@@ -246,7 +247,7 @@ HRESULT CAVI2AC3Filter::Transform(IMediaSample* pSample, IMediaSample* pOutSampl
                     pOut += curlen;
                 }
 
-                pOutSample->SetActualDataLength(pOut - pOutOrg);
+                pOutSample->SetActualDataLength(long(pOut - pOutOrg));
 
                 hr = m_pOutput->Deliver(pOutSample);
             }
@@ -318,7 +319,7 @@ HRESULT CAVI2AC3Filter::Transform(IMediaSample* pSample, IMediaSample* pOutSampl
         return E_FAIL;
     }
 
-    pOutSample->SetActualDataLength(pOut - pOutOrg);
+    pOutSample->SetActualDataLength(int(pOut - pOutOrg));
 
     return S_OK;
 }
@@ -390,7 +391,7 @@ HRESULT CAVI2AC3Filter::DecideBufferSize(IMemAllocator* pAllocator, ALLOCATOR_PR
     pAllocatorIn->GetProperties(pProperties);
 
     pProperties->cBuffers = 2;
-    pProperties->cbBuffer = max(pProperties->cbBuffer, 1024 * 1024); // this should be enough...
+    pProperties->cbBuffer = std::max(pProperties->cbBuffer, 1024l * 1024l); // this should be enough...
     pProperties->cbAlign = 1;
     pProperties->cbPrefix = 0;
 
@@ -427,7 +428,7 @@ HRESULT CAVI2AC3Filter::GetMediaType(int iPosition, CMediaType* pMediaType)
 
         pMediaType->formattype = FORMAT_WaveFormatEx;
         WAVEFORMATEX* wfe = (WAVEFORMATEX*)pMediaType->AllocFormatBuffer(sizeof(WAVEFORMATEX));
-        memset(wfe, 0, sizeof(WAVEFORMATEX));
+        ZeroMemory(wfe, sizeof(WAVEFORMATEX));
         wfe->cbSize = sizeof(WAVEFORMATEX);
         wfe->nAvgBytesPerSec = ((WAVEFORMATEX*)m_pInput->CurrentMediaType().pbFormat)->nAvgBytesPerSec;
         wfe->nSamplesPerSec = ((WAVEFORMATEX*)m_pInput->CurrentMediaType().pbFormat)->nSamplesPerSec;
@@ -457,7 +458,7 @@ HRESULT CAVI2AC3Filter::GetMediaType(int iPosition, CMediaType* pMediaType)
 
             pMediaType->formattype = FORMAT_WaveFormatEx;
             DOLBYAC3WAVEFORMAT* wfe = (DOLBYAC3WAVEFORMAT*)pMediaType->AllocFormatBuffer(sizeof(DOLBYAC3WAVEFORMAT));
-            memset(wfe, 0, sizeof(DOLBYAC3WAVEFORMAT));
+            ZeroMemory(wfe, sizeof(DOLBYAC3WAVEFORMAT));
             // unfortunately we can't tell what we are going to get in transform,
             // so we just set the most common values and hope that the ac3 decoder
             // is flexible enough (it is usually :) to find out these from the bitstream
@@ -471,7 +472,7 @@ HRESULT CAVI2AC3Filter::GetMediaType(int iPosition, CMediaType* pMediaType)
 
             pMediaType->formattype = FORMAT_WaveFormatEx;
             WAVEFORMATEX* wfe = (WAVEFORMATEX*)pMediaType->AllocFormatBuffer(sizeof(WAVEFORMATEX));
-            memset(wfe, 0, sizeof(WAVEFORMATEX));
+            ZeroMemory(wfe, sizeof(WAVEFORMATEX));
             // same case as with ac3, but this time we don't even know the structure
             wfe->cbSize = sizeof(WAVEFORMATEX);
             wfe->wFormatTag = WAVE_FORMAT_PCM;
@@ -488,16 +489,19 @@ HRESULT CAVI2AC3Filter::GetMediaType(int iPosition, CMediaType* pMediaType)
             case 1:
                 pMediaType->ResetFormatBuffer();
                 pMediaType->formattype = FORMAT_None;
+            // no break
             case 2:
                 pMediaType->majortype = MEDIATYPE_MPEG2_PES;
                 break;
             case 3:
                 pMediaType->ResetFormatBuffer();
                 pMediaType->formattype = FORMAT_None;
+            // no break
             case 4:
                 pMediaType->majortype = MEDIATYPE_DVD_ENCRYPTED_PACK;
                 break;
             default:
+                ASSERT(FALSE); // Shouldn't happen
                 return E_INVALIDARG;
         }
     } else {

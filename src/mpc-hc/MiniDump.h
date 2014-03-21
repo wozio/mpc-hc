@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,20 +20,16 @@
 
 #pragma once
 
-// Uncomment the following line to turn off the minidump creation.
-//#define DISABLE_MINIDUMP
-
 class CMiniDump
 {
 public:
     CMiniDump();
     ~CMiniDump();
 
-    static void Enable()  { m_bMiniDumpEnabled = true; };
-    static void Disable() { m_bMiniDumpEnabled = false; };
+    static void Enable()  { SetUnhandledExceptionFilter(UnhandledExceptionFilter); };
+    static void Disable() { SetUnhandledExceptionFilter(nullptr); };
 
 private:
-    static LONG WINAPI  UnhandledExceptionFilter(_EXCEPTION_POINTERS* lpTopLevelExceptionFilter);
-    static BOOL         PreventSetUnhandledExceptionFilter();
-    static bool         m_bMiniDumpEnabled;
+    static LONG WINAPI UnhandledExceptionFilter(_EXCEPTION_POINTERS* lpTopLevelExceptionFilter);
+    static BOOL        PreventSetUnhandledExceptionFilter();
 };

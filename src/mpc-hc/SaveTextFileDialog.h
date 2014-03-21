@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,19 +28,19 @@
 
 class CSaveTextFileDialog : public CFileDialog
 {
-    DECLARE_DYNAMIC(CSaveTextFileDialog)
-
-private:
+protected:
     CTextFile::enc m_e;
+    CComboBox m_encoding;
+
+    DECLARE_DYNAMIC(CSaveTextFileDialog)
 
 public:
     CSaveTextFileDialog(
         CTextFile::enc e,
-        LPCTSTR lpszDefExt = NULL, LPCTSTR lpszFileName = NULL,
-        LPCTSTR lpszFilter = NULL, CWnd* pParentWnd = NULL);
+        LPCTSTR lpszDefExt = nullptr, LPCTSTR lpszFileName = nullptr,
+        LPCTSTR lpszFilter = nullptr, CWnd* pParentWnd = nullptr);
     virtual ~CSaveTextFileDialog();
 
-    CComboBox m_encoding;
     CTextFile::enc GetEncoding() { return m_e; }
 
 protected:
@@ -49,6 +49,5 @@ protected:
     virtual BOOL OnInitDialog();
     virtual BOOL OnFileNameOK();
 
-public:
     afx_msg void OnEncodingChange();
 };

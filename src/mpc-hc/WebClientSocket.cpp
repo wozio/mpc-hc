@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,13 +20,16 @@
  */
 
 #include "stdafx.h"
-#include <atlisapi.h>
+#include "atl/atlisapi.h"
 #include "mplayerc.h"
 #include "resource.h"
 #include "MainFrm.h"
 #include "../Subtitles/TextFile.h"
 #include "WebServer.h"
 #include "WebClientSocket.h"
+
+#define MAX_HEADER_SIZE 512 * 1024
+#define MAX_DATA_SIZE 2 * 1024 * 1024
 
 CWebClientSocket::CWebClientSocket(CWebServer* pWebServer, CMainFrame* pMainFrame)
     : m_pWebServer(pWebServer)
@@ -37,7 +40,7 @@ CWebClientSocket::CWebClientSocket(CWebServer* pWebServer, CMainFrame* pMainFram
     , m_parsingState(PARSING_HEADER)
     , m_dataLen(0)
 {
-    m_buff = DNew char[m_buffMaxLen];
+    m_buff = DEBUG_NEW char[m_buffMaxLen];
 }
 
 CWebClientSocket::~CWebClientSocket()
@@ -112,7 +115,7 @@ void CWebClientSocket::HandleRequest()
     // start new session
 
     if (!m_cookie.Lookup("MPCSESSIONID", m_sessid)) {
-        srand((unsigned int)time(NULL));
+        srand((unsigned int)time(nullptr));
         m_sessid.Format(_T("%08x"), rand() * 0x12345678);
         SetCookie("MPCSESSIONID", m_sessid);
     } else {
@@ -122,16 +125,17 @@ void CWebClientSocket::HandleRequest()
     CStringA reshdr, resbody;
 
     if (m_cmd == _T("GET") || m_cmd == _T("HEAD") || m_cmd == _T("POST")) {
-        int k = m_path.Find('?');
-        if (k >= 0) {
-            m_query = m_path.Mid(k + 1);
-            m_path.Truncate(k);
+        int i = m_path.Find('?');
+        if (i >= 0) {
+            m_query = m_path.Mid(i + 1);
+            m_path.Truncate(i);
         }
+        m_path = UrlDecode(m_path);
 
-        if (m_query.GetLength() > 0) {
-            int k = m_query.Find('#');
-            if (k >= 0) {
-                m_query.Truncate(k);
+        if (!m_query.IsEmpty()) {
+            int j = m_query.Find('#');
+            if (j >= 0) {
+                m_query.Truncate(j);
             }
 
             CAtlList<CStringA> sl;
@@ -224,7 +228,7 @@ void CWebClientSocket::HandleRequest()
     }
 }
 
-void CWebClientSocket::ParseHeader(char* headerEnd)
+void CWebClientSocket::ParseHeader(const char* headerEnd)
 {
     char* start = m_buff, *end;
 
@@ -257,7 +261,7 @@ void CWebClientSocket::ParseHeader(char* headerEnd)
     if (m_cmd == _T("POST")) {
         CStringA str;
         if (m_hdrlines.Lookup("content-length", str)) {
-            m_dataLen = strtol(str, NULL, 10);
+            m_dataLen = strtol(str, nullptr, 10);
         }
     }
     m_parsingState = (m_dataLen > 0) ? PARSING_POST_DATA : PARSING_DONE;
@@ -280,7 +284,7 @@ void CWebClientSocket::ParsePostData()
         val.SetString(start, int(end - start));
         start = end + 1;
 
-        m_post[key.MakeLower()] = val;
+        m_post[key.MakeLower()] = UTF8To16(UrlDecode(val));
     }
 
     m_parsingState = PARSING_DONE;
@@ -312,6 +316,13 @@ void CWebClientSocket::OnReceive(int nErrorCode)
 
                     if (headerEnd) {
                         ParseHeader(headerEnd);
+                        if (m_dataLen > MAX_DATA_SIZE) {
+                            // Refuse the connection if someone tries to send
+                            // more than MAX_DATA_SIZE of size.
+                            OnClose(0);
+                            return;
+                        }
+
                         headerEnd += 4;
                         m_buffLen = max(int(m_buff + m_buffLen - headerEnd), 0);
                         if (m_buffLen > 0) {
@@ -320,6 +331,11 @@ void CWebClientSocket::OnReceive(int nErrorCode)
                                 ParsePostData();
                             }
                         }
+                    } else if (m_buffLen > MAX_HEADER_SIZE) {
+                        // If we got more than MAX_HEADER_SIZE of data without finding
+                        // the end of the header we close the connection.
+                        OnClose(0);
+                        return;
                     } else {
                         // Start next search from current end of the file
                         m_buffLenProcessed += nRead;
@@ -366,8 +382,7 @@ bool CWebClientSocket::OnCommand(CStringA& hdr, CStringA& body, CStringA& mime)
             if (arg == CMD_SETPOS && m_request.Lookup("position", arg)) {
                 int h, m, s, ms = 0;
                 TCHAR c;
-                if (_stscanf_s(arg, _T("%d%c%d%c%d%c%d"), &h, &c, sizeof(TCHAR),
-                               &m, &c, sizeof(TCHAR), &s, &c, sizeof(TCHAR), &ms) >= 5) {
+                if (_stscanf_s(arg, _T("%d%c%d%c%d%c%d"), &h, &c, 1, &m, &c, 1, &s, &c, 1, &ms) >= 5) {
                     REFERENCE_TIME rtPos = 10000i64 * (((h * 60 + m) * 60 + s) * 1000 + ms);
                     m_pMainFrame->SeekTo(rtPos);
                     for (int retries = 20; retries-- > 0; Sleep(50)) {
@@ -382,7 +397,7 @@ bool CWebClientSocket::OnCommand(CStringA& hdr, CStringA& body, CStringA& mime)
                     m_pMainFrame->SeekTo((REFERENCE_TIME)(percent / 100 * m_pMainFrame->GetDur()));
                 }
             } else if (arg == CMD_SETVOLUME && m_request.Lookup("volume", arg)) {
-                int volume = _tcstol(arg, NULL, 10);
+                int volume = _tcstol(arg, nullptr, 10);
                 m_pMainFrame->m_wndToolBar.Volume = min(max(volume, 0), 100);
                 m_pMainFrame->OnPlayVolume(0);
             }
@@ -412,7 +427,7 @@ bool CWebClientSocket::OnIndex(CStringA& hdr, CStringA& body, CStringA& mime)
     while (pos) {
         const wmcmd& wc = s.wmcmds.GetNext(pos);
         CStringA str;
-        str.Format("%d", wc.cmd);
+        str.Format("%u", wc.cmd);
         CStringA valueName(UTF8(wc.GetName()));
         valueName.Replace("&", "&amp;");
         wmcoptions += "<option value=\"" + str + "\">" + valueName + "</option>\r\n";
@@ -431,23 +446,40 @@ bool CWebClientSocket::OnInfo(CStringA& hdr, CStringA& body, CStringA& mime)
 
     CString positionstring, durationstring, versionstring, sizestring;
     versionstring.Format(L"%s", AfxGetMyApp()->m_strVersion);
-    CPath file(m_pMainFrame->m_wndPlaylistBar.GetCurFileName());
-    file.StripPath();
-    file.RemoveExtension();
 
     positionstring.Format(_T("%02d:%02d:%02d"), (pos / 3600000), (pos / 60000) % 60, (pos / 1000) % 60);
     durationstring.Format(_T("%02d:%02d:%02d"), (dur / 3600000), (dur / 60000) % 60, (dur / 1000) % 60);
 
-    WIN32_FIND_DATA wfd;
-    HANDLE hFind = FindFirstFile(m_pMainFrame->m_wndPlaylistBar.GetCurFileName(), &wfd);
-    if (hFind != INVALID_HANDLE_VALUE) {
-        FindClose(hFind);
-        __int64 size = (__int64(wfd.nFileSizeHigh) << 32) | wfd.nFileSizeLow;
-        const int MAX_FILE_SIZE_BUFFER = 65;
-        TCHAR szFileSize[MAX_FILE_SIZE_BUFFER];
-        StrFormatByteSizeW(size, szFileSize, MAX_FILE_SIZE_BUFFER);
-        sizestring.Format(L"%s", szFileSize);
+    CPath file(m_pMainFrame->GetFileName());
+    file.RemoveExtension();
+
+    LONGLONG size = 0;
+    if (CComQIPtr<IBaseFilter> pBF = m_pMainFrame->m_pFSF) {
+        BeginEnumPins(pBF, pEP, pPin) {
+            if (CComQIPtr<IAsyncReader> pAR = pPin) {
+                LONGLONG total, available;
+                if (SUCCEEDED(pAR->Length(&total, &available))) {
+                    size = total;
+                    break;
+                }
+            }
+        }
+        EndEnumPins;
     }
+
+    if (size == 0) {
+        WIN32_FIND_DATA wfd;
+        HANDLE hFind = FindFirstFile(m_pMainFrame->m_wndPlaylistBar.GetCurFileName(), &wfd);
+        if (hFind != INVALID_HANDLE_VALUE) {
+            FindClose(hFind);
+            size = (LONGLONG(wfd.nFileSizeHigh) << 32) | wfd.nFileSizeLow;
+        }
+    }
+
+    const int MAX_FILE_SIZE_BUFFER = 65;
+    TCHAR szFileSize[MAX_FILE_SIZE_BUFFER];
+    StrFormatByteSizeW(size, szFileSize, MAX_FILE_SIZE_BUFFER);
+    sizestring.Format(L"%s", szFileSize);
 
     m_pWebServer->LoadPage(IDR_HTML_INFO, body, AToT(m_path));
     body.Replace("[version]", UTF8(versionstring));
@@ -461,11 +493,11 @@ bool CWebClientSocket::OnInfo(CStringA& hdr, CStringA& body, CStringA& mime)
 bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
 {
     CAtlList<CStringA> rootdrives;
-    for (TCHAR drive[] = _T("A:"); drive[0] <= 'Z'; drive[0]++)
+    for (TCHAR drive[] = _T("A:"); drive[0] <= _T('Z'); drive[0]++) {
         if (GetDriveType(drive) != DRIVE_NO_ROOT_DIR) {
             rootdrives.AddTail(CStringA(drive) + '\\');
         }
-
+    }
     // process GET
 
     CString path;
@@ -510,7 +542,7 @@ bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
                 cds.dwData = 0x6ABE51;
                 cds.cbData = DWORD(p - buff);
                 cds.lpData = (void*)(BYTE*)buff;
-                m_pMainFrame->SendMessage(WM_COPYDATA, (WPARAM)NULL, (LPARAM)&cds);
+                m_pMainFrame->SendMessage(WM_COPYDATA, (WPARAM)nullptr, (LPARAM)&cds);
             }
 
             CPath p(path);
@@ -547,12 +579,12 @@ bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
         while (pos) {
             CStringA& drive = rootdrives.GetNext(pos);
 
-            files += "<tr class=\"dir\">\r\n";
+            files += "<tr>\r\n";
             files +=
-                "<td class=\"dirname\"><a href=\"[path]?path=" + UrlEncode(drive) + "\">" + drive + "</a></td>"
-                "<td class=\"dirtype\">Directory</td>"
+                "<td class=\"dirname\"><a href=\"[path]?path=" + UrlEncode(drive) + "\">" + drive + "</a></td>\r\n"
+                "<td class=\"dirtype\">Directory</td>\r\n"
                 "<td class=\"dirsize\">&nbsp;</td>\r\n"
-                "<td class=\"dirdate\">&nbsp;</td>";
+                "<td class=\"dirdate\">&nbsp;</td>\r\n";
             files += "</tr>\r\n";
         }
 
@@ -567,15 +599,16 @@ bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
             parent = (LPCTSTR)p;
         }
 
-        files += "<tr class=\"dir\">\r\n";
+        files += "<tr>\r\n";
         files +=
-            "<td class=\"dirname\"><a href=\"[path]?path=" + parent + "\">..</a></td>"
-            "<td class=\"dirtype\">Directory</td>"
+            "<td class=\"dirname\"><a href=\"[path]?path=" + UTF8Arg(parent) + "\">..</a></td>\r\n"
+            "<td class=\"dirtype\">Directory</td>\r\n"
             "<td class=\"dirsize\">&nbsp;</td>\r\n"
-            "<td class=\"dirdate\">&nbsp;</td>";
+            "<td class=\"dirdate\">&nbsp;</td>\r\n";
         files += "</tr>\r\n";
 
-        WIN32_FIND_DATA fd = {0};
+        WIN32_FIND_DATA fd;
+        ZeroMemory(&fd, sizeof(WIN32_FIND_DATA));
 
         HANDLE hFind = FindFirstFile(path + "*.*", &fd);
         if (hFind != INVALID_HANDLE_VALUE) {
@@ -586,12 +619,12 @@ bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
 
                 CString fullpath = path + fd.cFileName;
 
-                files += "<tr class=\"dir\">\r\n";
+                files += "<tr>\r\n";
                 files +=
-                    "<td class=\"dirname\"><a href=\"[path]?path=" + UTF8Arg(fullpath) + "\">" + UTF8(fd.cFileName) + "</a></td>"
-                    "<td class=\"dirtype\">Directory</td>"
+                    "<td class=\"dirname\"><a href=\"[path]?path=" + UTF8Arg(fullpath) + "\">" + UTF8(fd.cFileName) + "</a></td>\r\n"
+                    "<td class=\"dirtype\">Directory</td>\r\n"
                     "<td class=\"dirsize\">&nbsp;</td>\r\n"
-                    "<td class=\"dirdate\"><span class=\"nobr\">" + CStringA(CTime(fd.ftLastWriteTime).Format(_T("%Y.%m.%d %H:%M"))) + "</span></td>";
+                    "<td class=\"dirdate\"><span class=\"nobr\">" + CStringA(CTime(fd.ftLastWriteTime).Format(_T("%Y.%m.%d %H:%M"))) + "</span></td>\r\n";
                 files += "</tr>\r\n";
             } while (FindNextFile(hFind, &fd));
 
@@ -607,26 +640,26 @@ bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
 
                 CString fullpath = path + fd.cFileName;
                 TCHAR* ext = _tcsrchr(fd.cFileName, '.');
-                if (ext != NULL) {
+                if (ext != nullptr) {
                     ext++;
                 }
 
                 CStringA size;
-                size.Format("%I64dK", ((UINT64)fd.nFileSizeHigh << 22) | (fd.nFileSizeLow >> 10));
+                size.Format("%I64uK", ((UINT64)fd.nFileSizeHigh << 22) | (fd.nFileSizeLow >> 10));
 
                 CString type(_T("&nbsp;"));
                 LoadType(fullpath, type);
 
-                if (ext != NULL) {
+                if (ext != nullptr) {
                     files += "<tr class=\"" + UTF8(ext) + "\">\r\n";
                 } else {
                     files += "<tr class=\"noext\">\r\n";
                 }
                 files +=
-                    "<td class=\"filename\"><a href=\"[path]?path=" + UTF8Arg(fullpath) + "\">" + UTF8(fd.cFileName) + "</a></td>"
-                    "<td class=\"filetype\"><span class=\"nobr\">" + UTF8(type) + "</span></td>"
-                    "<td class=\"filesize\" align=\"right\"><span class=\"nobr\">" + size + "</span></td>\r\n"
-                    "<td class=\"filedate\"><span class=\"nobr\">" + CStringA(CTime(fd.ftLastWriteTime).Format(_T("%Y.%m.%d %H:%M"))) + "</span></td>";
+                    "<td class=\"browser-td\"><a href=\"[path]?path=" + UTF8Arg(fullpath) + "\">" + UTF8(fd.cFileName) + "</a></td>\r\n"
+                    "<td class=\"browser-td\"><span class=\"nobr\">" + UTF8(type) + "</span></td>\r\n"
+                    "<td class=\"browser-td align-right\"><span class=\"nobr\">" + size + "</span></td>\r\n"
+                    "<td class=\"browser-td\"><span class=\"nobr\">" + CStringA(CTime(fd.ftLastWriteTime).Format(_T("%Y.%m.%d %H:%M"))) + "</span></td>\r\n";
                 files += "</tr>\r\n";
             } while (FindNextFile(hFind, &fd));
 
@@ -635,7 +668,7 @@ bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
     }
 
     m_pWebServer->LoadPage(IDR_HTML_BROWSER, body, AToT(m_path));
-    body.Replace("[currentdir]", UTF8(path));
+    body.Replace("[currentdir]", HtmlSpecialChars(UTF8(path)));
     body.Replace("[currentfiles]", files);
 
     return true;
@@ -834,13 +867,13 @@ bool CWebClientSocket::OnPlayer(CStringA& hdr, CStringA& body, CStringA& mime)
     return true;
 }
 
-bool CWebClientSocket::OnSnapShotJpeg(CStringA& hdr, CStringA& body, CStringA& mime)
+bool CWebClientSocket::OnSnapshotJpeg(CStringA& hdr, CStringA& body, CStringA& mime)
 {
     // TODO: add quality control and return logo when nothing is loaded
 
     bool fRet = false;
 
-    BYTE* pData = NULL;
+    BYTE* pData = nullptr;
     long size = 0;
     if (m_pMainFrame->GetDIB(&pData, size, true)) {
         PBITMAPINFO bi = reinterpret_cast<PBITMAPINFO>(pData);
@@ -852,16 +885,9 @@ bool CWebClientSocket::OnSnapShotJpeg(CStringA& hdr, CStringA& body, CStringA& m
         }
         int w = bih->biWidth;
         int h = abs(bih->biHeight);
-        BYTE* p = DNew BYTE[w * h * 4];
+        BYTE* p = DEBUG_NEW BYTE[w * h * 4];
 
         const BYTE* src = pData + sizeof(*bih);
-        if (bpp <= 8) {
-            if (bih->biClrUsed) {
-                src += bih->biClrUsed * sizeof(bi->bmiColors[0]);
-            } else {
-                src += (1 << bpp) * DWORD(sizeof(bi->bmiColors[0]));
-            }
-        }
 
         int srcpitch = w * (bpp >> 3);
         int dstpitch = w * 4;
@@ -875,9 +901,9 @@ bool CWebClientSocket::OnSnapShotJpeg(CStringA& hdr, CStringA& body, CStringA& m
 
             CImage img;
             img.Attach(bmp);
-            IStream* pStream = NULL;
+            IStream* pStream = nullptr;
             CByteArray ba;
-            if (SUCCEEDED(CreateStreamOnHGlobal(NULL, TRUE, &pStream))) {
+            if (SUCCEEDED(CreateStreamOnHGlobal(nullptr, TRUE, &pStream))) {
                 if (SUCCEEDED(img.Save(pStream, Gdiplus::ImageFormatJPEG))) {
                     ULARGE_INTEGER ulnSize;
                     LARGE_INTEGER lnOffset;
@@ -886,7 +912,7 @@ bool CWebClientSocket::OnSnapShotJpeg(CStringA& hdr, CStringA& body, CStringA& m
                         if (SUCCEEDED(pStream->Seek(lnOffset, STREAM_SEEK_SET, 0))) {
                             ULONG ulBytesRead;
                             ba.SetSize((INT_PTR)ulnSize.QuadPart);
-                            pStream->Read(ba.GetData(), (INT_PTR)ulnSize.QuadPart, &ulBytesRead);
+                            pStream->Read(ba.GetData(), (ULONG)ulnSize.QuadPart, &ulBytesRead);
                         }
                     }
                 }
@@ -922,7 +948,7 @@ bool CWebClientSocket::OnViewRes(CStringA& hdr, CStringA& body, CStringA& mime)
 
     CAutoLock cAutoLock(&CDSMResource::m_csResources);
 
-    CDSMResource* res = NULL;
+    CDSMResource* res = nullptr;
     if (!CDSMResource::m_resources.Lookup(key, res) || !res) {
         return false;
     }

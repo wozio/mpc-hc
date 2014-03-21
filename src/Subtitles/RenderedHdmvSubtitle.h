@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2008-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -44,6 +44,8 @@ public:
     STDMETHODIMP_(bool) IsAnimated(POSITION pos);
     STDMETHODIMP Render(SubPicDesc& spd, REFERENCE_TIME rt, double fps, RECT& bbox);
     STDMETHODIMP GetTextureSize(POSITION pos, SIZE& MaxTextureSize, SIZE& VirtualSize, POINT& VirtualTopLeft);
+    STDMETHODIMP GetRelativeTo(POSITION pos, RelativeTo& relativeTo);
+    STDMETHODIMP SetSourceTargetInfo(CString yuvMatrix, int targetBlackLevel, int targetWhiteLevel);
 
     // IPersist
     STDMETHODIMP GetClassID(CLSID* pClassID);
@@ -57,6 +59,7 @@ public:
 
     HRESULT ParseSample(IMediaSample* pSample);
     HRESULT NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate);
+    void EndOfStream();
 
 private:
     CString         m_name;

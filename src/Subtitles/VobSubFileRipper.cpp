@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "VobSubFile.h"
 #include "VobSubFileRipper.h"
 #include "../DeCSS/VobDec.h"
@@ -30,7 +31,7 @@
 //
 
 CVobSubFileRipper::CVobSubFileRipper()
-    : CVobSubFile(NULL)
+    : CVobSubFile(nullptr)
     , m_fThreadActive(false)
     , m_fBreakThread(false)
     , m_fIndexing(false)
@@ -107,8 +108,6 @@ void CVobSubFileRipper::Finished(bool fSucceeded)
 
 bool CVobSubFileRipper::LoadIfo(CString fn)
 {
-    CString str;
-
     CFileStatus status;
     if (!CFileGetStatus(fn, status) || !status.m_size) {
         Log(LOG_ERROR, _T("Invalid ifo"));
@@ -136,7 +135,7 @@ bool CVobSubFileRipper::LoadIfo(CString fn)
     f.Seek(0x254, CFile::begin);
 
     WORD ids[32];
-    memset(ids, 0, sizeof(ids));
+    ZeroMemory(ids, sizeof(ids));
 
     int len = 0;
     ReadBEw(len);
@@ -209,8 +208,6 @@ bool CVobSubFileRipper::LoadIfo(CString fn)
 
             for (size_t j = 0; j < 32; j++) {
                 if (splinfo[j].id1 || splinfo[i].id2) {
-                    WORD tmpids[32];
-                    memset(tmpids, 0, sizeof(tmpids));
 
                     for (j = 0; j < 32; j++) {
                         if (!(splinfo[j].res1 & 0x80)) {
@@ -239,9 +236,9 @@ bool CVobSubFileRipper::LoadIfo(CString fn)
 
                 y = (y - 16) * 255 / 219;
 
-                pgc.pal[j].rgbRed = (BYTE)min(max(1.0 * y + 1.4022 * (u - 128), 0), 255);
-                pgc.pal[j].rgbGreen = (BYTE)min(max(1.0 * y - 0.3456 * (u - 128) - 0.7145 * (v - 128), 0), 255);
-                pgc.pal[j].rgbBlue = (BYTE)min(max(1.0 * y + 1.7710 * (v - 128), 0) , 255);
+                pgc.pal[j].rgbRed = std::min<BYTE>(std::max<BYTE>(BYTE(1.0 * y + 1.4022 * (u - 128)), 0u), 255u);
+                pgc.pal[j].rgbGreen = std::min<BYTE>(std::max<BYTE>(BYTE(1.0 * y - 0.3456 * (u - 128) - 0.7145 * (v - 128)), 0u), 255u);
+                pgc.pal[j].rgbBlue = std::min<BYTE>(std::max<BYTE>(BYTE(1.0 * y + 1.7710 * (v - 128)), 0u) , 255u);
             }
 
             //
@@ -301,7 +298,7 @@ bool CVobSubFileRipper::LoadIfo(CString fn)
                         break; // last angle block (no more should follow)
                 }
                 pgc.angles[0][j].iAngle = iAngle;
-                pgc.nAngles = max(pgc.nAngles, iAngle);
+                pgc.nAngles = std::max(pgc.nAngles, iAngle);
 
                 f.Seek(3, CFile::current);
                 ReadBEdw(pgc.angles[0][j].tTime);
@@ -446,7 +443,7 @@ DWORD CVobSubFileRipper::ThreadProc()
 
             default:
                 Reply((DWORD)E_FAIL);
-                return (DWORD) - 1;
+                return DWORD_ERROR;
         }
 
         m_fBreakThread = false;
@@ -472,19 +469,19 @@ bool CVobSubFileRipper::Create()
 
     PGC& pgc = m_rd.pgcs[m_rd.iSelPGC];
 
-    if (pgc.iSelAngle < 0 || pgc.iSelAngle > 9 || pgc.angles[pgc.iSelAngle].GetCount() == 0) {
+    if (pgc.iSelAngle < 0 || pgc.iSelAngle > 9 || pgc.angles[pgc.iSelAngle].IsEmpty()) {
         Log(LOG_ERROR, _T("Invalid angle number (%d)!"), pgc.iSelAngle);
         return false;
     }
 
     CAtlArray<vc_t>& angle = pgc.angles[pgc.iSelAngle];
 
-    if (m_rd.selids.GetCount() == 0 && !m_rd.fClosedCaption) {
+    if (m_rd.selids.IsEmpty() && !m_rd.fClosedCaption) {
         Log(LOG_ERROR, _T("No valid stream set to be extacted!"));
         return false;
     }
 
-    if (m_rd.selvcs.GetCount() == 0) {
+    if (m_rd.selvcs.IsEmpty()) {
         Log(LOG_ERROR, _T("No valid vob/cell id set to be extacted!"));
         return false;
     }
@@ -771,7 +768,7 @@ bool CVobSubFileRipper::Create()
     Progress(1);
 
     for (ptrdiff_t i = 0; i < 32; i++) {
-        if (m_iLang == -1 && m_langs[i].subpos.GetCount() > 0) {
+        if (m_iLang == -1 && !m_langs[i].subpos.IsEmpty()) {
             m_iLang = (int)i;
         }
         m_langs[i].id = pgc.ids[i];
@@ -811,7 +808,7 @@ bool CVobSubFileRipper::Create()
 
     Log(LOG_INFO, _T("Subtitles saved"));
 
-    if (!m_vob.IsDVD() && loadedchunks.GetCount() == 0) {
+    if (!m_vob.IsDVD() && loadedchunks.IsEmpty()) {
         if (SaveChunks(foundchunks)) {
             Log(LOG_INFO, _T(".chunk file saved"));
         }
@@ -952,7 +949,7 @@ STDMETHODIMP CVobSubFileRipper::LoadParamFile(CString fn)
             }
             phase = P_PGC;
         } else if (phase == P_PGC) {
-            m_rd.iSelPGC = _tcstol(line, NULL, 10) - 1;
+            m_rd.iSelPGC = _tcstol(line, nullptr, 10) - 1;
             if (m_rd.iSelPGC < 0 || (size_t)m_rd.iSelPGC >= m_rd.pgcs.GetCount()) {
                 break;
             }
@@ -960,8 +957,8 @@ STDMETHODIMP CVobSubFileRipper::LoadParamFile(CString fn)
         } else if (phase == 3) {
             PGC& pgc = m_rd.pgcs[m_rd.iSelPGC];
 
-            pgc.iSelAngle = _tcstol(line, NULL, 10);
-            if (pgc.iSelAngle < 0 || pgc.iSelAngle > max(1, pgc.nAngles) || pgc.iSelAngle > 9) {
+            pgc.iSelAngle = _tcstol(line, nullptr, 10);
+            if (pgc.iSelAngle < 0 || pgc.iSelAngle > std::max(1, pgc.nAngles) || pgc.iSelAngle > 9) {
                 break;
             }
 
@@ -1018,7 +1015,7 @@ STDMETHODIMP CVobSubFileRipper::LoadParamFile(CString fn)
             } else {
                 line += ' ';
 
-                while (line.GetLength() > 0) {
+                while (!line.IsEmpty()) {
                     int n = line.Find(_T(" "));
 
                     CString lang = line.Left(n);
@@ -1053,13 +1050,9 @@ STDMETHODIMP CVobSubFileRipper::LoadParamFile(CString fn)
                     } else {
                         break;
                     }
-
-                    if (n != 1) {
-                        break;
-                    }
                 }
 
-                if ((m_rd.selids.GetCount() > 0 || m_rd.fClosedCaption) && line.IsEmpty()) {
+                if ((!m_rd.selids.IsEmpty() || m_rd.fClosedCaption) && line.IsEmpty()) {
                     phase = P_OPTIONS;
                 }
             }
@@ -1144,7 +1137,7 @@ STDMETHODIMP CVobSubFileRipper::Abort(bool fSavePartial)
 void VSFRipperData::Reset()
 {
     vidsize.SetSize(0, 0);
-    memset(&vidinfo, 0, sizeof(vidinfo));
+    ZeroMemory(&vidinfo, sizeof(vidinfo));
     pgcs.RemoveAll();
     iSelPGC = -1;
     fResetTime = fClosedCaption = true;

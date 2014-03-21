@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "StreamDriveThru.h"
 #include "../../../DSUtil/DSUtil.h"
 
@@ -34,8 +35,8 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudpPins[] = {
-    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesIn), sudPinTypesIn},
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut}
+    {L"Input", FALSE, FALSE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesIn), sudPinTypesIn},
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut}
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
@@ -43,7 +44,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CStreamDriveThruFilter>, NULL, &sudFilter[0]}
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CStreamDriveThruFilter>, nullptr, &sudFilter[0]}
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -76,8 +77,8 @@ CStreamDriveThruFilter::CStreamDriveThruFilter(LPUNKNOWN pUnk, HRESULT* phr)
         *phr = S_OK;
     }
 
-    m_pInput = DNew CStreamDriveThruInputPin(NAME("CStreamDriveThruInputPin"), this, &m_csLock, phr);
-    m_pOutput = DNew CStreamDriveThruOutputPin(NAME("CStreamDriveThruOutputPin"), this, &m_csLock, phr);
+    m_pInput = DEBUG_NEW CStreamDriveThruInputPin(NAME("CStreamDriveThruInputPin"), this, &m_csLock, phr);
+    m_pOutput = DEBUG_NEW CStreamDriveThruOutputPin(NAME("CStreamDriveThruOutputPin"), this, &m_csLock, phr);
 
     CAMThread::Create();
 }
@@ -135,7 +136,7 @@ DWORD CStreamDriveThruFilter::ThreadProc()
                     LARGE_INTEGER li = {0};
                     ULARGE_INTEGER uli = {0};
 
-                    if (FAILED(pStream->Seek(li, STREAM_SEEK_SET, NULL))
+                    if (FAILED(pStream->Seek(li, STREAM_SEEK_SET, nullptr))
                             || FAILED(pStream->SetSize(uli))) {
                         break;
                     }
@@ -144,8 +145,8 @@ DWORD CStreamDriveThruFilter::ThreadProc()
                         pFSF->SetMode(AM_FILE_OVERWRITE);
 
                         LPOLESTR pfn;
-                        if (SUCCEEDED(pFSF->GetCurFile(&pfn, NULL))) {
-                            pFSF->SetFileName(pfn, NULL);
+                        if (SUCCEEDED(pFSF->GetCurFile(&pfn, nullptr))) {
+                            pFSF->SetFileName(pfn, nullptr);
                             CoTaskMemFree(pfn);
                         }
                     }
@@ -163,7 +164,7 @@ DWORD CStreamDriveThruFilter::ThreadProc()
                                 break;
                             }
 
-                            LONG size = (LONG)min(PACKETSIZE, total - m_position);
+                            LONG size = std::min<LONG>(PACKETSIZE, LONG(total - m_position));
                             if (FAILED(pAsyncReader->SyncRead(m_position, size, buff))) {
                                 cmd = CMD_STOP;
                                 break;
@@ -219,7 +220,7 @@ CBasePin* CStreamDriveThruFilter::GetPin(int n)
         return m_pOutput;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 STDMETHODIMP CStreamDriveThruFilter::Stop()
@@ -265,7 +266,11 @@ STDMETHODIMP CStreamDriveThruFilter::Run(REFERENCE_TIME tStart)
 
 STDMETHODIMP CStreamDriveThruFilter::GetCapabilities(DWORD* pCapabilities)
 {
-    return pCapabilities ? *pCapabilities = AM_SEEKING_CanGetCurrentPos | AM_SEEKING_CanGetStopPos | AM_SEEKING_CanGetDuration, S_OK : E_POINTER;
+    CheckPointer(pCapabilities, E_POINTER);
+
+    *pCapabilities = AM_SEEKING_CanGetCurrentPos | AM_SEEKING_CanGetStopPos | AM_SEEKING_CanGetDuration;
+
+    return S_OK;
 }
 
 STDMETHODIMP CStreamDriveThruFilter::CheckCapabilities(DWORD* pCapabilities)
@@ -296,7 +301,11 @@ STDMETHODIMP CStreamDriveThruFilter::QueryPreferredFormat(GUID* pFormat)
 
 STDMETHODIMP CStreamDriveThruFilter::GetTimeFormat(GUID* pFormat)
 {
-    return pFormat ? *pFormat = TIME_FORMAT_MEDIA_TIME, S_OK : E_POINTER;
+    CheckPointer(pFormat, E_POINTER);
+
+    *pFormat = TIME_FORMAT_MEDIA_TIME;
+
+    return S_OK;
 }
 
 STDMETHODIMP CStreamDriveThruFilter::IsUsingTimeFormat(const GUID* pFormat)
@@ -332,7 +341,11 @@ STDMETHODIMP CStreamDriveThruFilter::GetStopPosition(LONGLONG* pStop)
 
 STDMETHODIMP CStreamDriveThruFilter::GetCurrentPosition(LONGLONG* pCurrent)
 {
-    return pCurrent ? *pCurrent = m_position, S_OK : E_POINTER;
+    CheckPointer(pCurrent, E_POINTER);
+
+    *pCurrent = m_position;
+
+    return S_OK;
 }
 
 STDMETHODIMP CStreamDriveThruFilter::ConvertTimeFormat(LONGLONG* pTarget, const GUID* pTargetFormat, LONGLONG Source, const GUID* pSourceFormat)
@@ -367,7 +380,11 @@ STDMETHODIMP CStreamDriveThruFilter::GetRate(double* pdRate)
 
 STDMETHODIMP CStreamDriveThruFilter::GetPreroll(LONGLONG* pllPreroll)
 {
-    return pllPreroll ? *pllPreroll = 0, S_OK : E_POINTER;
+    CheckPointer(pllPreroll, E_POINTER);
+
+    *pllPreroll = 0;
+
+    return S_OK;
 }
 
 //
@@ -387,7 +404,7 @@ HRESULT CStreamDriveThruInputPin::GetAsyncReader(IAsyncReader** ppAsyncReader)
 {
     CheckPointer(ppAsyncReader, E_POINTER);
 
-    *ppAsyncReader = NULL;
+    *ppAsyncReader = nullptr;
 
     CheckPointer(m_pAsyncReader, VFW_E_NOT_CONNECTED);
 
@@ -481,7 +498,7 @@ HRESULT CStreamDriveThruOutputPin::GetStream(IStream** ppStream)
 {
     CheckPointer(ppStream, E_POINTER);
 
-    *ppStream = NULL;
+    *ppStream = nullptr;
 
     CheckPointer(m_pStream, VFW_E_NOT_CONNECTED);
 

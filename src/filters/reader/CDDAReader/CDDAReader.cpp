@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #ifdef STANDALONE_FILTER
 #include <InitGuid.h>
 #endif
@@ -36,7 +37,7 @@ const AMOVIESETUP_MEDIATYPE sudPinTypesOut[] = {
 };
 
 const AMOVIESETUP_PIN sudOpPin[] = {
-    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, NULL, _countof(sudPinTypesOut), sudPinTypesOut},
+    {L"Output", FALSE, TRUE, FALSE, FALSE, &CLSID_NULL, nullptr, _countof(sudPinTypesOut), sudPinTypesOut},
 };
 
 const AMOVIESETUP_FILTER sudFilter[] = {
@@ -44,7 +45,7 @@ const AMOVIESETUP_FILTER sudFilter[] = {
 };
 
 CFactoryTemplate g_Templates[] = {
-    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CCDDAReader>, NULL, &sudFilter[0]}
+    {sudFilter[0].strName, sudFilter[0].clsID, CreateInstance<CCDDAReader>, nullptr, &sudFilter[0]}
 };
 
 int g_cTemplates = _countof(g_Templates);
@@ -104,6 +105,20 @@ STDMETHODIMP CCDDAReader::NonDelegatingQueryInterface(REFIID riid, void** ppv)
         QI(IFileSourceFilter)
         QI2(IAMMediaContent)
         __super::NonDelegatingQueryInterface(riid, ppv);
+}
+
+STDMETHODIMP CCDDAReader::QueryFilterInfo(FILTER_INFO* pInfo)
+{
+    CheckPointer(pInfo, E_POINTER);
+    ValidateReadWritePtr(pInfo, sizeof(FILTER_INFO));
+
+    wcscpy_s(pInfo->achName, CCDDAReaderName);
+    pInfo->pGraph = m_pGraph;
+    if (m_pGraph) {
+        m_pGraph->AddRef();
+    }
+
+    return S_OK;
 }
 
 // IFileSourceFilter
@@ -245,10 +260,10 @@ CCDDAStream::CCDDAStream()
 
     m_llPosition = m_llLength = 0;
 
-    memset(&m_TOC, 0, sizeof(m_TOC));
-    m_nStartSector = m_nStopSector = 0;
+    ZeroMemory(&m_TOC, sizeof(m_TOC));
+    m_nFirstSector = m_nStartSector = m_nStopSector = 0;
 
-    memset(&m_header, 0, sizeof(m_header));
+    ZeroMemory(&m_header, sizeof(m_header));
     m_header.riff.hdr.chunkID = RIFFID;
     m_header.riff.WAVE = WAVEID;
     m_header.frm.hdr.chunkID = FormatID;
@@ -293,14 +308,14 @@ bool CCDDAStream::Load(const WCHAR* fnw)
         m_hDrive = INVALID_HANDLE_VALUE;
     }
 
-    m_hDrive = CreateFile(drive, GENERIC_READ, FILE_SHARE_READ, NULL,
-                          OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN, (HANDLE)NULL);
+    m_hDrive = CreateFile(drive, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                          OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_SEQUENTIAL_SCAN, (HANDLE)nullptr);
     if (m_hDrive == INVALID_HANDLE_VALUE) {
         return false;
     }
 
     DWORD BytesReturned;
-    if (!DeviceIoControl(m_hDrive, IOCTL_CDROM_READ_TOC, NULL, 0, &m_TOC, sizeof(m_TOC), &BytesReturned, 0)
+    if (!DeviceIoControl(m_hDrive, IOCTL_CDROM_READ_TOC, nullptr, 0, &m_TOC, sizeof(m_TOC), &BytesReturned, 0)
             || !(m_TOC.FirstTrack <= iTrackIndex && iTrackIndex <= m_TOC.LastTrack)) {
         CloseHandle(m_hDrive);
         m_hDrive = INVALID_HANDLE_VALUE;
@@ -329,7 +344,7 @@ bool CCDDAStream::Load(const WCHAR* fnw)
 
     do {
         CDROM_READ_TOC_EX TOCEx;
-        memset(&TOCEx, 0, sizeof(TOCEx));
+        ZeroMemory(&TOCEx, sizeof(TOCEx));
         TOCEx.Format = CDROM_READ_TOC_EX_FORMAT_CDTEXT;
         TOCEx.SessionTrack = iTrackIndex;
         WORD size = 0;
@@ -338,11 +353,13 @@ bool CCDDAStream::Load(const WCHAR* fnw)
             break;
         }
 
-        size = ((size >> 8) | (size << 8)) + sizeof(size);
+        size = _byteswap_ushort(size) + sizeof(size);
 
         CAutoVectorPtr<BYTE> pCDTextData;
-        pCDTextData.Allocate(size);
-        memset(pCDTextData, 0, size);
+        if (!pCDTextData.Allocate(size)) {
+            break;
+        }
+        ZeroMemory(pCDTextData, size);
 
         if (!DeviceIoControl(m_hDrive, IOCTL_CDROM_READ_TOC_EX, &TOCEx, sizeof(TOCEx), pCDTextData, size, &BytesReturned, 0)) {
             break;
@@ -352,7 +369,7 @@ bool CCDDAStream::Load(const WCHAR* fnw)
         CDROM_TOC_CD_TEXT_DATA_BLOCK* pDesc = ((CDROM_TOC_CD_TEXT_DATA*)(BYTE*)pCDTextData)->Descriptors;
 
         CStringArray str[16];
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < _countof(str); i++) {
             str[i].SetSize(1 + m_TOC.LastTrack);
         }
         CString last;
@@ -374,7 +391,7 @@ bool CCDDAStream::Load(const WCHAR* fnw)
                           ? (!pDesc->Unicode
                              ? CString(CStringA((CHAR*)pDesc->Text + tlen + 1, lenU - (tlen + 1)))
                              : CString(CStringW((WCHAR*)pDesc->WText + tlen + 1, lenW - (tlen + 1))))
-                              : _T("");
+                          : _T("");
 
             if ((pDesc->PackType -= 0x80) >= 0x10) {
                 continue;
@@ -383,7 +400,7 @@ bool CCDDAStream::Load(const WCHAR* fnw)
             if (pDesc->CharacterPosition == 0) {
                 str[pDesc->PackType][pDesc->TrackNumber] = text;
             } else if (pDesc->CharacterPosition <= 0xf) {
-                if (pDesc->CharacterPosition < 0xf && last.GetLength() > 0) {
+                if (pDesc->CharacterPosition < 0xf && !last.IsEmpty()) {
                     str[pDesc->PackType][pDesc->TrackNumber] = last + text;
                 } else {
                     str[pDesc->PackType][pDesc->TrackNumber] += text;
@@ -423,7 +440,7 @@ HRESULT CCDDAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDW
     size_t len = (size_t)dwBytesToRead;
 
     if (pos < sizeof(m_header) && len > 0) {
-        size_t l = (size_t)min(len, sizeof(m_header) - pos);
+        size_t l = std::min(len, size_t(sizeof(m_header) - pos));
         memcpy(pbBuffer, &((BYTE*)&m_header)[pos], l);
         pbBuffer += l;
         pos += l;
@@ -449,7 +466,7 @@ HRESULT CCDDAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDW
                      &BytesReturned, 0);
         UNREFERENCED_PARAMETER(b);
 
-        size_t l = (size_t)min(min(len, size_t(RAW_SECTOR_SIZE - offset)), size_t(m_llLength - pos));
+        size_t l = (size_t)std::min(std::min(len, size_t(RAW_SECTOR_SIZE - offset)), size_t(m_llLength - pos));
         memcpy(pbBuffer, &buff[offset], l);
 
         pbBuffer += l;
@@ -458,7 +475,7 @@ HRESULT CCDDAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDW
     }
 
     if (pdwBytesRead) {
-        *pdwBytesRead = pbBuffer - pbBufferOrg;
+        *pdwBytesRead = DWORD(pbBuffer - pbBufferOrg);
     }
     m_llPosition += pbBuffer - pbBufferOrg;
 

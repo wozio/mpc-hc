@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,21 +30,169 @@
 #include "moreuuids.h"
 
 
+static bool GetProperty(IFilterGraph* pFG, LPCOLESTR propName, VARIANT* vt)
+{
+    BeginEnumFilters(pFG, pEF, pBF) {
+        if (CComQIPtr<IPropertyBag> pPB = pBF)
+            if (SUCCEEDED(pPB->Read(propName, vt, nullptr))) {
+                return true;
+            }
+    }
+    EndEnumFilters;
+
+    return false;
+}
+
+static CString FormatDateTime(FILETIME tm)
+{
+    SYSTEMTIME st;
+    FileTimeToSystemTime(&tm, &st);
+    TCHAR buff[256];
+    GetDateFormat(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, nullptr, buff, _countof(buff));
+    CString ret(buff);
+    ret += _T(" ");
+    GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, buff, _countof(buff));
+    ret += buff;
+    return ret;
+}
+
 // CPPageFileInfoDetails dialog
 
 IMPLEMENT_DYNAMIC(CPPageFileInfoDetails, CPropertyPage)
-CPPageFileInfoDetails::CPPageFileInfoDetails(CString fn, IFilterGraph* pFG, ISubPicAllocatorPresenter* pCAP)
+CPPageFileInfoDetails::CPPageFileInfoDetails(CString path, IFilterGraph* pFG, ISubPicAllocatorPresenter* pCAP, IFileSourceFilter* pFSF)
     : CPropertyPage(CPPageFileInfoDetails::IDD, CPPageFileInfoDetails::IDD)
-    , m_fn(fn)
-    , m_pFG(pFG)
-    , m_pCAP(pCAP)
-    , m_hIcon(NULL)
+    , m_fn(path)
+    , m_path(path)
+    , m_hIcon(nullptr)
     , m_type(ResStr(IDS_AG_NOT_KNOWN))
     , m_size(ResStr(IDS_AG_NOT_KNOWN))
     , m_time(ResStr(IDS_AG_NOT_KNOWN))
     , m_res(ResStr(IDS_AG_NOT_KNOWN))
     , m_created(ResStr(IDS_AG_NOT_KNOWN))
 {
+    if (pFSF) {
+        LPOLESTR pFN;
+        if (SUCCEEDED(pFSF->GetCurFile(&pFN, nullptr))) {
+            m_fn = pFN;
+            CoTaskMemFree(pFN);
+        }
+    }
+
+    CString created;
+    CComVariant vt;
+    if (::GetProperty(pFG, L"CurFile.TimeCreated", &vt)) {
+        if (V_VT(&vt) == VT_UI8) {
+            ULARGE_INTEGER uli;
+            uli.QuadPart = V_UI8(&vt);
+
+            FILETIME ft;
+            ft.dwLowDateTime = uli.LowPart;
+            ft.dwHighDateTime = uli.HighPart;
+
+            created = FormatDateTime(ft);
+        }
+    }
+
+    LONGLONG size = 0;
+    if (CComQIPtr<IBaseFilter> pBF = pFSF) {
+        BeginEnumPins(pBF, pEP, pPin) {
+            if (CComQIPtr<IAsyncReader> pAR = pPin) {
+                LONGLONG total, available;
+                if (SUCCEEDED(pAR->Length(&total, &available))) {
+                    size = total;
+                    break;
+                }
+            }
+        }
+        EndEnumPins;
+    }
+
+    WIN32_FIND_DATA wfd;
+    HANDLE hFind = FindFirstFile(m_path, &wfd);
+    if (hFind != INVALID_HANDLE_VALUE) {
+        FindClose(hFind);
+
+        if (size == 0) {
+            size = (__int64(wfd.nFileSizeHigh) << 32) | wfd.nFileSizeLow;
+        }
+
+        if (created.IsEmpty()) {
+            created = FormatDateTime(wfd.ftCreationTime);
+        }
+    }
+
+    if (size > 0) {
+        const int MAX_FILE_SIZE_BUFFER = 65;
+        WCHAR szFileSize[MAX_FILE_SIZE_BUFFER];
+        StrFormatByteSizeW(size, szFileSize, MAX_FILE_SIZE_BUFFER);
+        CString szByteSize;
+        szByteSize.Format(_T("%I64d"), size);
+        m_size.Format(_T("%s (%s bytes)"), szFileSize, FormatNumber(szByteSize));
+    }
+
+    if (!created.IsEmpty()) {
+        m_created = created;
+    }
+
+    REFERENCE_TIME rtDur = 0;
+    CComQIPtr<IMediaSeeking> pMS = pFG;
+    if (pMS && SUCCEEDED(pMS->GetDuration(&rtDur)) && rtDur > 0) {
+        m_time = ReftimeToString2(rtDur);
+    }
+
+    CSize wh(0, 0), arxy(0, 0);
+
+    if (pCAP) {
+        wh = pCAP->GetVideoSize(false);
+        arxy = pCAP->GetVideoSize(true);
+    } else {
+        if (CComQIPtr<IBasicVideo> pBV = pFG) {
+            if (SUCCEEDED(pBV->GetVideoSize(&wh.cx, &wh.cy))) {
+                if (CComQIPtr<IBasicVideo2> pBV2 = pFG) {
+                    pBV2->GetPreferredAspectRatio(&arxy.cx, &arxy.cy);
+                }
+            } else {
+                wh.SetSize(0, 0);
+            }
+        }
+
+        if (wh.cx == 0 && wh.cy == 0) {
+            BeginEnumFilters(pFG, pEF, pBF) {
+                if (CComQIPtr<IBasicVideo> pBV = pBF) {
+                    pBV->GetVideoSize(&wh.cx, &wh.cy);
+                    if (CComQIPtr<IBasicVideo2> pBV2 = pBF) {
+                        pBV2->GetPreferredAspectRatio(&arxy.cx, &arxy.cy);
+                    }
+                    break;
+                } else if (CComQIPtr<IVMRWindowlessControl> pWC = pBF) {
+                    pWC->GetNativeVideoSize(&wh.cx, &wh.cy, &arxy.cx, &arxy.cy);
+                    break;
+                } else if (CComQIPtr<IVMRWindowlessControl9> pWC9 = pBF) {
+                    pWC9->GetNativeVideoSize(&wh.cx, &wh.cy, &arxy.cx, &arxy.cy);
+                    break;
+                }
+            }
+            EndEnumFilters;
+        }
+    }
+
+    if (wh.cx > 0 && wh.cy > 0) {
+        m_res.Format(_T("%dx%d"), wh.cx, wh.cy);
+
+        int gcd = GCD(arxy.cx, arxy.cy);
+        if (gcd > 1) {
+            arxy.cx /= gcd;
+            arxy.cy /= gcd;
+        }
+
+        if (arxy.cx > 0 && arxy.cy > 0 && arxy.cx * wh.cy != arxy.cy * wh.cx) {
+            CString ar;
+            ar.Format(_T(" (AR %d:%d)"), arxy.cx, arxy.cy);
+            m_res += ar;
+        }
+    }
+
+    InitEncodingText(pFG);
 }
 
 CPPageFileInfoDetails::~CPPageFileInfoDetails()
@@ -75,51 +223,17 @@ END_MESSAGE_MAP()
 
 // CPPageFileInfoDetails message handlers
 
-static bool GetProperty(IFilterGraph* pFG, LPCOLESTR propName, VARIANT* vt)
-{
-    BeginEnumFilters(pFG, pEF, pBF) {
-        if (CComQIPtr<IPropertyBag> pPB = pBF)
-            if (SUCCEEDED(pPB->Read(propName, vt, NULL))) {
-                return true;
-            }
-    }
-    EndEnumFilters;
-
-    return false;
-}
-
-static CString FormatDateTime(FILETIME tm)
-{
-    SYSTEMTIME st;
-    FileTimeToSystemTime(&tm, &st);
-    TCHAR buff[256];
-    GetDateFormat(LOCALE_USER_DEFAULT, DATE_LONGDATE, &st, NULL, buff, 256);
-    CString ret(buff);
-    ret += _T(" ");
-    GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, buff, 256);
-    ret += buff;
-    return ret;
-}
-
 BOOL CPPageFileInfoDetails::OnInitDialog()
 {
     __super::OnInitDialog();
 
-    if (m_fn == _T("")) {
-        BeginEnumFilters(m_pFG, pEF, pBF) {
-            CComQIPtr<IFileSourceFilter> pFSF = pBF;
-            if (pFSF) {
-                LPOLESTR pFN = NULL;
-                AM_MEDIA_TYPE mt;
-                if (SUCCEEDED(pFSF->GetCurFile(&pFN, &mt)) && pFN && *pFN) {
-                    m_fn = CStringW(pFN);
-                    CoTaskMemFree(pFN);
-                }
-                break;
-            }
-        }
-        EndEnumFilters;
+    if (m_path.IsEmpty()) {
+        m_path = m_fn;
     }
+
+    m_fn.TrimRight('/');
+    m_fn.Replace('\\', '/');
+    m_fn = m_fn.Mid(m_fn.ReverseFind('/') + 1);
 
     CString ext = m_fn.Left(m_fn.Find(_T("://")) + 1).TrimRight(':');
     if (ext.IsEmpty() || !ext.CompareNoCase(_T("file"))) {
@@ -135,105 +249,9 @@ BOOL CPPageFileInfoDetails::OnInitDialog()
         m_type.LoadString(IDS_AG_NOT_KNOWN);
     }
 
-    CComVariant vt;
-    if (::GetProperty(m_pFG, L"CurFile.TimeCreated", &vt)) {
-        if (V_VT(&vt) == VT_UI8) {
-            ULARGE_INTEGER uli;
-            uli.QuadPart = V_UI8(&vt);
-
-            FILETIME ft;
-            ft.dwLowDateTime = uli.LowPart;
-            ft.dwHighDateTime = uli.HighPart;
-
-            m_created = FormatDateTime(ft);
-        }
-    }
-
-    WIN32_FIND_DATA wfd;
-    HANDLE hFind = FindFirstFile(m_fn, &wfd);
-    if (hFind != INVALID_HANDLE_VALUE) {
-        FindClose(hFind);
-
-        __int64 size = (__int64(wfd.nFileSizeHigh) << 32) | wfd.nFileSizeLow;
-        const int MAX_FILE_SIZE_BUFFER = 65;
-        WCHAR szFileSize[MAX_FILE_SIZE_BUFFER];
-        StrFormatByteSizeW(size, szFileSize, MAX_FILE_SIZE_BUFFER);
-        CString szByteSize;
-        szByteSize.Format(_T("%I64d"), size);
-        m_size.Format(_T("%s (%s bytes)"), szFileSize, FormatNumber(szByteSize));
-
-        if (m_created.IsEmpty()) {
-            m_created = FormatDateTime(wfd.ftCreationTime);
-        }
-    }
-
-    REFERENCE_TIME rtDur = 0;
-    CComQIPtr<IMediaSeeking> pMS = m_pFG;
-    if (pMS && SUCCEEDED(pMS->GetDuration(&rtDur)) && rtDur > 0) {
-        m_time = ReftimeToString2(rtDur);
-    }
-
-    CSize wh(0, 0), arxy(0, 0);
-
-    if (m_pCAP) {
-        wh = m_pCAP->GetVideoSize(false);
-        arxy = m_pCAP->GetVideoSize(true);
-    } else {
-        if (CComQIPtr<IBasicVideo> pBV = m_pFG) {
-            if (SUCCEEDED(pBV->GetVideoSize(&wh.cx, &wh.cy))) {
-                if (CComQIPtr<IBasicVideo2> pBV2 = m_pFG) {
-                    pBV2->GetPreferredAspectRatio(&arxy.cx, &arxy.cy);
-                }
-            } else {
-                wh.SetSize(0, 0);
-            }
-        }
-
-        if (wh.cx == 0 && wh.cy == 0) {
-            BeginEnumFilters(m_pFG, pEF, pBF) {
-                if (CComQIPtr<IBasicVideo> pBV = pBF) {
-                    pBV->GetVideoSize(&wh.cx, &wh.cy);
-                    if (CComQIPtr<IBasicVideo2> pBV2 = pBF) {
-                        pBV2->GetPreferredAspectRatio(&arxy.cx, &arxy.cy);
-                    }
-                    break;
-                } else if (CComQIPtr<IVMRWindowlessControl> pWC = pBF) {
-                    pWC->GetNativeVideoSize(&wh.cx, &wh.cy, &arxy.cx, &arxy.cy);
-                    break;
-                } else if (CComQIPtr<IVMRWindowlessControl9> pWC = pBF) {
-                    pWC->GetNativeVideoSize(&wh.cx, &wh.cy, &arxy.cx, &arxy.cy);
-                    break;
-                }
-            }
-            EndEnumFilters;
-        }
-    }
-
-    if (wh.cx > 0 && wh.cy > 0) {
-        m_res.Format(_T("%dx%d"), wh.cx, wh.cy);
-
-        int lnko = LNKO(arxy.cx, arxy.cy);
-        if (lnko > 1) {
-            arxy.cx /= lnko, arxy.cy /= lnko;
-        }
-
-        if (arxy.cx > 0 && arxy.cy > 0 && arxy.cx * wh.cy != arxy.cy * wh.cx) {
-            CString ar;
-            ar.Format(_T(" (AR %d:%d)"), arxy.cx, arxy.cy);
-            m_res += ar;
-        }
-    }
-
-    m_fn.TrimRight('/');
-    m_fn.Replace('\\', '/');
-    m_fn = m_fn.Mid(m_fn.ReverseFind('/') + 1);
-
     UpdateData(FALSE);
 
-    InitEncoding();
-
-    m_pFG = NULL;
-    m_pCAP = NULL;
+    m_encoding.SetWindowText(m_encodingtext);
 
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE
@@ -253,11 +271,20 @@ LRESULT CPPageFileInfoDetails::OnSetPageFocus(WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void CPPageFileInfoDetails::InitEncoding()
+void CPPageFileInfoDetails::InitEncodingText(IFilterGraph* pFG)
 {
-    CAtlList<CString> sl;
+    CAtlList<CString> videoStreams;
+    CAtlList<CString> otherStreams;
 
-    BeginEnumFilters(m_pFG, pEF, pBF) {
+    auto addStream = [&](const AM_MEDIA_TYPE & mt, const CString & str) {
+        if (mt.majortype == MEDIATYPE_Video) {
+            videoStreams.AddTail(str);
+        } else {
+            otherStreams.AddTail(str);
+        }
+    };
+
+    BeginEnumFilters(pFG, pEF, pBF) {
         CComPtr<IBaseFilter> pUSBF = GetUpStreamFilter(pBF);
 
         if (GetCLSID(pBF) == CLSID_NetShowSource) {
@@ -278,40 +305,56 @@ void CPPageFileInfoDetails::InitEncoding()
             }
         }
 
-        BeginEnumPins(pBF, pEP, pPin) {
-            CMediaTypeEx mt;
-            PIN_DIRECTION dir;
-            if (FAILED(pPin->QueryDirection(&dir)) || dir != PINDIR_OUTPUT
-                    || FAILED(pPin->ConnectionMediaType(&mt))) {
-                continue;
+        bool bUsePins = true;
+
+        // If the filter claims to have tracks, we use that
+        if (CComQIPtr<IAMStreamSelect> pSS = pBF) {
+            DWORD nCount;
+            if (FAILED(pSS->Count(&nCount))) {
+                nCount = 0;
             }
 
-            CString str = mt.ToString();
+            for (DWORD i = 0; i < nCount; i++) {
+                AM_MEDIA_TYPE* pmt = nullptr;
+                WCHAR* pszName = nullptr;
+                if (SUCCEEDED(pSS->Info(i, &pmt, nullptr, nullptr, nullptr, &pszName, nullptr, nullptr)) && pmt) {
+                    CMediaTypeEx mt = *pmt;
+                    CString str = mt.ToString();
 
-            if (!str.IsEmpty()) {
-                if (mt.majortype == MEDIATYPE_Video) { // Sort streams, set Video streams at head
-                    bool found_video = false;
-                    for (POSITION pos = sl.GetTailPosition(); pos; sl.GetPrev(pos)) {
-                        CString Item = sl.GetAt(pos);
-                        if (!Item.Find(_T("Video:"))) {
-                            sl.InsertAfter(pos, str + CString(L" [" + GetPinName(pPin) + L"]"));
-                            found_video = true;
-                            break;
+                    if (!str.IsEmpty()) {
+                        if (pszName && wcslen(pszName)) {
+                            str.AppendFormat(_T(" [%s]"), pszName);
                         }
+                        addStream(mt, str);
+                        bUsePins = false;
                     }
-                    if (!found_video) {
-                        sl.AddHead(str + CString(L" [" + GetPinName(pPin) + L"]"));
-                    }
-                } else {
-                    sl.AddTail(str + CString(L" [" + GetPinName(pPin) + L"]"));
                 }
+                DeleteMediaType(pmt);
+                CoTaskMemFree(pszName);
             }
         }
-        EndEnumPins;
+        // We fall back to listing the pins only if we could not get any info from IAMStreamSelect
+        if (bUsePins) {
+            BeginEnumPins(pBF, pEP, pPin) {
+                CMediaTypeEx mt;
+                PIN_DIRECTION dir;
+                if (SUCCEEDED(pPin->QueryDirection(&dir)) && dir == PINDIR_OUTPUT
+                        && SUCCEEDED(pPin->ConnectionMediaType(&mt))) {
+                    CString str = mt.ToString();
+
+                    if (!str.IsEmpty()) {
+                        addStream(mt, str + CString(L" [" + GetPinName(pPin) + L"]"));
+                    }
+                }
+            }
+            EndEnumPins;
+        }
     }
     EndEnumFilters;
 
-    CString text = Implode(sl, '\n');
-    text.Replace(_T("\n"), _T("\r\n"));
-    m_encoding.SetWindowText(text);
+    m_encodingtext = Implode(videoStreams, _T("\r\n"));
+    if (!m_encodingtext.IsEmpty()) {
+        m_encodingtext += _T("\r\n");
+    }
+    m_encodingtext += Implode(otherStreams, _T("\r\n"));
 }

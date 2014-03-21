@@ -1,5 +1,5 @@
-#!/bin/sh
-# (C) 2012 see Authors.txt
+#!/bin/bash
+# (C) 2012-2013 see Authors.txt
 #
 # This file is part of MPC-HC.
 #
@@ -16,71 +16,85 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-[ -n "$1" ] && cd $1
-# This is the last svn changeset, the number and hash can be automatically
-# calculated, but it is slow to do that. So it is better to have it hardcoded.
-# We'll need to update this with the last svn data before committing this script
-SVNREV=5597
-SVNHASH="f669833b77e6515dc5f0a682c5bf665f9a81b2ec"
+versionfile_fixed="./include/version.h"
+versionfile="./include/version_rev.h"
+manifestfile="./src/mpc-hc/res/mpc-hc.exe.manifest"
 
-if [ ! -d ".git" ] || ! command -v git >/dev/null 2>&1 ; then
-  # If the folder ".git" doesn't exist or git isn't available we use hardcoded values
-  HASH=0000000
-  VER=0
-else
-  # Get the current branch name
-  BRANCH=`git branch | grep "^\*" | awk '{print $2}'`
-  # If we are on the master branch
-  if [ "$BRANCH" == "master" ] ; then
-    BASE="HEAD"
-  # If we are on another branch that isn't master, we want extra info like on
-  # which commit from master it is based on and what its hash is. This assumes we
-  # won't ever branch from a changeset from before the move to git
-  else
-    # Get where the branch is based on master
-    BASE=`git merge-base master HEAD`
-
-    VERSION_INFO="#define MPCHC_BRANCH _T(\"$BRANCH\")\n"
-    VER_FULL=" ($BRANCH)"
+# Read major, minor and patch version numbers from static version.h file
+while read -r _ var value; do
+  if [[ $var == MPC_VERSION_MAJOR ]]; then
+    ver_fixed_major=$value
+  elif [[ $var == MPC_VERSION_MINOR ]]; then
+    ver_fixed_minor=$value
+  elif [[ $var == MPC_VERSION_PATCH ]]; then
+    ver_fixed_patch=$value
   fi
+done < "$versionfile_fixed"
+ver_fixed="${ver_fixed_major}.${ver_fixed_minor}.${ver_fixed_patch}"
+echo "Version:   $ver_fixed"
 
-  # Count how many changesets we have since the last svn changeset
-  VER=`git rev-list $SVNHASH..$BASE | wc -l`
-  # Now add it with to last svn revision number
-  VER=$(($VER+$SVNREV))
+# If we are not inside a git repo use hardcoded values
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+  hash=0000000
+  ver=0
+  ver_additional=
+  echo "Warning: Git not available or not a git repo. Using dummy values for hash and version number."
+else
+  # Get information about the current version
+  describe=$(git describe --long)
+  echo "Describe:  $describe"
 
   # Get the abbreviated hash of the current changeset
-  HASH=`git log -n1 --format=%h`
+  hash=${describe##*-g}
 
+  # Get the number changesets since the last tag
+  ver=${describe#*-}
+  ver=${ver%-*}
+
+  ver_additional=" ($hash)"
+
+  # Get the current branch name
+  branch=$(git symbolic-ref -q HEAD) && branch=${branch##refs/heads/} || branch="no branch"
+
+  echo "On branch: $branch"
+  echo "Hash:      $hash"
+  if ! git diff-index --quiet HEAD; then
+    echo "Revision:  $ver (Local modifications found)"
+  else
+    echo "Revision:  $ver"
+  fi
+
+  # If we are on another branch that isn't master, we want extra info like on
+  # which commit from master it is based on. This assumes we
+  # won't ever branch from a changeset from before the move to git
+  if [[ "$branch" != "master" ]]; then
+    version_info="#define MPCHC_BRANCH _T(\"$branch\")"$'\n'
+    ver_additional+=" ($branch)"
+    if git show-ref --verify --quiet refs/heads/master; then
+      # Get where the branch is based on master
+      base=$(git merge-base master HEAD)
+      base=${base:0:7}
+      ver_additional+=" (master@${base})"
+      echo "Mergebase: master@${base}"
+    fi
+  fi
 fi
 
-VER_FULL="_T(\"$VER ($HASH)$VER_FULL\")"
+version_info+="#define MPCHC_HASH _T(\"$hash\")"$'\n'
+version_info+="#define MPC_VERSION_REV $ver"$'\n'
+version_info+="#define MPC_VERSION_ADDITIONAL _T(\"${ver_additional}\")"
 
-VERSION_INFO+="#define MPCHC_HASH _T(\"$HASH\")\n"
-VERSION_INFO+="#define MPC_VERSION_REV $VER\n"
-VERSION_INFO+="#define MPC_VERSION_REV_FULL $VER_FULL"
 
-if [ "$BRANCH" ] ; then
-  echo -e "On branch: $BRANCH"
-fi
-echo -e "Hash:      $HASH"
-if [ "$BRANCH" ] && git status | grep -q "modified:" ; then
-  echo -e "Revision:  $VER (Local modifications found)"
-else
-  echo -e "Revision:  $VER"
-fi
-
-if [ -f ./include/version_rev.h ] ; then
-  VERSION_INFO_OLD=`<./include/version_rev.h`
-fi
-
-# Only write the files if the version information has changed
-[ "$(echo $VERSION_INFO | sed -e 's/\\n/ /g')" != "$(echo $VERSION_INFO_OLD)" ] ; VER_CHANGED=$?
-if [ $VER_CHANGED -eq 0 ] ; then
+# Update version_rev.h if it does not exist, or if version information was changed.
+if [[ ! -f "$versionfile" ]] || [[ "$version_info" != "$(<"$versionfile")" ]]; then
   # Write the version information to version_rev.h
-  echo -e $VERSION_INFO > ./include/version_rev.h
+  echo "$version_info" > "$versionfile"
 fi
-if [ $VER_CHANGED -eq 0 ] || [ ! -f "./src/mpc-hc/res/mpc-hc.exe.manifest" ] ; then
+
+
+# Update manifest file if it does not exist or if source manifest.conf was changed.
+newmanifest="$(sed -e "s/\\\$VERSION\\\$/${ver_fixed}.${ver}/" "$manifestfile.conf")"
+if [[ ! -f "$manifestfile" ]] || [[ "$newmanifest" != "$(<"$manifestfile")" ]]; then
   # Update the revision number in the manifest file
-  sed -e "s/\\\$WCREV\\\$/${VER}/" ./src/mpc-hc/res/mpc-hc.exe.manifest.conf > ./src/mpc-hc/res/mpc-hc.exe.manifest
+  echo "$newmanifest" > "$manifestfile"
 fi

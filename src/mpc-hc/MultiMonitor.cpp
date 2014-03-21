@@ -27,7 +27,7 @@
 // CMonitor
 
 // constucts a monitor class not attached to any handle
-CMonitor::CMonitor() : m_hMonitor(NULL)
+CMonitor::CMonitor() : m_hMonitor(nullptr)
 {
 }
 
@@ -51,7 +51,7 @@ void CMonitor::Attach(const HMONITOR hMonitor)
 HMONITOR CMonitor::Detach()
 {
     HMONITOR hMonitor = m_hMonitor;
-    m_hMonitor = NULL;
+    m_hMonitor = nullptr;
     return hMonitor;
 }
 
@@ -71,15 +71,15 @@ HDC CMonitor::CreateDC() const
     GetName(name);
 
     //create a dc for this display
-    HDC hdc = ::CreateDC(name, name, NULL, NULL);
-    ASSERT(hdc != NULL);
+    HDC hdc = ::CreateDC(name, name, nullptr, nullptr);
+    ASSERT(hdc != nullptr);
 
     //set the viewport based on the monitor rect's relation to the primary monitor
     CRect rect;
     GetMonitorRect(&rect);
 
-    ::SetViewportOrgEx(hdc, -rect.left, -rect.top, NULL);
-    ::SetViewportExtEx(hdc, rect.Width(), rect.Height(), NULL);
+    ::SetViewportOrgEx(hdc, -rect.left, -rect.top, nullptr);
+    ::SetViewportExtEx(hdc, rect.Width(), rect.Height(), nullptr);
 
     return hdc;
 }
@@ -106,7 +106,7 @@ void CMonitor::GetName(CString& string) const
 
 //
 // these methods return true if any part of the item intersects the monitor rect
-BOOL CMonitor::IsOnMonitor(const POINT pt) const
+BOOL CMonitor::IsOnMonitor(const POINT& pt) const
 {
     CRect rect;
     GetMonitorRect(rect);
@@ -199,7 +199,7 @@ void CMonitor::CenterWindowToMonitor(CWnd* const pWnd, const BOOL UseWorkAreaRec
         pWnd->GetParent()->ScreenToClient(&rect);
     }
     // MPC-HC custom code end
-    pWnd->SetWindowPos(NULL, rect.left, rect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    pWnd->SetWindowPos(nullptr, rect.left, rect.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 void CMonitor::ClipRectToMonitor(LPRECT lprc, const BOOL UseWorkAreaRect) const
@@ -214,8 +214,8 @@ void CMonitor::ClipRectToMonitor(LPRECT lprc, const BOOL UseWorkAreaRect) const
         GetMonitorRect(&rect);
     }
 
-    lprc->left = max(rect.left, min(rect.right - w, lprc->left));
-    lprc->top = max(rect.top, min(rect.bottom - h, lprc->top));
+    lprc->left = std::max(rect.left, std::min(rect.right - w, lprc->left));
+    lprc->top = std::max(rect.top, std::min(rect.bottom - h, lprc->top));
     lprc->right = lprc->left + w;
     lprc->bottom = lprc->top  + h;
 }

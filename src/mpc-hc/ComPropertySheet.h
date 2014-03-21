@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -40,11 +40,11 @@ class CComPropertySheet : public CPropertySheet, public IComPropertyPageDirty
     CSize m_size;
 
 public:
-    CComPropertySheet(UINT nIDCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
-    CComPropertySheet(LPCTSTR pszCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
+    CComPropertySheet(UINT nIDCaption, CWnd* pParentWnd = nullptr, UINT iSelectPage = 0);
+    CComPropertySheet(LPCTSTR pszCaption, CWnd* pParentWnd = nullptr, UINT iSelectPage = 0);
     virtual ~CComPropertySheet();
 
-    int AddPages(ISpecifyPropertyPages* pSPP);
+    int AddPages(ISpecifyPropertyPages* pSPP, ULONG uIgnorePage = ULONG(-1));
     bool AddPage(IPropertyPage* pPage, IUnknown* pUnk);
 
     void OnActivated(CPropertyPage* pPage);

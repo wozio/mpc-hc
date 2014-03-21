@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,16 +25,16 @@
 #include <atlcoll.h>
 #include "ISubPic.h"
 #include "CoordGeom.h"
+#include "SubRenderIntf.h"
 
 class CSubPicAllocatorPresenterImpl
     : public CUnknown
     , public CCritSec
     , public ISubPicAllocatorPresenter2
+    , public ISubRenderConsumer
 {
 protected:
     HWND m_hWnd;
-    CSize m_spMaxSize; // TODO:
-    int m_spMaxQueued; // TODO:
     REFERENCE_TIME m_rtSubtitleDelay;
 
     CSize m_NativeVideoSize, m_AspectRatio;
@@ -42,6 +42,9 @@ protected:
 
     REFERENCE_TIME m_rtNow;
     double m_fps;
+    UINT m_RefreshRate;
+
+    CMediaType m_InputMediaType;
 
     CComPtr<ISubPicProvider> m_SubPicProvider;
     CComPtr<ISubPicAllocator> m_pAllocator;
@@ -50,7 +53,7 @@ protected:
     bool m_bDeviceResetRequested;
     bool m_bPendingResetDevice;
 
-    void AlphaBltSubPic(CSize size, SubPicDesc* pTarget = NULL);
+    void AlphaBltSubPic(const CRect& windowRect, const CRect& videoRect, SubPicDesc* pTarget = nullptr);
 
     XForm m_xform;
     void Transform(CRect r, Vector v[4]);
@@ -64,14 +67,14 @@ public:
 
     // ISubPicAllocatorPresenter
 
-    STDMETHODIMP CreateRenderer(IUnknown** ppRenderer) = 0;
+    STDMETHODIMP CreateRenderer(IUnknown** ppRenderer) PURE;
 
     STDMETHODIMP_(SIZE) GetVideoSize(bool fCorrectAR = true);
     STDMETHODIMP_(SIZE) GetVisibleVideoSize() {
         return m_NativeVideoSize;
     };
     STDMETHODIMP_(void) SetPosition(RECT w, RECT v);
-    STDMETHODIMP_(bool) Paint(bool fAll) = 0;
+    STDMETHODIMP_(bool) Paint(bool fAll) PURE;
 
     STDMETHODIMP_(void) SetTime(REFERENCE_TIME rtNow);
     STDMETHODIMP_(void) SetSubtitleDelay(int delay_ms);
@@ -81,27 +84,48 @@ public:
     STDMETHODIMP_(void) SetSubPicProvider(ISubPicProvider* pSubPicProvider);
     STDMETHODIMP_(void) Invalidate(REFERENCE_TIME rtInvalidate = -1);
 
-    STDMETHODIMP GetDIB(BYTE* lpDib, DWORD* size) {
-        return E_NOTIMPL;
-    }
+    STDMETHODIMP GetDIB(BYTE* lpDib, DWORD* size) { return E_NOTIMPL; }
 
-    STDMETHODIMP_(bool) ResetDevice() {
-        return false;
-    }
+    STDMETHODIMP_(bool) ResetDevice() { return false; }
 
-    STDMETHODIMP_(bool) DisplayChange() {
-        return false;
-    }
+    STDMETHODIMP_(bool) DisplayChange() { return false; }
 
-    STDMETHODIMP SetVideoAngle(Vector v, bool fRepaint = true);
-    STDMETHODIMP SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget) {
-        return E_NOTIMPL;
-    }
+    STDMETHODIMP SetVideoAngle(Vector v);
+    STDMETHODIMP SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget) { return E_NOTIMPL; }
     STDMETHODIMP SetPixelShader2(LPCSTR pSrcData, LPCSTR pTarget, bool bScreenSpace) {
         if (!bScreenSpace) {
             return SetPixelShader(pSrcData, pTarget);
         }
         return E_NOTIMPL;
     }
-};
 
+    // ISubRenderOptions
+
+    STDMETHODIMP GetBool(LPCSTR field, bool* value);
+    STDMETHODIMP GetInt(LPCSTR field, int* value);
+    STDMETHODIMP GetSize(LPCSTR field, SIZE* value);
+    STDMETHODIMP GetRect(LPCSTR field, RECT* value);
+    STDMETHODIMP GetUlonglong(LPCSTR field, ULONGLONG* value);
+    STDMETHODIMP GetDouble(LPCSTR field, double* value);
+    STDMETHODIMP GetString(LPCSTR field, LPWSTR* value, int* chars);
+    STDMETHODIMP GetBin(LPCSTR field, LPVOID* value, int* size);
+    STDMETHODIMP SetBool(LPCSTR field, bool value);
+    STDMETHODIMP SetInt(LPCSTR field, int value);
+    STDMETHODIMP SetSize(LPCSTR field, SIZE value);
+    STDMETHODIMP SetRect(LPCSTR field, RECT value);
+    STDMETHODIMP SetUlonglong(LPCSTR field, ULONGLONG value);
+    STDMETHODIMP SetDouble(LPCSTR field, double value);
+    STDMETHODIMP SetString(LPCSTR field, LPWSTR value, int chars);
+    STDMETHODIMP SetBin(LPCSTR field, LPVOID value, int size);
+
+    // ISubRenderConsumer
+
+    STDMETHODIMP GetMerit(ULONG* plMerit) {
+        CheckPointer(plMerit, E_POINTER);
+        *plMerit = 4 << 16;
+        return S_OK;
+    }
+    STDMETHODIMP Connect(ISubRenderProvider* subtitleRenderer);
+    STDMETHODIMP Disconnect();
+    STDMETHODIMP DeliverFrame(REFERENCE_TIME start, REFERENCE_TIME stop, LPVOID context, ISubRenderFrame* subtitleFrame);
+};

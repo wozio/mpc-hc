@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,7 +27,7 @@
 #define __DUMMY__ _T("*.*")
 
 bool COpenFileDlg::m_fAllowDirSelection = false;
-WNDPROC COpenFileDlg::m_wndProc = NULL;
+WNDPROC COpenFileDlg::m_wndProc = nullptr;
 
 
 // COpenFileDlg
@@ -38,10 +38,13 @@ COpenFileDlg::COpenFileDlg(CAtlArray<CString>& mask, bool fAllowDirSelection, LP
     : CFileDialog(TRUE, lpszDefExt, lpszFileName, dwFlags | OFN_NOVALIDATE, lpszFilter, pParentWnd, 0)
     , m_mask(mask)
 {
-    m_fAllowDirSelection = fAllowDirSelection;
-    m_pOFN->lpstrInitialDir = lpszFileName;
+    m_defaultDir = lpszFileName;
+    m_defaultDir.RemoveFileSpec();
 
-    m_buff = DNew TCHAR[10000];
+    m_fAllowDirSelection = fAllowDirSelection;
+    m_pOFN->lpstrInitialDir = m_defaultDir.FileExists() ? (LPCTSTR)m_defaultDir : nullptr;
+
+    m_buff = DEBUG_NEW TCHAR[10000];
     m_buff[0] = 0;
     m_pOFN->lpstrFile = m_buff;
     m_pOFN->nMaxFile = 10000;
@@ -64,9 +67,9 @@ LRESULT CALLBACK COpenFileDlg::WindowProcNew(HWND hwnd, UINT message, WPARAM wPa
     if (message == WM_COMMAND && HIWORD(wParam) == BN_CLICKED && LOWORD(wParam) == IDOK
             && m_fAllowDirSelection) {
         CAutoVectorPtr<TCHAR> path;
-        path.Allocate(_MAX_PATH + 1); // _MAX_PATH should be bigger for multiple selection, but we are only interested if it's zero length
-        // note: allocating _MAX_PATH only will cause a buffer overrun for too long strings, and will result in a silent app disappearing crash, 100% reproducible
-        if (::GetDlgItemText(hwnd, cmb13, (TCHAR*)path, _MAX_PATH) == 0) {
+        // MAX_PATH should be bigger for multiple selection, but we are only interested if it's zero length
+        // note: allocating MAX_PATH only will cause a buffer overrun for too long strings, and will result in a silent app disappearing crash, 100% reproducible
+        if (path.Allocate(MAX_PATH + 1) && ::GetDlgItemText(hwnd, cmb13, (TCHAR*)path, MAX_PATH) == 0) {
             ::SendMessage(hwnd, CDM_SETCONTROLTEXT, edt1, (LPARAM)__DUMMY__);
         }
     }
@@ -96,7 +99,7 @@ void COpenFileDlg::OnDestroy()
 
 BOOL COpenFileDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 {
-    ASSERT(pResult != NULL);
+    ASSERT(pResult != nullptr);
 
     OFNOTIFY* pNotify = (OFNOTIFY*)lParam;
     // allow message map to override
@@ -118,10 +121,10 @@ BOOL COpenFileDlg::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT* pResult)
 
 BOOL COpenFileDlg::OnIncludeItem(OFNOTIFYEX* pOFNEx, LRESULT* pResult)
 {
-    TCHAR buff[_MAX_PATH];
-    if (!SHGetPathFromIDList((LPCITEMIDLIST)pOFNEx->pidl, buff)) {
+    TCHAR buff[MAX_PATH];
+    if (!SHGetPathFromIDList((PIDLIST_ABSOLUTE)pOFNEx->pidl, buff)) {
         STRRET s;
-        HRESULT hr = ((IShellFolder*)pOFNEx->psf)->GetDisplayNameOf((LPCITEMIDLIST)pOFNEx->pidl, SHGDN_NORMAL | SHGDN_FORPARSING, &s);
+        HRESULT hr = ((IShellFolder*)pOFNEx->psf)->GetDisplayNameOf((PCUITEMID_CHILD)pOFNEx->pidl, SHGDN_NORMAL | SHGDN_FORPARSING, &s);
         if (S_OK != hr) {
             return FALSE;
         }

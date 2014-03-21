@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -39,20 +39,22 @@ public:
     int m_nJumpDistS;
     int m_nJumpDistM;
     int m_nJumpDistL;
-    BOOL m_fNotifyMSN;
+    BOOL m_fNotifySkype;
 
     BOOL m_fPreventMinimize;
     BOOL m_fUseWin7TaskBar;
     BOOL m_fUseSearchInFolder;
     BOOL m_fUseTimeTooltip;
+    BOOL m_bHideWindowedMousePointer;
     CComboBox m_TimeTooltipPosition;
     CComboBox m_FontSize;
     CComboBox m_FontType;
-    int m_OSD_Size;
-    CString m_OSD_Font;
+    CComboBox m_FastSeekMethod;
+    int m_nOSDSize;
+    CString m_strOSDFont;
 
     BOOL m_fFastSeek;
-	BOOL m_fShowChapters;
+    BOOL m_fShowChapters;
 
     BOOL m_fLCDSupport;
 
@@ -65,7 +67,7 @@ protected:
 
 public:
     afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMH, LRESULT* pResult);
-    afx_msg void OnUpdateCheck3(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateFastSeek(CCmdUI* pCmdUI);
     afx_msg void OnBnClickedButton1();
     afx_msg void OnUseTimeTooltipClicked();
     afx_msg void OnChngOSDCombo();

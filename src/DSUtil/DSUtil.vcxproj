@@ -21,9 +21,11 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FC70988B-1AE5-4381-866D-4F405E28AC42}</ProjectGuid>
     <RootNamespace>DSUtil</RootNamespace>
-    <Keyword>Win32Proj</Keyword>
+    <Keyword>MFCProj</Keyword>
+    <ProjectName>DSUtil</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\platform.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>Static</UseOfMfc>
@@ -69,7 +71,6 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -112,7 +113,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AudioParser.cpp" />
+    <ClCompile Include="AudioTools.cpp" />
     <ClCompile Include="deinterlace.cpp" />
     <ClCompile Include="DSMPropertyBag.cpp" />
     <ClCompile Include="DSUtil.cpp" />
@@ -124,6 +125,7 @@
     <ClCompile Include="MediaTypeEx.cpp" />
     <ClCompile Include="MediaTypes.cpp" />
     <ClCompile Include="NullRenderers.cpp" />
+    <ClCompile Include="PathUtils.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -136,7 +138,7 @@
     <ClCompile Include="WinAPIUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AudioParser.h" />
+    <ClInclude Include="AudioTools.h" />
     <ClInclude Include="DSMPropertyBag.h" />
     <ClInclude Include="DSUtil.h" />
     <ClInclude Include="FileVersionInfo.h" />
@@ -148,8 +150,8 @@
     <ClInclude Include="MediaTypes.h" />
     <ClInclude Include="Mpeg2Def.h" />
     <ClInclude Include="NullRenderers.h" />
+    <ClInclude Include="PathUtils.h" />
     <ClInclude Include="SharedInclude.h" />
-    <ClInclude Include="simd_common.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SysVersion.h" />
     <ClInclude Include="text.h" />
@@ -160,7 +162,6 @@
   <ItemGroup>
     <ProjectReference Include="..\thirdparty\VirtualDub\Kasumi\Kasumi.vcxproj">
       <Project>{0d252872-7542-4232-8d02-53f9182aee15}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

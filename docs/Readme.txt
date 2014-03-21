@@ -2,17 +2,19 @@ Media Player Classic - Home Cinema (MPC-HC) is a free and open source audio
 and video player for Windows. MPC-HC is based on the original Guliverkli project
 and contains a lot of additional features and bug fixes.
 
-We are in dire need of new developers of any kind. If you can code a little, or you can create
-logos for the player and images for the file associations, or you can create/maintain the main
-website, please join our IRC channel and talk to us. Any help is always appreciated.
-Find some easy ticket on our trac page, fix the problem, post the patch on trac or come on IRC
-and we'll review it for you.
+We are in dire need of new developers of any kind. If you can code a little,
+or you can create logos for the player and images for the file associations,
+or you can create/maintain the main website, please join our IRC channel
+and talk to us. Find some easy ticket on our trac page, fix the problem,
+post the patch on trac or come on IRC and we'll review it for you.
+Any help is always appreciated.
 
-We care about keeping an open project open and free for contributions wherever they may come from.
+We care about keeping an open project open and free for contributions
+wherever they may come from.
 
 
 Main Features:
----------------
+--------------
 * Option to remove tearing
 * Better support for Windows Vista/7, including a 64-bit build
 * Support for EVR/EVR CP (Enhanced Video Renderer)
@@ -22,23 +24,22 @@ Main Features:
 * Multi-Monitor support
 * Various pixel shaders
 * Color management
-* 24 translations available
+* 32 translations available
 
 
 System Requirements:
----------------------
+--------------------
 * An SSE capable CPU
-* Windows XP SP3, Vista, 7 32-bit/64-bit
+* Windows XP SP3, Vista, 7, 8, 8.1 32-bit/64-bit
 
 
 Links:
--------
-Website:            http://mpc-hc.sourceforge.net
+------
+Website:            http://mpc-hc.org
 Source code:        https://github.com/mpc-hc
-Support Trac:       http://sourceforge.net/apps/trac/mpc-hc
+Support Trac:       https://trac.mpc-hc.org
 IRC Channel:        #mpc-hc / #mpc-hc-dev at Freenode (http://webchat.freenode.net/)
-Help and Support:   http://sourceforge.net/apps/trac/mpc-hc/
-Donations:          http://sourceforge.net/donate/index.php?group_id=170561
+Donations:          http://mpc-hc.org/donate/
 
 
 For the people involved in the development, see Authors.txt.
@@ -52,19 +53,16 @@ MPC-HC makes use of the following third-party code:
 Project             License                     Website
 --------------------------------------------------------------------
 ATL Server          Ms-LPL                      http://atlserver.codeplex.com/
-Bento4              GPLv2                       http://zebulon.bok.net/trac/Bento4
 CLineNumberEdit     -                           http://www.codeproject.com/Articles/6385/Controls-in-controls-A-line-numbering-edit-box
 CSizingControlBar   GPLv2                       http://www.datamekanix.com/sizecbar/
-Detours             MSR-SSLA                    http://research.microsoft.com/en-us/projects/detours/
-FFmpeg              GPLv2                       http://www.ffmpeg.org/
-libflac             GPLv2 / New BSD License     http://flac.sourceforge.net/
-libmpeg2            GPLv2                       http://libmpeg2.sourceforge.net/
-libogg              New BSD License             http://www.xiph.org/
+LAV Filters         GPLv2                       http://code.google.com/p/lavfilters/
 Little CMS          MIT License                 http://www.littlecms.com/
 Logitech SDK        -                           -
-MediaInfoLib        LGPLv2+                     http://mediainfo.sourceforge.net/
+MediaInfoLib        Simplified BSD License      http://mediaarea.net/MediaInfo
+Mhook               MIT License                 http://codefromthe70s.org/mhook23.aspx
 MultiMon            CPOL                        http://www.codeproject.com/KB/GDI/multimon.aspx
 QuickTime SDK       -                           http://developer.apple.com/quicktime/
+RARFileSource       GPLv2+                      http://www.v12pwr.com/RARFileSource/
 RealMedia SDK       -                           -
 ResizableLib        Artistic License            http://sourceforge.net/projects/resizablelib/
 Silk Icons          CC Attribution 2.5          http://www.famfamfam.com/lab/icons/silk/

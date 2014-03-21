@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -32,9 +32,11 @@
 // CPlayerToolBar
 
 IMPLEMENT_DYNAMIC(CPlayerToolBar, CToolBar)
-CPlayerToolBar::CPlayerToolBar()
-    : m_nButtonHeight(16)
-    , m_pButtonsImages(NULL)
+CPlayerToolBar::CPlayerToolBar(CMainFrame* pMainFrame)
+    : m_pMainFrame(pMainFrame)
+    , m_nButtonHeight(16)
+    , m_pButtonsImages(nullptr)
+    , m_volumeMinSizeInc(0)
 {
 }
 
@@ -89,7 +91,12 @@ BOOL CPlayerToolBar::Create(CWnd* pParentWnd)
     };
 
     for (int i = 0; i < _countof(styles); ++i) {
-        SetButtonStyle(i, styles[i] | TBBS_DISABLED);
+        // This fixes missing separator in Win 7
+        if (styles[i] & TBBS_SEPARATOR) {
+            SetButtonInfo(i, GetItemID(i), styles[i], -1);
+        } else {
+            SetButtonStyle(i, styles[i] | TBBS_DISABLED);
+        }
     }
 
     m_volctrl.Create(this);
@@ -106,7 +113,7 @@ BOOL CPlayerToolBar::Create(CWnd* pParentWnd)
             // the manual specifies that sizeButton should be sizeImage inflated by (7, 6)
             SetSizes(CSize(height + 7, height + 6), CSize(height, height));
 
-            m_pButtonsImages = DNew CImageList();
+            m_pButtonsImages = DEBUG_NEW CImageList();
             if (bpp == 32) {
                 m_pButtonsImages->Create(height, height, ILC_COLOR32 | ILC_MASK, 1, 0);
                 m_pButtonsImages->Add(bmp, static_cast<CBitmap*>(0)); // alpha is the mask
@@ -137,16 +144,21 @@ void CPlayerToolBar::ArrangeControls()
     CRect r10;
     GetItemRect(10, &r10);
 
-    CRect vr;
-    m_volctrl.GetClientRect(&vr);
-    CRect vr2(r.right + br.right - 60, r.bottom - 25, r.right + br.right + 6, r.bottom);
-    m_volctrl.MoveWindow(vr2);
+    CRect vr(r.right + br.right - 60, r.top - 2, r.right + br.right + 6, r.bottom);
+    m_volctrl.MoveWindow(vr);
+
+    CRect thumbRect;
+    m_volctrl.GetThumbRect(thumbRect);
+    m_volctrl.MapWindowPoints(this, thumbRect);
+    vr.top += std::max((r.bottom - thumbRect.bottom - 4) / 2, 0l);
+    vr.left -= m_volumeMinSizeInc = MulDiv(thumbRect.Height(), 50, 19) - 50;
+    m_volctrl.MoveWindow(vr);
 
     UINT nID;
     UINT nStyle;
     int iImage;
     GetButtonInfo(12, nID, nStyle, iImage);
-    SetButtonInfo(11, GetItemID(11), TBBS_SEPARATOR, vr2.left - iImage - r10.right - (r10.bottom - r10.top) + 11);
+    SetButtonInfo(11, GetItemID(11), TBBS_SEPARATOR, vr.left - iImage - r10.right - (r10.bottom - r10.top) + 11);
 }
 
 void CPlayerToolBar::SetMute(bool fMute)
@@ -185,7 +197,7 @@ int CPlayerToolBar::GetVolume() const
 
 int CPlayerToolBar::GetMinWidth() const
 {
-    return m_nButtonHeight * 9 + 155;
+    return m_nButtonHeight * 9 + 155 + m_volumeMinSizeInc;
 }
 
 void CPlayerToolBar::SetVolume(int volume)
@@ -201,11 +213,10 @@ BEGIN_MESSAGE_MAP(CPlayerToolBar, CToolBar)
     ON_UPDATE_COMMAND_UI(ID_VOLUME_MUTE, OnUpdateVolumeMute)
     ON_COMMAND_EX(ID_VOLUME_UP, OnVolumeUp)
     ON_COMMAND_EX(ID_VOLUME_DOWN, OnVolumeDown)
-    ON_COMMAND_EX(ID_VOLUME_INC, OnVolumeIncrease)
-    ON_COMMAND_EX(ID_VOLUME_DEC, OnVolumeDecrease)
     ON_WM_NCPAINT()
     ON_WM_LBUTTONDOWN()
-    ON_WM_MOUSEMOVE()
+    ON_WM_SETCURSOR()
+    ON_NOTIFY_EX_RANGE(TTN_NEEDTEXTW, 0, 0xFFFF, OnToolTipNotify)
 END_MESSAGE_MAP()
 
 // CPlayerToolBar message handlers
@@ -286,18 +297,6 @@ BOOL CPlayerToolBar::OnVolumeDown(UINT nID)
     return FALSE;
 }
 
-BOOL CPlayerToolBar::OnVolumeIncrease(UINT nID)
-{
-    m_volctrl.SetPos(m_volctrl.GetPos() + 1);
-    return FALSE;
-}
-
-BOOL CPlayerToolBar::OnVolumeDecrease(UINT nID)
-{
-    m_volctrl.SetPos(m_volctrl.GetPos() - 1);
-    return FALSE;
-}
-
 void CPlayerToolBar::OnNcPaint() // when using XP styles the NC area isn't drawn for our toolbar...
 {
     CRect wr, cr;
@@ -312,37 +311,36 @@ void CPlayerToolBar::OnNcPaint() // when using XP styles the NC area isn't drawn
     dc.FillSolidRect(wr, GetSysColor(COLOR_BTNFACE));
 
     // Do not call CToolBar::OnNcPaint() for painting messages
+    
+    // Invalidate window to force repaint the expanded separator
+    Invalidate(FALSE);
 }
 
-void CPlayerToolBar::OnMouseMove(UINT nFlags, CPoint point)
+BOOL CPlayerToolBar::OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message)
 {
-    int i = getHitButtonIdx(point);
+    BOOL ret = FALSE;
+    if (nHitTest == HTCLIENT) {
+        CPoint point;
+        VERIFY(GetCursorPos(&point));
+        ScreenToClient(&point);
 
-    if (i == -1 || (GetButtonStyle(i) & (TBBS_SEPARATOR | TBBS_DISABLED))) {
-        ;
-    } else {
-        if (i != 10 && i != 11) {
+        int i = getHitButtonIdx(point);
+        if (i >= 0 && !(GetButtonStyle(i) & (TBBS_SEPARATOR | TBBS_DISABLED))) {
             ::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_HAND));
+            ret = TRUE;
         }
     }
-    __super::OnMouseMove(nFlags, point);
+    return ret ? ret : __super::OnSetCursor(pWnd, nHitTest, message);
 }
 
 void CPlayerToolBar::OnLButtonDown(UINT nFlags, CPoint point)
 {
     int i = getHitButtonIdx(point);
-    CMainFrame* pFrame = ((CMainFrame*)GetParentFrame());
 
-    if (i == -1 || (GetButtonStyle(i) & (TBBS_SEPARATOR | TBBS_DISABLED))) {
-        if (!pFrame->m_fFullScreen) {
-            MapWindowPoints(pFrame, &point, 1);
-            pFrame->PostMessage(WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
-        }
+    if (!m_pMainFrame->m_fFullScreen && (i < 0 || (GetButtonStyle(i) & (TBBS_SEPARATOR | TBBS_DISABLED)))) {
+        MapWindowPoints(m_pMainFrame, &point, 1);
+        m_pMainFrame->PostMessage(WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
     } else {
-        if (i != 10 && i != 11) {
-            ::SetCursor(AfxGetApp()->LoadStandardCursor(IDC_HAND));
-        }
-
         __super::OnLButtonDown(nFlags, point);
     }
 }
@@ -362,4 +360,40 @@ int CPlayerToolBar::getHitButtonIdx(CPoint point)
     }
 
     return hit;
+}
+
+BOOL CPlayerToolBar::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult)
+{
+    TOOLTIPTEXT* pTTT = (TOOLTIPTEXT*)pNMHDR;
+
+    UINT_PTR nID = pNMHDR->idFrom;
+    if (pTTT->uFlags & TTF_IDISHWND) {
+        nID = ::GetDlgCtrlID((HWND)nID);
+    }
+
+    if (nID != ID_VOLUME_MUTE) {
+        return FALSE;
+    }
+
+    CToolBarCtrl& tb = GetToolBarCtrl();
+    TBBUTTONINFO bi;
+    bi.cbSize = sizeof(bi);
+    bi.dwMask = TBIF_IMAGE;
+    tb.GetButtonInfo(ID_VOLUME_MUTE, &bi);
+
+    static CString strTipText;
+    if (bi.iImage == 12) {
+        strTipText.LoadString(ID_VOLUME_MUTE);
+    } else if (bi.iImage == 13) {
+        strTipText.LoadString(ID_VOLUME_MUTE_ON);
+    } else if (bi.iImage == 14) {
+        strTipText.LoadString(ID_VOLUME_MUTE_DISABLED);
+    } else {
+        return FALSE;
+    }
+    pTTT->lpszText = (LPWSTR)(LPCWSTR)strTipText;
+
+    *pResult = 0;
+
+    return TRUE;    // message was handled
 }

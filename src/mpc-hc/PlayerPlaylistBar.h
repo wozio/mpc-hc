@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,12 +29,16 @@
 
 class OpenMediaData;
 
+class CMainFrame;
+
 class CPlayerPlaylistBar : public CPlayerBar
 {
     DECLARE_DYNAMIC(CPlayerPlaylistBar)
 
 private:
     enum { COL_NAME, COL_TIME };
+
+    CMainFrame* m_pMainFrame;
 
     CImageList m_fakeImageList;
     CPlayerListCtrl m_list;
@@ -56,7 +60,7 @@ private:
     void SetupList();
     void UpdateList();
     void EnsureVisible(POSITION pos);
-    int FindItem(POSITION pos) const;
+    int FindItem(const POSITION pos) const;
     POSITION FindPos(int i);
 
     CImageList* m_pDragImage;
@@ -69,7 +73,7 @@ private:
     bool m_bHiddenDueToFullscreen;
 
 public:
-    CPlayerPlaylistBar();
+    CPlayerPlaylistBar(CMainFrame* pMainFrame);
     virtual ~CPlayerPlaylistBar();
 
     BOOL Create(CWnd* pParentWnd, UINT defDockBarID);
@@ -100,8 +104,8 @@ public:
     void Refresh();
     bool Empty();
 
-    void Open(CAtlList<CString>& fns, bool fMulti, CAtlList<CString>* subs = NULL);
-    void Append(CAtlList<CString>& fns, bool fMulti, CAtlList<CString>* subs = NULL);
+    void Open(CAtlList<CString>& fns, bool fMulti, CAtlList<CString>* subs = nullptr);
+    void Append(CAtlList<CString>& fns, bool fMulti, CAtlList<CString>* subs = nullptr);
 
     void Open(CStringW vdn, CStringW adn, int vinput, int vchannel, int ainput);
     void Append(CStringW vdn, CStringW adn, int vinput, int vchannel, int ainput);
@@ -112,6 +116,7 @@ public:
     void SavePlaylist();
 
     bool SelectFileInPlaylist(LPCTSTR filename);
+    bool DeleteFileInPlaylist(POSITION pos, bool recycle = true);
 
 protected:
     virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
@@ -135,4 +140,7 @@ public:
     afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
     afx_msg void OnLvnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnXButtonDown(UINT nFlags, UINT nButton, CPoint point);
+    afx_msg void OnXButtonUp(UINT nFlags, UINT nButton, CPoint point);
+    afx_msg void OnXButtonDblClk(UINT nFlags, UINT nButton, CPoint point);
 };

@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,7 +29,8 @@ IMPLEMENT_DYNAMIC(CPPageSubMisc, CPPageBase)
 
 CPPageSubMisc::CPPageSubMisc()
     : CPPageBase(CPPageSubMisc::IDD, CPPageSubMisc::IDD)
-    , m_fPrioritizeExternalSubtitles(FALSE)
+    , m_fPreferDefaultForcedSubtitles(TRUE)
+    , m_fPrioritizeExternalSubtitles(TRUE)
     , m_fDisableInternalSubtitles(FALSE)
     , m_szAutoloadPaths("")
     , m_ISDb(_T(""))
@@ -43,8 +44,9 @@ CPPageSubMisc::~CPPageSubMisc()
 void CPPageSubMisc::DoDataExchange(CDataExchange* pDX)
 {
     CPPageBase::DoDataExchange(pDX);
-    DDX_Check(pDX, IDC_CHECK1, m_fPrioritizeExternalSubtitles);
-    DDX_Check(pDX, IDC_CHECK2, m_fDisableInternalSubtitles);
+    DDX_Check(pDX, IDC_CHECK1, m_fPreferDefaultForcedSubtitles);
+    DDX_Check(pDX, IDC_CHECK2, m_fPrioritizeExternalSubtitles);
+    DDX_Check(pDX, IDC_CHECK3, m_fDisableInternalSubtitles);
     DDX_Text(pDX, IDC_EDIT1, m_szAutoloadPaths);
     DDX_Control(pDX, IDC_COMBO1, m_ISDbCombo);
     DDX_CBString(pDX, IDC_COMBO1, m_ISDb);
@@ -56,6 +58,7 @@ BOOL CPPageSubMisc::OnInitDialog()
 
     const CAppSettings& s = AfxGetAppSettings();
 
+    m_fPreferDefaultForcedSubtitles = s.bPreferDefaultForcedSubtitles;
     m_fPrioritizeExternalSubtitles = s.fPrioritizeExternalSubtitles;
     m_fDisableInternalSubtitles = s.fDisableInternalSubtitles;
     m_szAutoloadPaths = s.strSubtitlePaths;
@@ -77,6 +80,7 @@ BOOL CPPageSubMisc::OnApply()
 
     CAppSettings& s = AfxGetAppSettings();
 
+    s.bPreferDefaultForcedSubtitles = !!m_fPreferDefaultForcedSubtitles;
     s.fPrioritizeExternalSubtitles = !!m_fPrioritizeExternalSubtitles;
     s.fDisableInternalSubtitles = !!m_fDisableInternalSubtitles;
     s.strSubtitlePaths = m_szAutoloadPaths;
@@ -89,13 +93,13 @@ BOOL CPPageSubMisc::OnApply()
 
 
 BEGIN_MESSAGE_MAP(CPPageSubMisc, CPPageBase)
-    ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedButton1)
-    ON_BN_CLICKED(IDC_BUTTON2, OnBnClickedButton2)
-    ON_UPDATE_COMMAND_UI(IDC_BUTTON2, OnUpdateButton2)
+    ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedResetSubsPath)
+    ON_BN_CLICKED(IDC_BUTTON2, OnBnClickedTestSubsDB)
+    ON_UPDATE_COMMAND_UI(IDC_BUTTON2, OnUpdateButtonTestSubsDB)
     ON_CBN_EDITCHANGE(IDC_COMBO1, OnURLModified)
 END_MESSAGE_MAP()
 
-void CPPageSubMisc::OnBnClickedButton1()
+void CPPageSubMisc::OnBnClickedResetSubsPath()
 {
     m_szAutoloadPaths = DEFAULT_SUBTITLE_PATHS;
 
@@ -103,7 +107,7 @@ void CPPageSubMisc::OnBnClickedButton1()
     SetModified();
 }
 
-void CPPageSubMisc::OnBnClickedButton2()
+void CPPageSubMisc::OnBnClickedTestSubsDB()
 {
     CString ISDb, ver, str;
     UINT msg;
@@ -128,7 +132,7 @@ void CPPageSubMisc::OnBnClickedButton2()
     AfxMessageBox(msg, nIconType | MB_OK, 0);
 }
 
-void CPPageSubMisc::OnUpdateButton2(CCmdUI* pCmdUI)
+void CPPageSubMisc::OnUpdateButtonTestSubsDB(CCmdUI* pCmdUI)
 {
     pCmdUI->Enable(m_ISDbCombo.GetWindowTextLength() > 0);
 }

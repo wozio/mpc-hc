@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -35,12 +35,12 @@ CBaseStream::CBaseStream(TCHAR* name, CSource* pParent, HRESULT* phr)
     : CSourceStream(name, phr, pParent, L"Output")
     , CSourceSeeking(name, (IPin*)this, phr, &m_cSharedState)
     , m_bDiscontinuity(FALSE), m_bFlushing(FALSE)
+    , m_AvgTimePerFrame(0)
+    , m_rtSampleTime(0)
+    , m_rtPosition(0)
 {
     CAutoLock cAutoLock(&m_cSharedState);
-
-    m_AvgTimePerFrame = 0;
-    m_rtDuration = 0;
-    m_rtStop = m_rtDuration;
+    m_rtDuration = m_rtStop = 0;
 }
 
 CBaseStream::~CBaseStream()
@@ -141,16 +141,15 @@ HRESULT CBaseStream::OnThreadCreate()
 
 HRESULT CBaseStream::FillBuffer(IMediaSample* pSample)
 {
-    HRESULT hr;
-
     {
+        HRESULT hr;
         CAutoLock cAutoLockShared(&m_cSharedState);
 
         if (m_rtPosition >= m_rtStop) {
             return S_FALSE;
         }
 
-        BYTE* pOut = NULL;
+        BYTE* pOut = nullptr;
         if (FAILED(hr = pSample->GetPointer(&pOut)) || !pOut) {
             return S_FALSE;
         }

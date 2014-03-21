@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,6 +21,8 @@
 // originally from virtualdub
 
 #include "stdafx.h"
+#include <algorithm>
+#include <MMReg.h>
 #include "Audio.h"
 
 static long audio_pointsample_8(void* dst, void* src, long accum, long samp_frac, long cnt)
@@ -133,7 +135,7 @@ static int permute_index(int a, int b)
 
 static void make_downsample_filter(long* filter_bank, int filter_width, long samp_frac)
 {
-    int i, j, v;
+    int i, j;
     double filt_max;
     double filtwidth_frac;
 
@@ -159,7 +161,7 @@ static void make_downsample_filter(long* filter_bank, int filter_width, long sam
     // Normalize the filter to correct for integer roundoff errors
 
     for (i = 0; i < 256 * filter_width; i += filter_width) {
-        v = 0;
+        int v = 0;
         for (j = 0; j < filter_width; j++) {
             v += filter_bank[i + j];
         }
@@ -176,11 +178,15 @@ static void make_downsample_filter(long* filter_bank, int filter_width, long sam
 }
 
 AudioStreamResampler::AudioStreamResampler(int bps, long orig_rate, long new_rate, bool fHighQuality)
+    : samp_frac(0x80000)
+    , bps(bps)
+    , holdover(0)
+    , filter_bank(nullptr)
+    , filter_width(1)
+    , accum(0)
+    , ptsampleRout(audio_pointsample_16)
+    , dnsampleRout(audio_downsample_mono16)
 {
-    samp_frac = 0x80000;
-
-    this->bps = bps;
-
     if (bps == 1) {
         ptsampleRout = audio_pointsample_8;
         dnsampleRout = audio_downsample_mono8;
@@ -194,20 +200,14 @@ AudioStreamResampler::AudioStreamResampler(int bps, long orig_rate, long new_rat
     // orig_rate > new_rate!
     samp_frac = MulDiv(orig_rate, 0x80000, new_rate);
 
-    holdover = 0;
-    filter_bank = NULL;
-    filter_width = 1;
-    accum = 0;
-
     // If this is a high-quality downsample, allocate memory for the filter bank
-
     if (fHighQuality) {
         if (samp_frac > 0x80000) {
             // HQ downsample: allocate filter bank
 
             filter_width = ((samp_frac + 0x7ffff) >> 19) << 1 << 1;
 
-            filter_bank = DNew long[filter_width * 256];
+            filter_bank = DEBUG_NEW long[filter_width * 256];
             if (!filter_bank) {
                 filter_width = 1;
                 return;
@@ -258,7 +258,7 @@ long AudioStreamResampler::Downsample(void* input, long samplesIn, void* output,
 
         // Read into buffer.
 
-        srcSamples = min(srcSamples, samplesIn);
+        srcSamples = std::min(srcSamples, samplesIn);
         if (!srcSamples) {
             break;
         }
@@ -302,7 +302,7 @@ long AudioStreamResampler::Downsample(void* input, long samplesIn, void* output,
 
         nhold = - (accum >> 19);
 
-        //_ASSERT(nhold<=(filter_width/2));
+        //ASSERT(nhold <= (filter_width / 2));
 
         if (nhold > 0) {
             memmove(cbuffer, (char*)cbuffer + bps * (srcSamples + holdover - nhold), bps * nhold);
@@ -312,7 +312,7 @@ long AudioStreamResampler::Downsample(void* input, long samplesIn, void* output,
             holdover = 0;
         }
 
-        //_ASSERT(accum>=0);
+        //ASSERT(accum >= 0);
     }
 
     int Bytes = lActualSamples * bps;

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,7 +28,7 @@
 // CFavoriteAddDlg dialog
 
 IMPLEMENT_DYNAMIC(CFavoriteAddDlg, CCmdUIDialog)
-CFavoriteAddDlg::CFavoriteAddDlg(CString shortname, CString fullname, CWnd* pParent /*=NULL*/)
+CFavoriteAddDlg::CFavoriteAddDlg(CString shortname, CString fullname, CWnd* pParent /*=nullptr*/)
     : CCmdUIDialog(CFavoriteAddDlg::IDD, pParent)
     , m_shortname(shortname)
     , m_fullname(fullname)
@@ -64,8 +64,10 @@ BOOL CFavoriteAddDlg::OnInitDialog()
 
     ::CorrectComboListWidth(m_namectrl);
 
-    m_bRememberPos = AfxGetAppSettings().bFavRememberPos;
-    m_bRelativeDrive = AfxGetAppSettings().bFavRelativeDrive;
+    const CAppSettings& s = AfxGetAppSettings();
+
+    m_bRememberPos = s.bFavRememberPos;
+    m_bRelativeDrive = s.bFavRelativeDrive;
 
     UpdateData(FALSE); // Update UI
 
@@ -95,8 +97,10 @@ void CFavoriteAddDlg::OnOK()
     UpdateData(); // Retrieve UI values
 
     // Remember settings
-    AfxGetAppSettings().bFavRememberPos = !!m_bRememberPos;
-    AfxGetAppSettings().bFavRelativeDrive = !!m_bRelativeDrive;
+    CAppSettings& s = AfxGetAppSettings();
+
+    s.bFavRememberPos = !!m_bRememberPos;
+    s.bFavRelativeDrive = !!m_bRelativeDrive;
 
     CCmdUIDialog::OnOK();
 }

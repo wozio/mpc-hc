@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -52,7 +52,7 @@ CQuicktimeGraph::CQuicktimeGraph(HWND hWndParent, HRESULT& hr)
             dwStyle &= ~WS_VISIBLE;
         }
     } else if (s.iQTVideoRendererType == VIDRNDT_QT_DX9) {
-        bool bFullscreen = (AfxGetApp()->m_pMainWnd != NULL) && (((CMainFrame*)AfxGetApp()->m_pMainWnd)->IsD3DFullScreenMode());
+        bool bFullscreen = (AfxGetApp()->m_pMainWnd != nullptr) && (((CMainFrame*)AfxGetApp()->m_pMainWnd)->IsD3DFullScreenMode());
         if (SUCCEEDED(CreateAP9(CLSID_QT9AllocatorPresenter, hWndParent, bFullscreen, &m_pQTAP))) {
             dwStyle &= ~WS_VISIBLE;
         }
@@ -70,12 +70,12 @@ CQuicktimeGraph::CQuicktimeGraph(HWND hWndParent, HRESULT& hr)
     }
     m_fQtInitialized = true;
 
-    if (!m_wndWindowFrame.CreateEx(WS_EX_NOPARENTNOTIFY, NULL, NULL, dwStyle, CRect(0, 0, 0, 0), CWnd::FromHandle(hWndParent), 0)) {
+    if (!m_wndWindowFrame.CreateEx(WS_EX_NOPARENTNOTIFY, nullptr, nullptr, dwStyle, CRect(0, 0, 0, 0), CWnd::FromHandle(hWndParent), 0)) {
         hr = E_FAIL;
         return;
     }
 
-    if (!m_wndDestFrame.Create(NULL, NULL, dwStyle, CRect(0, 0, 0, 0), &m_wndWindowFrame, 0)) {
+    if (!m_wndDestFrame.Create(nullptr, nullptr, dwStyle, CRect(0, 0, 0, 0), &m_wndWindowFrame, 0)) {
         hr = E_FAIL;
         return;
     }
@@ -115,7 +115,7 @@ STDMETHODIMP CQuicktimeGraph::RenderFile(LPCWSTR lpcwstrFile, LPCWSTR lpcwstrPla
             OSType aTrackType;
             GetMediaHandlerDescription(aMedia, &aTrackType, 0, 0);
             if (aTrackType == SoundMediaType) {
-                SampleDescriptionHandle aDesc = (SampleDescriptionHandle)NewHandle(sizeof(aDesc));
+                SampleDescriptionHandle aDesc = (SampleDescriptionHandle)NewHandle(sizeof(*aDesc));
                 GetMediaSampleDescription(aMedia, 1, aDesc);
                 if (GetMoviesError() == noErr) {
                     SoundDescription& desc = **(SoundDescriptionHandle)aDesc;
@@ -151,8 +151,12 @@ STDMETHODIMP CQuicktimeGraph::Stop()
 
 STDMETHODIMP CQuicktimeGraph::GetState(LONG msTimeout, OAFilterState* pfs)
 {
+    CheckPointer(pfs, E_POINTER);
+
     // TODO: this seems to deadlock when opening from the net
-    return pfs ? *pfs = m_wndDestFrame.GetState(), S_OK : E_POINTER;
+    *pfs = m_wndDestFrame.GetState();
+
+    return S_OK;
 }
 
 // IMediaSeeking
@@ -226,14 +230,23 @@ STDMETHODIMP CQuicktimeGraph::SetPositions(LONGLONG* pCurrent, DWORD dwCurrentFl
 
 STDMETHODIMP CQuicktimeGraph::SetRate(double dRate)
 {
-    return m_wndDestFrame.theMovie ? SetMovieRate(m_wndDestFrame.theMovie, (Fixed)(dRate * 0x10000)), S_OK : E_UNEXPECTED;
+    CheckPointer(m_wndDestFrame.theMovie, E_UNEXPECTED);
+
+    SetMovieRate(m_wndDestFrame.theMovie, (Fixed)(dRate * 0x10000));
+
+    return S_OK;
 }
 
 STDMETHODIMP CQuicktimeGraph::GetRate(double* pdRate)
 {
     CheckPointer(pdRate, E_POINTER);
     *pdRate = 1.0;
-    return m_wndDestFrame.theMovie ? *pdRate = (double)GetMovieRate(m_wndDestFrame.theMovie) / 0x10000, S_OK : E_UNEXPECTED;
+
+    CheckPointer(m_wndDestFrame.theMovie, E_UNEXPECTED);
+
+    *pdRate = (double)GetMovieRate(m_wndDestFrame.theMovie) / 0x10000;
+
+    return S_OK;
 }
 
 // IVideoWindow
@@ -254,7 +267,7 @@ STDMETHODIMP CQuicktimeGraph::SetDestinationPosition(long Left, long Top, long W
 
         if (m_wndDestFrame.theMC) {
             Rect bounds = {0, 0, (short)Height, (short)Width};
-            MCPositionController(m_wndDestFrame.theMC, &bounds, NULL, mcTopLeftMovie | mcScaleMovieToFit);
+            MCPositionController(m_wndDestFrame.theMC, &bounds, nullptr, mcTopLeftMovie | mcScaleMovieToFit);
         }
     }
 
@@ -277,8 +290,8 @@ STDMETHODIMP CQuicktimeGraph::GetVideoSize(long* pWidth, long* pHeight)
 STDMETHODIMP CQuicktimeGraph::put_Volume(long lVolume)
 {
     if (m_wndDestFrame.theMovie) {
-        short volume = (lVolume <= -10000) ? 0 : (short)(pow(10.0, lVolume / 4000.0) * 256);
-        volume = max(min(volume, 256), 0);
+        short volume = (lVolume <= -10000) ? 0 : short(pow(10.0, lVolume / 4000.0) * 256);
+        volume = max<short>(min<short>(volume, 256), 0);
         SetMovieVolume(m_wndDestFrame.theMovie, volume);
         return S_OK;
     }
@@ -293,7 +306,7 @@ STDMETHODIMP CQuicktimeGraph::get_Volume(long* plVolume)
     if (m_wndDestFrame.theMovie) {
         *plVolume = (long)GetMovieVolume(m_wndDestFrame.theMovie); // [?..256]
         if (*plVolume > 0) {
-            *plVolume = min((long)(4000 * log10(*plVolume / 256.0f)), 0);
+            *plVolume = min(long(4000 * log10(*plVolume / 256.0f)), 0l);
         } else {
             *plVolume = -10000;
         }
@@ -319,12 +332,12 @@ STDMETHODIMP CQuicktimeGraph::Step(DWORD dwFrames, IUnknown* pStepObject)
     // w/o m_wndDestFrame.theMC
 
     OSType myTypes[] = {VisualMediaCharacteristic};
-    TimeValue myCurrTime = GetMovieTime(m_wndDestFrame.theMovie, NULL);
-    Fixed theRate = (int)dwFrames > 0 ? 0x00010000 : 0xffff0000;
+    TimeValue myCurrTime = GetMovieTime(m_wndDestFrame.theMovie, nullptr);
+    Fixed theRate = !(dwFrames & 0x80000000) ? 0x00010000 : 0xffff0000;
 
     for (int nSteps = abs((int)dwFrames); nSteps > 0; nSteps--) {
         TimeValue myNextTime;
-        GetMovieNextInterestingTime(m_wndDestFrame.theMovie, nextTimeStep, 1, myTypes, myCurrTime, theRate, &myNextTime, NULL);
+        GetMovieNextInterestingTime(m_wndDestFrame.theMovie, nextTimeStep, 1, myTypes, myCurrTime, theRate, &myNextTime, nullptr);
         if (GetMoviesError() != noErr) {
             return E_FAIL;
         }
@@ -379,12 +392,12 @@ STDMETHODIMP_(engine_t) CQuicktimeGraph::GetEngine()
 
 CQuicktimeWindow::CQuicktimeWindow(CQuicktimeGraph* pGraph)
     : m_pGraph(pGraph)
-    , theMovie(NULL)
-    , theMC(NULL)
+    , theMovie(nullptr)
+    , theMC(nullptr)
     , m_size(0, 0)
     , m_idEndPoller(0)
     , m_fs(State_Stopped)
-    , m_offscreenGWorld(NULL)
+    , m_offscreenGWorld(nullptr)
 {
 }
 
@@ -462,7 +475,7 @@ bool CQuicktimeWindow::OpenMovie(CString fn)
 
     if (!pQTVS) {
         // Set the port
-        SetGWorld((CGrafPtr)GetHWNDPort(m_hWnd), NULL);
+        SetGWorld((CGrafPtr)GetHWNDPort(m_hWnd), nullptr);
     }
 
     if (fn.Find(_T("://")) > 0) {
@@ -474,7 +487,7 @@ bool CQuicktimeWindow::OpenMovie(CString fn)
 
         BlockMove((LPSTR)(LPCSTR)CStringA(fn), *myHandle, mySize);
 
-        OSErr err = NewMovieFromDataRef(&theMovie, newMovieActive, NULL, myHandle, URLDataHandlerSubType);
+        OSErr err = NewMovieFromDataRef(&theMovie, newMovieActive, nullptr, myHandle, URLDataHandlerSubType);
 
         DisposeHandle(myHandle);
 
@@ -482,12 +495,12 @@ bool CQuicktimeWindow::OpenMovie(CString fn)
             return false;
         }
     } else {
-        if (!(fn.GetLength() > 0 && fn.GetLength() < 255)) {
+        if (fn.IsEmpty() || fn.GetLength() >= 255) {
             return false;
         }
 
-        CHAR buff[_MAX_PATH] = {0, 0};
-        WideCharToMultiByte(GetACP(), 0, fn, -1, buff + 1, _MAX_PATH - 1, 0, 0);
+        CHAR buff[MAX_PATH] = {0, 0};
+        WideCharToMultiByte(GetACP(), 0, fn, -1, buff + 1, _countof(buff) - 1, 0, 0);
         buff[0] = strlen(buff + 1);
 
         // Make a FSSpec with a pascal string filename
@@ -531,7 +544,7 @@ bool CQuicktimeWindow::OpenMovie(CString fn)
                 long bmiColors[256];
             } bmi;
 
-            memset(&bmi, 0, sizeof(bmi));
+            ZeroMemory(&bmi, sizeof(bmi));
 
             //int bpp = m_dc.GetDeviceCaps(BITSPIXEL);
             bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
@@ -547,9 +560,9 @@ bool CQuicktimeWindow::OpenMovie(CString fn)
             bmi.bmiColors[2] = /*bpp == 16 ? 0x001f :*/ 0x0000ff;
 
             void* bits;
-            m_bm.Attach(CreateDIBSection(m_dc, (BITMAPINFO*)&bmi, DIB_RGB_COLORS, &bits, NULL, 0));
+            m_bm.Attach(CreateDIBSection(m_dc, (BITMAPINFO*)&bmi, DIB_RGB_COLORS, &bits, nullptr, 0));
 
-            QDErr err = NewGWorldFromHBITMAP(&m_offscreenGWorld, NULL, NULL, 0, m_bm.m_hObject, m_dc.m_hDC);
+            QDErr err = NewGWorldFromHBITMAP(&m_offscreenGWorld, nullptr, nullptr, 0, m_bm.m_hObject, m_dc.m_hDC);
             UNREFERENCED_PARAMETER(err);
 
             SetMovieGWorld(theMovie, m_offscreenGWorld, GetGWorldDevice(m_offscreenGWorld));
@@ -561,22 +574,22 @@ bool CQuicktimeWindow::OpenMovie(CString fn)
         }
     }
 
-    return (theMovie != NULL);
+    return (theMovie != nullptr);
 }
 
 void CQuicktimeWindow::CloseMovie()
 {
     if (theMC) {
-        DisposeMovieController(theMC), theMC = NULL;
+        DisposeMovieController(theMC), theMC = nullptr;
     }
     if (theMovie) {
-        DisposeMovie(theMovie), theMovie = NULL;
+        DisposeMovie(theMovie), theMovie = nullptr;
     }
     m_size.SetSize(0, 0);
     m_fs = State_Stopped;
 
     if (m_offscreenGWorld) {
-        DisposeGWorld(m_offscreenGWorld), m_offscreenGWorld = NULL;
+        DisposeGWorld(m_offscreenGWorld), m_offscreenGWorld = nullptr;
     }
     m_dc.DeleteDC();
     m_bm.DeleteObject();
@@ -587,7 +600,7 @@ void CQuicktimeWindow::Run()
     if (theMovie) {
         StartMovie(theMovie);
         if (!m_idEndPoller) {
-            m_idEndPoller = SetTimer(1, 10, NULL);    // 10ms -> 100fps max
+            m_idEndPoller = SetTimer(1, 10, nullptr);    // 10ms -> 100fps max
         }
     }
 
@@ -641,7 +654,7 @@ int CQuicktimeWindow::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
     if (!pQTVS) {
         // Create GrafPort <-> HWND association
-        CreatePortAssociation(m_hWnd, NULL, 0);
+        CreatePortAssociation(m_hWnd, nullptr, 0);
     }
 
     return 0;
@@ -685,7 +698,7 @@ void CQuicktimeWindow::OnTimer(UINT_PTR nIDEvent)
                         // err is 0 but still doesn't seem to work... returns duration=0 always
                         TRACE(_T("%d\n"), duration);
                         KillTimer(m_idEndPoller);
-                        m_idEndPoller = SetTimer(m_idEndPoller, duration, NULL);
+                        m_idEndPoller = SetTimer(m_idEndPoller, duration, nullptr);
             */
         }
     }

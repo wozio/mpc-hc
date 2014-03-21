@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -40,16 +40,17 @@ private:
         bool checked;
     };
 
-    typedef struct THREADSTRUCT {
+    struct THREADSTRUCT {
         HWND hWND;
         CInternetSession is;
         CStringA url;
         CStringA raw_list;
         CStringA ticket;
-        CList<isdb_movie> raw_movies;
-    } THREADSTRUCT, *PTHREADSTRUCT;
+        CList<ISDb::movie> raw_movies;
+    };
+    typedef THREADSTRUCT* PTHREADSTRUCT;
 
-    typedef struct PARAMSORT {
+    struct PARAMSORT {
         PARAMSORT(HWND hWnd, int colIndex, bool ascending) :
             m_hWnd(hWnd),
             m_colIndex(colIndex),
@@ -58,7 +59,19 @@ private:
         HWND m_hWnd;
         int m_colIndex;
         bool m_ascending;
-    } PARAMSORT, *PPARAMSORT;
+    };
+    typedef PARAMSORT* PPARAMSORT;
+
+    struct DEFPARAMSORT {
+        DEFPARAMSORT(HWND hWnd, CString filename) :
+            m_hWnd(hWnd),
+            m_filename(filename)
+        {}
+        HWND m_hWnd;
+        CString m_filename;
+        CMap <CString, LPCTSTR, int, int> m_langPos;
+    };
+    typedef DEFPARAMSORT* PDEFPARAMSORT;
 
     enum {
         COL_FILENAME,
@@ -67,7 +80,8 @@ private:
         COL_DISC,
         COL_TITLES
     };
-    PARAMSORT ps;
+    PARAMSORT m_ps;
+    DEFPARAMSORT m_defps;
     PTHREADSTRUCT m_pTA;
 
     CArray<isdb_movie_parsed> m_parsed_movies;
@@ -75,7 +89,7 @@ private:
     bool m_fReplaceSubs;
 
     CListCtrl m_list;
-    CList<isdb_subtitle> m_selsubs;
+    CList<ISDb::subtitle> m_selsubs;
     CStatusBarCtrl m_status;
 
     void SetStatus(const CString& status);
@@ -84,8 +98,13 @@ private:
 
     static UINT RunThread(LPVOID pParam);
     static int CALLBACK SortCompare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+    static int CALLBACK DefSortCompare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+    static size_t StrMatch(LPCTSTR a, LPCTSTR b);
+    static CString LangCodeToName(LPCSTR code);
+    static bool OpenUrl(CInternetSession& is, CString url, CStringA& str);
+
 public:
-    explicit CSubtitleDlDlg(CWnd* pParent, const CStringA& url);
+    explicit CSubtitleDlDlg(CWnd* pParent, const CStringA& url, const CString& filename);
     virtual ~CSubtitleDlDlg();
 
     enum { IDD = IDD_SUBTITLEDL_DLG };
@@ -93,7 +112,10 @@ public:
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);
     virtual BOOL OnInitDialog();
+    virtual BOOL PreTranslateMessage(MSG* pMsg);
     virtual void OnOK();
+
+    void DownloadSelectedSubtitles();
 
     DECLARE_MESSAGE_MAP()
 
@@ -104,4 +126,6 @@ protected:
     afx_msg void OnColumnClick(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnDestroy();
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+    afx_msg void OnDoubleClickSubtitle(NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnKeyPressedSubtitle(NMHDR* pNMHDR, LRESULT* pResult);
 };

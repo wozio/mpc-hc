@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,8 +28,8 @@
 // CPlayerInfoBar
 
 IMPLEMENT_DYNAMIC(CPlayerInfoBar, CDialogBar)
-CPlayerInfoBar::CPlayerInfoBar(int nFirstColWidth)
-    : m_nFirstColWidth(nFirstColWidth)
+CPlayerInfoBar::CPlayerInfoBar(CMainFrame* pMainFrame)
+    : m_pMainFrame(pMainFrame)
 {
 }
 
@@ -39,6 +39,7 @@ CPlayerInfoBar::~CPlayerInfoBar()
 
 void CPlayerInfoBar::SetLine(CString label, CString info)
 {
+    info.Trim();
     if (info.IsEmpty()) {
         RemoveLine(label);
         return;
@@ -51,17 +52,19 @@ void CPlayerInfoBar::SetLine(CString label, CString info)
             m_info[idx]->GetWindowText(tmp);
             if (info != tmp) {
                 m_info[idx]->SetWindowText(info);
+                m_tooltip.UpdateTipText(info, m_info[idx]);
             }
             return;
         }
     }
 
-    CAutoPtr<CStatusLabel> l(DNew CStatusLabel(true, false));
+    CAutoPtr<CStatusLabel> l(DEBUG_NEW CStatusLabel(true, false));
     l->Create(label, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_OWNERDRAW, CRect(0, 0, 0, 0), this);
     m_label.Add(l);
 
-    CAutoPtr<CStatusLabel> i(DNew CStatusLabel(false, true));
-    i->Create(info, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_OWNERDRAW, CRect(0, 0, 0, 0), this);
+    CAutoPtr<CStatusLabel> i(DEBUG_NEW CStatusLabel(false, true));
+    i->Create(info, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SS_OWNERDRAW | SS_NOTIFY, CRect(0, 0, 0, 0), this);
+    m_tooltip.AddTool(i, info);
     m_info.Add(i);
 
     Relayout();
@@ -88,6 +91,7 @@ void CPlayerInfoBar::RemoveLine(CString label)
         CString tmp;
         m_label[i]->GetWindowText(tmp);
         if (label == tmp) {
+            m_tooltip.DelTool(m_info[i]);
             m_label.RemoveAt(i);
             m_info.RemoveAt(i);
             break;
@@ -102,12 +106,21 @@ void CPlayerInfoBar::RemoveAllLines()
     m_label.RemoveAll();
     m_info.RemoveAll();
 
-    Relayout();
+    // invalidate and redraw bypassing message queue
+    Invalidate();
+    UpdateWindow();
 }
 
 BOOL CPlayerInfoBar::Create(CWnd* pParentWnd)
 {
-    return CDialogBar::Create(pParentWnd, IDD_PLAYERINFOBAR, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_BOTTOM, IDD_PLAYERINFOBAR);
+    BOOL res = CDialogBar::Create(pParentWnd, IDD_PLAYERINFOBAR, WS_CHILD | WS_VISIBLE | CBRS_ALIGN_BOTTOM, IDD_PLAYERINFOBAR);
+
+    m_tooltip.Create(this, TTS_NOPREFIX);
+    m_tooltip.Activate(TRUE);
+    m_tooltip.SetMaxTipWidth(m_pMainFrame->m_dpi.ScaleX(500));
+    m_tooltip.SetDelayTime(TTDT_AUTOPOP, 10000);
+
+    return res;
 }
 
 BOOL CPlayerInfoBar::PreCreateWindow(CREATESTRUCT& cs)
@@ -126,7 +139,8 @@ CSize CPlayerInfoBar::CalcFixedLayout(BOOL bStretch, BOOL bHorz)
 {
     CRect r;
     GetParent()->GetClientRect(&r);
-    r.bottom = r.top + (LONG)m_label.GetCount() * 17 + (m_label.GetCount() ? 4 : 0);
+    r.bottom = r.top + (LONG)m_label.GetCount() * m_pMainFrame->m_dpi.ScaleY(17) +
+               (m_label.GetCount() ? m_pMainFrame->m_dpi.ScaleY(2) * 2 : 0);
     return r.Size();
 }
 
@@ -135,19 +149,22 @@ void CPlayerInfoBar::Relayout()
     CRect r;
     GetParent()->GetClientRect(&r);
 
-    int w = m_nFirstColWidth, h = 17, y = 2;
+    int w = m_pMainFrame->m_dpi.ScaleX(100);
+    const int h = m_pMainFrame->m_dpi.ScaleY(17);
+    int y = m_pMainFrame->m_dpi.ScaleY(2);
 
     for (size_t i = 0; i < m_label.GetCount(); i++) {
         CDC* pDC = m_label[i]->GetDC();
         CString str;
         m_label[i]->GetWindowText(str);
-        w = max(w, pDC->GetTextExtent(str).cx);
+        w = max<int>(w, pDC->GetTextExtent(str).cx);
         m_label[i]->ReleaseDC(pDC);
     }
 
+    const int sep = m_pMainFrame->m_dpi.ScaleX(10);
     for (size_t i = 0; i < m_label.GetCount(); i++, y += h) {
-        m_label[i]->MoveWindow(1, y, w - 10, h);
-        m_info[i]->MoveWindow(w + 10, y, r.Width() - (w + 10) - 1, h);
+        m_label[i]->MoveWindow(1, y, w - sep, h);
+        m_info[i]->MoveWindow(w + sep, y, r.Width() - w - sep - 1, h);
     }
 }
 
@@ -157,9 +174,16 @@ BEGIN_MESSAGE_MAP(CPlayerInfoBar, CDialogBar)
     ON_WM_LBUTTONDOWN()
 END_MESSAGE_MAP()
 
-
-
 // CPlayerInfoBar message handlers
+
+BOOL CPlayerInfoBar::PreTranslateMessage(MSG* pMsg)
+{
+    if (IsWindow(m_tooltip)) {
+        m_tooltip.RelayEvent(pMsg);
+    }
+
+    return __super::PreTranslateMessage(pMsg);
+}
 
 BOOL CPlayerInfoBar::OnEraseBkgnd(CDC* pDC)
 {

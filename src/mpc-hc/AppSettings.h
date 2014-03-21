@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,6 +27,9 @@
 #include "../Subtitles/STS.h"
 #include "MediaFormats.h"
 #include "DVBChannel.h"
+#include "MediaPositionList.h"
+#include "../filters/switcher/AudioSwitcher/AudioSwitcher.h"
+#include "Shaders.h"
 
 #include <afxsock.h>
 
@@ -57,10 +60,11 @@ enum {
     CLSW_HELP = CLSW_NEW << 1,
     CLSW_DVD = CLSW_HELP << 1,
     CLSW_CD = CLSW_DVD << 1,
-    CLSW_ADD = CLSW_CD << 1,
+    CLSW_DEVICE = CLSW_CD << 1,
+    CLSW_ADD = CLSW_DEVICE << 1,
     CLSW_MINIMIZED = CLSW_ADD << 1,
-    CLSW_REGEXTVID = CLSW_MINIMIZED << 1,
-    CLSW_REGEXTAUD = CLSW_REGEXTVID << 1,   // 16
+    CLSW_REGEXTVID = CLSW_MINIMIZED << 1,   // 16
+    CLSW_REGEXTAUD = CLSW_REGEXTVID << 1,
     CLSW_REGEXTPL = CLSW_REGEXTAUD << 1,
     CLSW_UNREGEXT = CLSW_REGEXTPL << 1,
     CLSW_ICONSASSOC = CLSW_UNREGEXT << 1,
@@ -73,10 +77,10 @@ enum {
     CLSW_SLAVE = CLSW_ADMINOPTION << 1,
     CLSW_AUDIORENDERER = CLSW_SLAVE << 1,
     CLSW_RESET = CLSW_AUDIORENDERER << 1,
-    CLSW_UNRECOGNIZEDSWITCH = CLSW_RESET << 1 // 29
+    CLSW_UNRECOGNIZEDSWITCH = CLSW_RESET << 1 // 30
 };
 
-enum {
+enum MpcCaptionState {
     MODE_SHOWCAPTIONMENU,
     MODE_HIDEMENU,
     MODE_FRAMEONLY,
@@ -126,17 +130,17 @@ enum MCE_RAW_INPUT {
     MCE_MEDIA_PREVIOUSTRACK = 0x0100B6
 };
 
-#define AUDRNDT_NULL_COMP _T("Null Audio Renderer (Any)")
-#define AUDRNDT_NULL_UNCOMP _T("Null Audio Renderer (Uncompressed)")
-#define AUDRNDT_MPC _T("MPC Audio Renderer")
+#define AUDRNDT_NULL_COMP       _T("Null Audio Renderer (Any)")
+#define AUDRNDT_NULL_UNCOMP     _T("Null Audio Renderer (Uncompressed)")
+#define AUDRNDT_MPC             _T("MPC-HC Audio Renderer")
 
-#define DEFAULT_SUBTITLE_PATHS _T(".;.\\subtitles;.\\subs")
+#define DEFAULT_SUBTITLE_PATHS  _T(".;.\\subtitles;.\\subs")
 #define DEFAULT_JUMPDISTANCE_1  1000
 #define DEFAULT_JUMPDISTANCE_2  5000
 #define DEFAULT_JUMPDISTANCE_3  20000
 
 
-typedef enum {
+enum dvstype {
     DVS_HALF,
     DVS_NORMAL,
     DVS_DOUBLE,
@@ -145,54 +149,56 @@ typedef enum {
     DVS_FROMOUTSIDE,
     DVS_ZOOM1,
     DVS_ZOOM2
-} dvstype;
+};
 
-typedef enum {
+enum favtype {
     FAV_FILE,
     FAV_DVD,
     FAV_DEVICE
-} favtype;
-
-#define MAX_DVD_POSITION 20
-typedef struct {
-    ULONGLONG           llDVDGuid;
-    ULONG               lTitle;
-    DVD_HMSF_TIMECODE   Timecode;
-} DVD_POSITION;
+};
 
 #define MAX_FILE_POSITION 20
-typedef struct {
-    CString             strFile;
-    LONGLONG            llPosition;
-} FILE_POSITION;
+#define MAX_DVD_POSITION 20
 
 enum {
     TIME_TOOLTIP_ABOVE_SEEKBAR,
     TIME_TOOLTIP_BELOW_SEEKBAR
 };
 
+enum DVB_RebuildFilterGraph {
+    DVB_REBUILD_FG_NEVER = 0,
+    DVB_REBUILD_FG_WHEN_SWITCHING,
+    DVB_REBUILD_FG_ALWAYS
+};
+
+enum DVB_StopFilterGraph {
+    DVB_STOP_FG_NEVER = 0,
+    DVB_STOP_FG_WHEN_SWITCHING,
+    DVB_STOP_FG_ALWAYS
+};
+
 #pragma pack(push, 1)
-typedef struct {
+struct dispmode {
     bool fValid;
     CSize size;
     int bpp, freq;
     DWORD dmDisplayFlags;
-} dispmode;
+};
 
-typedef struct {
+struct fpsmode {
     double vfr_from;
     double vfr_to;
     bool fChecked;
     dispmode dmFSRes;
     bool fIsData;
-} fpsmode;
+};
 
-#define MaxFpsCount 30
-typedef struct {
+#define MAX_FPS_COUNT 30
+struct AChFR {
     bool bEnabled;
-    fpsmode dmFullscreenRes[MaxFpsCount];
+    fpsmode dmFullscreenRes[MAX_FPS_COUNT];
     bool bApplyDefault;
-}   AChFR; //AutoChangeFullscrRes
+}; //AutoChangeFullscrRes
 #pragma pack(pop)
 
 class wmcmd : public ACCEL
@@ -232,20 +238,34 @@ public:
     int rmrepcnt;
 
     wmcmd(WORD cmd = 0)
-        : rmrepcnt(0) {
+        : appcmd(0)
+        , appcmdorg(0)
+        , dwname(0)
+        , mouse(NONE)
+        , mouseorg(NONE)
+        , mouseFS(NONE)
+        , mouseFSorg(NONE)
+        , rmcmd("")
+        , rmrepcnt(0) {
         this->cmd = cmd;
+        this->key = 0;
+        this->fVirt = 0;
+        ZeroMemory(&backup, sizeof(backup));
     }
 
-    wmcmd(WORD cmd, WORD key, BYTE fVirt, DWORD dwname, UINT appcmd = 0, UINT mouse = NONE, UINT mouseFS = NONE, LPCSTR rmcmd = "", int rmrepcnt = 5) {
+    wmcmd(WORD cmd, WORD key, BYTE fVirt, DWORD dwname, UINT appcmd = 0, UINT mouse = NONE, UINT mouseFS = NONE, LPCSTR rmcmd = "", int rmrepcnt = 5)
+        : appcmd(appcmd)
+        , appcmdorg(appcmd)
+        , dwname(dwname)
+        , mouse(mouse)
+        , mouseorg(mouse)
+        , mouseFS(mouseFS)
+        , mouseFSorg(mouseFS)
+        , rmcmd(rmcmd)
+        , rmrepcnt(rmrepcnt) {
         this->cmd = cmd;
         this->key = key;
         this->fVirt = fVirt;
-        this->appcmd = appcmdorg = appcmd;
-        this->dwname = dwname;
-        this->mouse = mouseorg = mouse;
-        this->mouseFS = mouseFSorg = mouseFS;
-        this->rmcmd = rmcmd;
-        this->rmrepcnt = rmrepcnt;
         backup = *this;
     }
 
@@ -315,6 +335,8 @@ public:
     CUIceClient();
 };
 
+#define APPSETTINGS_VERSION 3
+
 class CAppSettings
 {
     bool fInitialized;
@@ -330,8 +352,6 @@ class CAppSettings
     };
 
 public:
-    bool fShaderEditorWasOpened;
-
     // cmdline params
     UINT nCLSwitches;
     CAtlList<CString>   slFiles, slDubs, slSubs, slFilters;
@@ -369,6 +389,8 @@ public:
     bool            fKeepHistory;
     CRecentFileAndURLList MRU;
     CRecentFileAndURLList MRUDub;
+    CFilePositionList filePositions;
+    CDVDPositionList  dvdPositions;
     bool            fRememberDVDPos;
     bool            fRememberFilePos;
     bool            bRememberPlaylistItems;
@@ -400,7 +422,7 @@ public:
     CString         strLogoFileName;
 
     // Web Inteface
-    BOOL            fEnableWebServer;
+    bool            fEnableWebServer;
     int             nWebServerPort;
     int             nCmdlnWebServerPort;
     bool            fWebServerUseCompression;
@@ -417,6 +439,7 @@ public:
     bool            fLoopForever;
     bool            fRewind;
     bool            fRememberZoomLevel;
+    int             nAutoFitFactor;
     int             iZoomLevel;
     CStringW        strAudiosLanguageOrder;
     CStringW        strSubtitlesLanguageOrder;
@@ -425,12 +448,13 @@ public:
     bool            fAutoloadAudio;
     bool            fAutoloadSubtitles;
     bool            fBlockVSFilter;
+    UINT            nVolumeStep;
+    UINT            nSpeedStep;
 
     // DVD/OGM
     bool            fUseDVDPath;
     CString         strDVDPath;
     LCID            idMenuLang, idAudioLang, idSubtitlesLang;
-    bool            fAutoSpeakerConf;
     bool            fClosedCaptions;
 
     // Output
@@ -444,11 +468,19 @@ public:
 
     // Fullscreen
     bool            fLaunchfullscreen;
-    bool            fShowBarsWhenFullScreen;
-    int             nShowBarsWhenFullScreenTimeOut;
+    bool            bHideFullscreenControls;
+    enum class HideFullscreenControlsPolicy
+    {
+        SHOW_NEVER,
+        SHOW_WHEN_HOVERED,
+        SHOW_WHEN_CURSOR_MOVED,
+    } eHideFullscreenControlsPolicy;
+    unsigned        uHideFullscreenControlsDelay;
+    bool            bHideFullscreenDockedPanels;
     bool            fExitFullScreenAtTheEnd;
     CStringW        strFullScreenMonitor;
     AChFR           AutoChangeFullscrRes;
+    unsigned        uAutoChangeFullscrResDelay;
     bool            fRestoreResAfterExit;
 
     // Sync Renderer Settings
@@ -470,24 +502,25 @@ public:
     bool            fBDAIgnoreEncryptedChannels;
     UINT            nDVBLastChannel;
     CAtlList<CDVBChannel> m_DVBChannels;
+    DVB_RebuildFilterGraph nDVBRebuildFilterGraph;
+    DVB_StopFilterGraph nDVBStopFilterGraph;
 
     // Internal Filters
     bool            SrcFilters[SRC_LAST + !SRC_LAST];
     bool            TraFilters[TRA_LAST + !TRA_LAST];
-    bool            DXVAFilters[TRA_DXVA_LAST + !TRA_DXVA_LAST];
-    bool            FFmpegFilters[FFM_LAST + !FFM_LAST];
 
     // Audio Switcher
     bool            fEnableAudioSwitcher;
     bool            fAudioNormalize;
+    UINT            nAudioMaxNormFactor;
     bool            fAudioNormalizeRecover;
-    float           dAudioBoost_dB;
+    UINT            nAudioBoost;
     bool            fDownSampleTo441;
     bool            fAudioTimeShift;
     int             iAudioTimeShift;
     bool            fCustomChannelMapping;
     int             nSpeakerChannels;
-    DWORD           pSpeakerToChannelMap[18][18];
+    DWORD           pSpeakerToChannelMap[AS_MAX_CHANNELS][AS_MAX_CHANNELS];
 
     // External Filters
     CAutoPtrList<FilterOverride> m_filters;
@@ -498,11 +531,13 @@ public:
     int             nSubDelayInterval;
 
     // Default Style
-    STSStyle        subdefstyle;
+    STSStyle        subtitlesDefStyle;
 
     // Misc
+    bool            bPreferDefaultForcedSubtitles;
     bool            fPrioritizeExternalSubtitles;
     bool            fDisableInternalSubtitles;
+    bool            bAllowOverridingExternalSplitterChoice;
     CString         strSubtitlePaths;
     CString         strISDb;
 
@@ -510,9 +545,10 @@ public:
     int             nJumpDistS;
     int             nJumpDistM;
     int             nJumpDistL;
-    bool            fFastSeek;
+    bool            bFastSeek;
+    enum { FASTSEEK_LATEST_KEYFRAME, FASTSEEK_NEAREST_KEYFRAME } eFastSeekMethod;
     bool            fShowChapters;
-    bool            fNotifyMSN;
+    bool            bNotifySkype;
     bool            fPreventMinimize;
     bool            fUseWin7TaskBar;
     bool            fLCDSupport;
@@ -521,6 +557,7 @@ public:
     int             nTimeTooltipPosition;
     CString         strOSDFont;
     int             nOSDSize;
+    bool            bHideWindowedMousePointer;
 
     // Miscellaneous
     int             iBrightness;
@@ -532,7 +569,7 @@ public:
 
     // MENUS
     // View
-    int             iCaptionMenuMode; // normal -> hidemenu -> frameonly -> borderless
+    MpcCaptionState eCaptionMenuMode;
     bool            fHideNavigation;
     UINT            nCS; // Control state for toolbars
     // Language
@@ -559,21 +596,12 @@ public:
     bool            bFavRememberPos;
     bool            bFavRelativeDrive;
     // Save Image...
-    CString         strSnapShotPath, strSnapShotExt;
+    CString         strSnapshotPath, strSnapshotExt;
     // Save Thumbnails...
     int             iThumbRows, iThumbCols, iThumbWidth;
-    // Shader Editor
-    struct Shader {
-        CString     label;
-        CString     target;
-        CString     srcdata;
-    };
-    CAtlList<Shader> m_shaders;
-    // Shader Combiner
-    bool            fToggleShader;
-    bool            fToggleShaderScreenSpace;
-    CString         strShaderList;
-    CString         strShaderListScreenSpace;
+    // Shaders
+    ShaderList      m_ShadersExtraList;
+    ShaderSelection m_Shaders;
     // Playlist (contex menu)
     bool            bShufflePlaylistItems;
     bool            bHidePlaylistFullScreen;
@@ -595,54 +623,60 @@ public:
 
     HWND            hMasterWnd;
 
+    bool            bHideWindowedControls;
+
     bool            IsD3DFullscreen() const;
     CString         SelectedAudioRenderer() const;
-    void            ResetPositions();
-    DVD_POSITION*   CurrentDVDPosition();
-    bool            NewDvd(ULONGLONG llDVDGuid);
-    FILE_POSITION*  CurrentFilePosition();
-    bool            NewFile(LPCTSTR strFileName);
-
-    void            SaveCurrentDVDPosition();
-    void            ClearDVDPositions();
-    void            SaveCurrentFilePosition();
-    void            ClearFilePositions();
-
-    void            DeserializeHex(LPCTSTR strVal, BYTE* pBuffer, int nBufSize) const;
-    CString         SerializeHex(BYTE* pBuffer, int nBufSize) const;
+    bool            IsISREnabled() const;
 
 private:
-    DVD_POSITION    DvdPosition[MAX_DVD_POSITION];
-    int             nCurrentDvdPosition;
-    FILE_POSITION   FilePosition[MAX_FILE_POSITION];
-    int             nCurrentFilePosition;
+    struct FilterKey {
+        CString name;
+        bool bDefault;
 
-    CString         SrcFiltersKeys[SRC_LAST + !SRC_LAST];
-    CString         TraFiltersKeys[TRA_LAST + !TRA_LAST];
-    CString         DXVAFiltersKeys[TRA_DXVA_LAST + !TRA_DXVA_LAST];
-    CString         FFMFiltersKeys[FFM_LAST + !FFM_LAST];
+        FilterKey()
+            : name()
+            , bDefault(false) {
+        }
 
-    __int64         ConvertTimeToMSec(CString& time) const;
+        FilterKey(CString name, bool bDefault)
+            : name(name)
+            , bDefault(bDefault) {
+        }
+    };
+
+    FilterKey       SrcFiltersKeys[SRC_LAST + !SRC_LAST];
+    FilterKey       TraFiltersKeys[TRA_LAST + !TRA_LAST];
+
+    __int64         ConvertTimeToMSec(const CString& time) const;
     void            ExtractDVDStartPos(CString& strParam);
 
     void            CreateCommands();
 
+    void            SaveExternalFilters(CAutoPtrList<FilterOverride>& filters, LPCTSTR baseKey = IDS_R_EXTERNAL_FILTERS);
+    void            LoadExternalFilters(CAutoPtrList<FilterOverride>& filters, LPCTSTR baseKey = IDS_R_EXTERNAL_FILTERS);
+    void            ConvertOldExternalFiltersList();
+
+    void            UpdateRenderersData(bool fSave);
+    friend void     CRenderersSettings::UpdateData(bool bSave);
+
 public:
     CAppSettings();
     virtual ~CAppSettings();
+
     void            SaveSettings();
-    void            SaveExternalFilters();
     void            LoadSettings();
+    void            SaveExternalFilters() { if (fInitialized) { SaveExternalFilters(m_filters); } };
+    void            UpdateSettings();
 
     void            GetFav(favtype ft, CAtlList<CString>& sl) const;
     void            SetFav(favtype ft, CAtlList<CString>& sl);
     void            AddFav(favtype ft, CString s);
+
     CDVBChannel*    FindChannelByPref(int nPrefNumber);
 
     bool            GetAllowMultiInst() const;
+
     static bool     IsVSFilterInstalled();
     static bool     HasEVR();
-private:
-    void            UpdateRenderersData(bool fSave);
-    friend void     CRenderersSettings::UpdateData(bool bSave);
 };

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,10 +29,11 @@ WNDPROC COpenDirHelper::CBProc;
 bool COpenDirHelper::m_incl_subdir;
 CString COpenDirHelper::strLastOpenDir;
 
-void COpenDirHelper::SetFont(HWND hwnd, LPTSTR FontName, int FontSize)
+void COpenDirHelper::SetFont(HWND hwnd, const LPTSTR FontName, int FontSize)
 {
     HFONT hf, hfOld;
-    LOGFONT lf = {0};
+    LOGFONT lf;
+    ZeroMemory(&lf, sizeof(LOGFONT));
     HDC hdc = GetDC(hwnd);
 
     GetObject(GetWindowFont(hwnd), sizeof(lf), &lf);
@@ -42,8 +43,8 @@ void COpenDirHelper::SetFont(HWND hwnd, LPTSTR FontName, int FontSize)
     hf = CreateFontIndirect(&lf);
     SetBkMode(hdc, OPAQUE);
 
-    hfOld = (HFONT)SendMessage(hwnd, WM_GETFONT, NULL, NULL);  // get old font
-    SendMessage(hwnd, WM_SETFONT, (WPARAM)hf, TRUE);           // set new font
+    hfOld = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);  // get old font
+    SendMessage(hwnd, WM_SETFONT, (WPARAM)hf, TRUE);     // set new font
 
     if (!hfOld && (hfOld != hf)) {
         DeleteObject(hfOld);    // if the old font is not system font or the same as newfont, release it.
@@ -78,9 +79,9 @@ int CALLBACK COpenDirHelper::BrowseCallbackProcDIR(HWND hwnd, UINT uMsg, LPARAM 
 
         checkbox = CreateWindowEx(0, _T("BUTTON"), ResStr(IDS_MAINFRM_DIR_CHECK),
                                   WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | BS_AUTOCHECKBOX | BS_MULTILINE,
-                                  0, 100, 100, 50, hwnd, 0, AfxGetApp()->m_hInstance, NULL);
+                                  0, 100, 100, 50, hwnd, 0, AfxGetApp()->m_hInstance, nullptr);
 
-        HWND ListView = FindWindowEx(hwnd, NULL, _T("SysTreeView32"), NULL);
+        HWND ListView = FindWindowEx(hwnd, nullptr, _T("SysTreeView32"), nullptr);
 
         HWND id_ok = GetDlgItem(hwnd, IDOK);
         HWND id_cancel = GetDlgItem(hwnd, IDCANCEL);
@@ -113,7 +114,8 @@ int CALLBACK COpenDirHelper::BrowseCallbackProcDIR(HWND hwnd, UINT uMsg, LPARAM 
 
 void COpenDirHelper::RecurseAddDir(CString path, CAtlList<CString>* sl)
 {
-    WIN32_FIND_DATA fd = {0};
+    WIN32_FIND_DATA fd;
+    ZeroMemory(&fd, sizeof(WIN32_FIND_DATA));
 
     HANDLE hFind = FindFirstFile(path + _T("*.*"), &fd);
     if (hFind != INVALID_HANDLE_VALUE) {

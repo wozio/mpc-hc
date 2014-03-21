@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,14 +23,14 @@
 #include "mplayerc.h"
 #include "GoToDlg.h"
 
-#include <atlrx.h>
+#include "atl/atlrx.h"
 #include "SettingsDefines.h"
 #include <math.h>
 
 // CGoToDlg dialog
 
 IMPLEMENT_DYNAMIC(CGoToDlg, CDialog)
-CGoToDlg::CGoToDlg(REFERENCE_TIME time, REFERENCE_TIME maxTime, double fps, CWnd* pParent /*=NULL*/)
+CGoToDlg::CGoToDlg(REFERENCE_TIME time, REFERENCE_TIME maxTime, double fps, CWnd* pParent /*=nullptr*/)
     : CDialog(CGoToDlg::IDD, pParent)
     , m_timestr(_T(""))
     , m_framestr(_T(""))
@@ -89,7 +89,7 @@ BOOL CGoToDlg::OnInitDialog()
         }
 
         if (m_fps > 0) {
-            m_framestr.Format(_T("%d, %.3f"), (int)(m_fps * m_time / 10000000), m_fps);
+            m_framestr.Format(_T("%d, %.3f"), (int)(m_fps * m_time / 10000000 + 0.5), m_fps);
         }
 
         UpdateData(FALSE);
@@ -116,32 +116,32 @@ BOOL CGoToDlg::OnInitDialog()
 
 
 BEGIN_MESSAGE_MAP(CGoToDlg, CDialog)
-    ON_BN_CLICKED(IDC_OK1, OnBnClickedOk1)
-    ON_BN_CLICKED(IDC_OK2, OnBnClickedOk2)
+    ON_BN_CLICKED(IDC_OK1, OnParseTimeCode)
+    ON_BN_CLICKED(IDC_OK2, OnParseFrameCode)
 END_MESSAGE_MAP()
 
 
 // CGoToDlg message handlers
 
-void CGoToDlg::OnBnClickedOk1()
+void CGoToDlg::OnParseTimeCode()
 {
     UpdateData();
 
     AfxGetApp()->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_GOTO_LAST_USED, TYPE_TIME);
 
-    unsigned int hh = 0;
-    unsigned int mm = 0;
-    float ss = 0.0;
-    wchar_t c1 = L':'; // delimiter character
-    wchar_t c2 = L':'; // delimiter character
-    wchar_t c3[2];     // unnecessary character
+    // The hh and mm are declared volatile to work around a compiler bug with ICL 13.
+    // It prevents the compiler to optimize out those variables from the computation.
+    volatile unsigned int hh = 0;
+    volatile unsigned int mm = 0;
+    float ss = 0.0f;
+    wchar_t c[2]; // unnecessary character
 
-    if ((swscanf_s(m_timestr, L"%f%1s", &ss, &c3, _countof(c3)) == 1 || // sss[.ms]
-            swscanf_s(m_timestr, L"%u%c%f%1s", &mm, &c2, sizeof(wchar_t), &ss, &c3, _countof(c3)) == 3 && ss < 60 || // mmm:ss[.ms]
-            swscanf_s(m_timestr, L"%u%c%u%c%f%1s", &hh, &c1, sizeof(wchar_t), &mm, &c2, sizeof(wchar_t), &ss, &c3, _countof(c3)) == 5 && mm < 60  && ss < 60) && // hhh:mm:ss[.ms]
-            c1 == L':' && c2 == L':' && ss >= 0) {
+    if (((swscanf_s(m_timestr, L"%f%1s", &ss, c, _countof(c)) == 1) // ss[.ms]
+            || (swscanf_s(m_timestr, L"%u:%f%1s", &mm, &ss, c, _countof(c)) == 2 && ss < 60.0f) // mm:ss[.ms]
+            || (swscanf_s(m_timestr, L"%u:%u:%f%1s", &hh, &mm, &ss, c, _countof(c)) == 3 && mm < 60  && ss < 60.0f)) // hh:mm:ss[.ms]
+            && ss >= 0.0f) {
 
-        int time = (int)(1000 * ((hh * 60 + mm) * 60 + ss) + 0.5);
+        int time = (int)(1000.0f * ((hh * 60 + mm) * 60 + ss) + 0.5f);
         m_time = time * 10000i64;
 
         OnOK();
@@ -150,7 +150,7 @@ void CGoToDlg::OnBnClickedOk1()
     }
 }
 
-void CGoToDlg::OnBnClickedOk2()
+void CGoToDlg::OnParseFrameCode()
 {
     UpdateData();
 
@@ -161,7 +161,7 @@ void CGoToDlg::OnBnClickedOk2()
     wchar_t c1[2]; // delimiter character
     wchar_t c2[2]; // unnecessary character
 
-    int result = swscanf_s(m_framestr, L"%u%1s%f%1s", &frame, &c1, _countof(c1), &fps, &c2, _countof(c2));
+    int result = swscanf_s(m_framestr, L"%u%1s%f%1s", &frame, c1, _countof(c1), &fps, c2, _countof(c2));
     if (result == 1) {
         m_time = (REFERENCE_TIME)ceil(10000000.0 * frame / m_fps);
         OnOK();
@@ -188,9 +188,9 @@ BOOL CGoToDlg::PreTranslateMessage(MSG* pMsg)
 {
     if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN) {
         if (*GetFocus() == m_timeedit) {
-            OnBnClickedOk1();
+            OnParseTimeCode();
         } else if (*GetFocus() == m_frameedit) {
-            OnBnClickedOk2();
+            OnParseFrameCode();
         }
 
         return TRUE;

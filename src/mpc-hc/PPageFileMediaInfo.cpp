@@ -1,5 +1,5 @@
 /*
- * (C) 2006-2012 see Authors.txt
+ * (C) 2009-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -26,30 +26,100 @@
 #include "PPageFileMediaInfo.h"
 #include "WinAPIUtils.h"
 
-#ifdef USE_MEDIAINFO_STATIC
+#if USE_STATIC_MEDIAINFO
 #include "MediaInfo/MediaInfo.h"
 using namespace MediaInfoLib;
+#define MediaInfo_int64u ZenLib::int64u
 #else
 #include "MediaInfoDLL.h"
 using namespace MediaInfoDLL;
 #endif
 
+#define MEDIAINFO_BUFFER_SIZE 1024 * 256
 
 // CPPageFileMediaInfo dialog
 
 IMPLEMENT_DYNAMIC(CPPageFileMediaInfo, CPropertyPage)
-CPPageFileMediaInfo::CPPageFileMediaInfo(CString fn, IFilterGraph* pFG)
+CPPageFileMediaInfo::CPPageFileMediaInfo(CString path, IFileSourceFilter* pFSF)
     : CPropertyPage(CPPageFileMediaInfo::IDD, CPPageFileMediaInfo::IDD)
-    , m_fn(fn)
-    , m_pFG(pFG)
-    , m_pCFont(NULL)
+    , m_fn(path)
+    , m_path(path)
+    , m_pCFont(nullptr)
 {
+    CComQIPtr<IAsyncReader> pAR;
+    if (pFSF) {
+        LPOLESTR pFN;
+        if (SUCCEEDED(pFSF->GetCurFile(&pFN, nullptr))) {
+            m_fn = pFN;
+            CoTaskMemFree(pFN);
+        }
+
+        if (CComQIPtr<IBaseFilter> pBF = pFSF) {
+            BeginEnumPins(pBF, pEP, pPin) {
+                if (pAR = pPin) {
+                    break;
+                }
+            }
+            EndEnumPins;
+        }
+    }
+
+    if (m_path.IsEmpty()) {
+        m_path = m_fn;
+    }
+
+#if USE_STATIC_MEDIAINFO
+    MediaInfoLib::String f_name = m_path;
+    MediaInfoLib::MediaInfo MI;
+#else
+    MediaInfoDLL::String f_name = m_path;
+    MediaInfo MI;
+#endif
+
+    MI.Option(_T("ParseSpeed"), _T("0"));
+    MI.Option(_T("Complete"));
+    MI.Option(_T("Language"), _T("  Config_Text_ColumnSize;30"));
+
+    LONGLONG llSize, llAvailable;
+    if (pAR && SUCCEEDED(pAR->Length(&llSize, &llAvailable))) {
+        size_t ret = MI.Open_Buffer_Init((MediaInfo_int64u)llSize);
+
+        size_t szLength = (size_t)std::min<LONGLONG>(llSize, MEDIAINFO_BUFFER_SIZE);
+        BYTE* pBuffer = DEBUG_NEW BYTE[szLength];
+        LONGLONG llPosition = 0;
+        while ((ret & 0x1) && !(ret & 0x2)) { // While accepted and not filled
+            if (pAR->SyncRead(llPosition, (LONG)szLength, pBuffer) != S_OK) {
+                break;
+            }
+            ret = MI.Open_Buffer_Continue(pBuffer, szLength);
+
+            // Seek to a different position if needed
+            MediaInfo_int64u uiNeeded = MI.Open_Buffer_Continue_GoTo_Get();
+            if (uiNeeded != (MediaInfo_int64u) - 1 && (ULONGLONG)llPosition < uiNeeded) {
+                llPosition = (LONGLONG)uiNeeded;
+            } else {
+                llPosition += szLength;
+            }
+        }
+        MI.Open_Buffer_Finalize();
+        delete [] pBuffer;
+
+        MI_Text = MI.Inform().c_str();
+    } else {
+        MI.Open(f_name);
+        MI_Text = MI.Inform().c_str();
+        MI.Close();
+
+        if (!MI_Text.Find(_T("Unable to load"))) {
+            MI_Text = _T("");
+        }
+    }
 }
 
 CPPageFileMediaInfo::~CPPageFileMediaInfo()
 {
     delete m_pCFont;
-    m_pCFont = NULL;
+    m_pCFont = nullptr;
 }
 
 void CPPageFileMediaInfo::DoDataExchange(CDataExchange* pDX)
@@ -85,47 +155,14 @@ BOOL CPPageFileMediaInfo::OnInitDialog()
     __super::OnInitDialog();
 
     if (!m_pCFont) {
-        m_pCFont = DNew CFont;
+        m_pCFont = DEBUG_NEW CFont;
     }
     if (!m_pCFont) {
         return TRUE;
     }
 
-    if (m_fn == _T("")) {
-        BeginEnumFilters(m_pFG, pEF, pBF) {
-            CComQIPtr<IFileSourceFilter> pFSF = pBF;
-            if (pFSF) {
-                LPOLESTR pFN = NULL;
-                AM_MEDIA_TYPE mt;
-                if (SUCCEEDED(pFSF->GetCurFile(&pFN, &mt)) && pFN && *pFN) {
-                    m_fn = CStringW(pFN);
-                    CoTaskMemFree(pFN);
-                }
-                break;
-            }
-        }
-        EndEnumFilters;
-    }
-
-#ifdef USE_MEDIAINFO_STATIC
-    MediaInfoLib::String f_name = m_fn;
-    MediaInfoLib::MediaInfo MI;
-#else
-    MediaInfoDLL::String f_name = m_fn;
-    MediaInfo MI;
-#endif
-
-    MI.Open(f_name);
-    MI.Option(_T("Complete"));
-    MI.Option(_T("Language"), _T("  Config_Text_ColumnSize;30"));
-    MI_Text = MI.Inform().c_str();
-    MI.Close();
-    if (!MI_Text.Find(_T("Unable to load"))) {
-        MI_Text = _T("");
-    }
-
     LOGFONT lf;
-    memset(&lf, 0, sizeof(lf));
+    ZeroMemory(&lf, sizeof(lf));
     lf.lfPitchAndFamily = DEFAULT_PITCH | FF_MODERN;
     // The empty string will fallback to the first font that matches the other specified attributes.
     LPCTSTR fonts[] = { _T("Lucida Console"), _T("Courier New"), _T("") };
@@ -159,7 +196,7 @@ void CPPageFileMediaInfo::OnShowWindow(BOOL bShow, UINT nStatus)
     }
 }
 
-#ifndef USE_MEDIAINFO_STATIC
+#if !USE_STATIC_MEDIAINFO
 bool CPPageFileMediaInfo::HasMediaInfo()
 {
     MediaInfo MI;

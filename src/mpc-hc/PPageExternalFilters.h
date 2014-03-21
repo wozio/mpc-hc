@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -26,22 +26,28 @@
 #include "mplayerc.h"
 
 
+class CPPageExternalFiltersListBox : public CCheckListBox
+{
+    DECLARE_DYNAMIC(CPPageExternalFiltersListBox)
+
+public:
+    CPPageExternalFiltersListBox();
+
+protected:
+    virtual void PreSubclassWindow();
+    virtual INT_PTR OnToolHitTest(CPoint point, TOOLINFO* pTI) const;
+
+    DECLARE_MESSAGE_MAP()
+
+    afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
+};
+
+
 // CPPageExternalFilters dialog
 
 class CPPageExternalFilters : public CPPageBase
 {
     DECLARE_DYNAMIC(CPPageExternalFilters)
-
-private:
-    void StepUp(CCheckListBox& list);
-    void StepDown(CCheckListBox& list);
-
-    CAutoPtrList<FilterOverride> m_pFilters;
-    FilterOverride* m_pLastSelFilter;
-    FilterOverride* GetCurFilter();
-
-    void SetupMajorTypes(CAtlArray<GUID>& guids);
-    void SetupSubTypes(CAtlArray<GUID>& guids);
 
 public:
     CPPageExternalFilters();
@@ -50,10 +56,22 @@ public:
     // Dialog Data
     enum { IDD = IDD_PPAGEEXTERNALFILTERS };
 
-    CCheckListBox m_filters;
+private:
+    CAutoPtrList<FilterOverride> m_pFilters;
+    FilterOverride* m_pLastSelFilter;
+
+    CPPageExternalFiltersListBox m_filters;
     int m_iLoadType;
     CHexEdit m_dwMerit;
     CTreeCtrl m_tree;
+
+    void StepUp(CCheckListBox& list);
+    void StepDown(CCheckListBox& list);
+
+    FilterOverride* GetCurFilter();
+
+    void SetupMajorTypes(CAtlArray<GUID>& guids);
+    void SetupSubTypes(CAtlArray<GUID>& guids);
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
@@ -62,7 +80,6 @@ protected:
 
     DECLARE_MESSAGE_MAP()
 
-public:
     afx_msg void OnUpdateFilter(CCmdUI* pCmdUI);
     afx_msg void OnUpdateFilterUp(CCmdUI* pCmdUI);
     afx_msg void OnUpdateFilterDown(CCmdUI* pCmdUI);
@@ -73,17 +90,18 @@ public:
     afx_msg void OnRemoveFilter();
     afx_msg void OnMoveFilterUp();
     afx_msg void OnMoveFilterDown();
-    afx_msg void OnLbnDblclkFilter();
+    afx_msg void OnDoubleClickFilter();
     afx_msg int OnVKeyToItem(UINT nKey, CListBox* pListBox, UINT nIndex);
     afx_msg void OnAddMajorType();
     afx_msg void OnAddSubType();
     afx_msg void OnDeleteType();
     afx_msg void OnResetTypes();
-    afx_msg void OnLbnSelchangeList1();
-    afx_msg void OnCheckChangeList1();
-    afx_msg void OnBnClickedRadio();
-    afx_msg void OnEnChangeEdit1();
-    afx_msg void OnNMDblclkTree2(NMHDR* pNMHDR, LRESULT* pResult);
-    afx_msg void OnTVNKeyDownTree2(NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnFilterSelectionChange();
+    afx_msg void OnFilterCheckChange();
+    afx_msg void OnClickedMeritRadioButton();
+    afx_msg void OnChangeMerit();
+    afx_msg void OnDoubleClickType(NMHDR* pNMHDR, LRESULT* pResult);
+    afx_msg void OnKeyDownType(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnDropFiles(HDROP hDropInfo);
+    afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
 };

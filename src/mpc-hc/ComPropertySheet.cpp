@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -33,7 +33,7 @@ class CComPropertyPageSite : public CUnknown, public IPropertyPageSite
     IComPropertyPageDirty* m_pPPD;
 
 public:
-    CComPropertyPageSite(IComPropertyPageDirty* pPPD) : CUnknown(NAME("CComPropertyPageSite"), NULL), m_pPPD(pPPD) {}
+    CComPropertyPageSite(IComPropertyPageDirty* pPPD) : CUnknown(NAME("CComPropertyPageSite"), nullptr), m_pPPD(pPPD) {}
 
     DECLARE_IUNKNOWN
     STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv) {
@@ -73,14 +73,14 @@ IMPLEMENT_DYNAMIC(CComPropertySheet, CPropertySheet)
 CComPropertySheet::CComPropertySheet(UINT nIDCaption, CWnd* pParentWnd, UINT iSelectPage)
     : CPropertySheet(nIDCaption, pParentWnd, iSelectPage)
 {
-    m_pSite = DNew CComPropertyPageSite(this);
+    m_pSite = DEBUG_NEW CComPropertyPageSite(this);
     m_size.SetSize(0, 0);
 }
 
 CComPropertySheet::CComPropertySheet(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectPage)
     : CPropertySheet(pszCaption, pParentWnd, iSelectPage)
 {
-    m_pSite = DNew CComPropertyPageSite(this);
+    m_pSite = DEBUG_NEW CComPropertyPageSite(this);
     m_size.SetSize(0, 0);
 }
 
@@ -88,19 +88,19 @@ CComPropertySheet::~CComPropertySheet()
 {
 }
 
-int CComPropertySheet::AddPages(ISpecifyPropertyPages* pSPP)
+int CComPropertySheet::AddPages(ISpecifyPropertyPages* pSPP, ULONG uIgnorePage /*= -1*/)
 {
     if (!pSPP) {
         return 0;
     }
 
     CAUUID caGUID;
-    caGUID.pElems = NULL;
-    if (FAILED(pSPP->GetPages(&caGUID)) || caGUID.pElems == NULL) {
+    caGUID.pElems = nullptr;
+    if (FAILED(pSPP->GetPages(&caGUID)) || caGUID.pElems == nullptr) {
         return 0;
     }
 
-    IUnknown* lpUnk = NULL;
+    IUnknown* lpUnk = nullptr;
     if (FAILED(pSPP->QueryInterface(&lpUnk))) {
         return 0;
     }
@@ -128,16 +128,14 @@ int CComPropertySheet::AddPages(ISpecifyPropertyPages* pSPP)
             hr = LoadExternalPropertyPage(pPersist, caGUID.pElems[i], &pPage);
         }
 
-        if (SUCCEEDED(hr)) {
+        if (SUCCEEDED(hr) && i != uIgnorePage) {
             if (AddPage(pPage, lpUnk)) {
                 nPages++;
             }
         }
     }
 
-    if (caGUID.pElems) {
-        CoTaskMemFree(caGUID.pElems);
-    }
+    CoTaskMemFree(caGUID.pElems);
     lpUnk->Release();
 
     return nPages;
@@ -153,9 +151,9 @@ bool CComPropertySheet::AddPage(IPropertyPage* pPage, IUnknown* pUnk)
     pPage->SetObjects(1, &pUnk);
     PROPPAGEINFO ppi;
     pPage->GetPageInfo(&ppi);
-    m_size.cx = max(m_size.cx, ppi.size.cx);
-    m_size.cy = max(m_size.cy, ppi.size.cy);
-    CAutoPtr<CComPropertyPage> p(DNew CComPropertyPage(pPage));
+    m_size.cx = std::max(m_size.cx, ppi.size.cx);
+    m_size.cy = std::max(m_size.cy, ppi.size.cy);
+    CAutoPtr<CComPropertyPage> p(DEBUG_NEW CComPropertyPage(pPage));
     __super::AddPage(p);
     m_pages.AddTail(p);
 
@@ -173,13 +171,13 @@ void CComPropertySheet::OnActivated(CPropertyPage* pPage)
     CRect wr, cr;
     GetWindowRect(wr);
     GetClientRect(cr);
-    CSize ws = wr.Size(), cs = cr.Size();
+    CSize ws = wr.Size();
 
     CRect twr, tcr;
     CTabCtrl* pTC = (CTabCtrl*)GetDlgItem(AFX_IDC_TAB_CONTROL);
     pTC->GetWindowRect(twr);
     pTC->GetClientRect(tcr);
-    CSize tws = twr.Size(), tcs = tcr.Size();
+    CSize tws = twr.Size();
 
     if (CWnd* pChild = pPage->GetWindow(GW_CHILD)) {
         pChild->ModifyStyle(WS_CAPTION | WS_THICKFRAME, 0);
@@ -198,7 +196,7 @@ void CComPropertySheet::OnActivated(CPropertyPage* pPage)
     }
 
     bounds |= CRect(0, 0, 0, 0);
-    bounds.SetRect(0, 0, bounds.right + max(bounds.left, 4), bounds.bottom + max(bounds.top, 4));
+    bounds.SetRect(0, 0, bounds.right + std::max(bounds.left, 4l), bounds.bottom + std::max(bounds.top, 4l));
 
     CRect r = CRect(CPoint(0, 0), bounds.Size());
     pTC->AdjustRect(TRUE, r);

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,7 @@
  */
 
 #include "stdafx.h"
+#include <algorithm>
 #include "MatroskaFile.h"
 #include "../../../DSUtil/DSUtil.h"
 
@@ -34,25 +35,26 @@ static void bswap(BYTE* s, int len)
 
 //
 
-CID::CID(DWORD id) : m_id(id)
+CID::CID(DWORD id)
+    : m_id(id)
 {
 }
 
-MatroskaWriter::QWORD CID::Size(bool fWithHeader)
+QWORD CID::Size(bool fWithHeader)
 {
     return CUInt(0, m_id).Size(false);
 }
 
 HRESULT CID::Write(IStream* pStream)
 {
-    MatroskaWriter::QWORD len = CID::Size();
+    QWORD len = CID::Size();
     DWORD id = m_id;
     bswap((BYTE*)&id, (int)len);
     *(BYTE*)&id = ((*(BYTE*)&id) & (1 << (8 - len)) - 1) | (1 << (8 - len));
-    return pStream->Write(&id, (ULONG)len, NULL);
+    return pStream->Write(&id, (ULONG)len, nullptr);
 }
 
-MatroskaWriter::QWORD CID::HeaderSize(MatroskaWriter::QWORD len)
+QWORD CID::HeaderSize(QWORD len)
 {
     return CID::Size() + CLength(len).Size();
 }
@@ -64,13 +66,13 @@ HRESULT CID::HeaderWrite(IStream* pStream)
     return S_OK;
 }
 
-MatroskaWriter::QWORD CBinary::Size(bool fWithHeader)
+QWORD CBinary::Size(bool fWithHeader)
 {
-    if (GetCount() == 0) {
+    if (IsEmpty()) {
         return 0;
     }
 
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += GetCount();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -80,21 +82,21 @@ MatroskaWriter::QWORD CBinary::Size(bool fWithHeader)
 
 HRESULT CBinary::Write(IStream* pStream)
 {
-    if (GetCount() == 0) {
+    if (IsEmpty()) {
         return S_OK;
     }
 
     HeaderWrite(pStream);
-    return pStream->Write(GetData(), GetCount(), NULL);
+    return pStream->Write(GetData(), (ULONG)GetCount(), nullptr);
 }
 
-MatroskaWriter::QWORD CANSI::Size(bool fWithHeader)
+QWORD CANSI::Size(bool fWithHeader)
 {
-    if (GetLength() == 0) {
+    if (IsEmpty()) {
         return 0;
     }
 
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += GetLength();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -104,21 +106,21 @@ MatroskaWriter::QWORD CANSI::Size(bool fWithHeader)
 
 HRESULT CANSI::Write(IStream* pStream)
 {
-    if (GetLength() == 0) {
+    if (IsEmpty()) {
         return S_OK;
     }
 
     HeaderWrite(pStream);
-    return pStream->Write((LPCSTR) * this, GetLength(), NULL);
+    return pStream->Write((LPCSTR) * this, GetLength(), nullptr);
 }
 
-MatroskaWriter::QWORD CUTF8::Size(bool fWithHeader)
+QWORD CUTF8::Size(bool fWithHeader)
 {
-    if (GetLength() == 0) {
+    if (IsEmpty()) {
         return 0;
     }
 
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += UTF16To8(*this).GetLength();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -128,23 +130,23 @@ MatroskaWriter::QWORD CUTF8::Size(bool fWithHeader)
 
 HRESULT CUTF8::Write(IStream* pStream)
 {
-    if (GetLength() == 0) {
+    if (IsEmpty()) {
         return S_OK;
     }
 
     HeaderWrite(pStream);
     CStringA str = UTF16To8(*this);
-    return pStream->Write((BYTE*)(LPCSTR)str, str.GetLength(), NULL);
+    return pStream->Write((BYTE*)(LPCSTR)str, str.GetLength(), nullptr);
 }
 
 template<class T, class BASE>
-MatroskaWriter::QWORD CSimpleVar<T, BASE>::Size(bool fWithHeader)
+QWORD CSimpleVar<T, BASE>::Size(bool fWithHeader)
 {
     if (!m_fSet) {
         return 0;
     }
 
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += sizeof(T);
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -162,16 +164,16 @@ HRESULT CSimpleVar<T, BASE>::Write(IStream* pStream)
     HeaderWrite(pStream);
     T val = m_val;
     bswap((BYTE*)&val, sizeof(T));
-    return pStream->Write(&val, sizeof(T), NULL);
+    return pStream->Write(&val, sizeof(T), nullptr);
 }
 
-MatroskaWriter::QWORD CUInt::Size(bool fWithHeader)
+QWORD CUInt::Size(bool fWithHeader)
 {
     if (!m_fSet) {
         return 0;
     }
 
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
 
     if (m_val == 0) {
         len++;
@@ -200,16 +202,16 @@ HRESULT CUInt::Write(IStream* pStream)
     l.Write(pStream);
     UINT64 val = m_val;
     bswap((BYTE*)&val, (int)l);
-    return pStream->Write(&val, (ULONG)l, NULL);
+    return pStream->Write(&val, (ULONG)l, nullptr);
 }
 
-MatroskaWriter::QWORD CInt::Size(bool fWithHeader)
+QWORD CInt::Size(bool fWithHeader)
 {
     if (!m_fSet) {
         return 0;
     }
 
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
 
     if (m_val == 0) {
         len++;
@@ -242,16 +244,16 @@ HRESULT CInt::Write(IStream* pStream)
     l.Write(pStream);
     UINT64 val = m_val;
     bswap((BYTE*)&val, (int)l);
-    return pStream->Write(&val, (ULONG)l, NULL);
+    return pStream->Write(&val, (ULONG)l, nullptr);
 }
 
-MatroskaWriter::QWORD CLength::Size(bool fWithHeader)
+QWORD CLength::Size(bool fWithHeader)
 {
     if (m_len == 0x00FFFFFFFFFFFFFFi64) {
         return 8;
     }
 
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     for (int i = 1; i <= 8; i++) {
         if (!(m_len & (~((1i64 << (7 * i)) - 1))) && (m_len & ((1i64 << (7 * i)) - 1)) != ((1i64 << (7 * i)) - 1)) {
             len += i;
@@ -263,11 +265,11 @@ MatroskaWriter::QWORD CLength::Size(bool fWithHeader)
 
 HRESULT CLength::Write(IStream* pStream)
 {
-    MatroskaWriter::QWORD len = Size(false);
+    QWORD len = Size(false);
     UINT64 val = m_len;
     bswap((BYTE*)&val, (int)len);
     *(BYTE*)&val = ((*(BYTE*)&val) & (1 << (8 - len)) - 1) | (1 << (8 - len));
-    return pStream->Write(&val, (ULONG)len, NULL);
+    return pStream->Write(&val, (ULONG)len, nullptr);
 }
 
 //
@@ -284,9 +286,9 @@ EBML::EBML(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD EBML::Size(bool fWithHeader)
+QWORD EBML::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += EBMLVersion.Size();
     len += EBMLReadVersion.Size();
     len += EBMLMaxIDLength.Size();
@@ -330,9 +332,9 @@ Info::Info(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Info::Size(bool fWithHeader)
+QWORD Info::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += SegmentUID.Size();
     len += PrevUID.Size();
     len += NextUID.Size();
@@ -374,11 +376,11 @@ Segment::Segment(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Segment::Size(bool fWithHeader)
+QWORD Segment::Size(bool fWithHeader)
 {
     return 0x00FFFFFFFFFFFFFFi64;
     /*
-        MatroskaWriter::QWORD len = 0;
+        QWORD len = 0;
         if (fWithHeader) len += HeaderSize(len);
         return len;
     */
@@ -395,9 +397,9 @@ Track::Track(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Track::Size(bool fWithHeader)
+QWORD Track::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += TrackEntries.Size();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -439,9 +441,9 @@ TrackEntry::TrackEntry(DWORD id)
     DescType = NoDesc;
 }
 
-MatroskaWriter::QWORD TrackEntry::Size(bool fWithHeader)
+QWORD TrackEntry::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += TrackNumber.Size();
     len += TrackUID.Size();
     len += TrackType.Size();
@@ -520,9 +522,9 @@ Video::Video(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Video::Size(bool fWithHeader)
+QWORD Video::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += FlagInterlaced.Size();
     len += StereoMode.Size();
     len += PixelWidth.Size();
@@ -567,9 +569,9 @@ Audio::Audio(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Audio::Size(bool fWithHeader)
+QWORD Audio::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += SamplingFrequency.Size();
     len += OutputSamplingFrequency.Size();
     len += Channels.Size();
@@ -600,9 +602,9 @@ Cluster::Cluster(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Cluster::Size(bool fWithHeader)
+QWORD Cluster::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += TimeCode.Size();
     len += Position.Size();
     len += PrevSize.Size();
@@ -633,9 +635,9 @@ BlockGroup::BlockGroup(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD BlockGroup::Size(bool fWithHeader)
+QWORD BlockGroup::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += BlockDuration.Size();
     len += ReferencePriority.Size();
     len += ReferenceBlock.Size();
@@ -663,12 +665,13 @@ HRESULT BlockGroup::Write(IStream* pStream)
 CBlock::CBlock(DWORD id)
     : CID(id)
     , TimeCode(0)
+    , TimeCodeStop(0)
 {
 }
 
-MatroskaWriter::QWORD CBlock::Size(bool fWithHeader)
+QWORD CBlock::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += TrackNumber.Size() + 2 + 1; // TrackNumber + TimeCode + Lacing
     if (BlockData.GetCount() > 1) {
         len += 1; // nBlockData
@@ -697,23 +700,23 @@ HRESULT CBlock::Write(IStream* pStream)
     TrackNumber.Write(pStream);
     short t = (short)TimeCode;
     bswap((BYTE*)&t, 2);
-    pStream->Write(&t, 2, NULL);
+    pStream->Write(&t, 2, nullptr);
     BYTE Lacing = 0;
-    BYTE n = BlockData.GetCount();
+    BYTE n = (BYTE)BlockData.GetCount();
     if (n > 1) {
         Lacing |= 2;
     }
-    pStream->Write(&Lacing, 1, NULL);
+    pStream->Write(&Lacing, 1, nullptr);
     if (n > 1) {
-        pStream->Write(&n, 1, NULL);
+        pStream->Write(&n, 1, nullptr);
         POSITION pos = BlockData.GetHeadPosition();
         while (pos) {
             CBinary* b = BlockData.GetNext(pos);
             if (pos) {
                 INT_PTR len = b->GetCount();
                 while (len >= 0) {
-                    n = (BYTE)min(len, 255);
-                    pStream->Write(&n, 1, NULL);
+                    n = (BYTE)std::min<INT_PTR>(len, 255);
+                    pStream->Write(&n, 1, nullptr);
                     len -= 255;
                 }
             }
@@ -722,7 +725,7 @@ HRESULT CBlock::Write(IStream* pStream)
     POSITION pos = BlockData.GetHeadPosition();
     while (pos) {
         CBinary* b = BlockData.GetNext(pos);
-        pStream->Write(b->GetData(), b->GetCount(), NULL);
+        pStream->Write(b->GetData(), (ULONG)b->GetCount(), nullptr);
     }
     return S_OK;
 }
@@ -732,9 +735,9 @@ Cue::Cue(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Cue::Size(bool fWithHeader)
+QWORD Cue::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += CuePoints.Size();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -755,9 +758,9 @@ CuePoint::CuePoint(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD CuePoint::Size(bool fWithHeader)
+QWORD CuePoint::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += CueTime.Size();
     len += CueTrackPositions.Size();
     if (fWithHeader) {
@@ -783,9 +786,9 @@ CueTrackPosition::CueTrackPosition(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD CueTrackPosition::Size(bool fWithHeader)
+QWORD CueTrackPosition::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += CueTrack.Size();
     len += CueClusterPosition.Size();
     len += CueBlockNumber.Size();
@@ -813,9 +816,9 @@ Seek::Seek(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Seek::Size(bool fWithHeader)
+QWORD Seek::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += SeekHeads.Size();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -836,9 +839,9 @@ SeekID::SeekID(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD SeekID::Size(bool fWithHeader)
+QWORD SeekID::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += m_id.Size();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -859,9 +862,9 @@ SeekHead::SeekHead(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD SeekHead::Size(bool fWithHeader)
+QWORD SeekHead::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += ID.Size();
     len += Position.Size();
     if (fWithHeader) {
@@ -883,9 +886,9 @@ Tags::Tags(DWORD id)
 {
 }
 
-MatroskaWriter::QWORD Tags::Size(bool fWithHeader)
+QWORD Tags::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     //  len += .Size();
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -900,15 +903,15 @@ HRESULT Tags::Write(IStream* pStream)
     return S_OK;
 }
 
-Void::Void(MatroskaWriter::QWORD len, DWORD id)
+Void::Void(QWORD len, DWORD id)
     : CID(id)
     , m_len(len)
 {
 }
 
-MatroskaWriter::QWORD Void::Size(bool fWithHeader)
+QWORD Void::Size(bool fWithHeader)
 {
-    MatroskaWriter::QWORD len = 0;
+    QWORD len = 0;
     len += m_len;
     if (fWithHeader) {
         len += HeaderSize(len);
@@ -922,7 +925,7 @@ HRESULT Void::Write(IStream* pStream)
     BYTE buff[64];
     memset(buff, 0x80, sizeof(buff));
     for (int len = (int)m_len; len > 0; len -= sizeof(buff)) {
-        pStream->Write(buff, (ULONG)min(sizeof(buff), len), NULL);
+        pStream->Write(buff, std::min<ULONG>(sizeof(buff), (ULONG)len), nullptr);
     }
     return S_OK;
 }

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -77,40 +77,40 @@ public:
     public:
         CAdvRendererSettings() { SetDefault(); }
 
-        bool   fVMR9AlterativeVSync;
-        int    iVMR9VSyncOffset;
-        bool   iVMR9VSyncAccurate;
-        bool   iVMR9FullscreenGUISupport;
-        bool   iVMR9VSync;
-        bool   iVMR9FullFloatingPointProcessing;
-        bool   iVMR9HalfFloatingPointProcessing;
-        bool   iVMR9ColorManagementEnable;
-        int    iVMR9ColorManagementInput;
-        int    iVMR9ColorManagementAmbientLight;
-        int    iVMR9ColorManagementIntent;
-        bool   iVMRDisableDesktopComposition;
-        int    iVMRFlushGPUBeforeVSync;
-        int    iVMRFlushGPUAfterPresent;
-        int    iVMRFlushGPUWait;
+        bool    bVMR9AlterativeVSync;
+        int     iVMR9VSyncOffset;
+        bool    bVMR9VSyncAccurate;
+        bool    bVMR9FullscreenGUISupport;
+        bool    bVMR9VSync;
+        bool    bVMR9FullFloatingPointProcessing;
+        bool    bVMR9HalfFloatingPointProcessing;
+        bool    bVMR9ColorManagementEnable;
+        int     iVMR9ColorManagementInput;
+        int     iVMR9ColorManagementAmbientLight;
+        int     iVMR9ColorManagementIntent;
+        bool    bVMRDisableDesktopComposition;
+        bool    bVMRFlushGPUBeforeVSync;
+        bool    bVMRFlushGPUAfterPresent;
+        bool    bVMRFlushGPUWait;
 
         // EVR
-        bool iEVRHighColorResolution;
-        bool iEVRForceInputHighColorResolution;
-        bool iEVREnableFrameTimeCorrection;
-        int  iEVROutputRange;
+        bool    bEVRHighColorResolution;
+        bool    bEVRForceInputHighColorResolution;
+        bool    bEVREnableFrameTimeCorrection;
+        int     iEVROutputRange;
 
         // SyncRenderer settings
-        int    bSynchronizeVideo;
-        int    bSynchronizeDisplay;
-        int    bSynchronizeNearest;
-        int    iLineDelta;
-        int    iColumnDelta;
-        double fCycleDelta;
-        double fTargetSyncOffset;
-        double fControlLimit;
+        bool    bSynchronizeVideo;
+        bool    bSynchronizeDisplay;
+        bool    bSynchronizeNearest;
+        int     iLineDelta;
+        int     iColumnDelta;
+        double  fCycleDelta;
+        double  fTargetSyncOffset;
+        double  fControlLimit;
 
-        void SetDefault();
-        void SetOptimal();
+        void    SetDefault();
+        void    SetOptimal();
     };
 
     CAdvRendererSettings m_AdvRendSets;
@@ -138,19 +138,19 @@ class CRenderersData
 public:
     CRenderersData();
 
-    // Casimir666
-    bool        m_fTearingTest;
-    int         m_fDisplayStats;
-    bool        m_bResetStats; // Set to reset the presentation statistics
+    bool        m_bTearingTest;
+    int         m_iDisplayStats;
+    bool        m_bResetStats;  // Set to reset the presentation statistics
     CString     m_strD3DX9Version;
 
     // Hardware feature support
     bool        m_bFP16Support;
     bool        m_b10bitSupport;
+    CString     m_strDXVAInfo;
 
-    LONGLONG    GetPerfCounter();
+    LONGLONG    GetPerfCounter() const;
     HINSTANCE   GetD3X9Dll();
-    UINT        GetDXSdkRelease() { return m_nDXSdkRelease; };
+    UINT        GetDXSdkRelease() const { return m_nDXSdkRelease; };
 };
 
 extern CRenderersData*      GetRenderersData();

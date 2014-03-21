@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,12 +27,46 @@
 // CPPageFileInfoRes dialog
 
 IMPLEMENT_DYNAMIC(CPPageFileInfoRes, CPPageBase)
-CPPageFileInfoRes::CPPageFileInfoRes(CString fn, IFilterGraph* pFG)
+CPPageFileInfoRes::CPPageFileInfoRes(CString path, IFilterGraph* pFG, IFileSourceFilter* pFSF)
     : CPPageBase(CPPageFileInfoRes::IDD, CPPageFileInfoRes::IDD)
-    , m_fn(fn)
-    , m_hIcon(NULL)
-    , m_pFG(pFG)
+    , m_fn(path)
+    , m_hIcon(nullptr)
 {
+    if (pFSF) {
+        LPOLESTR pFN = nullptr;
+        if (SUCCEEDED(pFSF->GetCurFile(&pFN, nullptr))) {
+            m_fn = pFN;
+            CoTaskMemFree(pFN);
+        }
+    }
+
+    m_fn.TrimRight('/');
+    int i = std::max(m_fn.ReverseFind('\\'), m_fn.ReverseFind('/'));
+    if (i >= 0 && i < m_fn.GetLength() - 1) {
+        m_fn = m_fn.Mid(i + 1);
+    }
+
+    BeginEnumFilters(pFG, pEF, pBF) {
+        if (CComQIPtr<IDSMResourceBag> pRB = pBF)
+            if (pRB && pRB->ResGetCount() > 0) {
+                for (DWORD j = 0; j < pRB->ResGetCount(); j++) {
+                    CComBSTR name, desc, mime;
+                    BYTE* pData = nullptr;
+                    DWORD len = 0;
+                    if (SUCCEEDED(pRB->ResGet(j, &name, &desc, &mime, &pData, &len, nullptr))) {
+                        CDSMResource r;
+                        r.name = name;
+                        r.desc = desc;
+                        r.mime = mime;
+                        r.data.SetCount(len);
+                        memcpy(r.data.GetData(), pData, r.data.GetCount());
+                        CoTaskMemFree(pData);
+                        m_res.push_back(std::move(r));
+                    }
+                }
+            }
+    }
+    EndEnumFilters;
 }
 
 CPPageFileInfoRes::~CPPageFileInfoRes()
@@ -67,41 +101,14 @@ BOOL CPPageFileInfoRes::OnInitDialog()
         m_icon.SetIcon(m_hIcon);
     }
 
-    m_fn.TrimRight('/');
-    int i = max(m_fn.ReverseFind('\\'), m_fn.ReverseFind('/'));
-    if (i >= 0 && i < m_fn.GetLength() - 1) {
-        m_fn = m_fn.Mid(i + 1);
-    }
-
     m_list.SetExtendedStyle(m_list.GetExtendedStyle() | LVS_EX_FULLROWSELECT);
-
     m_list.InsertColumn(0, ResStr(IDS_EMB_RESOURCES_VIEWER_NAME), LVCFMT_LEFT, 187);
     m_list.InsertColumn(1, ResStr(IDS_EMB_RESOURCES_VIEWER_TYPE), LVCFMT_LEFT, 127);
-
-    BeginEnumFilters(m_pFG, pEF, pBF) {
-        if (CComQIPtr<IDSMResourceBag> pRB = pBF)
-            if (pRB && pRB->ResGetCount() > 0) {
-                for (DWORD j = 0; j < pRB->ResGetCount(); j++) {
-                    CComBSTR name, desc, mime;
-                    BYTE* pData = NULL;
-                    DWORD len = 0;
-                    if (SUCCEEDED(pRB->ResGet(j, &name, &desc, &mime, &pData, &len, NULL))) {
-                        CDSMResource r;
-                        r.name = name;
-                        r.desc = desc;
-                        r.mime = mime;
-                        r.data.SetCount(len);
-                        memcpy(r.data.GetData(), pData, r.data.GetCount());
-                        CoTaskMemFree(pData);
-                        POSITION pos = m_res.AddTail(r);
-                        int iItem = m_list.InsertItem(m_list.GetItemCount(), CString(name));
-                        m_list.SetItemText(iItem, 1, CString(mime));
-                        m_list.SetItemData(iItem, (DWORD_PTR)pos);
-                    }
-                }
-            }
+    for (auto it = m_res.cbegin(); it != m_res.cend(); ++it) {
+        int nItem = m_list.InsertItem(m_list.GetItemCount(), it->name);
+        m_list.SetItemText(nItem, 1, it->mime);
+        m_list.SetItemData(nItem, nItem);
     }
-    EndEnumFilters;
 
     UpdateData(FALSE);
 
@@ -116,13 +123,13 @@ void CPPageFileInfoRes::OnSaveAs()
         return;
     }
 
-    CDSMResource& r = m_res.GetAt((POSITION)m_list.GetItemData(i));
+    CDSMResource& r = m_res[m_list.GetItemData(i)];
 
-    CFileDialog fd(FALSE, NULL, CString(r.name),
+    CFileDialog fd(FALSE, nullptr, CString(r.name),
                    OFN_EXPLORER | OFN_ENABLESIZING | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR,
                    _T("All files|*.*||"), this, 0);
     if (fd.DoModal() == IDOK) {
-        FILE* f = NULL;
+        FILE* f = nullptr;
         if (!_tfopen_s(&f, fd.GetPathName(), _T("wb"))) {
             fwrite(r.data.GetData(), 1, r.data.GetCount(), f);
             fclose(f);
@@ -145,11 +152,11 @@ void CPPageFileInfoRes::OnOpenEmbeddedResInBrowser(NMHDR* pNMHDR, LRESULT* pResu
     const CAppSettings& s = AfxGetAppSettings();
 
     if (s.fEnableWebServer) {
-        CDSMResource& r = m_res.GetAt((POSITION)m_list.GetItemData(i));
+        CDSMResource& r = m_res[m_list.GetItemData(i)];
 
         CString url;
         url.Format(_T("http://localhost:%d/viewres.html?id=%Ix"), s.nWebServerPort, reinterpret_cast<uintptr_t>(&r));
-        ShellExecute(NULL, _T("open"), url, NULL, NULL, SW_SHOWDEFAULT);
+        ShellExecute(nullptr, _T("open"), url, nullptr, nullptr, SW_SHOWDEFAULT);
     } else {
         AfxMessageBox(IDS_EMB_RESOURCES_VIEWER_INFO, MB_ICONINFORMATION);
     }

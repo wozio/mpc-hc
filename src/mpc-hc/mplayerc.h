@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -33,7 +33,10 @@
 #include <d3d9.h>
 #include <vmr9.h>
 #include <dxva2api.h> //#include <evr9.h>
+#include <map>
+#include <afxmt.h>
 
+#include "EventDispatcher.h"
 
 #define MPC_WND_CLASS_NAME L"MediaPlayerClassicW"
 
@@ -43,70 +46,69 @@
 
 enum {
     WM_GRAPHNOTIFY = WM_RESET_DEVICE + 1,
-    WM_RESUMEFROMSTATE,
+    WM_POSTOPEN,
+    WM_OPENFAILED,
+    WM_SAVESETTINGS,
     WM_TUNER_SCAN_PROGRESS,
     WM_TUNER_SCAN_END,
     WM_TUNER_STATS,
     WM_TUNER_NEW_CHANNEL
 };
 
-#define WM_MYMOUSELAST WM_XBUTTONDBLCLK
-
 ///////////////
 
 extern HICON LoadIcon(CString fn, bool fSmall);
 extern bool LoadType(CString fn, CString& type);
 extern bool LoadResource(UINT resid, CStringA& str, LPCTSTR restype);
-extern CStringA GetContentType(CString fn, CAtlList<CString>* redir = NULL);
+extern CStringA GetContentType(CString fn, CAtlList<CString>* redir = nullptr);
 extern WORD AssignedToCmd(UINT keyOrMouseValue, bool bIsFullScreen = false, bool bCheckMouse = true);
 
-typedef enum {
+enum ControlType {
     ProcAmp_Brightness = 0x1,
     ProcAmp_Contrast   = 0x2,
     ProcAmp_Hue        = 0x4,
     ProcAmp_Saturation = 0x8,
     ProcAmp_All = ProcAmp_Brightness | ProcAmp_Contrast | ProcAmp_Hue | ProcAmp_Saturation
-} ControlType;
+};
 
-typedef struct {
+struct COLORPROPERTY_RANGE {
     DWORD dwProperty;
     int   MinValue;
     int   MaxValue;
     int   DefaultValue;
     int   StepSize;
-} COLORPROPERTY_RANGE;
+};
 
 __inline DXVA2_Fixed32 IntToFixed(__in const int _int_, __in const short divisor = 1)
 {
     // special converter that is resistant to MS bugs
     DXVA2_Fixed32 _fixed_;
-    _fixed_.Value = _int_ / divisor;
-    _fixed_.Fraction = (_int_ % divisor * 0x10000 + divisor / 2) / divisor;
+    _fixed_.Value = SHORT(_int_ / divisor);
+    _fixed_.Fraction = USHORT((_int_ % divisor * 0x10000 + divisor / 2) / divisor);
     return _fixed_;
 }
 
-__inline int FixedToInt(__in const DXVA2_Fixed32 _fixed_, __in const short factor = 1)
+__inline int FixedToInt(__in const DXVA2_Fixed32& _fixed_, __in const short factor = 1)
 {
     // special converter that is resistant to MS bugs
     return (int)_fixed_.Value * factor + ((int)_fixed_.Fraction * factor + 0x8000) / 0x10000;
 }
 
-extern void GetCurDispMode(dispmode& dm, CString& DisplayName);
-extern bool GetDispMode(int i, dispmode& dm, CString& DisplayName);
-extern void SetDispMode(const dispmode& dm, CString& DisplayName);
 extern void SetAudioRenderer(int AudioDevNo);
 
 extern void SetHandCursor(HWND m_hWnd, UINT nID);
 
 struct LanguageResource {
-    const UINT resourceID;
-    const LANGID localeID; // Check http://msdn.microsoft.com/en-us/goglobal/bb964664
-    const LPCTSTR name;
-    const LPCTSTR dllPath;
+    UINT resourceID;
+    LANGID localeID; // Check http://msdn.microsoft.com/en-us/goglobal/bb964664
+    LPCTSTR name;
+    LPCTSTR dllPath;
 };
 
 class CMPlayerCApp : public CWinApp
 {
+    HMODULE m_hNTDLL;
+
     ATL::CMutex m_mutexOneInstance;
 
     CAtlList<CString> m_cmdln;
@@ -121,8 +123,16 @@ class CMPlayerCApp : public CWinApp
     static UINT GetRemoteControlCodeMicrosoft(UINT nInputcode, HRAWINPUT hRawInput);
     static UINT GetRemoteControlCodeSRM7500(UINT nInputcode, HRAWINPUT hRawInput);
 
+    bool m_bDelayingIdle;
+    void DelayedIdle();
+    virtual BOOL IsIdleMessage(MSG* pMsg) override;
+    virtual BOOL PumpMessage() override;
+
 public:
     CMPlayerCApp();
+    ~CMPlayerCApp();
+
+    EventRouter m_eventd;
 
     void ShowCmdlnSwitches() const;
 
@@ -130,12 +140,27 @@ public:
     bool StoreSettingsToRegistry();
     CString GetIniPath() const;
     bool IsIniValid() const;
-    bool IsIniUTF16LE() const;
     bool ChangeSettingsLocation(bool useIni);
-    void ExportSettings();
+    bool ExportSettings(CString savePath, CString subKey = _T(""));
+
+private:
+    std::map<CString, std::map<CString, CString, CStringUtils::IgnoreCaseLess>, CStringUtils::IgnoreCaseLess> m_ProfileMap;
+    bool m_fProfileInitialized;
+    void InitProfile();
+    ::CCriticalSection m_ProfileCriticalSection;
+public:
+    void FlushProfile();
+    virtual BOOL GetProfileBinary(LPCTSTR lpszSection, LPCTSTR lpszEntry, LPBYTE* ppData, UINT* pBytes) override;
+    virtual UINT GetProfileInt(LPCTSTR lpszSection, LPCTSTR lpszEntry, int nDefault) override;
+    virtual CString GetProfileString(LPCTSTR lpszSection, LPCTSTR lpszEntry, LPCTSTR lpszDefault = nullptr) override;
+    virtual BOOL WriteProfileBinary(LPCTSTR lpszSection, LPCTSTR lpszEntry, LPBYTE pData, UINT nBytes) override;
+    virtual BOOL WriteProfileInt(LPCTSTR lpszSection, LPCTSTR lpszEntry, int nValue) override;
+    virtual BOOL WriteProfileString(LPCTSTR lpszSection, LPCTSTR lpszEntry, LPCTSTR lpszValue) override;
+    bool HasProfileEntry(LPCTSTR lpszSection, LPCTSTR lpszEntry);
 
     bool GetAppSavePath(CString& path);
 
+    bool m_fClosingState;
     CRenderersData m_Renderers;
     CString     m_strVersion;
     CString     m_AudioRendererDisplayName_CL;
@@ -180,5 +205,26 @@ public:
     afx_msg void OnHelpShowcommandlineswitches();
 };
 
-#define AfxGetMyApp() static_cast<CMPlayerCApp*>(AfxGetApp())
+class DPI final
+{
+    int m_dpix, m_dpiy;
+public:
+    DPI() {
+        HDC hDC = ::GetDC(nullptr);
+        m_dpix = GetDeviceCaps(hDC, LOGPIXELSX);
+        m_dpiy = GetDeviceCaps(hDC, LOGPIXELSY);
+        ::ReleaseDC(nullptr, hDC);
+    }
+    int ScaleFloorX(int x) { return x * m_dpix / 96; }
+    int ScaleFloorY(int y) { return y * m_dpiy / 96; }
+    int ScaleX(int x) { return MulDiv(x, m_dpix, 96); }
+    int ScaleY(int y) { return MulDiv(y, m_dpiy, 96); }
+    int TransposeScaledX(int x) { return MulDiv(x, m_dpiy, m_dpix); }
+    int TransposeScaledY(int y) { return MulDiv(y, m_dpix, m_dpiy); }
+};
+
 #define AfxGetAppSettings() static_cast<CMPlayerCApp*>(AfxGetApp())->m_s
+#define AfxGetMyApp()       static_cast<CMPlayerCApp*>(AfxGetApp())
+#define AfxGetMainFrame()   dynamic_cast<CMainFrame*>(AfxGetMainWnd())
+
+#define GetEventd() AfxGetMyApp()->m_eventd

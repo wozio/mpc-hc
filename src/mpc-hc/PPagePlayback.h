@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -41,18 +41,25 @@ public:
     CSliderCtrl m_balancectrl;
     int m_nVolume;
     int m_nBalance;
+    int m_nVolumeStep;
+    CSpinButtonCtrl m_VolumeStepCtrl;
+    int m_nSpeedStep;
+    CSpinButtonCtrl m_SpeedStepCtrl;
     int m_iLoopForever;
     CEdit m_loopnumctrl;
     int m_nLoops;
     BOOL m_fRewind;
     int m_iZoomLevel;
     BOOL m_iRememberZoomLevel;
+    int m_nAutoFitFactor;
+    CSpinButtonCtrl m_AutoFitFactorCtrl;
     BOOL m_fAutoloadAudio;
     BOOL m_fAutoloadSubtitles;
     BOOL m_fEnableWorkerThreadForOpening;
     BOOL m_fReportFailedPins;
     CString m_subtitlesLanguageOrder;
     CString m_audiosLanguageOrder;
+    BOOL m_fAllowOverridingExternalSplitterChoice;
 
     CComboBox m_zoomlevelctrl;
 
@@ -71,6 +78,8 @@ public:
     afx_msg void OnBnClickedRadio12(UINT nID);
     afx_msg void OnUpdateLoopNum(CCmdUI* pCmdUI);
     afx_msg void OnUpdateAutoZoomCombo(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateAutoZoomFactor(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateSpeedStep(CCmdUI* pCmdUI);
 
     afx_msg void OnBalanceTextDblClk();
     afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);

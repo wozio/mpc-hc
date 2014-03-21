@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,18 +30,19 @@ DWORD CharSetToCodePage(DWORD dwCharSet)
     if (dwCharSet == CP_UTF7) {
         return CP_UTF7;
     }
-    CHARSETINFO cs = {0};
+    CHARSETINFO cs;
+    ZeroMemory(&cs, sizeof(CHARSETINFO));
     ::TranslateCharsetInfo((DWORD*)dwCharSet, &cs, TCI_SRCCHARSET);
     return cs.ciACP;
 }
 
 CStringA ConvertMBCS(CStringA str, DWORD SrcCharSet, DWORD DstCharSet)
 {
-    WCHAR* utf16 = DNew WCHAR[str.GetLength() + 1];
-    memset(utf16, 0, (str.GetLength() + 1)*sizeof(WCHAR));
+    WCHAR* utf16 = DEBUG_NEW WCHAR[str.GetLength() + 1];
+    ZeroMemory(utf16, (str.GetLength() + 1)*sizeof(WCHAR));
 
-    CHAR* mbcs = DNew CHAR[str.GetLength() * 6 + 1];
-    memset(mbcs, 0, str.GetLength() * 6 + 1);
+    CHAR* mbcs = DEBUG_NEW CHAR[str.GetLength() * 6 + 1];
+    ZeroMemory(mbcs, str.GetLength() * 6 + 1);
 
     int len = MultiByteToWideChar(
                   CharSetToCodePage(SrcCharSet),
@@ -58,8 +59,8 @@ CStringA ConvertMBCS(CStringA str, DWORD SrcCharSet, DWORD DstCharSet)
               len,
               mbcs,
               str.GetLength() * 6,
-              NULL,
-              NULL);
+              nullptr,
+              nullptr);
 
     str = mbcs;
 
@@ -169,6 +170,19 @@ CString ExtractTag(CString tag, CMapStringToString& attribs, bool& fClosing)
     return type;
 }
 
+CStringA HtmlSpecialChars(CStringA str, bool bQuotes /*= false*/)
+{
+    str.Replace("&", "&amp;");
+    str.Replace("\"", "&quot;");
+    if (bQuotes) {
+        str.Replace("\'", "&#039;");
+    }
+    str.Replace("<", "&lt;");
+    str.Replace(">", "&gt;");
+
+    return str;
+}
+
 CAtlList<CString>& MakeLower(CAtlList<CString>& sl)
 {
     POSITION pos = sl.GetHeadPosition();
@@ -191,14 +205,14 @@ CString FormatNumber(CString szNumber, bool bNoFractionalDigits /*= true*/)
 {
     CString ret;
 
-    int nChars = GetNumberFormat(LOCALE_USER_DEFAULT, 0, szNumber, NULL, NULL, 0);
-    GetNumberFormat(LOCALE_USER_DEFAULT, 0, szNumber, NULL, ret.GetBuffer(nChars), nChars);
+    int nChars = GetNumberFormat(LOCALE_USER_DEFAULT, 0, szNumber, nullptr, nullptr, 0);
+    GetNumberFormat(LOCALE_USER_DEFAULT, 0, szNumber, nullptr, ret.GetBuffer(nChars), nChars);
     ret.ReleaseBuffer();
 
     if (bNoFractionalDigits) {
         TCHAR szNumberFractionalDigits[2] = {0};
         GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IDIGITS, szNumberFractionalDigits, _countof(szNumberFractionalDigits));
-        int nNumberFractionalDigits = _tcstol(szNumberFractionalDigits, NULL, 10);
+        int nNumberFractionalDigits = _tcstol(szNumberFractionalDigits, nullptr, 10);
         if (nNumberFractionalDigits) {
             ret.Truncate(ret.GetLength() - nNumberFractionalDigits - 1);
         }

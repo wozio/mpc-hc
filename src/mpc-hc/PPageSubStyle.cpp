@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,6 +27,8 @@
 
 // CPPageSubStyle dialog
 
+#pragma warning(push)
+#pragma warning(disable: 4351) // new behavior: elements of array 'array' will be default initialized
 IMPLEMENT_DYNAMIC(CPPageSubStyle, CPPageBase)
 CPPageSubStyle::CPPageSubStyle()
     : CPPageBase(CPPageSubStyle::IDD, CPPageSubStyle::IDD)
@@ -41,17 +43,19 @@ CPPageSubStyle::CPPageSubStyle()
     , m_screenalignment(0)
     , m_margin(0, 0, 0, 0)
     , m_linkalphasliders(FALSE)
-    , m_relativeTo(FALSE)
+    , m_iRelativeTo(0)
     , m_fUseDefaultStyle(true)
+    , m_stss(AfxGetAppSettings().subtitlesDefStyle)
+    , m_alpha()
 {
-    m_stss = AfxGetAppSettings().subdefstyle;
 }
+#pragma warning(pop)
 
 CPPageSubStyle::~CPPageSubStyle()
 {
 }
 
-void CPPageSubStyle::InitStyle(CString title, STSStyle& stss)
+void CPPageSubStyle::InitStyle(CString title, const STSStyle& stss)
 {
     m_pPSP->pszTitle = (m_title = title);
     m_psp.dwFlags |= PSP_USETITLE;
@@ -67,6 +71,7 @@ void CPPageSubStyle::AskColor(int i)
     if (dlg.DoModal() == IDOK) {
         m_stss.colors[i] = dlg.m_cc.rgbResult;
         m_color[i].Invalidate();
+        SetModified();
     }
 }
 
@@ -111,7 +116,7 @@ void CPPageSubStyle::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_SLIDER3, m_alphasliders[2]);
     DDX_Control(pDX, IDC_SLIDER4, m_alphasliders[3]);
     DDX_Check(pDX, IDC_CHECK1, m_linkalphasliders);
-    DDX_Check(pDX, IDC_CHECK_RELATIVETO, m_relativeTo);
+    DDX_Check(pDX, IDC_CHECK_RELATIVETO, m_iRelativeTo);
 }
 
 
@@ -138,7 +143,7 @@ BOOL CPPageSubStyle::OnInitDialog()
     m_iCharset = -1;
     for (int i = 0; i < CharSetLen; i++) {
         CString str;
-        str.Format(_T("%s (%d)"), CharSetNames[i], CharSetList[i]);
+        str.Format(_T("%s (%u)"), CharSetNames[i], CharSetList[i]);
         m_charset.AddString(str);
         m_charset.SetItemData(i, CharSetList[i]);
         if (m_stss.charSet == CharSetList[i]) {
@@ -171,7 +176,7 @@ BOOL CPPageSubStyle::OnInitDialog()
     m_marginrightspin.SetRange32(-10000, 10000);
     m_margintopspin.SetRange32(-10000, 10000);
     m_marginbottomspin.SetRange32(-10000, 10000);
-    m_relativeTo = m_stss.relativeTo;
+    m_iRelativeTo = m_stss.relativeTo;
 
     for (int i = 0; i < 4; i++) {
         m_color[i].SetColorPtr(&m_stss.colors[i]);
@@ -207,18 +212,18 @@ BOOL CPPageSubStyle::OnApply()
 
     m_stss.scrAlignment = m_screenalignment + 1;
     m_stss.marginRect = m_margin;
-    m_stss.relativeTo = m_relativeTo;
+    m_stss.relativeTo = m_iRelativeTo;
 
     for (int i = 0; i < 4; i++) {
         m_stss.alpha[i] = 255 - m_alpha[i];
     }
 
     if (m_fUseDefaultStyle) {
-        STSStyle& stss = AfxGetAppSettings().subdefstyle;
-        if (!(stss == m_stss)) {
+        STSStyle& stss = AfxGetAppSettings().subtitlesDefStyle;
+        if (stss != m_stss) {
             stss = m_stss;
             if (CMainFrame* pFrame = dynamic_cast<CMainFrame*>(AfxGetMainWnd())) {
-                pFrame->UpdateSubtitle(false, true);
+                pFrame->SetSubtitle(0, true, false, true);
             }
         }
     }
@@ -228,10 +233,15 @@ BOOL CPPageSubStyle::OnApply()
 
 void CPPageSubStyle::OnBnClickedButton1()
 {
+    UpdateData();
+
     LOGFONT lf;
     lf <<= m_stss;
+    if (m_iCharset >= 0) {
+        lf.lfCharSet = (BYTE)m_charset.GetItemData(m_iCharset);
+    }
 
-    CFontDialog dlg(&lf, CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT | CF_FORCEFONTEXIST | CF_SCALABLEONLY | CF_EFFECTS);
+    CFontDialog dlg(&lf, CF_SCREENFONTS | CF_INITTOLOGFONTSTRUCT | CF_FORCEFONTEXIST | CF_SCALABLEONLY);
     if (dlg.DoModal() == IDOK) {
         CString str(lf.lfFaceName);
         if (str.GetLength() > 16) {

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -41,7 +41,7 @@ class CScopeLock
     void* m_pLock;
     FLock* m_pUnlockFunc;
 public:
-    CScopeLock() {}; // let's make cppcheck happy
+    CScopeLock(): m_pLock(nullptr), m_pUnlockFunc(nullptr) {};
 
     template <typename t_Lock>
     class TCLocker
@@ -100,7 +100,7 @@ class CDX9SubPicAllocator : public CSubPicAllocatorImpl, public CCritSec
 
 public:
     static CCritSec ms_SurfaceQueueLock;
-    CAtlList<CComPtr<IDirect3DSurface9> > m_FreeSurfaces;
+    CAtlList<CComPtr<IDirect3DSurface9>> m_FreeSurfaces;
     CAtlList<CDX9SubPic*> m_AllocatedSurfaces;
 
     void GetStats(int& _nFree, int& _nAlloc);

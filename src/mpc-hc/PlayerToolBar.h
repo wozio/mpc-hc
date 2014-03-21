@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,11 +25,15 @@
 
 #include <atlimage.h>
 
+class CMainFrame;
+
 class CPlayerToolBar : public CToolBar
 {
     DECLARE_DYNAMIC(CPlayerToolBar)
 
 private:
+    CMainFrame* m_pMainFrame;
+
     bool IsMuted() const;
     void SetMute(bool fMute = true);
     int getHitButtonIdx(CPoint point);
@@ -37,9 +41,10 @@ private:
 
     int m_nButtonHeight;
     CImageList* m_pButtonsImages;
+    int m_volumeMinSizeInc;
 
 public:
-    CPlayerToolBar();
+    CPlayerToolBar(CMainFrame* pMainFrame);
     virtual ~CPlayerToolBar();
 
     int GetVolume() const;
@@ -67,11 +72,11 @@ protected:
     afx_msg void OnUpdateVolumeMute(CCmdUI* pCmdUI);
     afx_msg BOOL OnVolumeUp(UINT nID);
     afx_msg BOOL OnVolumeDown(UINT nID);
-    afx_msg BOOL OnVolumeIncrease(UINT nID);
-    afx_msg BOOL OnVolumeDecrease(UINT nID);
     afx_msg void OnNcPaint();
     afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
     afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+    afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
+    afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
     //}}AFX_MSG
     DECLARE_MESSAGE_MAP()
 };

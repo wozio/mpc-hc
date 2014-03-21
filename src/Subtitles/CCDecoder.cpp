@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,8 +28,8 @@ CCDecoder::CCDecoder(CString fn, CString rawfn) : m_fn(fn), m_rawfn(rawfn)
 
     m_time = 0;
     m_fEndOfCaption = false;
-    memset(m_buff, 0, sizeof(m_buff));
-    memset(m_disp, 0, sizeof(m_disp));
+    ZeroMemory(m_buff, sizeof(m_buff));
+    ZeroMemory(m_disp, sizeof(m_disp));
     m_cursor = CPoint(0, 0);
 
     if (!m_rawfn.IsEmpty()) {
@@ -41,10 +41,10 @@ CCDecoder::~CCDecoder()
 {
     if (!m_sts.IsEmpty() && !m_fn.IsEmpty()) {
         m_sts.Sort();
-        m_sts.SaveAs(m_fn, EXTSRT, -1, CTextFile::DEFAULT_ENCODING);
-        m_sts.SaveAs(m_fn.Left(m_fn.ReverseFind('.') + 1) + _T("utf8.srt"), EXTSRT, -1, CTextFile::UTF8);
-        m_sts.SaveAs(m_fn.Left(m_fn.ReverseFind('.') + 1) + _T("utf16le.srt"), EXTSRT, -1, CTextFile::LE16);
-        m_sts.SaveAs(m_fn.Left(m_fn.ReverseFind('.') + 1) + _T("utf16be.srt"), EXTSRT, -1, CTextFile::BE16);
+        m_sts.SaveAs(m_fn, EXTSRT, -1, 0, CTextFile::DEFAULT_ENCODING);
+        m_sts.SaveAs(m_fn.Left(m_fn.ReverseFind('.') + 1) + _T("utf8.srt"), EXTSRT, -1, 0, CTextFile::UTF8);
+        m_sts.SaveAs(m_fn.Left(m_fn.ReverseFind('.') + 1) + _T("utf16le.srt"), EXTSRT, -1, 0, CTextFile::LE16);
+        m_sts.SaveAs(m_fn.Left(m_fn.ReverseFind('.') + 1) + _T("utf16be.srt"), EXTSRT, -1, 0, CTextFile::BE16);
     }
 }
 
@@ -107,10 +107,10 @@ void CCDecoder::SaveDisp(__int64 time)
     m_sts.Add(str, true, (int)m_time, (int)time);
 }
 
-void CCDecoder::DecodeCC(BYTE* buff, int len, __int64 time)
+void CCDecoder::DecodeCC(const BYTE* buff, int len, __int64 time)
 {
     if (!m_rawfn.IsEmpty()) {
-        FILE* f = NULL;
+        FILE* f = nullptr;
         if (!_tfopen_s(&f, m_rawfn, _T("at"))) {
             _ftprintf_s(f, _T("%02d:%02d:%02d.%03d\n"),
                         (int)(time / 1000 / 60 / 60),
@@ -256,9 +256,9 @@ void CCDecoder::DecodeCC(BYTE* buff, int len, __int64 time)
 
                 PutChar(charmap[c - 0x20]);
             } else if (buff[i] == 0x94 && buff[i + 1] == 0xae) { // Erase Non-displayed [buffer] Memory
-                memset(m_buff, 0, sizeof(m_buff));
+                ZeroMemory(m_buff, sizeof(m_buff));
             } else if (buff[i] == 0x94 && buff[i + 1] == 0x20) { // Resume Caption Loading
-                memset(m_buff, 0, sizeof(m_buff));
+                ZeroMemory(m_buff, sizeof(m_buff));
             } else if (buff[i] == 0x94 && buff[i + 1] == 0x2f) { // End Of Caption
                 if (memcmp(m_disp, m_buff, sizeof(m_disp)) != 0) {
                     if (m_fEndOfCaption) {
@@ -275,7 +275,7 @@ void CCDecoder::DecodeCC(BYTE* buff, int len, __int64 time)
                     SaveDisp(time + (i / 2) * 1000 / 30);
                 }
 
-                memset(m_disp, 0, sizeof(m_disp));
+                ZeroMemory(m_disp, sizeof(m_disp));
             } else if (buff[i] == 0x97 && (buff[i + 1] == 0xa1 || buff[i + 1] == 0xa2 || buff[i + 1] == 0x23)) { // Tab Over
                 OffsetCursor(buff[i + 1] & 3, 0);
             } else if (buff[i] == 0x91 || buff[i] == 0x92 || buff[i] == 0x15 || buff[i] == 0x16
@@ -334,10 +334,10 @@ void CCDecoder::ExtractCC(BYTE* buff, int len, __int64 time)
             i += 8;
             int nBytes = buff[i++] & 0x3f;
             if (nBytes > 0) {
-                nBytes = (nBytes + 1)&~1;
+                nBytes = (nBytes + 1) & ~1;
 
-                BYTE* pData1 = DNew BYTE[nBytes];
-                BYTE* pData2 = DNew BYTE[nBytes];
+                BYTE* pData1 = DEBUG_NEW BYTE[nBytes];
+                BYTE* pData2 = DEBUG_NEW BYTE[nBytes];
 
                 if (pData1 && pData2) {
                     int nBytes1 = 0, nBytes2 = 0;

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2012 see Authors.txt
+ * (C) 2006-2013 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -39,18 +39,20 @@ using namespace DSObjects;
 // CRealMediaPlayer
 
 CRealMediaPlayer::CRealMediaPlayer(HWND hWndParent, CRealMediaGraph* pRMG)
-    : CUnknown(NAME("CRealMediaPlayer"), NULL)
+    : CUnknown(NAME("CRealMediaPlayer"), nullptr)
     , m_pRMG(pRMG)
     , m_hWndParent(hWndParent)
-    , m_fpCreateEngine(NULL)
-    , m_fpCloseEngine(NULL)
-    , m_hRealMediaCore(NULL)
+    , m_fpCreateEngine(nullptr)
+    , m_fpCloseEngine(nullptr)
+    , m_hRealMediaCore(nullptr)
     , m_State(State_Stopped)
     , m_UserState(State_Stopped)
     , m_nCurrent(0)
     , m_nDuration(0)
     , m_VideoSize(0, 0)
     , m_fVideoSizeChanged(true)
+    , m_fpSetDLLAccessPath(nullptr)
+    , m_unPercentComplete(0)
 {
 }
 
@@ -69,9 +71,9 @@ bool CRealMediaPlayer::Init()
         return false;
     }
 
-    TCHAR buff[_MAX_PATH];
+    TCHAR buff[MAX_PATH];
     ULONG len = _countof(buff);
-    if (ERROR_SUCCESS != key.QueryStringValue(NULL, buff, &len)) {
+    if (ERROR_SUCCESS != key.QueryStringValue(nullptr, buff, &len)) {
         return false;
     }
 
@@ -96,10 +98,10 @@ bool CRealMediaPlayer::Init()
         len = _countof(buff);
         for (int i = 0; ERROR_SUCCESS == key.EnumKey(i, buff, &len); i++, len = _countof(buff)) {
             CRegKey key2;
-            TCHAR buff2[_MAX_PATH];
+            TCHAR buff2[MAX_PATH];
             ULONG len2 = _countof(buff2);
             if (ERROR_SUCCESS != key2.Open(HKEY_CLASSES_ROOT, prefs + _T("\\") + buff, KEY_READ)
-                    || ERROR_SUCCESS != key2.QueryStringValue(NULL, buff2, &len2)) {
+                    || ERROR_SUCCESS != key2.QueryStringValue(nullptr, buff2, &len2)) {
                 continue;
             }
 
@@ -109,7 +111,7 @@ bool CRealMediaPlayer::Init()
         key.Close();
 
         if (!dllpaths.IsEmpty()) {
-            char* s = DNew char[dllpaths.GetLength() + 1];
+            char* s = DEBUG_NEW char[dllpaths.GetLength() + 1];
             strcpy_s(s, dllpaths.GetLength() + 1, CStringA(dllpaths));
             for (size_t i = 0, j = strlen(s); i < j; i++) {
                 if (s[i] == '|') {
@@ -165,18 +167,18 @@ bool CRealMediaPlayer::Init()
             CComPtr<IRMABuffer> pBuffer;
             HRESULT hr = pPrefs->ReadPref("HTTPProxyHost", *&pBuffer);
 
-            UCHAR* pData = NULL;
+            UCHAR* pData = nullptr;
             ULONG32 ulLength = 0;
             hr = pBuffer->Get(pData, ulLength);
 
-            pBuffer = NULL;
+            pBuffer = nullptr;
             hr = m_pCommonClassFactory->CreateInstance(CLSID_IRMABuffer, (void**)&pBuffer);
             hr = pBuffer->SetSize(strlen("localhost")+1);
             pData = pBuffer->GetBuffer();
             strcpy_s((char*)pData, "localhost");
             hr = pBuffer->Set(pData, strlen("localhost")+1);
 
-            pData = NULL;
+            pData = nullptr;
             ulLength = 0;
             hr = pBuffer->Get(pData, ulLength);
 
@@ -200,7 +202,7 @@ void CRealMediaPlayer::Deinit()
 
         m_pPlayer->RemoveAdviseSink(static_cast<IRMAClientAdviseSink*>(this));
 
-        m_pVolume = NULL;
+        m_pVolume = nullptr;
         m_pAudioPlayer->RemovePostMixHook(static_cast<IRMAAudioHook*>(this));
         m_pAudioPlayer.Release();
 
@@ -209,7 +211,7 @@ void CRealMediaPlayer::Deinit()
         m_pSiteManager.Release();
         m_pCommonClassFactory.Release();
 
-        m_pPlayer = NULL;
+        m_pPlayer = nullptr;
     }
 
     if (m_pEngine) {
@@ -219,7 +221,7 @@ void CRealMediaPlayer::Deinit()
 
     if (m_hRealMediaCore) {
         FreeLibrary(m_hRealMediaCore);
-        m_hRealMediaCore = NULL;
+        m_hRealMediaCore = nullptr;
     }
 }
 
@@ -239,7 +241,7 @@ STDMETHODIMP CRealMediaPlayer::NonDelegatingQueryInterface(REFIID riid, void** p
 
 char* AllocateErrorMessage(const char* msg)
 {
-    char* errmsg = NULL;
+    char* errmsg = nullptr;
     size_t len = strlen(msg);
     if (len > 0) {
         errmsg = (char*)CoTaskMemAlloc(len + 1);
@@ -254,7 +256,7 @@ char* AllocateErrorMessage(const char* msg)
 STDMETHODIMP CRealMediaPlayer::ErrorOccurred(const UINT8 unSeverity, const UINT32 ulRMACode, const UINT32 ulUserCode, const char* pUserString, const char* pMoreInfoURL)
 {
     if (unSeverity < 5) {
-        char* errmsg = NULL;
+        char* errmsg = nullptr;
 
         if (CComQIPtr<IRMAErrorMessages, &IID_IRMAErrorMessages> pErrorMessages = m_pPlayer) {
             CComPtr<IRMABuffer> pBuffer = pErrorMessages->GetErrorText(ulRMACode);
@@ -355,7 +357,7 @@ STDMETHODIMP CRealMediaPlayer::HandleAuthenticationRequest(IRMAAuthenticationMan
         return PNR_OK;
     }
 
-    return pResponse->AuthenticationRequestDone(PNR_NOT_AUTHORIZED, NULL, NULL);
+    return pResponse->AuthenticationRequestDone(PNR_NOT_AUTHORIZED, nullptr, nullptr);
 }
 
 // IRMASiteSupplier
@@ -486,23 +488,23 @@ CRealMediaPlayerWindowed::CRealMediaPlayerWindowed(HWND hWndParent, CRealMediaGr
     : CRealMediaPlayer(hWndParent, pRMG)
 {
     if (!m_wndWindowFrame.CreateEx(WS_EX_NOPARENTNOTIFY,
-                                   NULL,
-                                   NULL,
+                                   nullptr,
+                                   nullptr,
                                    WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
                                    CRect(0, 0, 0, 0),
                                    CWnd::FromHandle(m_hWndParent),
                                    0,
-                                   NULL)) {
+                                   nullptr)) {
         return;
     }
 
-    if (!m_wndDestFrame.Create(NULL,
-                               NULL,
+    if (!m_wndDestFrame.Create(nullptr,
+                               nullptr,
                                WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
                                CRect(0, 0, 0, 0),
                                &m_wndWindowFrame,
                                0,
-                               NULL)) {
+                               nullptr)) {
         return;
     }
 }
@@ -513,14 +515,14 @@ CRealMediaPlayerWindowed::~CRealMediaPlayerWindowed()
     m_wndWindowFrame.DestroyWindow();
 }
 
-void CRealMediaPlayerWindowed::SetWindowRect(CRect r)
+void CRealMediaPlayerWindowed::SetWindowRect(const CRect& r)
 {
     if (IsWindow(m_wndWindowFrame.m_hWnd)) {
         m_wndWindowFrame.MoveWindow(r);
     }
 }
 
-void CRealMediaPlayerWindowed::SetDestRect(CRect r)
+void CRealMediaPlayerWindowed::SetDestRect(const CRect& r)
 {
     if (IsWindow(m_wndDestFrame.m_hWnd)) {
         m_wndDestFrame.MoveWindow(r);
@@ -570,7 +572,7 @@ CRealMediaPlayerWindowless::CRealMediaPlayerWindowless(HWND hWndParent, CRealMed
 {
     const CAppSettings& s = AfxGetAppSettings();
 
-    bool bFullscreen = (AfxGetApp()->m_pMainWnd != NULL) && (((CMainFrame*)AfxGetApp()->m_pMainWnd)->IsD3DFullScreenMode());
+    bool bFullscreen = (AfxGetApp()->m_pMainWnd != nullptr) && (((CMainFrame*)AfxGetApp()->m_pMainWnd)->IsD3DFullScreenMode());
     switch (s.iRMVideoRendererType) {
         default:
         case VIDRNDT_RM_DX7:
@@ -610,7 +612,7 @@ bool CRealMediaPlayerWindowless::CreateSite(IRMASite** ppSite)
     CRealMediaWindowlessSite* pWMWlS;
 
     CComPtr<IRMASiteWindowless> pSiteWindowless;
-    pSiteWindowless = (IRMASiteWindowless*)(pWMWlS = DNew CRealMediaWindowlessSite(hr, m_pPlayer, NULL, NULL));
+    pSiteWindowless = (IRMASiteWindowless*)(pWMWlS = DEBUG_NEW CRealMediaWindowlessSite(hr, m_pPlayer, nullptr, nullptr));
     if (FAILED(hr)) {
         return false;
     }
@@ -629,7 +631,7 @@ STDMETHODIMP CRealMediaPlayerWindowless::SizeChanged(PNxSize* size)
 {
     if (CComQIPtr<IRMAVideoSurface, &IID_IRMAVideoSurface> pRMAVS = m_pRMAP) {
         RMABitmapInfoHeader BitmapInfo;
-        memset(&BitmapInfo, 0, sizeof(BitmapInfo));
+        ZeroMemory(&BitmapInfo, sizeof(BitmapInfo));
         BitmapInfo.biWidth = size->cx;
         BitmapInfo.biHeight = size->cy;
         pRMAVS->BeginOptimizedBlt(&BitmapInfo);
@@ -647,8 +649,8 @@ CRealMediaGraph::CRealMediaGraph(HWND hWndParent, HRESULT& hr)
     hr = S_OK;
 
     m_pRMP = AfxGetAppSettings().iRMVideoRendererType == VIDRNDT_RM_DEFAULT
-             ? (CRealMediaPlayer*)DNew CRealMediaPlayerWindowed(hWndParent, this)
-             : (CRealMediaPlayer*)DNew CRealMediaPlayerWindowless(hWndParent, this);
+             ? (CRealMediaPlayer*)DEBUG_NEW CRealMediaPlayerWindowed(hWndParent, this)
+             : (CRealMediaPlayer*)DEBUG_NEW CRealMediaPlayerWindowless(hWndParent, this);
 
     if (!m_pRMP) {
         hr = E_OUTOFMEMORY;
@@ -656,7 +658,8 @@ CRealMediaGraph::CRealMediaGraph(HWND hWndParent, HRESULT& hr)
     }
 
     if (!m_pRMP->Init()) {
-        delete m_pRMP, m_pRMP = NULL;
+        delete m_pRMP;
+        m_pRMP = nullptr;
         hr = E_FAIL;
         return;
     }
@@ -669,7 +672,7 @@ CRealMediaGraph::~CRealMediaGraph()
     if (m_pRMP) {
         m_pRMP->Deinit();
         m_pRMP->Release();
-        m_pRMP = NULL;
+        m_pRMP = nullptr;
     }
 }
 
@@ -678,7 +681,7 @@ STDMETHODIMP CRealMediaGraph::NonDelegatingQueryInterface(REFIID riid, void** pp
     CheckPointer(ppv, E_POINTER);
 
     return
-        (m_pRMP && (riid == __uuidof(ISubPicAllocatorPresenter) || riid == __uuidof(ISubPicAllocatorPresenter))) ? m_pRMP->QueryInterface(riid, ppv) :
+        (m_pRMP && (riid == __uuidof(ISubPicAllocatorPresenter) || riid == __uuidof(ISubPicAllocatorPresenter2))) ? m_pRMP->QueryInterface(riid, ppv) :
         __super::NonDelegatingQueryInterface(riid, ppv);
 }
 
@@ -687,8 +690,8 @@ STDMETHODIMP CRealMediaGraph::RenderFile(LPCWSTR lpcwstrFile, LPCWSTR lpcwstrPla
 {
     m_fn = lpcwstrFile;
 
-    CHAR buff[_MAX_PATH] = {0};
-    WideCharToMultiByte(GetACP(), 0, lpcwstrFile, -1, buff, _MAX_PATH, 0, 0);
+    CHAR buff[MAX_PATH] = {0};
+    WideCharToMultiByte(GetACP(), 0, lpcwstrFile, -1, buff, _countof(buff), 0, 0);
 
     CStringA fn(buff);
     if (fn.Find("://") < 0) {
@@ -712,7 +715,7 @@ STDMETHODIMP CRealMediaGraph::RenderFile(LPCWSTR lpcwstrFile, LPCWSTR lpcwstrPla
 STDMETHODIMP CRealMediaGraph::Run()
 {
     if (m_pRMP->m_pPlayer->IsDone()) {
-        RenderFile(m_fn, NULL);
+        RenderFile(m_fn, nullptr);
     }
 
     m_pRMP->m_UserState = State_Running;
@@ -733,18 +736,30 @@ STDMETHODIMP CRealMediaGraph::Stop()
 
 STDMETHODIMP CRealMediaGraph::GetState(LONG msTimeout, OAFilterState* pfs)
 {
-    return pfs ? *pfs = m_pRMP->m_State, S_OK : E_POINTER;
+    CheckPointer(pfs, E_POINTER);
+
+    *pfs = m_pRMP->m_State;
+
+    return S_OK;
 }
 
 // IMediaSeeking
 STDMETHODIMP CRealMediaGraph::GetDuration(LONGLONG* pDuration)
 {
-    return pDuration ? *pDuration = m_pRMP->m_nDuration, S_OK : E_POINTER;
+    CheckPointer(pDuration, E_POINTER);
+
+    *pDuration = m_pRMP->m_nDuration;
+
+    return S_OK;
 }
 
 STDMETHODIMP CRealMediaGraph::GetCurrentPosition(LONGLONG* pCurrent)
 {
-    return pCurrent ? *pCurrent = m_pRMP->m_nCurrent, S_OK : E_POINTER;
+    CheckPointer(pCurrent, E_POINTER);
+
+    *pCurrent = m_pRMP->m_nCurrent;
+
+    return S_OK;
 }
 
 STDMETHODIMP CRealMediaGraph::SetPositions(LONGLONG* pCurrent, DWORD dwCurrentFlags, LONGLONG* pStop, DWORD dwStopFlags)
@@ -787,8 +802,8 @@ STDMETHODIMP CRealMediaGraph::put_Volume(long lVolume)
         return E_UNEXPECTED;
     }
 
-    UINT16 volume = (lVolume <= -10000) ? 0 : (UINT16)(pow(10.0, lVolume / 4000.0) * 100);
-    volume = max(min(volume, 100), 0);
+    UINT16 volume = (lVolume <= -10000) ? 0 : UINT16(pow(10.0, lVolume / 4000.0) * 100);
+    volume = max<UINT16>(min<UINT16>(volume, 100u), 0u);
 
     return PNR_OK == m_pRMP->m_pVolume->SetVolume(volume) ? S_OK : E_FAIL;
 }
@@ -803,7 +818,7 @@ STDMETHODIMP CRealMediaGraph::get_Volume(long* plVolume)
 
     *plVolume = (long)m_pRMP->m_pVolume->GetVolume(); // [?..100]
     if (*plVolume > 0) {
-        *plVolume = min((long)(4000 * log10(*plVolume / 100.0f)), 0);
+        *plVolume = min(long(4000 * log10(*plVolume / 100.0f)), 0l);
     } else {
         *plVolume = -10000;
     }
