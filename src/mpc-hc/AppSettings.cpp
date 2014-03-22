@@ -232,6 +232,9 @@ CAppSettings::CAppSettings()
 #if INTERNAL_SOURCEFILTER_AVI
     SrcFiltersKeys[SRC_AVI] = FilterKey(_T("SRC_AVI"), true);
 #endif
+#if INTERNAL_SOURCEFILTER_AVS
+    SrcFiltersKeys[SRC_AVS] = FilterKey(_T("SRC_AVS"), true);
+#endif
 #if INTERNAL_SOURCEFILTER_OGG
     SrcFiltersKeys[SRC_OGG] = FilterKey(_T("SRC_OGG"), true);
 #endif
@@ -587,18 +590,19 @@ bool CAppSettings::IsD3DFullscreen() const
     }
 }
 
-bool CAppSettings::IsISREnabled() const
+bool CAppSettings::IsISRAvailable() const
 {
-    if (iDSVideoRendererType == VIDRNDT_DS_VMR7RENDERLESS ||
+    return (iDSVideoRendererType == VIDRNDT_DS_VMR7RENDERLESS ||
             iDSVideoRendererType == VIDRNDT_DS_VMR9RENDERLESS ||
             iDSVideoRendererType == VIDRNDT_DS_EVR_CUSTOM ||
             iDSVideoRendererType == VIDRNDT_DS_DXR ||
             iDSVideoRendererType == VIDRNDT_DS_SYNC ||
-            iDSVideoRendererType == VIDRNDT_DS_MADVR) {
-        return fAutoloadSubtitles;
-    } else {
-        return false;
-    }
+            iDSVideoRendererType == VIDRNDT_DS_MADVR);
+}
+
+bool CAppSettings::IsISRAutoLoadEnabled() const
+{
+    return fAutoloadSubtitles && IsISRAvailable();
 }
 
 CString CAppSettings::SelectedAudioRenderer() const
@@ -1134,7 +1138,7 @@ void CAppSettings::LoadSettings()
 
     strAudioRendererDisplayName = pApp->GetProfileString(IDS_R_SETTINGS, IDS_RS_AUDIORENDERERTYPE);
     fAutoloadAudio = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_AUTOLOADAUDIO, TRUE);
-    fAutoloadSubtitles = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_AUTOLOADSUBTITLES, !IsVSFilterInstalled() || (SysVersion::IsVistaOrLater() && HasEVR()));
+    fAutoloadSubtitles = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_AUTOLOADSUBTITLES, TRUE);
     strSubtitlesLanguageOrder = pApp->GetProfileString(IDS_R_SETTINGS, IDS_RS_SUBTITLESLANGORDER);
     strAudiosLanguageOrder = pApp->GetProfileString(IDS_R_SETTINGS, IDS_RS_AUDIOSLANGORDER);
     fBlockVSFilter = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_BLOCKVSFILTER, TRUE);

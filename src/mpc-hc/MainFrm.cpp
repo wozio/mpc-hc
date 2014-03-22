@@ -1321,6 +1321,10 @@ void CMainFrame::OnMove(int x, int y)
     //MoveVideoWindow(); // This isn't needed, based on my limited tests. If it is needed then please add a description the scenario(s) where it is needed.
     m_wndView.Invalidate();
 
+    if (m_bWasSnapped && IsZoomed()) {
+        m_bWasSnapped = false;
+    }
+
     WINDOWPLACEMENT wp;
     GetWindowPlacement(&wp);
     if (!m_fFirstFSAfterLaunchOnFS && !m_fFullScreen && wp.flags != WPF_RESTORETOMAXIMIZED && wp.showCmd != SW_SHOWMINIMIZED) {
@@ -3467,13 +3471,6 @@ void CMainFrame::OnFilePostClosemedia(bool bNextIsQueued/* = false*/)
     }
 
     SetAlwaysOnTop(AfxGetAppSettings().iOnTop);
-
-    // Ensure the dynamically added menu items are cleared
-    SetupFiltersSubMenu();
-    SetupAudioSubMenu();
-    SetupSubtitlesSubMenu();
-    SetupVideoStreamsSubMenu();
-    SetupJumpToSubMenus();
 
     SendNowPlayingToSkype();
 
@@ -10716,7 +10713,6 @@ HRESULT CMainFrame::OpenBDAGraph()
 {
     HRESULT hr = m_pGB->RenderFile(L"", L"");
     if (SUCCEEDED(hr)) {
-        // AddTextPassThruFilter();
         SetPlaybackMode(PM_DIGITAL_CAPTURE);
     }
     return hr;
@@ -10887,7 +10883,7 @@ void CMainFrame::OpenCustomizeGraph()
     CleanGraph();
 
     if (GetPlaybackMode() == PM_FILE) {
-        if (m_pCAP && AfxGetAppSettings().fAutoloadSubtitles) {
+        if (m_pCAP && AfxGetAppSettings().IsISRAutoLoadEnabled()) {
             AddTextPassThruFilter();
         }
     }
@@ -11713,7 +11709,7 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
         OpenSetupAudio();
         checkAborted();
 
-        if (m_pCAP && (!m_fAudioOnly || m_fRealMediaGraph)) {
+        if (m_pCAP && s.IsISRAutoLoadEnabled() && (!m_fAudioOnly || m_fRealMediaGraph)) {
             if (s.fDisableInternalSubtitles) {
                 m_pSubStreams.RemoveAll(); // Needs to be replaced with code that checks for forced subtitles.
             }
@@ -11795,7 +11791,6 @@ void CMainFrame::CloseMediaPrivate()
     m_fEndOfStream = false;
     m_rtDurationOverride = -1;
     m_bUsingDXVA = false;
-    m_kfs.clear();
     m_pCB.Release();
 
     {
@@ -13333,6 +13328,11 @@ HRESULT CMainFrame::InsertTextPassThruFilter(IBaseFilter* pBF, IPin* pPin, IPin*
         return hr;
             }
 
+    OAFilterState fs = GetMediaState();
+    if (fs == State_Running || fs == State_Paused) {
+        m_pMC->Stop();
+    }
+
             hr = pPinTo->Disconnect();
             hr = pPin->Disconnect();
 
@@ -13343,14 +13343,37 @@ HRESULT CMainFrame::InsertTextPassThruFilter(IBaseFilter* pBF, IPin* pPin, IPin*
         SubtitleInput subInput(CComQIPtr<ISubStream>(pTPTF), pBF);
         m_pSubStreams.AddTail(subInput);
             }
+
+    if (fs == State_Running) {
+        m_pMC->Run();
+    } else if (fs == State_Paused) {
+        m_pMC->Pause();
+    }
+
     return hr;
         }
 
 bool CMainFrame::LoadSubtitle(CString fn, ISubStream** actualStream /*= nullptr*/, bool bAutoLoad /*= false*/)
 {
+    CAppSettings& s = AfxGetAppSettings();
     CComQIPtr<ISubStream> pSubStream;
 
+    if (FindFilter(CLSID_VSFilter, m_pGB) || FindFilter(CLSID_XySubFilter, m_pGB)) {
+        // Prevent ISR from loading if VSFilter is already in graph.
+        // TODO: Support VSFilter natively (see ticket #4122)
+        // Note that this doesn't affect ISR auto-loading if any sub renderer force loading itself into the graph.
+        // VSFilter like filters should be blocked when building the graph and ISR auto-loading is enabled.
+        return false;
+    }
+
+    if (GetPlaybackMode() == PM_FILE && !s.fDisableInternalSubtitles && !FindFilter(__uuidof(CTextPassThruFilter), m_pGB)) {
+        // Add TextPassThru filter if it isn't already in the graph. (i.e ISR hasn't been loaded before)
+        // This will load all embedded subtitle tracks when user triggers ISR (load external subtitle file) for the first time.
+        AddTextPassThruFilter();
+    }
+
     // TMP: maybe this will catch something for those who get a runtime error dialog when opening subtitles from cds
+    // TODO: Remove this try/catch from MainFrm
     try {
         if (!pSubStream) {
             CAutoPtr<CVobSubFile> pVSF(DEBUG_NEW CVobSubFile(&m_csSubLock));
@@ -13363,8 +13386,6 @@ bool CMainFrame::LoadSubtitle(CString fn, ISubStream** actualStream /*= nullptr*
         }
 
         if (!pSubStream) {
-            CAppSettings& s = AfxGetAppSettings();
-
             CAutoPtr<CRenderedTextSubtitle> pRTS(DEBUG_NEW CRenderedTextSubtitle(&m_csSubLock, &s.subtitlesDefStyle, s.fUseDefaultSubtitlesStyle));
 
             CString videoName = GetPlaybackMode() == PM_FILE ? m_wndPlaylistBar.GetCurFileName() : _T("");
@@ -14499,6 +14520,15 @@ void CMainFrame::CloseMedia(bool bNextIsQueued/* = false*/)
 
     // clear any active osd messages
     m_OSD.ClearMessage();
+
+    // Ensure the dynamically added menu items are cleared and all references
+    // on objects belonging to the DirectShow graph they might hold are freed.
+    // Note that we need to be in closing state already when doing that
+    SetupFiltersSubMenu();
+    SetupAudioSubMenu();
+    SetupSubtitlesSubMenu();
+    SetupVideoStreamsSubMenu();
+    SetupJumpToSubMenus();
 
     // initiate graph destruction
     if (m_pGraphThread && m_bOpenedThroughThread) {

@@ -1437,6 +1437,13 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     }
 #endif
 
+#if INTERNAL_SOURCEFILTER_AVS
+    if (src[SRC_AVS]) {
+        pFGLAVSplitterSource->m_extensions.AddTail(_T(".avs"));
+        pFGLAVSplitterSource->AddFormat("avisynth");
+    }
+#endif
+
 #if INTERNAL_SOURCEFILTER_MP4
     if (src[SRC_MP4]) {
         pFGLAVSplitterSource->m_chkbytes.AddTail(_T("4,4,,66747970")); // ftyp
@@ -1632,6 +1639,12 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     if (src[SRC_AVI]) {
         pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_Avi);
         pFGLAVSplitter->AddFormat("avi");
+    }
+#endif
+
+#if INTERNAL_SOURCEFILTER_AVS
+    if (src[SRC_AVS]) {
+        pFGLAVSplitter->AddFormat("avisynth");
     }
 #endif
 
@@ -2123,17 +2136,13 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     m_transform.AddTail(DEBUG_NEW CFGFilterRegistry(GUIDFromCString(_T("{272D77A0-A852-4851-ADA4-9091FEAD4C86}")), MERIT64_DO_NOT_USE));
 
     // VSFilter blocking routines
-    if (s.fBlockVSFilter) {
-        // If the internal renderer is enabled or XySubFilter is registered and we are using a compatible renderer
-        if (s.IsISREnabled()) {
-            // Disable VSFilter as a workaround for its aggressive loading
-            m_transform.AddTail(DEBUG_NEW CFGFilterRegistry(CLSID_VSFilter, MERIT64_DO_NOT_USE));
-            // Prevent XySubFilter from connecting while the ISR is active
-            m_transform.AddTail(DEBUG_NEW CFGFilterRegistry(CLSID_XySubFilter, MERIT64_DO_NOT_USE));
-        } else if (IsCLSIDRegistered(CLSID_XySubFilter) && s.iDSVideoRendererType == VIDRNDT_DS_MADVR) {
-            // Disable VSFilter as a workaround for its aggressive loading
-            m_transform.AddTail(DEBUG_NEW CFGFilterRegistry(CLSID_VSFilter, MERIT64_DO_NOT_USE));
-        }
+    if (s.fBlockVSFilter && s.IsISRAutoLoadEnabled()) {
+        // Prevent VSFilter from connecting while the ISR is active
+        m_transform.AddTail(DEBUG_NEW CFGFilterRegistry(CLSID_VSFilter, MERIT64_DO_NOT_USE));
+        // Prevent XySubFilter from connecting while the ISR is active
+        m_transform.AddTail(DEBUG_NEW CFGFilterRegistry(CLSID_XySubFilter, MERIT64_DO_NOT_USE));
+        // Prevent XySubFilter's loader from connecting while the ISR is active
+        m_transform.AddTail(DEBUG_NEW CFGFilterRegistry(CLSID_XySubFilter_AutoLoader, MERIT64_DO_NOT_USE));
     }
 
     // Blacklist Accusoft PICVideo M-JPEG Codec 2.1 since causes a DEP crash

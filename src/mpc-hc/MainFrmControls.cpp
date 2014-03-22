@@ -22,10 +22,13 @@
 #include "MainFrmControls.h"
 #include "MainFrm.h"
 
+#define DELAY_SHOW_NOT_LOADED_TIME_MS 3000
+
 CMainFrameControls::ControlsVisibilityState::ControlsVisibilityState()
     : nVisibleCS(0)
     , bLastCanAutoHideToolbars(false)
     , bLastCanAutoHidePanels(false)
+    , bLastHaveExclusiveSeekbar(false)
 {
     nCurrentCS = AfxGetAppSettings().nCS;
 }
@@ -335,6 +338,8 @@ void CMainFrameControls::UpdateToolbarsVisibility()
         VERIFY(m_pMainFrame->m_pMVRS->SettingsGetBoolean(L"enableExclusive", &bOptExcl));
         VERIFY(m_pMainFrame->m_pMVRS->SettingsGetBoolean(L"enableSeekbar", &bOptExclSeekbar));
         bExclSeekbar = (bOptExcl && bOptExclSeekbar);
+    } else if (m_bDelayShowNotLoaded && st.bLastHaveExclusiveSeekbar) {
+        bExclSeekbar = true;
     }
 
     if (m_pMainFrame->m_fFullScreen && s.bHideFullscreenControls &&
@@ -533,10 +538,6 @@ void CMainFrameControls::UpdateToolbarsVisibility()
             if (zone & mask.maskShow) {
                 bool bSetTick = false;
                 if (zone == DOCK_BOTTOM) {
-                    if (DelayShowNotLoaded()) {
-                        DelayShowNotLoaded(false);
-                        mask.show(maskAll);
-                    }
                     if (ShowToolbarsSelection()) {
                         bRecalcLayout = true;
                     }
@@ -651,6 +652,7 @@ void CMainFrameControls::UpdateToolbarsVisibility()
 
     st.bLastCanAutoHideToolbars = bCanAutoHide;
     st.bLastCanAutoHidePanels = bCanAutoHide && bCanHideDockedPanels;
+    st.bLastHaveExclusiveSeekbar = bExclSeekbar;
 }
 
 unsigned CMainFrameControls::GetVisibleToolbarsHeight() const
@@ -667,7 +669,8 @@ void CMainFrameControls::DelayShowNotLoaded(bool bDoDelay)
 {
     auto id = CMainFrame::TimerOneTimeSubscriber::TOOLBARS_DELAY_NOTLOADED;
     if (bDoDelay) {
-        m_pMainFrame->m_timerOneTime.Subscribe(id, std::bind(&CMainFrameControls::DelayShowNotLoadedCallback, this), 4000);
+        m_pMainFrame->m_timerOneTime.Subscribe(id, std::bind(&CMainFrameControls::DelayShowNotLoadedCallback, this),
+                                               DELAY_SHOW_NOT_LOADED_TIME_MS);
     } else if (m_bDelayShowNotLoaded) {
         m_pMainFrame->m_timerOneTime.Unsubscribe(id);
     }
