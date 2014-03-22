@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "LibraryReaderPush.h"
 #include "../../../DSUtil/DSUtil.h"
-#include "../../../../../common/src/discovery.h"
-#include "../../../../../common/src/yamicontainer.h"
-#include "../../../../../common/src/logger.h"
+#include "../../../home-system/common/src/discovery.h"
+#include "../../../home-system/common/src/yamicontainer.h"
+#include "../../../home-system/common/src/logger.h"
 #include <thread>
 #include <fstream>
 
@@ -20,7 +20,7 @@ CLibraryReaderPush::CLibraryReaderPush(IUnknown* pUnk, HRESULT* phr)
 {
   LOG("CLibraryReaderPush Created");
   *phr = S_OK;
-  if (!(DNew CLibraryStreamPush(this, phr)))
+  if (!(new CLibraryStreamPush(this, phr)))
   {
     *phr = E_OUTOFMEMORY;
   }

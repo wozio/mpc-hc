@@ -1,0 +1,188 @@
+----
+Differences between versions 1.6.0 and 1.5.0:
+
+* Various build configuration fixes and Makefile corrections.
+
+* Fixed reverse DNS lookup in Java.
+
+* Corrected usage of several POSIX functions in the core library.
+
+* Added functions for querying socket usage limits for the core and
+  C++ libraries.
+
+* Added asynchronous outgoing message callback for C++.
+
+* Added queue server.
+
+* Added support for Objective-C.
+
+----
+Differences between versions 1.5.0 and 1.4.0:
+
+* Implemented __del__ methods for Python2 and Python3 modules to allow
+  GC-driven cleanup of YAMI4 objects and resources.
+
+* Fixed type information issues in Python3 loadable module.
+
+* Introduced support for DLL on Windows.
+
+* Added the possibility to open a new connection in C++ with overriding
+  set of configuration options.
+
+* Added extended error reporting for C++ that allows to obtain system-specific
+  messages in case of I/O errors.
+
+----
+Differences between versions 1.4.0 and 1.3.0:
+
+* Corrected object buffer spaces for 64-bit compatibility
+  in the Ada-Ravenscar module.
+
+* Replaced the ctypes-based Python bindings with classic extension
+  implementation for compatibility with 64-bit systems.
+
+* Added support for first-update (sending back first known value) in
+  publish-subscribe scenario.
+
+* Added event monitoring capability to Ada and C++ agents.
+  Added standard statistics monitor with remote access.
+
+* Added Dashboard - a centralized management and monitoring GUI console.
+
+----
+Differences between versions 1.3.0 and 1.2.2:
+
+* Aligned gpr build files with GNAT 2009 conventions
+  with regard to Ada 2005 language features.
+
+* Fixed handling of empty strings in Ada, at the level of interface with C++.
+
+* Fixed a bug in handling of UDP frames in Java.
+
+* Improved source and Makefiles compatibility with FreeBSD.
+
+* Removed core limits for allocation sizes in deserialization routines.
+
+* Added Ada-Ravenscar variant of the Ada core library with interfaces
+  that are compatible with the Ravenscar execution profile for real-time
+  and critical systems.
+
+* Added name server, message broker and cache as optional central services.
+
+* Added support for the .NET platform with a complete C# library.
+
+----
+Differences between versions 1.2.2 and 1.2.1:
+
+* Fixed internal locking scheme that blocked with UDP channels.
+
+* Fixed exception handling in the worker task (Ada).
+
+* Fixed Makefile for Python3 to properly switch between Darwin and Linux.
+
+* Relaxed typing restrictions for some related integers types (Ada).
+
+* Streamlined the use of selector to avoid unnecessary interrupts.
+
+----
+Differences between versions 1.2.1 and 1.2.0:
+
+* Fixed serialization bug for negative integers in Python.
+
+* Improved performance of string serialization in Java.
+
+* Introduced customized timeout for establishing TCP connections.
+
+----
+Differences between versions 1.2.0 and 1.1.0a:
+
+* Fixed frame size computation bug in core.
+
+* Fixed bug in closing connections in core.
+
+* Fixed flow control bug in Java
+  (starvation in massively multithreaded systems).
+
+* Introduced work-around for the JDK bug in handling connections
+  to unresolved addresses.
+
+* Improved exception handling (protecting library against user exceptions)
+  in Ada.
+
+* Improved handling of delays in opening new connections.
+
+* Improved Makefiles for the Python module (recognizing the target system).
+
+* Introduced the keepalive option to the agent.
+
+* Improved performance and memory usage patterns for Java serialization.
+
+* Added the possibility to propagate connection and disconnection events
+  to user code.
+
+* Extended the possibilities to manage slow subscribers, to reduce their
+  interference with other components.
+
+* Added support for Python 2.5+ (separate module, backported from Python3).
+
+----
+Differences between versions 1.1.0a and 1.1.0:
+
+* Fixed missing /I compiler option in Makefile.VS for the C++ library
+  on Windows.
+
+----
+Differences between versions 1.1.0 and 1.0.2:
+
+* Fixed handling of automatic message cancellation during channel closing
+  in Java.
+
+* Fixed handling of the preferred frame size in Java.
+
+* Fixed serialization bug related to 64-bit values in Java.
+
+* Fixed serialization bug related to non-ASCII strings in Java.
+
+* Fixed thread-safety issues of reconnection mechanism in Java.
+
+* Fixed several corner-cases related to memory management in memory
+  constrained environments (handling of memory allocation failures)
+  in core and C++.
+
+* Fixed error propagation scheme in C++ to avoid logic errors appearing
+  as a result of proper usage of public API.
+
+* Improved concurrency of reconnection mechanism in core, C++ and Ada.
+
+* Improved control over the automatic reconnection mechanism, added explicit
+  "open connection" operation.
+
+* Improved the publish-subscribe mechanism to reduce interferences between
+  different clients (to reduce jitter in the presence of client failures).
+
+* Added API for monitoring outgoing water marks.
+
+* Added support for user-defined abort actions in case of assertion failure
+  in core and C++.
+
+* Added hard limits for allocation sizes in deserialization routines to
+  protect the agent against corrupted incoming data.
+
+* Added support for in place re-initialization of outgoing messages in C++.
+
+* Added support for custom serializers and raw-binary data transfer.
+
+* Added support for the Python programming language (entirely new module).
+
+----
+Differences between versions 1.0.2 and 1.0.1:
+
+* Fixed bug in handling of timed wait for transmission and completion in Java.
+
+* Applied timeout limit in calls to select system function
+  to ensure compatibility with recent versions of Mac OS X.
+
+----
+Differences between versions 1.0.1 and 1.0.0:
+
+* Updated library code and tests for compatibility with 64-bit systems.

@@ -22,7 +22,7 @@
 #pragma once
 
 #include <atlbase.h>
-#include "../../../../../common/src/service.h"
+#include "../../../home-system/common/src/service.h"
 #include <boost/circular_buffer.hpp>
 #include <boost/shared_array.hpp>
 
