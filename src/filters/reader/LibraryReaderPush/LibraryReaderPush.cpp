@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "LibraryReaderPush.h"
 #include "../../../DSUtil/DSUtil.h"
-#include "../../../home-system/common/src/discovery.h"
-#include "../../../home-system/common/src/yamicontainer.h"
-#include "../../../home-system/common/src/logger.h"
+#include <discovery.h>
+#include <yamicontainer.h>
+#include <logger.h>
 #include <thread>
 #include <fstream>
 

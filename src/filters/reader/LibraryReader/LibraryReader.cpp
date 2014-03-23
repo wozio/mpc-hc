@@ -22,9 +22,9 @@
 #include "stdafx.h"
 #include "LibraryReader.h"
 #include "../../../DSUtil/DSUtil.h"
-#include "../../../../../common/src/discovery.h"
-#include "../../../../../common/src/yamicontainer.h"
-#include "../../../../../common/src/logger.h"
+#include <discovery.h>
+#include <yamicontainer.h>
+#include <logger.h>
 #include <boost/thread.hpp>
 #include <sstream>
 

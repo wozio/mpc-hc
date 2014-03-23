@@ -8,7 +8,7 @@
 #include "SysVersion.h"
 #include "../filters/switcher/AudioSwitcher/AudioSwitcher.h"
 #include "../filters/reader/LibraryReaderPush/LibraryReaderPush.h"
-#include "../../../common/src/logger.h"
+#include "logger.h"
 
 
 /// Format, Video MPEG2
@@ -241,7 +241,7 @@ STDMETHODIMP CFGManagerLibrary::RenderFile(LPCWSTR lpcwstrFile, LPCWSTR lpcwstrP
   HRESULT hr;
   const CAppSettings& s = AfxGetAppSettings();
 
-  CFGFilter* pFGF = DNew CFGFilterInternal<CLibraryReaderPush>();
+  CFGFilter* pFGF = new CFGFilterInternal<CLibraryReaderPush>();
   CComPtr<IBaseFilter> pSource;
   CInterfaceList<IUnknown, &IID_IUnknown> pUnks;
   pFGF->Create(&pSource, pUnks);

@@ -24,7 +24,7 @@
 #include <atlbase.h>
 #include "AsyncReader/asyncio.h"
 #include "AsyncReader/asyncrdr.h"
-#include "../../../home-system/common/src/service.h"
+#include <service.h>
 #include <boost/circular_buffer.hpp>
 
 #define LibraryReaderName L"MPC Library Reader"

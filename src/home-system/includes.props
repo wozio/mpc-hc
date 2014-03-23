@@ -4,9 +4,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <_PropertySheetDisplayName>common</_PropertySheetDisplayName>
-    <OutDir>$(SolutionDir)bin\lib\$(Configuration)_$(PlatformName)\</OutDir>
-    <IntDir>$(SolutionDir)bin\obj\$(Configuration)_$(PlatformName)\$(ProjectName)\</IntDir>
+    <_PropertySheetDisplayName>includes</_PropertySheetDisplayName>
+    <IncludePath>$(SolutionDir)\src\home-system\common\src;$(SolutionDir)\src\home-system\yami4;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

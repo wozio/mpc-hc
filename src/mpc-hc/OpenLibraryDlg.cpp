@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "OpenLibraryDlg.h"
-#include "../../../common/src/discovery.h"
+#include "discovery.h"
 
 using namespace std;
 

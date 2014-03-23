@@ -3979,7 +3979,7 @@ void CMainFrame::OnFileOpenLibrary()
   const CAppSettings& s = AfxGetAppSettings();
 
 
-  if (m_iMediaLoadState == MLS_LOADING)
+  if (GetLoadState() != MLS::LOADED)
   {
     return;
   }
@@ -3991,7 +3991,7 @@ void CMainFrame::OnFileOpenLibrary()
 
   m_wndPlaylistBar.Empty();
 
-  CAutoPtr<OpenLibraryData> p(DNew OpenLibraryData());
+  CAutoPtr<OpenLibraryData> p(new OpenLibraryData());
   OpenMedia(p);
 }
 
@@ -6876,19 +6876,24 @@ void CMainFrame::OnPlayPlay()
             m_pDVDC->Pause(FALSE);
         } else if (GetPlaybackMode() == PM_ANALOG_CAPTURE) {
             m_pMC->Stop(); // audio preview won't be in sync if we run it from paused state
-        } else if (GetPlaybackMode() == PM_DIGITAL_CAPTURE) {
-            CComQIPtr<IBDATuner> pTun = m_pGB;
-                if (pTun) {
-                bVideoWndNeedReset = false; // SetChannel deals with MoveVideoWindow
-                SetChannel(s.nDVBLastChannel);
-            } else {
-                ASSERT(FALSE);
-                }
-        } else {
-            ASSERT(FALSE);
-            }
-        } else if (GetPlaybackMode() == PM_LIBRARY) {
-            pMC->Run();
+		}
+		else if (GetPlaybackMode() == PM_DIGITAL_CAPTURE) {
+			CComQIPtr<IBDATuner> pTun = m_pGB;
+			if (pTun) {
+				bVideoWndNeedReset = false; // SetChannel deals with MoveVideoWindow
+				SetChannel(s.nDVBLastChannel);
+			}
+			else {
+				ASSERT(FALSE);
+			}
+		}
+		else if (GetPlaybackMode() == PM_LIBRARY)
+		{
+			//pMC->Run();
+    } else {
+      ASSERT(FALSE);
+		}
+        
 
         if (bVideoWndNeedReset) {
             MoveVideoWindow(false, true);
@@ -10251,7 +10256,7 @@ void CMainFrame::OpenCreateGraphObject(OpenMediaData* pOMD)
             m_pGB = DEBUG_NEW CFGManagerCapture(_T("CFGManagerCapture"), nullptr, m_pVideoWnd->m_hWnd);
         }
     } else if (OpenLibraryData* p = dynamic_cast<OpenLibraryData*>(pOMD)) {
-        pGB = DNew CFGManagerLibrary(_T("CFGManagerLibrary"), NULL, m_pVideoWnd->m_hWnd);
+      m_pGB = DEBUG_NEW CFGManagerLibrary(_T("CFGManagerLibrary"), NULL, m_pVideoWnd->m_hWnd);
     }
 
     if (!m_pGB) {
@@ -10720,7 +10725,7 @@ HRESULT CMainFrame::OpenBDAGraph()
 
 HRESULT CMainFrame::OpenLibraryGraph()
 {
-    HRESULT hr = pGB->RenderFile(L"", L"");
+    HRESULT hr = m_pGB->RenderFile(L"", L"");
     if (SUCCEEDED(hr)) {
         AddTextPassThruFilter();
         SetPlaybackMode(PM_LIBRARY);
@@ -11308,7 +11313,7 @@ void CMainFrame::OpenSetupWindowTitle(bool reset /*= false*/)
             } else if (GetPlaybackMode() == PM_DVD) {
                 title = _T("DVD");
             } else if (GetPlaybackMode() == PM_LIBRARY) {
-                fn = _T("Library Live TV");;
+              title = _T("Library Live TV");
             }
         } else { // Show full path
             if (GetPlaybackMode() == PM_FILE) {
@@ -11595,7 +11600,8 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
     OpenFileData* pFileData = dynamic_cast<OpenFileData*>(pOMD.m_p);
     OpenDVDData* pDVDData = dynamic_cast<OpenDVDData*>(pOMD.m_p);
     OpenDeviceData* pDeviceData = dynamic_cast<OpenDeviceData*>(pOMD.m_p);
-    ASSERT(pFileData || pDVDData || pDeviceData);
+    OpenLibraryData* pLibraryData = dynamic_cast<OpenLibraryData*>(pOMD.m_p);
+    ASSERT(pFileData || pDVDData || pDeviceData || pLibraryData);
 
     // Clear DXVA state ...
     ClearDXVAState();
@@ -12469,11 +12475,10 @@ void CMainFrame::SetupSubtitlesSubMenu()
 
     UINT id = ID_SUBTITLES_SUBITEM_START;
 
-    if (GetPlaybackMode() == PM_FILE ||
-      (GetPlaybackMode() == PM_CAPTURE && AfxGetAppSettings().iDefaultCaptureDevice == 1) ||
-      GetPlaybackMode() == PM_LIBRARY) {
-        SetupNavStreamSelectSubMenu(pSub, id, 2);
-    } else if (GetPlaybackMode() == PM_DVD) {
+    // DVD subtitles in DVD mode are never handled by the internal subtitles renderer
+    // but it is still possible to load external subtitles so we keep that if block
+    // separated from the rest
+    if (GetPlaybackMode() == PM_DVD) {
         ULONG ulStreamsAvailable, ulCurrentStream;
         BOOL bIsDisabled;
         if (SUCCEEDED(m_pDVDI->GetCurrentSubpicture(&ulStreamsAvailable, &ulCurrentStream, &bIsDisabled))
