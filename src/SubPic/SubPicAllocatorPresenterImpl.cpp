@@ -34,6 +34,7 @@
 CSubPicAllocatorPresenterImpl::CSubPicAllocatorPresenterImpl(HWND hWnd, HRESULT& hr, CString* _pError)
     : CUnknown(NAME("CSubPicAllocatorPresenterImpl"), nullptr)
     , m_hWnd(hWnd)
+    , m_maxSubtitleTextureSize(0, 0)
     , m_NativeVideoSize(0, 0)
     , m_AspectRatio(0, 0)
     , m_VideoRect(0, 0, 0, 0)
@@ -69,6 +70,43 @@ STDMETHODIMP CSubPicAllocatorPresenterImpl::NonDelegatingQueryInterface(REFIID r
         QI(ISubRenderOptions)
         QI(ISubRenderConsumer)
         __super::NonDelegatingQueryInterface(riid, ppv);
+}
+
+void CSubPicAllocatorPresenterImpl::InitMaxSubtitleTextureSize(int maxSize, CSize desktopSize)
+{
+    switch (maxSize) {
+        case 0:
+        default:
+            m_maxSubtitleTextureSize = desktopSize;
+            break;
+        case 1:
+            m_maxSubtitleTextureSize.SetSize(1024, 768);
+            break;
+        case 2:
+            m_maxSubtitleTextureSize.SetSize(800, 600);
+            break;
+        case 3:
+            m_maxSubtitleTextureSize.SetSize(640, 480);
+            break;
+        case 4:
+            m_maxSubtitleTextureSize.SetSize(512, 384);
+            break;
+        case 5:
+            m_maxSubtitleTextureSize.SetSize(384, 288);
+            break;
+        case 6:
+            m_maxSubtitleTextureSize.SetSize(2560, 1600);
+            break;
+        case 7:
+            m_maxSubtitleTextureSize.SetSize(1920, 1080);
+            break;
+        case 8:
+            m_maxSubtitleTextureSize.SetSize(1320, 900);
+            break;
+        case 9:
+            m_maxSubtitleTextureSize.SetSize(1280, 720);
+            break;
+    }
 }
 
 void CSubPicAllocatorPresenterImpl::AlphaBltSubPic(const CRect& windowRect, const CRect& videoRect, SubPicDesc* pTarget)
@@ -153,6 +191,15 @@ STDMETHODIMP_(double) CSubPicAllocatorPresenterImpl::GetFPS()
 STDMETHODIMP_(void) CSubPicAllocatorPresenterImpl::SetSubPicProvider(ISubPicProvider* pSubPicProvider)
 {
     m_SubPicProvider = pSubPicProvider;
+
+    // Reset the default state to be sure text subtitles will be displayed right.
+    // Subtitles with specific requirements will adapt those values later.
+    if (m_pAllocator) {
+        m_pAllocator->SetMaxTextureSize(m_maxSubtitleTextureSize);
+        m_pAllocator->SetCurSize(m_WindowRect.Size());
+        m_pAllocator->SetCurVidRect(m_VideoRect);
+        m_pAllocator->FreeStatic();
+    }
 
     if (m_pSubPicQueue) {
         m_pSubPicQueue->SetSubPicProvider(pSubPicProvider);

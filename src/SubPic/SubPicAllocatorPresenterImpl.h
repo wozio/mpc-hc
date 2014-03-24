@@ -37,6 +37,7 @@ protected:
     HWND m_hWnd;
     REFERENCE_TIME m_rtSubtitleDelay;
 
+    CSize m_maxSubtitleTextureSize;
     CSize m_NativeVideoSize, m_AspectRatio;
     CRect m_VideoRect, m_WindowRect;
 
@@ -52,6 +53,8 @@ protected:
 
     bool m_bDeviceResetRequested;
     bool m_bPendingResetDevice;
+
+    void InitMaxSubtitleTextureSize(int maxSize, CSize desktopSize);
 
     void AlphaBltSubPic(const CRect& windowRect, const CRect& videoRect, SubPicDesc* pTarget = nullptr);
 

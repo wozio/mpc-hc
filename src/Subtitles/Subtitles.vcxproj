@@ -110,6 +110,7 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="StdioFile64.cpp" />
     <ClCompile Include="STS.cpp" />
     <ClCompile Include="SubtitleInputPin.cpp" />
     <ClCompile Include="TextFile.cpp" />
@@ -133,6 +134,7 @@
     <ClInclude Include="RTS.h" />
     <ClInclude Include="SeparableFilter.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="StdioFile64.h" />
     <ClInclude Include="STS.h" />
     <ClInclude Include="SubtitleInputPin.h" />
     <ClInclude Include="TextFile.h" />

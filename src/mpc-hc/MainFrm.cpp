@@ -7733,7 +7733,7 @@ void CMainFrame::OnPlaySubtitles(UINT nID)
                 && ulStreamsAvailable) {
             if (i == 0) {
                 m_pDVDC->SetSubpictureState(bIsDisabled, DVD_CMD_FLAG_Block, nullptr);
-            } else {
+            } else if (i <= int(ulStreamsAvailable)) {
                 m_pDVDC->SelectSubpictureStream(i - 1, DVD_CMD_FLAG_Block, nullptr);
                 m_pDVDC->SetSubpictureState(TRUE, DVD_CMD_FLAG_Block, nullptr);
             }
@@ -12489,7 +12489,7 @@ void CMainFrame::SetupSubtitlesSubMenu()
             return;
         }
 
-            VERIFY(subMenu.AppendMenu(MF_STRING | (bIsDisabled ? 0 : MF_CHECKED), id++, ResStr(IDS_AG_ENABLED)));
+            VERIFY(subMenu.AppendMenu(MF_STRING | (bIsDisabled ? 0 : MF_CHECKED), id++, ResStr(IDS_DVD_SUBTITLES_ENABLE)));
             VERIFY(subMenu.AppendMenu(MF_SEPARATOR | MF_ENABLED));
 
         for (ULONG i = 0; i < ulStreamsAvailable; i++) {
@@ -13377,29 +13377,23 @@ bool CMainFrame::LoadSubtitle(CString fn, ISubStream** actualStream /*= nullptr*
         AddTextPassThruFilter();
     }
 
-    // TMP: maybe this will catch something for those who get a runtime error dialog when opening subtitles from cds
-    // TODO: Remove this try/catch from MainFrm
-    try {
-        if (!pSubStream) {
-            CAutoPtr<CVobSubFile> pVSF(DEBUG_NEW CVobSubFile(&m_csSubLock));
-            CString ext = CPath(fn).GetExtension().MakeLower();
-            // To avoid loading the same subtitles file twice, we ignore .sub file when auto-loading
-            if ((ext == _T(".idx") || (!bAutoLoad && ext == _T(".sub")))
-                    && pVSF && pVSF->Open(fn) && pVSF->GetStreamCount() > 0) {
-                pSubStream = pVSF.Detach();
-            }
+    if (!pSubStream) {
+        CAutoPtr<CVobSubFile> pVSF(DEBUG_NEW CVobSubFile(&m_csSubLock));
+        CString ext = CPath(fn).GetExtension().MakeLower();
+        // To avoid loading the same subtitles file twice, we ignore .sub file when auto-loading
+        if ((ext == _T(".idx") || (!bAutoLoad && ext == _T(".sub")))
+                && pVSF && pVSF->Open(fn) && pVSF->GetStreamCount() > 0) {
+            pSubStream = pVSF.Detach();
         }
+    }
 
-        if (!pSubStream) {
-            CAutoPtr<CRenderedTextSubtitle> pRTS(DEBUG_NEW CRenderedTextSubtitle(&m_csSubLock, &s.subtitlesDefStyle, s.fUseDefaultSubtitlesStyle));
+    if (!pSubStream) {
+        CAutoPtr<CRenderedTextSubtitle> pRTS(DEBUG_NEW CRenderedTextSubtitle(&m_csSubLock, &s.subtitlesDefStyle, s.fUseDefaultSubtitlesStyle));
 
-            CString videoName = GetPlaybackMode() == PM_FILE ? m_wndPlaylistBar.GetCurFileName() : _T("");
-            if (pRTS && pRTS->Open(fn, DEFAULT_CHARSET, _T(""), videoName) && pRTS->GetStreamCount() > 0) {
-                pSubStream = pRTS.Detach();
-            }
+        CString videoName = GetPlaybackMode() == PM_FILE ? m_wndPlaylistBar.GetCurFileName() : _T("");
+        if (pRTS && pRTS->Open(fn, DEFAULT_CHARSET, _T(""), videoName) && pRTS->GetStreamCount() > 0) {
+            pSubStream = pRTS.Detach();
         }
-    } catch (CException* e) {
-        e->Delete();
     }
 
     if (pSubStream) {

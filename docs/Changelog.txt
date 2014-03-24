@@ -47,11 +47,14 @@ next version - not released yet
   but it could produce blinking in some cases
 ! ISR: Crop PGS and DVB subtitles if they don't fit into video frame
 ! ISR/VSFilter: Use correct colorimetry information for PGS and DVB subtitles
+! ISR: Subtitles could be partially rendered when using no subtitle queue
+! ISR: Text subtitles were incorrectly displayed after switching from PGS/DVB subtitles
 ! Ticket #2588, Subtitle renderer: The subtitle's shadow was not drawn when the subtitle's border was very thin
 ! Ticket #2773, Subtitle renderer: Fix possible artifacts when using karaoke effects
 ! Ticket #2994, Fix toolbar separators not being properly painted
 ! Ticket #3437, Audio Switcher: Support fallback to another media type. For example, this enables audio decoders
   to fallback to normal decoding if bitstreaming isn't supported
+! Ticket #3544, Prevent the low-merit fall-back on internal LAV Splitter to demux raw subtitle formats
 ! Ticket #3691, PGS subtitle timings were sometimes wrong (subtitles started or ended too late)
 ! Ticket #3763, VMR-9 renderless and EVR-CP: The displayed subtitle was not updated when seeking while playback was paused
 ! Ticket #3775, "Play -> Subtitles" menu could be mistakenly disabled when the internal subtitle renderer was unavailable
@@ -68,7 +71,8 @@ next version - not released yet
 ! Ticket #4082, Fullscreen window was misplaced sometimes after monitor mode autochange
 ! Ticket #4116, "Snap to desktop edges" option wasn't working correctly
 ! Ticket #4128, Moving mouse over tooltips in fullscreen hid the toolbar under some circumstances
-! Ticket #4141, Subtitles were incorrectly displayed in DVD and DVB mode when using internal subtitle renderer and madVR
+! Ticket #4141, Subtitles were incorrectly displayed in DVD and DVB mode when using the internal subtitle renderer and madVR
+! Ticket #4141, DVD subtitles were always re-enabled when clicking on a menu entry related to external subtitles
 
 
 1.7.3 - 02 February 2014
