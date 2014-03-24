@@ -91,17 +91,21 @@
   <ItemGroup>
     <ClInclude Include="src\app.h" />
     <ClInclude Include="src\discovery.h" />
+    <ClInclude Include="src\ios_wrapper.h" />
     <ClInclude Include="src\logger.h" />
     <ClInclude Include="src\mcs.h" />
     <ClInclude Include="src\service.h" />
+    <ClInclude Include="src\timer.h" />
     <ClInclude Include="src\yamicontainer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\app.cpp" />
     <ClCompile Include="src\discovery.cpp" />
+    <ClCompile Include="src\ios_wrapper.cpp" />
     <ClCompile Include="src\logger.cpp" />
     <ClCompile Include="src\mcs.cpp" />
     <ClCompile Include="src\service.cpp" />
+    <ClCompile Include="src\timer.cpp" />
     <ClCompile Include="src\yamicontainer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

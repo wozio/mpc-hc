@@ -285,12 +285,10 @@
 #define ID_NAVIGATE_JUMPTO_SUBITEM_START 4300
 #define ID_NAVIGATE_JUMPTO_SUBITEM_END  4499
 #define ID_VIEW_ZOOM_AUTOFIT_LARGER     4500
-// filters
 #define IDS_FILTER_SETTINGS_CAPTION     7000
 #define IDS_ARS_WASAPI_MODE             7100
 #define IDS_ARS_MUTE_FAST_FORWARD       7101
 #define IDS_ARS_SOUND_DEVICE            7102
-//
 #define IDD_OPEN_DLG                    10000
 #define IDD_MEDIATYPES_DLG              10002
 #define IDD_AUTH_DLG                    10003
@@ -576,8 +574,8 @@
 #define IDS_VIEW_HIDEMENU               20010
 #define IDD_UPDATE_DIALOG               20011
 #define IDF_WIN7_TOOLBAR                20012
-#define IDD_OPENLIBRARY_DLG             20014
 #define IDD_DEBUGSHADERS_DLG            20013
+#define IDD_OPENLIBRARY_DLG             20014
 #define IDC_FULLSCREEN_MONITOR_CHECK    22002
 #define IDC_SLI_CONTRAST                22003
 #define IDC_RESET                       22004
@@ -1047,7 +1045,7 @@
 #define IDS_THUMB_PIXELS                33447
 #define IDS_TEXTFILE_ENC                33448
 #define ID_FILE_OPENLIBRARY             33451
-#define ID_FILE_OPENLIBRARY33451        33452
+#define ID_FILE_LIBRARY                 33452
 #define IDS_MFMT_AVI                    39001
 #define IDS_MFMT_MPEG                   39002
 #define IDS_MFMT_MPEGTS                 39003
@@ -1461,7 +1459,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        20015
-#define _APS_NEXT_COMMAND_VALUE         33452
+#define _APS_NEXT_COMMAND_VALUE         33453
 #define _APS_NEXT_CONTROL_VALUE         22078
 #define _APS_NEXT_SYMED_VALUE           24044
 #endif
