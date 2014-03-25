@@ -518,7 +518,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 
     ON_WM_WTSSESSION_CHANGE()
 
-    ON_COMMAND(ID_FILE_OPENLIBRARY, OnFileOpenLibrary)
+    ON_COMMAND(ID_FILE_LIBRARY, OnFileOpenLibrary)
 END_MESSAGE_MAP()
 
 #ifdef _DEBUG
@@ -3977,12 +3977,6 @@ void CMainFrame::OnFileOpenLibrary()
   dlg.DoModal();*/
 
   const CAppSettings& s = AfxGetAppSettings();
-
-
-  if (GetLoadState() != MLS::LOADED)
-  {
-    return;
-  }
 
   SendMessage(WM_COMMAND, ID_FILE_CLOSEMEDIA);
   SetForegroundWindow();
@@ -14324,6 +14318,7 @@ void CMainFrame::OpenMedia(CAutoPtr<OpenMediaData> pOMD)
     auto pFileData = dynamic_cast<const OpenFileData*>(pOMD.m_p);
     auto pDVDData = dynamic_cast<const OpenDVDData*>(pOMD.m_p);
     auto pDeviceData = dynamic_cast<const OpenDeviceData*>(pOMD.m_p);
+    auto pLibraryData = dynamic_cast<const OpenLibraryData*>(pOMD.m_p);
 
     // if the tuner graph is already loaded, we just change its channel
     if (pDeviceData) {
@@ -14403,7 +14398,7 @@ void CMainFrame::OpenMedia(CAutoPtr<OpenMediaData> pOMD)
         }
     } else if (pDeviceData) {
         fUseThread = false;
-    } else if (OpenLibraryData* p = dynamic_cast<OpenLibraryData*>(pOMD.m_p)) {
+    } else if (pLibraryData) {
         fUseThread = false;
     }
 

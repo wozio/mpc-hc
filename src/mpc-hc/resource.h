@@ -1044,7 +1044,6 @@
 #define IDS_THUMB_THUMBNAILS            33446
 #define IDS_THUMB_PIXELS                33447
 #define IDS_TEXTFILE_ENC                33448
-#define ID_FILE_OPENLIBRARY             33451
 #define ID_FILE_LIBRARY                 33452
 #define IDS_MFMT_AVI                    39001
 #define IDS_MFMT_MPEG                   39002
