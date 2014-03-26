@@ -135,17 +135,25 @@ HRESULT CLibraryStreamPush::GetMediaType(CMediaType* pmt)
 
 HRESULT CLibraryStreamPush::OnThreadStartPlay()
 {
-  yami::parameters params;
-                
-  params.set_integer("channel", 950);
-  params.set_string("destination", "player");
-  params.set_string("endpoint", YC.endpoint());
+  try
+  {
+    yami::parameters params;
 
-  auto_ptr<yami::outgoing_message> message(AGENT.send(DISCOVERY.get("tv"), "tv", "create_client_session", params));
+    params.set_integer("channel", 950);
+    params.set_string("destination", "player");
+    params.set_string("endpoint", YC.endpoint());
 
-  message->wait_for_completion(1000);
-                
-  if (message->get_state() == yami::replied)
+    auto_ptr<yami::outgoing_message> message(AGENT.send(DISCOVERY.get("tv"), "tv", "create_client_session", params));
+
+    message->wait_for_completion(1000);
+
+    if (message->get_state() != yami::replied)
+    {
+      return S_FALSE;
+    }
+
+  }
+  catch (const home_system::service_not_found& e)
   {
     return S_FALSE;
   }

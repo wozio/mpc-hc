@@ -11753,7 +11753,7 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
         m_closingmsg = err;
 
     auto getMessageArgs = [&]() {
-        WPARAM wp = pFileData ? PM_FILE : pDVDData ? PM_DVD : pDeviceData ? (s.iDefaultCaptureDevice == 1 ? PM_DIGITAL_CAPTURE : PM_ANALOG_CAPTURE) : PM_NONE;
+        WPARAM wp = pFileData ? PM_FILE : pDVDData ? PM_DVD : pDeviceData ? (s.iDefaultCaptureDevice == 1 ? PM_DIGITAL_CAPTURE : PM_ANALOG_CAPTURE) : pLibraryData ? PM_LIBRARY : PM_NONE;
         ASSERT(wp != PM_NONE);
         LPARAM lp = (LPARAM)pOMD.Detach();
         ASSERT(lp);
