@@ -619,10 +619,6 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
         m_pAllocator->ChangeDevice(m_pD3DDev);
     } else {
         m_pAllocator = DEBUG_NEW CDX9SubPicAllocator(m_pD3DDev, m_maxSubtitleTextureSize, GetRenderersSettings().fSPCPow2Tex, false);
-        if (!m_pAllocator) {
-            _Error += L"CDX9SubPicAllocator failed\n";
-            return E_FAIL;
-        }
     }
 
     hr = S_OK;
@@ -633,7 +629,6 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
         m_pSubPicQueue->GetSubPicProvider(&pSubPicProvider);
     }
 
-    m_pSubPicQueue = nullptr;
     if (!m_pSubPicQueue) {
         m_pSubPicQueue = GetRenderersSettings().nSPCSize > 0
                          ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(GetRenderersSettings().nSPCSize, !GetRenderersSettings().fSPCAllowAnimationWhenBuffering, m_pAllocator, &hr)
@@ -642,9 +637,9 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
         m_pSubPicQueue->Invalidate();
     }
 
-    if (!m_pSubPicQueue || FAILED(hr)) {
+    if (FAILED(hr)) {
         _Error += L"m_pSubPicQueue failed\n";
-        return E_FAIL;
+        return hr;
     }
 
     if (pSubPicProvider) {
@@ -750,6 +745,7 @@ HRESULT CBaseAP::ResetDXDevice(CString& _Error)
     m_dD3DRefreshCycle = 1000.0 / (double)m_RefreshRate; // In ms
     m_ScreenSize.SetSize(d3ddm.Width, d3ddm.Height);
     m_pGenlock->SetDisplayResolution(d3ddm.Width, d3ddm.Height);
+    CSize szDesktopSize(GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
 
     D3DPRESENT_PARAMETERS pp;
     ZeroMemory(&pp, sizeof(pp));
@@ -797,8 +793,8 @@ HRESULT CBaseAP::ResetDXDevice(CString& _Error)
         m_BackbufferType = pp.BackBufferFormat;
         m_DisplayType = d3ddm.Format;
     } else { // Windowed
-        pp.BackBufferWidth = d3ddm.Width;
-        pp.BackBufferHeight = d3ddm.Height;
+        pp.BackBufferWidth = szDesktopSize.cx;
+        pp.BackBufferHeight = szDesktopSize.cy;
         m_BackbufferType = d3ddm.Format;
         m_DisplayType = d3ddm.Format;
         if (m_bHighColorResolution) {
@@ -856,17 +852,12 @@ HRESULT CBaseAP::ResetDXDevice(CString& _Error)
         m_pSubPicQueue->GetSubPicProvider(&pSubPicProvider);
     }
 
-    InitMaxSubtitleTextureSize(GetRenderersSettings().nSPCMaxRes, m_ScreenSize);
+    InitMaxSubtitleTextureSize(GetRenderersSettings().nSPCMaxRes, m_bIsFullscreen ? m_ScreenSize : szDesktopSize);
 
     if (m_pAllocator) {
         m_pAllocator->ChangeDevice(m_pD3DDev);
     } else {
         m_pAllocator = DEBUG_NEW CDX9SubPicAllocator(m_pD3DDev, m_maxSubtitleTextureSize, GetRenderersSettings().fSPCPow2Tex, false);
-        if (!m_pAllocator) {
-            _Error += L"CDX9SubPicAllocator failed\n";
-
-            return E_FAIL;
-        }
     }
 
     hr = S_OK;
@@ -878,10 +869,10 @@ HRESULT CBaseAP::ResetDXDevice(CString& _Error)
         m_pSubPicQueue->Invalidate();
     }
 
-    if (!m_pSubPicQueue || FAILED(hr)) {
+    if (FAILED(hr)) {
         _Error += L"m_pSubPicQueue failed\n";
 
-        return E_FAIL;
+        return hr;
     }
 
     if (pSubPicProvider) {
