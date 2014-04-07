@@ -141,9 +141,11 @@ PUSHD src
 REM Build LAVFilters
 IF /I "%ARCH%" == "x86" (SET "ARCHVS=Win32") ELSE (SET "ARCHVS=x64")
 
-devenv /nologo LAVFilters.sln /%BUILDTYPE% "%RELEASETYPE%|%ARCHVS%"
+rem devenv /nologo LAVFilters.sln /%BUILDTYPE% "%RELEASETYPE%|%ARCHVS%"
+msbuild /nologo LAVFilters.sln /t:%BUILDTYPE% /p:Configuration="%RELEASETYPE%" /p:Platform="%ARCHVS%" /m
 IF %ERRORLEVEL% NEQ 0 (
-  CALL :SubMsg "ERROR" "'devenv /nologo LAVFilters.sln /%BUILDTYPE% "%RELEASETYPE%-%ARCHVS%"' failed!"
+  rem CALL :SubMsg "ERROR" "'devenv /nologo LAVFilters.sln /%BUILDTYPE% "%RELEASETYPE%-%ARCHVS%"' failed!"
+  CALL :SubMsg "ERROR" "'msbuild /nologo LAVFilters.sln /t:%BUILDTYPE% /p:Configuration="%RELEASETYPE%" /p:Platform="%ARCHVS%"' failed!"
   EXIT /B
 )
 
