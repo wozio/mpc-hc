@@ -29,3 +29,5 @@
 /src/MPCTestAPI/bin
 /src/thirdparty/LAVFilters/obj
 ipch
+/src/filters/reader/LibraryReaderPush/*.log
+*.log
