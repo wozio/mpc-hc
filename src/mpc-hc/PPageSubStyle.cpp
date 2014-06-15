@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,7 +20,7 @@
  */
 
 #include "stdafx.h"
-#include <math.h>
+#include <algorithm>
 #include "mplayerc.h"
 #include "MainFrm.h"
 #include "PPageSubStyle.h"
@@ -44,7 +44,7 @@ CPPageSubStyle::CPPageSubStyle()
     , m_margin(0, 0, 0, 0)
     , m_linkalphasliders(FALSE)
     , m_iRelativeTo(0)
-    , m_fUseDefaultStyle(true)
+    , m_bDefaultStyle(true)
     , m_stss(AfxGetAppSettings().subtitlesDefStyle)
     , m_alpha()
 {
@@ -55,13 +55,13 @@ CPPageSubStyle::~CPPageSubStyle()
 {
 }
 
-void CPPageSubStyle::InitStyle(CString title, const STSStyle& stss)
+void CPPageSubStyle::InitStyle(const CString& title, const STSStyle& stss)
 {
     m_pPSP->pszTitle = (m_title = title);
     m_psp.dwFlags |= PSP_USETITLE;
 
     m_stss = stss;
-    m_fUseDefaultStyle = false;
+    m_bDefaultStyle = false;
 }
 
 void CPPageSubStyle::AskColor(int i)
@@ -70,7 +70,7 @@ void CPPageSubStyle::AskColor(int i)
     dlg.m_cc.Flags |= CC_FULLOPEN;
     if (dlg.DoModal() == IDOK) {
         m_stss.colors[i] = dlg.m_cc.rgbResult;
-        m_color[i].Invalidate();
+        m_color[i].SetColor(dlg.m_cc.rgbResult);
         SetModified();
     }
 }
@@ -122,10 +122,10 @@ void CPPageSubStyle::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CPPageSubStyle, CPPageBase)
     ON_BN_CLICKED(IDC_BUTTON1, OnBnClickedButton1)
-    ON_STN_CLICKED(IDC_COLORPRI, OnStnClickedColorpri)
-    ON_STN_CLICKED(IDC_COLORSEC, OnStnClickedColorsec)
-    ON_STN_CLICKED(IDC_COLOROUTL, OnStnClickedColoroutl)
-    ON_STN_CLICKED(IDC_COLORSHAD, OnStnClickedColorshad)
+    ON_BN_CLICKED(IDC_COLORPRI, OnStnClickedColorpri)
+    ON_BN_CLICKED(IDC_COLORSEC, OnStnClickedColorsec)
+    ON_BN_CLICKED(IDC_COLOROUTL, OnStnClickedColoroutl)
+    ON_BN_CLICKED(IDC_COLORSHAD, OnStnClickedColorshad)
     ON_BN_CLICKED(IDC_CHECK1, OnBnClickedCheck1)
     ON_WM_HSCROLL()
 END_MESSAGE_MAP()
@@ -165,9 +165,9 @@ BOOL CPPageSubStyle::OnInitDialog()
     m_scaleyspin.SetRange32(-10000, 10000);
 
     m_borderstyle = m_stss.borderStyle;
-    m_borderwidth = (int)min(m_stss.outlineWidthX, m_stss.outlineWidthY);
+    m_borderwidth = (int)std::min(m_stss.outlineWidthX, m_stss.outlineWidthY);
     m_borderwidthspin.SetRange32(0, 10000);
-    m_shadowdepth = (int)min(m_stss.shadowDepthX, m_stss.shadowDepthY);
+    m_shadowdepth = (int)std::min(m_stss.shadowDepthX, m_stss.shadowDepthY);
     m_shadowdepthspin.SetRange32(0, 10000);
 
     m_screenalignment = m_stss.scrAlignment - 1;
@@ -179,7 +179,7 @@ BOOL CPPageSubStyle::OnInitDialog()
     m_iRelativeTo = m_stss.relativeTo;
 
     for (int i = 0; i < 4; i++) {
-        m_color[i].SetColorPtr(&m_stss.colors[i]);
+        m_color[i].SetColor(m_stss.colors[i]);
         m_alpha[i] = 255 - m_stss.alpha[i];
         m_alphasliders[i].SetRange(0, 255);
     }
@@ -218,12 +218,13 @@ BOOL CPPageSubStyle::OnApply()
         m_stss.alpha[i] = 255 - m_alpha[i];
     }
 
-    if (m_fUseDefaultStyle) {
+    if (m_bDefaultStyle) {
         STSStyle& stss = AfxGetAppSettings().subtitlesDefStyle;
+
         if (stss != m_stss) {
             stss = m_stss;
-            if (CMainFrame* pFrame = dynamic_cast<CMainFrame*>(AfxGetMainWnd())) {
-                pFrame->SetSubtitle(0, true, false, true);
+            if (auto pMainFrame = dynamic_cast<CMainFrame*>(AfxGetMainWnd())) {
+                pMainFrame->UpdateSubDefaultStyle();
             }
         }
     }

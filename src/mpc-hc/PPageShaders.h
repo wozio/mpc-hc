@@ -1,5 +1,5 @@
 /*
- * (C) 2013 see Authors.txt
+ * (C) 2013-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -65,6 +65,8 @@ public:
 private:
     enum { IDD = IDD_PPAGESHADERS };
 
+    std::map<UINT, CImageList> m_buttonIcons;
+
     EventClient m_eventc;
     bool m_bCurrentPresetChanged;
 
@@ -77,8 +79,6 @@ protected:
     virtual void DoDataExchange(CDataExchange* pDX) override;
     virtual BOOL OnInitDialog() override;
     virtual BOOL OnApply() override;
-
-    void UpdateState();
 
     void OnLoadShaderPreset();
     void OnSaveShaderPreset();
@@ -95,6 +95,20 @@ protected:
     void OnRemovePostResize();
     void OnAddShaderFile();
     void OnRemoveShader();
+
+    void OnUpdateLoadShaderPreset(CCmdUI* pCmdUI);
+    void OnUpdateSaveShaderPreset(CCmdUI* pCmdUI);
+    void OnUpdateDeleteShaderPreset(CCmdUI* pCmdUI);
+    void OnUpdateAddToPreResize(CCmdUI* pCmdUI);
+    void OnUpdateAddToPostResize(CCmdUI* pCmdUI);
+    void OnUpdateUpPreResize(CCmdUI* pCmdUI);
+    void OnUpdateDownPreResize(CCmdUI* pCmdUI);
+    void OnUpdateRemovePreResize(CCmdUI* pCmdUI);
+    void OnUpdateUpPostResize(CCmdUI* pCmdUI);
+    void OnUpdateDownPostResize(CCmdUI* pCmdUI);
+    void OnUpdateRemovePostResize(CCmdUI* pCmdUI);
+    void OnUpdateAddShaderFile(CCmdUI* pCmdUI);
+    void OnUpdateRemoveShader(CCmdUI* pCmdUI);
 
     DECLARE_MESSAGE_MAP()
 };

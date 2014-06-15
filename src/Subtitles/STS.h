@@ -22,27 +22,28 @@
 #pragma once
 
 #include <atlcoll.h>
+#include <array>
 #include "BaseClasses/wxutil.h"
 #include "TextFile.h"
-#include "GFN.h"
+#include "SubtitleHelpers.h"
 
 enum tmode { TIME, FRAME }; // the meaning of STSEntry::start/end
 
 class STSStyle
 {
 public:
-    CRect    marginRect;     // measured from the sides
-    int      scrAlignment;   // 1 - 9: as on the numpad, 0: default
-    int      borderStyle;    // 0: outline, 1: opaque box
+    CRect    marginRect;             // measured from the sides
+    int      scrAlignment;           // 1 - 9: as on the numpad, 0: default
+    int      borderStyle;            // 0: outline, 1: opaque box
     double   outlineWidthX, outlineWidthY;
     double   shadowDepthX, shadowDepthY;
-    COLORREF colors[4];      // usually: {primary, secondary, outline/background, shadow}
-    BYTE     alpha[4];
+    std::array<COLORREF, 4> colors;  // usually: {primary, secondary, outline/background, shadow}
+    std::array<BYTE, 4> alpha;
     int      charSet;
     CString  fontName;
-    double   fontSize;       // height
+    double   fontSize;               // height
     double   fontScaleX, fontScaleY; // percent
-    double   fontSpacing;    // +/- pixels
+    double   fontSpacing;            // +/- pixels
     LONG     fontWeight;
     int      fItalic;
     int      fUnderline;
@@ -51,7 +52,7 @@ public:
     double   fGaussianBlur;
     double   fontAngleZ, fontAngleX, fontAngleY;
     double   fontShiftX, fontShiftY;
-    int      relativeTo;     // 0: window, 1: video, 2: undefined (~window)
+    int      relativeTo;             // 0: window, 1: video, 2: undefined (~window)
 
     STSStyle();
 
@@ -96,7 +97,9 @@ public:
     int start, end;
     CAtlArray<int> subs;
 
-    STSSegment() : start(0), end(0) {}
+    STSSegment()
+        : start(0)
+        , end(0) {}
     STSSegment(int s, int e) {
         start = s;
         end = e;
@@ -125,7 +128,7 @@ protected:
 public:
     CString m_name;
     LCID m_lcid;
-    exttype m_exttype;
+    Subtitle::SubType m_subtitleType;
     tmode m_mode;
     CTextFile::enc m_encoding;
     CString m_path;
@@ -140,10 +143,11 @@ public:
     CSTSStyleMap m_styles;
 
     enum EPARCompensationType {
-        EPCTDisabled     = 0,
-        EPCTDownscale    = 1,
-        EPCTUpscale      = 2,
-        EPCTAccurateSize = 3
+        EPCTDisabled,
+        EPCTDownscale,
+        EPCTUpscale,
+        EPCTAccurateSize,
+        EPCTAccurateSize_ISR
     };
 
     EPARCompensationType m_ePARCompensationType;
@@ -164,7 +168,7 @@ public:
     bool Open(CString fn, int CharSet, CString name = _T(""), CString videoName = _T(""));
     bool Open(CTextFile* f, int CharSet, CString name);
     bool Open(BYTE* data, int len, int CharSet, CString name);
-    bool SaveAs(CString fn, exttype et, double fps = -1, int delay = 0, CTextFile::enc = CTextFile::DEFAULT_ENCODING);
+    bool SaveAs(CString fn, Subtitle::SubType type, double fps = -1, int delay = 0, CTextFile::enc = CTextFile::DEFAULT_ENCODING, bool bCreateExternalStyleFile = true);
 
     void Add(CStringW str, bool fUnicode, int start, int end, CString style = _T("Default"), CString actor = _T(""), CString effect = _T(""), const CRect& marginRect = CRect(0, 0, 0, 0), int layer = 0, int readorder = -1);
     STSStyle* CreateDefaultStyle(int CharSet);
@@ -172,8 +176,8 @@ public:
     void AddStyle(CString name, STSStyle* style); // style will be stored and freed in Empty() later
     bool CopyStyles(const CSTSStyleMap& styles, bool fAppend = false);
 
-    bool SetDefaultStyle(STSStyle& s);
-    bool GetDefaultStyle(STSStyle& s);
+    bool SetDefaultStyle(const STSStyle& s);
+    bool GetDefaultStyle(STSStyle& s) const;
 
     void ConvertToTimeBased(double fps);
     void ConvertToFrameBased(double fps);

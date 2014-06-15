@@ -77,6 +77,7 @@ File__Analyze::File__Analyze ()
         Demux_IntermediateItemFound=true;
         Demux_Offset=0;
         Demux_TotalBytes=0;
+        Demux_CurrentParser=NULL;
         Demux_EventWasSent_Accept_Specific=false;
     #endif //MEDIAINFO_DEMUX
     PTS_DTS_Needed=false;
@@ -338,7 +339,11 @@ void File__Analyze::Open_Buffer_Continue (const int8u* ToAdd, size_t ToAdd_Size)
         }
     #endif //MEDIAINFO_DEMUX
 
-    Frame_Count_InThisBlock=0;
+    if (ToAdd_Size)
+    {
+        Frame_Count_InThisBlock=0;
+        Field_Count_InThisBlock=0;
+    }
 
     //MD5
     #if MEDIAINFO_MD5
@@ -429,7 +434,12 @@ void File__Analyze::Open_Buffer_Continue (const int8u* ToAdd, size_t ToAdd_Size)
 
     //Parsing
     if (!IsSub)
-        Config->State_Set(Config->File_Size?(((float)Buffer_TotalBytes)/Config->File_Size):1);
+    {
+        if (Config->File_Size && Config->File_Size!=(int64u)-1)
+            Config->State_Set(((float)Buffer_TotalBytes)/Config->File_Size);
+        else if (Config->File_Names.size()>1)
+            Config->State_Set(((float)Config->File_Names_Pos)/Config->File_Names.size());
+    }
     if (Buffer_Size>=Buffer_MinimumSize || File_Offset+Buffer_Size==File_Size) //Parsing only if we have enough buffer
         while (Open_Buffer_Continue_Loop());
 
@@ -870,13 +880,6 @@ bool File__Analyze::Open_Buffer_Continue_Loop ()
         if (!Buffer_Parse())
             break;
     Buffer_TotalBytes+=Buffer_Offset;
-    #if MEDIAINFO_DEMUX
-        if (Config->Demux_EventWasSent)
-            return false;
-    #endif //MEDIAINFO_DEMUX
-
-    //Parsing specific
-    Read_Buffer_AfterParsing();
 
     //Handling of File_GoTo with already buffered data
     #if MEDIAINFO_MD5
@@ -914,8 +917,22 @@ bool File__Analyze::Open_Buffer_Continue_Loop ()
         Buffer_Offset=0;
         Buffer_Size=Buffer_Temp_Size;
         File_GoTo=(int64u)-1;
+
+        #if MEDIAINFO_DEMUX
+            if (Config->Demux_EventWasSent)
+                return false;
+        #endif //MEDIAINFO_DEMUX
+
         return true;
     }
+
+    #if MEDIAINFO_DEMUX
+        if (Config->Demux_EventWasSent)
+            return false;
+    #endif //MEDIAINFO_DEMUX
+
+    //Parsing specific
+    Read_Buffer_AfterParsing();
 
     //Jumping to the end of the file if needed
     if (!IsSub && !EOF_AlreadyDetected && Config->ParseSpeed<1 && Count_Get(Stream_General))
@@ -1156,8 +1173,11 @@ size_t File__Analyze::Read_Buffer_Seek_OneFramePerFile (size_t Method, int64u Va
                     if (Value>=Config->File_Names.size())
                         return 2; //Invalid value
                     int64u Offset=0;
-                    for (size_t Pos=0; Pos<Value; Pos++)
-                        Offset+=Config->File_Sizes[Pos];
+                    if (Config->File_Sizes.size()!=Config->File_Names.size())
+                        Offset=Value; //Offset is used as a file offset
+                    else
+                        for (size_t Pos=0; Pos<Value; Pos++)
+                            Offset+=Config->File_Sizes[Pos];
                     GoTo(Offset);
                     Open_Buffer_Unsynch();
                     return 1;
@@ -1170,13 +1190,22 @@ size_t File__Analyze::Read_Buffer_Seek_OneFramePerFile (size_t Method, int64u Va
 //---------------------------------------------------------------------------
 void File__Analyze::Read_Buffer_Unsynched_OneFramePerFile()
 {
-    int64u GoTo=File_GoTo;
-    for (Frame_Count_NotParsedIncluded=0; Frame_Count_NotParsedIncluded<Config->File_Sizes.size(); Frame_Count_NotParsedIncluded++)
-    {
-        if (GoTo>=Config->File_Sizes[(size_t)Frame_Count_NotParsedIncluded])
-            GoTo-=Config->File_Sizes[(size_t)Frame_Count_NotParsedIncluded];
+    #if MEDIAINFO_ADVANCED
+        if (Config->File_Sizes.size()!=Config->File_Names.size())
+        {
+            Frame_Count_NotParsedIncluded=File_GoTo;
+        }
         else
-            break;
+    #endif //MEDIAINFO_ADVANCED
+    {
+        int64u GoTo=File_GoTo;
+        for (Frame_Count_NotParsedIncluded=0; Frame_Count_NotParsedIncluded<Config->File_Sizes.size(); Frame_Count_NotParsedIncluded++)
+        {
+            if (GoTo>=Config->File_Sizes[(size_t)Frame_Count_NotParsedIncluded])
+                GoTo-=Config->File_Sizes[(size_t)Frame_Count_NotParsedIncluded];
+            else
+                break;
+        }
     }
 
     #if MEDIAINFO_DEMUX
@@ -1469,7 +1498,7 @@ bool File__Analyze::Synchro_Manage()
         {
             if (Status[IsFinished])
                 Finish(); //Finish
-            if (!IsSub && File_Offset_FirstSynched==(int64u)-1 && Buffer_TotalBytes+Buffer_Offset>=Buffer_TotalBytes_FirstSynched_Max)
+            if (File_Offset_FirstSynched==(int64u)-1 && Buffer_TotalBytes+Buffer_Offset>=Buffer_TotalBytes_FirstSynched_Max)
             {
                 Open_Buffer_Unsynch();
                 GoToFromEnd(0);
@@ -1547,7 +1576,7 @@ bool File__Analyze::Synchro_Manage_Test()
         {
             if (Status[IsFinished])
                 Finish(); //Finish
-            if (!IsSub && File_Offset_FirstSynched==(int64u)-1 && Buffer_TotalBytes+Buffer_Offset>=Buffer_TotalBytes_FirstSynched_Max)
+            if (File_Offset_FirstSynched==(int64u)-1 && Buffer_TotalBytes+Buffer_Offset>=Buffer_TotalBytes_FirstSynched_Max)
                 Reject();
             return false; //Wait for more data
         }
@@ -2764,6 +2793,14 @@ void File__Analyze::ForceFinish ()
 
     if (Status[IsAccepted])
     {
+        //Total file size
+        #if MEDIAINFO_ADVANCED
+            if (!IsSub && !(!Config->File_IgnoreSequenceFileSize_Get() || Config->File_Names.size()<=1) && Config->ParseSpeed>=1.0 && Config->File_Names.size()>1 && Config->File_Names_Pos+1>=Config->File_Names.size())
+            {
+                Fill (Stream_General, 0, General_FileSize, Config->File_Current_Size, 10, true);
+            }
+        #endif //MEDIAINFO_ADVANCED
+
         Fill();
         #if MEDIAINFO_DEMUX
             if (Config->Demux_EventWasSent)
@@ -3319,11 +3356,11 @@ void File__Analyze::Demux_UnpacketizeContainer_Demux (bool random_access)
 
 bool File__Analyze::Demux_UnpacketizeContainer_Test_OneFramePerFile ()
 {
-    if (Buffer_Size<Config->File_Sizes[Config->File_Names_Pos-1])
+    if (!IsSub && Buffer_Size<Config->File_Current_Size-Config->File_Current_Offset)
     {
         size_t* File_Buffer_Size_Hint_Pointer=Config->File_Buffer_Size_Hint_Pointer_Get();
         if (File_Buffer_Size_Hint_Pointer)
-            (*File_Buffer_Size_Hint_Pointer)=(size_t)Config->File_Sizes[Config->File_Names_Pos-1];
+            (*File_Buffer_Size_Hint_Pointer)=Config->File_Current_Size-Config->File_Current_Offset-Buffer_Size;
         return false;
     }
 

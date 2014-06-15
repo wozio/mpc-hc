@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -352,7 +352,7 @@ typedef CAtlArray<Codec> CCodecArray;
 
 // CPlayerCaptureDialog dialog
 
-class CPlayerCaptureDialog : public CResizableDialog //CDialog
+class CPlayerCaptureDialog : public CResizableDialog
 {
     //DECLARE_DYNAMIC(CPlayerCaptureDialog)
 
@@ -454,6 +454,9 @@ public:
     void SetupVideoControls(CStringW DisplayName, IAMStreamConfig* pAMSC, IAMVfwCaptureDialogs* pAMVfwCD);
     void SetupAudioControls(CStringW DisplayName, IAMStreamConfig* pAMSC, const CInterfaceArray<IAMAudioInputMixer>& pAMAIM);
 
+    void UpdateVideoControls();
+    void UpdateAudioControls();
+
     bool IsTunerActive();
 
     bool SetVideoInput(int input);
@@ -463,6 +466,10 @@ public:
     int GetVideoInput();
     int GetVideoChannel();
     int GetAudioInput();
+
+    bool IsInitialized() const {
+        return m_bInitialized;
+    };
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support

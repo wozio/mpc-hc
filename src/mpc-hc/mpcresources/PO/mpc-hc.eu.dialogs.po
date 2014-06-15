@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-03-21 18:23:35+0000\n"
-"PO-Revision-Date: 2014-03-22 19:10+0000\n"
+"POT-Creation-Date: 2014-06-03 21:36:02+0000\n"
+"PO-Revision-Date: 2014-06-05 11:12+0000\n"
 "Last-Translator: Xabier Aramendi <azpidatziak@gmail.com>\n"
 "Language-Team: Basque (http://www.transifex.com/projects/p/mpc-hc/language/eu/)\n"
 "MIME-Version: 1.0\n"
@@ -118,7 +118,7 @@ msgstr "Sarrera bideak:"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_STATIC3"
 msgid "Hold shift for immediate changes when clicking something "
-msgstr "Sakatu shift berehalako aldaketarako zerbait klikatzerakoan "
+msgstr "Sakatu \"aldatu\" tekla berehalako aldaketarako zerbait klikatzerakoan "
 
 msgctxt "IDD_GOTO_DLG_CAPTION"
 msgid "Go To..."
@@ -247,6 +247,10 @@ msgstr "Erabili irakurgailu bera multimedia agiri bakoitzerako"
 msgctxt "IDD_PPAGEPLAYER_IDC_RADIO2"
 msgid "Open a new player for each media file played"
 msgstr "Ireki irakurgailu berri bat multimedia agiri bakoitzerako"
+
+msgctxt "IDD_PPAGEPLAYER_IDC_STATIC"
+msgid "Language"
+msgstr "Hizkuntza"
 
 msgctxt "IDD_PPAGEPLAYER_IDC_STATIC"
 msgid "Title bar"
@@ -531,6 +535,14 @@ msgstr "Ahalbidetu animazioa bufferreratzean"
 msgctxt "IDD_PPAGESUBTITLES_IDC_CHECK_SPCPOW2TEX"
 msgid "Round up to power of two"
 msgstr "Borobildu biren indarrera"
+
+msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
+msgid "Renderer Layout"
+msgstr "Aurkezle Antolakuntza"
+
+msgctxt "IDD_PPAGESUBTITLES_IDC_CHECK_SUB_AR_COMPENSATION"
+msgid "Apply aspect ratio compensation for anamorphic videos"
+msgstr "Ezarri ikuspegi maila orekatzea bideo anamorfikoentzat"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
 msgid "Warning"
@@ -912,6 +924,10 @@ msgctxt "IDD_SAVESUBTITLESFILEDIALOGTEMPL_IDC_STATIC"
 msgid "ms"
 msgstr "sm"
 
+msgctxt "IDD_SAVESUBTITLESFILEDIALOGTEMPL_IDC_CHECK1"
+msgid "Save custom style"
+msgstr "Gorde norbere estiloa"
+
 msgctxt "IDD_SAVETHUMBSDIALOGTEMPL_IDC_STATIC"
 msgid "Thumbnails:"
 msgstr "Txikirudiak:"
@@ -1163,34 +1179,6 @@ msgstr "Itzulikapena"
 msgctxt "IDD_PPAGEOUTPUT_IDC_STATIC"
 msgid "* External filters (such as VSFilter) can display subtitles on all renderers."
 msgstr "* Kanpoko iragazkiek (VSFilter bezalakoak) azpidatziak aurkezle guztietan erakutsi ditzakete."
-
-msgctxt "IDD_AUTH_DLG_CAPTION"
-msgid "Authentication needed"
-msgstr "Egiaztapena beharrezkoa"
-
-msgctxt "IDD_AUTH_DLG_IDOK"
-msgid "OK"
-msgstr "Ongi"
-
-msgctxt "IDD_AUTH_DLG_IDCANCEL"
-msgid "Cancel"
-msgstr "Ezeztatu"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Restricted area"
-msgstr "Eremu Mugatua"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Username:"
-msgstr "Erabiltzaile-izena:"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Password:"
-msgstr "Sarhitza:"
-
-msgctxt "IDD_AUTH_DLG_IDC_CHECK1"
-msgid "Remember my password"
-msgstr "Gogoratu nire sarhitza"
 
 msgctxt "IDD_PPAGEWEBSERVER_IDC_CHECK1"
 msgid "Listen on port:"

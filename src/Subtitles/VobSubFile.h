@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -74,36 +74,17 @@ public:
     void GetDestrect(CRect& r); // destrect of m_img, considering the current alignment mode
     void GetDestrect(CRect& r, int w, int h); // this will scale it to the frame size of (w, h)
 
-    void SetAlignment(bool fAlign, int x, int y, int hor, int ver);
+    void SetAlignment(bool fAlign, int x, int y, int hor = 1, int ver = 1);
 };
 
 class __declspec(uuid("998D4C9A-460F-4de6-BDCD-35AB24F94ADF"))
     CVobSubFile : public CVobSubSettings, public ISubStream, public CSubPicProviderImpl
 {
-protected:
-    CString m_title;
-
-    void TrimExtension(CString& fn);
-    bool ReadIdx(CString fn, int& ver), ReadSub(CString fn), ReadRar(CString fn), ReadIfo(CString fn);
-    bool WriteIdx(CString fn, int delay), WriteSub(CString fn);
-
-    CMemFile m_sub;
-
-    BYTE* GetPacket(int idx, int& packetsize, int& datasize, int iLang = -1);
-    bool GetFrame(int idx, int iLang = -1);
-    bool GetFrameByTimeStamp(__int64 time);
-    int GetFrameIdxByTimeStamp(__int64 time);
-
-    bool SaveVobSub(CString fn, int delay);
-    bool SaveWinSubMux(CString fn, int delay);
-    bool SaveScenarist(CString fn, int delay);
-    bool SaveMaestro(CString fn, int delay);
-
 public:
     struct SubPos {
         __int64 filepos;
         __int64 start, stop;
-        bool fForced;
+        bool fForced, bAnimated;
         char vobid, cellid;
         __int64 celltimestamp;
         bool fValid;
@@ -115,10 +96,30 @@ public:
         CAtlArray<SubPos> subpos;
     };
 
+protected:
+    CString m_title;
+
+    void TrimExtension(CString& fn);
+    bool ReadIdx(CString fn, int& ver), ReadSub(CString fn), ReadRar(CString fn), ReadIfo(CString fn);
+    bool WriteIdx(CString fn, int delay), WriteSub(CString fn);
+
+    CMemFile m_sub;
+
+    BYTE* GetPacket(int idx, int& packetsize, int& datasize, int iLang = -1);
+    const SubPos* GetFrameInfo(int idx, int iLang = -1) const;
+    bool GetFrame(int idx, int iLang = -1, REFERENCE_TIME rt = -1);
+    bool GetFrameByTimeStamp(__int64 time);
+    int GetFrameIdxByTimeStamp(__int64 time);
+
+    bool SaveVobSub(CString fn, int delay);
+    bool SaveWinSubMux(CString fn, int delay);
+    bool SaveScenarist(CString fn, int delay);
+    bool SaveMaestro(CString fn, int delay);
+
+public:
     int m_iLang;
     SubLang m_langs[32];
 
-public:
     CVobSubFile(CCritSec* pLock);
     virtual ~CVobSubFile();
 
@@ -169,6 +170,7 @@ class __declspec(uuid("D7FBFB45-2D13-494F-9B3D-FFC9557D5C45"))
     CCritSec m_csSubPics;
     struct SubPic {
         REFERENCE_TIME tStart, tStop;
+        bool bAnimated;
         CAtlArray<BYTE> pData;
     };
     CAutoPtrList<SubPic> m_subpics;

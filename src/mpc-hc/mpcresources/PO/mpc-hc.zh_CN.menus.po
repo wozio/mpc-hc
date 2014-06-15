@@ -3,12 +3,12 @@
 # This file is distributed under the same license as the MPC-HC package.
 # Translators:
 # kasper93, 2013
-# BetaKing <yzonline@gmail.com>, 2013
+# Ming Chen <yzonline@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-02-16 20:48:44+0000\n"
-"PO-Revision-Date: 2014-02-17 08:49+0000\n"
+"POT-Creation-Date: 2014-04-22 11:15:01+0000\n"
+"PO-Revision-Date: 2014-05-07 08:42+0000\n"
 "Last-Translator: JellyFrog\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/mpc-hc/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
@@ -188,10 +188,6 @@ msgstr "自动适应(&F)"
 msgctxt "ID_VIEW_ZOOM_AUTOFIT_LARGER"
 msgid "Auto Fit (&Larger Only)"
 msgstr "自动适应 (仅放大)(&L)"
-
-msgctxt "ID_MENU_LANGUAGE"
-msgid "&Language"
-msgstr "语言(&L)"
 
 msgctxt "POPUP"
 msgid "R&enderer Settings"

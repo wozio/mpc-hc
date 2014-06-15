@@ -259,6 +259,7 @@
 #define ID_NORMALIZE                    994
 #define ID_REGAIN_VOLUME                995
 #define ID_PLAY_SEEKSET                 996
+#define ID_FILTERS_COPY_TO_CLIPBOARD    1999
 #define ID_FILTERS_SUBITEM_START        2000
 #define ID_FILTERS_SUBITEM_END          2099
 #define ID_FILTERSTREAMS_SUBITEM_START  2100
@@ -291,7 +292,6 @@
 #define IDS_ARS_SOUND_DEVICE            7102
 #define IDD_OPEN_DLG                    10000
 #define IDD_MEDIATYPES_DLG              10002
-#define IDD_AUTH_DLG                    10003
 #define IDD_SAVE_DLG                    10004
 #define IDD_SUBTITLEDL_DLG              10005
 #define IDD_FILEPROPDETAILS             10010
@@ -457,6 +457,7 @@
 #define IDC_PLAYERSTATUS                12026
 #define IDC_PLAYERTIME                  12027
 #define IDC_EDITLIST                    12028
+#define IDC_CHECK_SUB_AR_COMPENSATION   12029
 #define IDC_DSSYSDEF                    12100
 #define IDC_DSOLD                       12101
 #define IDC_DSOVERLAYMIXER              12102
@@ -673,40 +674,6 @@
 #define ID_SHIFT_SUB_DOWN               32782
 #define ID_SHIFT_SUB_UP                 32783
 #define ID_VIEW_DISPLAYSTATS            32784
-#define ID_LANGUAGE_ENGLISH             32787
-#define ID_LANGUAGE_FRENCH              32788
-#define ID_LANGUAGE_GERMAN              32789
-#define ID_LANGUAGE_RUSSIAN             32790
-#define ID_LANGUAGE_TURKISH             32791
-#define ID_LANGUAGE_CZECH               32792
-#define ID_LANGUAGE_SPANISH             32793
-#define ID_LANGUAGE_HUNGARIAN           32794
-#define ID_LANGUAGE_KOREAN              32795
-#define ID_LANGUAGE_POLISH              32796
-#define ID_LANGUAGE_UKRAINIAN           32797
-#define ID_LANGUAGE_ITALIAN             32798
-#define ID_LANGUAGE_SLOVAK              32799
-#define ID_LANGUAGE_CHINESE_SIMPLIFIED  32800
-#define ID_LANGUAGE_CHINESE_TRADITIONAL 32801
-#define ID_LANGUAGE_BELARUSIAN          32802
-#define ID_LANGUAGE_SWEDISH             32803
-#define ID_LANGUAGE_PORTUGUESE_BR       32804
-#define ID_LANGUAGE_DUTCH               32805
-#define ID_LANGUAGE_CATALAN             32806
-#define ID_LANGUAGE_JAPANESE            32807
-#define ID_LANGUAGE_ARMENIAN            32808
-#define ID_LANGUAGE_HEBREW              32809
-#define ID_LANGUAGE_BASQUE              32810
-#define ID_LANGUAGE_GREEK               32811
-#define ID_LANGUAGE_ROMANIAN            32812
-#define ID_LANGUAGE_ENGLISH_GB          32813
-#define ID_LANGUAGE_SLOVENIAN           32814
-#define ID_LANGUAGE_CROATIAN            32815
-#define ID_LANGUAGE_MALAY               32816
-#define ID_LANGUAGE_GALICIAN            32817
-#define ID_LANGUAGE_VIETNAMESE          32818
-#define ID_LANGUAGE_BENGALI             32819
-#define ID_LANGUAGE_LAST                32829
 #define IDS_AG_CLOSE                    32830
 #define IDS_AG_NONE                     32832
 #define IDS_AG_COMMAND                  32833
@@ -855,18 +822,19 @@
 #define IDS_SUBTITLE_STREAM_OFF         33053
 #define IDS_SUBTITLE_STREAM             33054
 #define IDS_MAINFRM_46                  33055
-#define IDS_MAINFRM_47                  33056
-#define IDS_MAINFRM_48                  33057
-#define IDS_MAINFRM_49                  33058
-#define IDS_MAINFRM_51                  33059
-#define IDS_MAINFRM_53                  33060
-#define IDS_MAINFRM_54                  33061
-#define IDS_MAINFRM_55                  33062
-#define IDS_MAINFRM_56                  33063
-#define IDS_MAINFRM_57                  33064
-#define IDS_MAINFRM_58                  33065
-#define IDS_MAINFRM_59                  33066
-#define IDS_MAINFRM_60                  33067
+#define IDS_SUB_LOADED_SUCCESS          33056
+#define IDS_ALL_FILES_FILTER            33057
+#define IDS_GETDIB_FAILED               33058
+#define IDS_GETCURRENTIMAGE_FAILED      33059
+#define IDS_SCREENSHOT_ERROR            33060
+#define IDS_THUMBNAILS_NO_DURATION      33061
+#define IDS_THUMBNAILS_NO_FRAME_SIZE    33062
+#define IDS_OUT_OF_MEMORY               33063
+#define IDS_THUMBNAILS_INVALID_FORMAT   33064
+#define IDS_THUMBNAILS_INFO_FILESIZE    33065
+#define IDS_THUMBNAILS_INFO_HEADER      33066
+#define IDS_THUMBNAIL_TOO_SMALL         33067
+#define IDS_CANNOT_LOAD_SUB             33068
 #define IDS_MAINFRM_68                  33075
 #define IDS_MAINFRM_69                  33076
 #define IDS_MAINFRM_70                  33077
@@ -1259,7 +1227,6 @@
 #define IDS_SATURATION_INC              41317
 #define IDS_SATURATION_DEC              41318
 #define IDS_RESET_COLOR                 41319
-#define ID_MENU_LANGUAGE                41320
 #define ID_HELP_CHECKFORUPDATE          41321
 #define IDS_USING_LATEST_STABLE         41322
 #define IDS_USING_NEWER_VERSION         41323
@@ -1452,9 +1419,13 @@
 #define IDS_HW_INDICATOR                57395
 #define IDS_TOOLTIP_SOFTWARE_DECODING   57396
 #define IDS_STATSBAR_PLAYBACK_RATE      57397
+#define IDS_FILTERS_COPY_TO_CLIPBOARD   57398
+#define IDS_CREDENTIALS_SERVER          57399
+#define IDS_CREDENTIALS_CONNECT         57400
+#define IDS_SUB_SAVE_EXTERNAL_STYLE_FILE 57401
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        20015

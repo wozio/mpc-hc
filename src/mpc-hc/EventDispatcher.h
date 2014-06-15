@@ -42,7 +42,9 @@ enum class MpcEvent
     DISPLAY_MODE_AUTOCHANGED,
     CONTEXT_MENU_POPUP_INITIALIZED,
     CONTEXT_MENU_POPUP_UNINITIALIZED,
-    MAIN_MENU_ENTER_MODAL_LOOP,
+    SYSTEM_MENU_POPUP_INITIALIZED,
+    SYSTEM_MENU_POPUP_UNINITIALIZED,
+    CHANGING_UI_LANGUAGE,
 };
 
 class EventClient;
@@ -60,7 +62,7 @@ private:
         DWORD m_tid;
         bool m_bDestroyed;
         struct EventClientInfo {
-            EventSelection recieves, fires;
+            EventSelection receives, fires;
             EventCallback callback;
         };
         std::map<EventClient*, EventClientInfo> m_conns;
@@ -74,9 +76,9 @@ public:
     EventRouter();
     ~EventRouter();
 
-    void Connect(EventClient& node, const EventSelection& recieves, const EventCallback& callback);
+    void Connect(EventClient& node, const EventSelection& receives, const EventCallback& callback);
     void Connect(EventClient& node, const EventSelection& fires);
-    void Connect(EventClient& node, const EventSelection& recieves, const EventCallback& callback, const EventSelection& fires);
+    void Connect(EventClient& node, const EventSelection& receives, const EventCallback& callback, const EventSelection& fires);
     void Disconnect(EventClient& node);
 };
 

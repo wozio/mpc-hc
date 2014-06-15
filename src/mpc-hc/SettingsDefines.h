@@ -1,5 +1,5 @@
 /*
- * (C) 2009-2013 see Authors.txt
+ * (C) 2009-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,6 +21,7 @@
 #pragma once
 
 #define IDS_R_SETTINGS                      _T("Settings")
+#define IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE IDS_R_SETTINGS _T("\\FullscreenAutoChangeMode")
 #define IDS_R_VERSION                       _T("SettingsVersion")
 #define IDS_R_FILTERS                       _T("Filters")
 #define IDS_R_EXTERNAL_FILTERS_x86          _T("Filters\\x86")
@@ -62,6 +63,7 @@
 #define IDS_RS_SUBTITLEPATHS                _T("SubtitlePaths")
 #define IDS_RS_USEDEFAULTSUBTITLESSTYLE     _T("UseDefaultsubtitlesStyle")
 #define IDS_RS_THUMBWIDTH                   _T("ThumbWidth")
+#define IDS_RS_SUBSAVEEXTERNALSTYLEFILE     _T("SubSaveExternalStyleFile")
 #define IDS_RS_D3DFULLSCREEN                _T("D3DFullScreen")
 //#define IDS_RS_MONITOR_AUTOREFRESHRATE      _T("MonitorAutoRefreshRate")
 #define IDS_RS_SPEEDSTEP                    _T("SpeedStep")
@@ -112,11 +114,11 @@
 #define IDS_RS_SPOVERRIDEPLACEMENT          _T("SPOverridePlacement")
 #define IDS_RS_SPHORPOS                     _T("SPHorPos")
 #define IDS_RS_SPVERPOS                     _T("SPVerPos")
+#define IDS_RS_SUBTITLEARCOMPENSATION       _T("SubtitleARCompensation")
 #define IDS_RS_SPCSIZE                      _T("SPCSize")
 #define IDS_RS_SPCMAXRES                    _T("SPCMaxRes")
 #define IDS_RS_INTREALMEDIA                 _T("IntRealMedia")
 #define IDS_RS_EXITFULLSCREENATTHEEND       _T("ExitFullscreenAtTheEnd")
-#define IDS_RS_RESTORERESAFTEREXIT          _T("RestoreResAfterExit")
 #define IDS_RS_REMEMBERWINDOWPOS            _T("RememberWindowPos")
 #define IDS_RS_LASTWINDOWRECT               _T("LastWindowRect")
 #define IDS_RS_AUDIORENDERERTYPE            _T("AudioRendererType")
@@ -138,8 +140,6 @@
 #define IDS_RS_AUDIOSLANGORDER              _T("AudiosLanguageOrder")
 #define IDS_RS_BLOCKVSFILTER                _T("BlockVSFilter")
 #define IDS_RS_ACCELTBL                     _T("AccelTbl")
-#define IDS_RS_FULLSCREENRES                _T("FullscreenRes")
-#define IDS_RS_FULLSCREENRES_DELAY          _T("FullscreenResDelay")
 #define IDS_RS_WINLIRCADDR                  _T("WinLircAddr")
 #define IDS_RS_WINLIRC                      _T("UseWinLirc")
 #define IDS_RS_TRAYICON                     _T("TrayIcon")
@@ -212,6 +212,20 @@
 #define IDS_RS_HIDE_WINDOWED_CONTROLS          _T("HideWindowedControls")
 
 #define IDS_RS_HIDE_WINDOWED_MOUSE_POINTER  _T("HideWindowedMousePointer")
+
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_ENABLE               _T("Enable")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_APPLYDEFMODEATFSEXIT _T("ApplyDefaultModeAtFSExit")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_RESTORERESAFTEREXIT  _T("RestoreResAfterExit")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_DELAY                _T("Delay")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE                 IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE _T("\\Mode%Id")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_CHECKED         _T("Checked")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_FRAMERATESTART  _T("FrameRateStart")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_FRAMERATESTOP   _T("FrameRateStop")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_BPP          _T("BPP")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_FREQ         _T("Freq")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_SIZEX        _T("SizeX")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_SIZEY        _T("SizeY")
+#define IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_FLAGS        _T("Flags")
 
 #define IDS_RS_DEFAULT_CAPTURE              _T("DefaultCapture")
 #define IDS_R_CAPTURE                       _T("Capture")

@@ -31,7 +31,7 @@ class CSubPicAllocatorPresenterImpl
     : public CUnknown
     , public CCritSec
     , public ISubPicAllocatorPresenter2
-    , public ISubRenderConsumer
+    , public ISubRenderConsumer2
 {
 protected:
     HWND m_hWnd;
@@ -54,6 +54,10 @@ protected:
     bool m_bDeviceResetRequested;
     bool m_bPendingResetDevice;
 
+    enum SubtitleTextureLimit {
+        STATIC, VIDEO, DESKTOP
+    };
+    SubtitleTextureLimit m_SubtitleTextureLimit;
     void InitMaxSubtitleTextureSize(int maxSize, CSize desktopSize);
 
     void AlphaBltSubPic(const CRect& windowRect, const CRect& videoRect, SubPicDesc* pTarget = nullptr);
@@ -72,6 +76,7 @@ public:
 
     STDMETHODIMP CreateRenderer(IUnknown** ppRenderer) PURE;
 
+    STDMETHODIMP_(void) SetVideoSize(CSize szVideo, CSize szAspectRatio = CSize(0, 0));
     STDMETHODIMP_(SIZE) GetVideoSize(bool fCorrectAR = true);
     STDMETHODIMP_(SIZE) GetVisibleVideoSize() {
         return m_NativeVideoSize;
@@ -131,4 +136,8 @@ public:
     STDMETHODIMP Connect(ISubRenderProvider* subtitleRenderer);
     STDMETHODIMP Disconnect();
     STDMETHODIMP DeliverFrame(REFERENCE_TIME start, REFERENCE_TIME stop, LPVOID context, ISubRenderFrame* subtitleFrame);
+
+    // ISubRenderConsumer2
+
+    STDMETHODIMP Clear(REFERENCE_TIME clearNewerThan = 0);
 };

@@ -837,7 +837,7 @@ CClipper::CClipper(CStringW str, CSize size, double scalex, double scaley, bool 
 
     if (inverse) {
         BYTE* inv_dst = m_pAlphaMask;
-        for (ptrdiff_t i = size.cx * size.cy; i > 0; --i, ++inv_dst) {
+        for (ptrdiff_t i = ptrdiff_t(size.cx) * size.cy; i > 0; --i, ++inv_dst) {
             *inv_dst = 0x40 - *inv_dst;    // mask is 6 bit
         }
     }
@@ -1097,8 +1097,8 @@ CSubtitle::CSubtitle(COutlineCache& outlineCache, COverlayCache& overlayCache)
     : m_outlineCache(outlineCache)
     , m_pClipper(nullptr)
     , m_clipInverse(false)
-    , m_scalex(1)
-    , m_scaley(1)
+    , m_scalex(1.0)
+    , m_scaley(1.0)
     , m_scrAlignment(0)
     , m_wrapStyle(0)
     , m_fAnimated(false)
@@ -1523,10 +1523,11 @@ CRect CScreenLayoutAllocator::AllocRect(const CSubtitle* s, int segment, int ent
 
 CAtlMap<CStringW, SSATagCmd, CStringElementTraits<CStringW>> CRenderedTextSubtitle::s_SSATagCmds;
 
-CRenderedTextSubtitle::CRenderedTextSubtitle(CCritSec* pLock, STSStyle* styleOverride, bool doOverride)
+CRenderedTextSubtitle::CRenderedTextSubtitle(CCritSec* pLock)
     : CSubPicProviderImpl(pLock)
-    , m_doOverrideStyle(doOverride)
-    , m_pStyleOverride(styleOverride)
+    , m_bOverrideStyle(false)
+    , m_bOverridePlacement(false)
+    , m_overridePlacement(50, 90)
     , m_time(0)
     , m_delay(0)
     , m_animStart(0)
@@ -1740,11 +1741,11 @@ void CRenderedTextSubtitle::ParseEffect(CSubtitle* sub, CString str)
         }
 
         sub->m_effects[e->type = EF_SCROLL] = e;
-        e->param[0] = (int)(sub->m_scaley * top * 8);
-        e->param[1] = (int)(sub->m_scaley * bottom * 8);
-        e->param[2] = (int)(std::max(1.0 * delay / sub->m_scaley, 1.0));
+        e->param[0] = lround(sub->m_scaley * top * 8.0);
+        e->param[1] = lround(sub->m_scaley * bottom * 8.0);
+        e->param[2] = lround(std::max(double(delay) / sub->m_scaley, 1.0));
         e->param[3] = (effect.GetLength() == 12);
-        e->param[4] = (int)(sub->m_scaley * fadeawayheight);
+        e->param[4] = lround(sub->m_scaley * fadeawayheight);
     }
 }
 
@@ -2349,10 +2350,10 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
 
                 if (tag.paramsReal.GetCount() == 4 && !sub->m_effects[EF_MOVE]) {
                     if (Effect* e = DEBUG_NEW Effect) {
-                        e->param[0] = (int)(sub->m_scalex * tag.paramsReal[0] * 8);
-                        e->param[1] = (int)(sub->m_scaley * tag.paramsReal[1] * 8);
-                        e->param[2] = (int)(sub->m_scalex * tag.paramsReal[2] * 8);
-                        e->param[3] = (int)(sub->m_scaley * tag.paramsReal[3] * 8);
+                        e->param[0] = lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
+                        e->param[1] = lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
+                        e->param[2] = lround(sub->m_scalex * tag.paramsReal[2] * 8.0);
+                        e->param[3] = lround(sub->m_scaley * tag.paramsReal[3] * 8.0);
                         e->t[0] = e->t[1] = -1;
 
                         if (tag.paramsInt.GetCount() == 2) {
@@ -2368,8 +2369,8 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
             case SSA_org: // {\org(x=param[0], y=param[1])}
                 if (tag.paramsReal.GetCount() == 2 && !sub->m_effects[EF_ORG]) {
                     if (Effect* e = DEBUG_NEW Effect) {
-                        e->param[0] = (int)(sub->m_scalex * tag.paramsReal[0] * 8.0);
-                        e->param[1] = (int)(sub->m_scaley * tag.paramsReal[1] * 8.0);
+                        e->param[0] = lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
+                        e->param[1] = lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
 
                         if (sub->m_relativeTo == 1) {
                             e->param[0] += m_vidrect.left;
@@ -2386,8 +2387,8 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
             case SSA_pos:
                 if (tag.paramsReal.GetCount() == 2 && !sub->m_effects[EF_MOVE]) {
                     if (Effect* e = DEBUG_NEW Effect) {
-                        e->param[0] = e->param[2] = (int)(sub->m_scalex * tag.paramsReal[0] * 8);
-                        e->param[1] = e->param[3] = (int)(sub->m_scaley * tag.paramsReal[1] * 8);
+                        e->param[0] = e->param[2] = lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
+                        e->param[1] = e->param[3] = lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
                         e->t[0] = e->t[1] = 0;
 
                         sub->m_effects[EF_MOVE] = e;
@@ -2581,7 +2582,7 @@ bool CRenderedTextSubtitle::ParseHtmlTag(CSubtitle* sub, CStringW str, STSStyle&
         } else {
             style.fontName = org.fontName;
             style.fontSize = org.fontSize;
-            memcpy(style.colors, org.colors, sizeof(style.colors));
+            style.colors = org.colors;
         }
     } else if (tag == L"k" && attribs.GetCount() == 1 && attribs[0] == L"t") {
         m_ktype = 1;
@@ -2624,61 +2625,120 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
         }
     }
 
-    sub = DEBUG_NEW CSubtitle(m_outlineCache, m_overlayCache);
-    if (!sub) {
+    try {
+        sub = DEBUG_NEW CSubtitle(m_outlineCache, m_overlayCache);
+    } catch (std::bad_alloc) {
         return nullptr;
     }
 
     CStringW str = GetStrW(entry, true);
 
-    STSStyle stss, orgstss;
-    if (m_doOverrideStyle && m_pStyleOverride != nullptr) {
+    STSStyle stss;
+    bool fScaledBAS = m_fScaledBAS;
+    if (m_bOverrideStyle) {
         // this RTS has been signaled to ignore embedded styles, use the built-in one
-        stss = *m_pStyleOverride;
+        stss = m_styleOverride;
+
+        // Scale values relatively to subtitles without explicitly defined m_dstScreenSize, we use 384x288 px in this case
+        // This allow to produce constant font size for default style regardless of m_dstScreenSize value
+        // Technically this is a hack, but regular user might not understand why default style font size vary along different files
+        double scaleX = m_dstScreenSize.cx / 384.0;
+        double scaleY = m_dstScreenSize.cy / 288.0;
+
+        stss.fontSize         *= scaleY;
+        stss.fontSpacing      *= scaleX;
+        stss.marginRect.left   = lround(scaleX * stss.marginRect.left);
+        stss.marginRect.top    = lround(scaleY * stss.marginRect.top);
+        stss.marginRect.right  = lround(scaleX * stss.marginRect.right);
+        stss.marginRect.bottom = lround(scaleY * stss.marginRect.bottom);
+        fScaledBAS = false;
     } else {
         // find the appropriate embedded style
         GetStyle(entry, stss);
+        if (m_bOverridePlacement) {
+            // Apply override placement to embedded style
+            stss.scrAlignment = 2;
+            LONG mw = m_dstScreenSize.cx - stss.marginRect.left - stss.marginRect.right;
+            stss.marginRect.bottom = std::lround(m_dstScreenSize.cy - m_dstScreenSize.cy * m_overridePlacement.cy / 100.0);
+            stss.marginRect.left   = std::lround(m_dstScreenSize.cx * m_overridePlacement.cx / 100.0 - mw / 2.0);
+            stss.marginRect.right  = m_dstScreenSize.cx - (stss.marginRect.left + mw);
+        }
     }
+
+    double dFontScaleXCompensation = 1.0;
+    double dFontScaleYCompensation = 1.0;
+
     if (m_ePARCompensationType == EPCTUpscale) {
-        if (stss.fontScaleX / stss.fontScaleY == 1.0 && m_dPARCompensation != 1.0) {
-            if (m_dPARCompensation < 1.0) {
-                stss.fontScaleY /= m_dPARCompensation;
-            } else {
-                stss.fontScaleX *= m_dPARCompensation;
-            }
+        if (m_dPARCompensation < 1.0) {
+            dFontScaleYCompensation = 1.0 / m_dPARCompensation;
+        } else {
+            dFontScaleXCompensation = m_dPARCompensation;
         }
     } else if (m_ePARCompensationType == EPCTDownscale) {
-        if (stss.fontScaleX / stss.fontScaleY == 1.0 && m_dPARCompensation != 1.0) {
-            if (m_dPARCompensation < 1.0) {
-                stss.fontScaleX *= m_dPARCompensation;
-            } else {
-                stss.fontScaleY /= m_dPARCompensation;
-            }
+        if (m_dPARCompensation < 1.0) {
+            dFontScaleXCompensation = m_dPARCompensation;
+        } else {
+            dFontScaleYCompensation = 1.0 / m_dPARCompensation;
         }
-    } else if (m_ePARCompensationType == EPCTAccurateSize) {
-        if (stss.fontScaleX / stss.fontScaleY == 1.0 && m_dPARCompensation != 1.0) {
-            stss.fontScaleX *= m_dPARCompensation;
-        }
+    } else if (m_ePARCompensationType == EPCTAccurateSize || m_ePARCompensationType == EPCTAccurateSize_ISR) {
+        dFontScaleXCompensation = m_dPARCompensation;
     }
 
-    orgstss = stss;
+    STSStyle orgstss = stss;
 
-    sub->m_clip.SetRect(0, 0, m_size.cx >> 3, m_size.cy >> 3);
     sub->m_scrAlignment = -stss.scrAlignment;
     sub->m_wrapStyle = m_defaultWrapStyle;
     sub->m_fAnimated = false;
     sub->m_relativeTo = stss.relativeTo;
-    // this whole conditional is a work-around for what happens in STS.cpp:
-    // in CSimpleTextSubtitle::Open, we have m_dstScreenSize = CSize(384, 288)
-    // now, files containing embedded subtitles (and with styles) set m_dstScreenSize to a correct value
-    // but where no style is given, those defaults are taken - 384, 288
-    if (m_doOverrideStyle && m_pStyleOverride) {
-        // so mind the default values, stated here to increase comprehension
-        sub->m_scalex = m_size.cx / (384 * 8);
-        sub->m_scaley = m_size.cy / (288 * 8);
+    sub->m_scalex = m_dstScreenSize.cx > 0 ? double(stss.relativeTo == 1 ? m_vidrect.Width() : m_size.cx) / (m_dstScreenSize.cx * 8.0) : 1.0;
+    sub->m_scaley = m_dstScreenSize.cy > 0 ? double(stss.relativeTo == 1 ? m_vidrect.Height() : m_size.cy) / (m_dstScreenSize.cy * 8.0) : 1.0;
+
+    STSEntry stse = GetAt(entry);
+    CRect marginRect = stse.marginRect;
+    if (marginRect.left == 0) {
+        marginRect.left = orgstss.marginRect.left;
+    }
+    if (marginRect.top == 0) {
+        marginRect.top = orgstss.marginRect.top;
+    }
+    if (marginRect.right == 0) {
+        marginRect.right = orgstss.marginRect.right;
+    }
+    if (marginRect.bottom == 0) {
+        marginRect.bottom = orgstss.marginRect.bottom;
+    }
+
+    marginRect.left   = lround(sub->m_scalex * marginRect.left * 8.0);
+    marginRect.top    = lround(sub->m_scaley * marginRect.top * 8.0);
+    marginRect.right  = lround(sub->m_scalex * marginRect.right * 8.0);
+    marginRect.bottom = lround(sub->m_scaley * marginRect.bottom * 8.0);
+
+    if (stss.relativeTo == 1) { // Don't be strict when using undefined mode (relativeTo == 2)
+        // Account for the user trying to fool the renderer by setting negative margins
+        CRect clipRect = m_vidrect;
+        if (marginRect.left < 0) {
+            clipRect.left = std::max(0l, clipRect.left + marginRect.left);
+        }
+        if (marginRect.top < 0) {
+            clipRect.top = std::max(0l, clipRect.top + marginRect.top);
+        }
+        if (marginRect.right < 0) {
+            clipRect.right = std::min(m_size.cx, clipRect.right - marginRect.right);
+        }
+        if (marginRect.bottom < 0) {
+            clipRect.bottom = std::min(m_size.cy, clipRect.bottom - marginRect.bottom);
+        }
+
+        sub->m_clip.SetRect(clipRect.left >> 3, clipRect.top >> 3, clipRect.right >> 3, clipRect.bottom >> 3);
     } else {
-        sub->m_scalex = m_dstScreenSize.cx > 0 ? 1.0 * (stss.relativeTo == 1 ? m_vidrect.Width() : m_size.cx) / (m_dstScreenSize.cx * 8) : 1.0;
-        sub->m_scaley = m_dstScreenSize.cy > 0 ? 1.0 * (stss.relativeTo == 1 ? m_vidrect.Height() : m_size.cy) / (m_dstScreenSize.cy * 8) : 1.0;
+        sub->m_clip.SetRect(0, 0, m_size.cx >> 3, m_size.cy >> 3);
+    }
+
+    if (stss.relativeTo == 1) {
+        marginRect.left   += m_vidrect.left;
+        marginRect.top    += m_vidrect.top;
+        marginRect.right  += m_size.cx - m_vidrect.right;
+        marginRect.bottom += m_size.cy - m_vidrect.bottom;
     }
 
     m_animStart = m_animEnd = 0;
@@ -2723,16 +2783,20 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
             i++;
         }
 
-        STSStyle tmp;
+        STSStyle tmp = stss;
 
-        tmp = stss;
+        tmp.fontSize      *= sub->m_scaley * 64.0;
+        tmp.fontSpacing   *= sub->m_scalex * 64.0;
+        tmp.outlineWidthX *= (fScaledBAS ? sub->m_scalex : 1.0) * 8.0;
+        tmp.outlineWidthY *= (fScaledBAS ? sub->m_scaley : 1.0) * 8.0;
+        tmp.shadowDepthX  *= (fScaledBAS ? sub->m_scalex : 1.0) * 8.0;
+        tmp.shadowDepthY  *= (fScaledBAS ? sub->m_scaley : 1.0) * 8.0;
 
-        tmp.fontSize = sub->m_scaley * tmp.fontSize * 64;
-        tmp.fontSpacing = sub->m_scalex * tmp.fontSpacing * 64;
-        tmp.outlineWidthX *= (m_fScaledBAS ? sub->m_scalex : 1) * 8;
-        tmp.outlineWidthY *= (m_fScaledBAS ? sub->m_scaley : 1) * 8;
-        tmp.shadowDepthX *= (m_fScaledBAS ? sub->m_scalex : 1) * 8;
-        tmp.shadowDepthY *= (m_fScaledBAS ? sub->m_scaley : 1) * 8;
+        if ((tmp.fontScaleX == tmp.fontScaleY && m_ePARCompensationType != EPCTAccurateSize_ISR)
+                || (tmp.fontScaleX != tmp.fontScaleY && m_ePARCompensationType == EPCTAccurateSize_ISR)) {
+            tmp.fontScaleX *= dFontScaleXCompensation;
+            tmp.fontScaleY *= dFontScaleYCompensation;
+        }
 
         if (m_nPolygon) {
             ParsePolygon(sub, str.Left(i), tmp);
@@ -2743,42 +2807,12 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
         str = str.Mid(i);
     }
 
-    if (m_doOverrideStyle && m_pStyleOverride != nullptr) {
-        sub->EmptyEffects();
-    }
-
     // just a "work-around" solution... in most cases nobody will want to use \org together with moving but without rotating the subs
     if (sub->m_effects[EF_ORG] && (sub->m_effects[EF_MOVE] || sub->m_effects[EF_BANNER] || sub->m_effects[EF_SCROLL])) {
         sub->m_fAnimated = true;
     }
 
     sub->m_scrAlignment = abs(sub->m_scrAlignment);
-
-    STSEntry stse = GetAt(entry);
-    CRect marginRect = stse.marginRect;
-    if (marginRect.left == 0) {
-        marginRect.left = orgstss.marginRect.left;
-    }
-    if (marginRect.top == 0) {
-        marginRect.top = orgstss.marginRect.top;
-    }
-    if (marginRect.right == 0) {
-        marginRect.right = orgstss.marginRect.right;
-    }
-    if (marginRect.bottom == 0) {
-        marginRect.bottom = orgstss.marginRect.bottom;
-    }
-    marginRect.left = (int)(sub->m_scalex * marginRect.left * 8);
-    marginRect.top = (int)(sub->m_scaley * marginRect.top * 8);
-    marginRect.right = (int)(sub->m_scalex * marginRect.right * 8);
-    marginRect.bottom = (int)(sub->m_scaley * marginRect.bottom * 8);
-
-    if (stss.relativeTo == 1) {
-        marginRect.left += m_vidrect.left;
-        marginRect.top += m_vidrect.top;
-        marginRect.right += m_size.cx - m_vidrect.right;
-        marginRect.bottom += m_size.cy - m_vidrect.bottom;
-    }
 
     sub->CreateClippers(m_size);
 

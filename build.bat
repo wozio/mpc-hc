@@ -266,6 +266,14 @@ IF %ERRORLEVEL% NEQ 0 (
   CALL :SubMsg "INFO" "mpciconlib.sln %1 compiled successfully"
 )
 IF /I "%SIGN%" == "True" CALL :SubSign MPC-HC mpciconlib.dll
+
+IF /I "%1" == "Win32" (SET "VS_OUT_DIR=mpc-hc_x86") ELSE (SET "VS_OUT_DIR=mpc-hc_x64")
+IF DEFINED MPCHC_LITE (
+  PUSHD "%BIN_DIR%"
+  COPY /Y /V "%VS_OUT_DIR%\mpciconlib.dll" "%VS_OUT_DIR% Lite" >NUL
+  POPD
+)
+
 EXIT /B
 
 
@@ -276,7 +284,7 @@ FOR %%G IN ("Armenian" "Basque" "Belarusian" "Bengali" "Catalan" "Chinese Simpli
  "Chinese Traditional" "Croatian" "Czech" "Dutch" "English (British)" "French"
  "Galician" "German" "Greek" "Hebrew" "Hungarian" "Italian" "Japanese" "Korean"
  "Malay" "Polish" "Portuguese (Brazil)" "Romanian" "Russian" "Slovak" "Slovenian"
- "Spanish" "Swedish" "Turkish" "Ukrainian" "Vietnamese"
+ "Spanish" "Swedish" "Tatar" "Turkish" "Ukrainian" "Vietnamese"
 ) DO (
  TITLE Compiling mpcresources %COMPILER% - %%~G^|%1...
  MSBuild.exe mpcresources.sln %MSBUILD_SWITCHES%^
@@ -327,9 +335,9 @@ EXIT /B
 :SubCopyDXDll
 IF /I "%BUILDCFG%" == "Debug" EXIT /B
 PUSHD "%BIN_DIR%"
-EXPAND "%DXSDK_DIR%\Redist\Jun2010_D3DCompiler_43_%~1.cab" -F:D3DCompiler_43.dll mpc-hc_%~1
+EXPAND "%DXSDK_DIR%\Redist\Jun2010_D3DCompiler_43_%~1.cab" -F:D3DCompiler_43.dll "mpc-hc_%~1%~2"
 IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Problem when extracting %DXSDK_DIR%\Redist\Jun2010_D3DCompiler_43_%~1.cab" & EXIT /B
-EXPAND "%DXSDK_DIR%\Redist\Jun2010_d3dx9_43_%~1.cab" -F:d3dx9_43.dll mpc-hc_%~1
+EXPAND "%DXSDK_DIR%\Redist\Jun2010_d3dx9_43_%~1.cab" -F:d3dx9_43.dll "mpc-hc_%~1%~2"
 IF %ERRORLEVEL% NEQ 0 CALL :SubMsg "ERROR" "Problem when extracting Jun2010_d3dx9_43_%~1.cab" & EXIT /B
 POPD
 EXIT /B
@@ -338,11 +346,18 @@ EXIT /B
 :SubCreateInstaller
 IF %ERRORLEVEL% NEQ 0 EXIT /B
 
-IF DEFINED MPCHC_LITE SET MPCHC_INNO_DEF=%MPCHC_INNO_DEF% /DMPCHC_LITE
 IF /I "%~1" == "x64" (
   SET MPCHC_INNO_DEF=%MPCHC_INNO_DEF% /Dx64Build
-  CALL :SubCopyDXDll x64
-) ELSE CALL :SubCopyDXDll x86
+  SET MPCHC_COPY_DX_DLL_ARGS=x64
+) ELSE SET MPCHC_COPY_DX_DLL_ARGS=x86
+
+
+IF DEFINED MPCHC_LITE (
+  SET MPCHC_INNO_DEF=%MPCHC_INNO_DEF% /DMPCHC_LITE
+  SET MPCHC_COPY_DX_DLL_ARGS=%MPCHC_COPY_DX_DLL_ARGS% " Lite"
+) 
+
+CALL :SubCopyDXDll %MPCHC_COPY_DX_DLL_ARGS%
 
 CALL :SubDetectInnoSetup
 
@@ -374,17 +389,24 @@ IF NOT DEFINED SEVENZIP (
 IF /I "%~1" == "Filters" (SET "NAME=MPC-HC_standalone_filters") ELSE (SET "NAME=MPC-HC")
 IF /I "%~2" == "Win32" (
   SET ARCH=x86
-  CALL :SubCopyDXDll x86
 ) ELSE (
   SET ARCH=x64
-  CALL :SubCopyDXDll x64
+)
+
+IF DEFINED MPCHC_LITE (
+  CALL :SubCopyDXDll %ARCH% " Lite"
+) ELSE (
+  CALL :SubCopyDXDll %ARCH%
 )
 
 PUSHD "%BIN_DIR%"
 
 SET "VS_OUT_DIR=%~1_%ARCH%"
 SET "PCKG_NAME=%NAME%.%MPCHC_VER%.%ARCH%"
-IF DEFINED MPCHC_LITE (SET "PCKG_NAME=%PCKG_NAME%.Lite")
+IF DEFINED MPCHC_LITE (
+  SET "VS_OUT_DIR=%VS_OUT_DIR% Lite"
+  SET "PCKG_NAME=%PCKG_NAME%.Lite"
+)
 IF /I "%BUILDCFG%" == "Debug" (
   SET "PCKG_NAME=%PCKG_NAME%.dbg"
   SET "VS_OUT_DIR=%VS_OUT_DIR%_Debug"
@@ -470,9 +492,7 @@ FOR /F "tokens=2,3" %%A IN ('FINDSTR /R /C:"define MPC" "include\version_rev.h"'
   SET "%%A=%%B"
 )
 
-FOR /F "tokens=3" %%A IN ('FINDSTR /R /C:"define MPC_NIGHTLY_RELEASE" "include\version.h"') DO (
-  SET "MPCHC_NIGHTLY=%%A"
-)
+IF "%MPC_VERSION_REV%" NEQ "0" (SET "MPCHC_NIGHTLY=1") ELSE (SET "MPCHC_NIGHTLY=0")
 
 SET "MPCHC_HASH=%MPCHC_HASH:~4,-2%"
 IF DEFINED MPCHC_BRANCH (

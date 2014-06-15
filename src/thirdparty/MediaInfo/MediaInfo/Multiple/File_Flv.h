@@ -38,6 +38,7 @@ private :
     void Streams_Finish_PerStream(stream_t StreamID);
 
     //Buffer - File header
+    bool FileHeader_Begin();
     void FileHeader_Parse();
 
     //Buffer - Synchro
@@ -58,6 +59,7 @@ private :
     void video_ScreenVideo(int8u Version);
     void video_VP6(bool WithAlpha);
     void video_AVC();
+    void video_HEVC();
     void audio();
     void audio_MPEG();
     void audio_AAC();
@@ -104,6 +106,7 @@ private :
     bool Searching_Duration;
     bool MetaData_NotTrustable;
     int32u PreviousTagSize;
+    int32u PreviousTagSize_Add11;
     int64u meta_filesize;
     float64 meta_duration;
 };

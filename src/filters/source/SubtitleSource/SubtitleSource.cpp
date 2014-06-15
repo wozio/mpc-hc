@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -230,7 +230,8 @@ STDMETHODIMP CSubtitleSource::QueryFilterInfo(FILTER_INFO* pInfo)
 CSubtitleStream::CSubtitleStream(const WCHAR* wfn, CSubtitleSource* pParent, HRESULT* phr)
     : CSourceStream(NAME("SubtitleStream"), phr, pParent, L"Output")
     , CSourceSeeking(NAME("SubtitleStream"), (IPin*)this, phr, &m_cSharedState)
-    , m_bDiscontinuity(FALSE), m_bFlushing(FALSE)
+    , m_bDiscontinuity(FALSE)
+    , m_bFlushing(FALSE)
     , m_nPosition(0)
     , m_rts(nullptr)
 {
@@ -646,7 +647,7 @@ HRESULT CSubtitleSourceSSA::GetMediaType(CMediaType* pmt)
 
     _tcscat_s(fn, _T(".ssa"));
 
-    if (!sts.SaveAs(fn, EXTSSA, -1, CTextFile::UTF8) || !f.Open(fn, CFile::modeRead)) {
+    if (!sts.SaveAs(fn, Subtitle::SSA, -1, CTextFile::UTF8) || !f.Open(fn, CFile::modeRead)) {
         return E_FAIL;
     }
 
@@ -697,7 +698,7 @@ HRESULT CSubtitleSourceASS::GetMediaType(CMediaType* pmt)
 
     _tcscat_s(fn, _T(".ass"));
 
-    if (!sts.SaveAs(fn, EXTASS, -1, CTextFile::UTF8) || !f.Open(fn, CFile::modeRead)) {
+    if (!sts.SaveAs(fn, Subtitle::ASS, -1, CTextFile::UTF8) || !f.Open(fn, CFile::modeRead)) {
         return E_FAIL;
     }
 

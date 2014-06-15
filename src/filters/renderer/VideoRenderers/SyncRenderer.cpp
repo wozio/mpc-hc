@@ -92,7 +92,7 @@ CBaseAP::CBaseAP(HWND hWnd, bool bFullscreen, HRESULT& hr, CString& _Error)
     , m_dCycleDifference(1.0)
     , m_llEstVBlankTime(0)
     , m_LastAdapterCheck(0)
-    , m_CurrentAdapter(0)
+    , m_CurrentAdapter(UINT_ERROR)
     , m_FocusThread(nullptr)
     , m_lNextSampleWait(1)
     , m_MinJitter(MAXLONG64)
@@ -425,10 +425,10 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
     m_pFont = nullptr;
     m_pSprite = nullptr;
     m_pLine = nullptr;
+    m_pOSDTexture = nullptr;
+    m_pOSDSurface = nullptr;
 
     m_pPSC.Free();
-    m_pD3DDev = nullptr;
-    m_pD3DDevEx = nullptr;
 
     m_pResizerPixelShader[0] = 0;
     m_pResizerPixelShader[1] = 0;
@@ -446,6 +446,15 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
         Shader.m_pPixelShader = nullptr;
     }
 
+    UINT currentAdapter = GetAdapter(m_pD3D, m_hWnd);
+    bool bTryToReset = (currentAdapter == m_CurrentAdapter);
+
+    if (!bTryToReset) {
+        m_pD3DDev = nullptr;
+        m_pD3DDevEx = nullptr;
+        m_CurrentAdapter = currentAdapter;
+    }
+
     if (!m_pD3D) {
         _Error += L"Failed to create Direct3D device\n";
         return E_UNEXPECTED;
@@ -453,20 +462,20 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
 
     D3DDISPLAYMODE d3ddm;
     ZeroMemory(&d3ddm, sizeof(d3ddm));
-    m_CurrentAdapter = GetAdapter(m_pD3D, m_hWnd);
     if (FAILED(m_pD3D->GetAdapterDisplayMode(m_CurrentAdapter, &d3ddm))) {
         _Error += L"Can not retrieve display mode data\n";
         return E_UNEXPECTED;
     }
 
-    if (FAILED(m_pD3D->GetDeviceCaps(m_CurrentAdapter, D3DDEVTYPE_HAL, &m_caps)))
+    if (FAILED(m_pD3D->GetDeviceCaps(m_CurrentAdapter, D3DDEVTYPE_HAL, &m_caps))) {
         if ((m_caps.Caps & D3DCAPS_READ_SCANLINE) == 0) {
             _Error += L"Video card does not have scanline access. Display synchronization is not possible.\n";
             return E_UNEXPECTED;
         }
+    }
 
     m_RefreshRate = d3ddm.RefreshRate;
-    m_dD3DRefreshCycle = 1000.0 / (double)m_RefreshRate; // In ms
+    m_dD3DRefreshCycle = 1000.0 / m_RefreshRate; // In ms
     m_ScreenSize.SetSize(d3ddm.Width, d3ddm.Height);
     m_pGenlock->SetDisplayResolution(d3ddm.Width, d3ddm.Height);
     CSize szDesktopSize(GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
@@ -515,23 +524,40 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
             DisplayMode.Format = pp.BackBufferFormat;
             pp.FullScreen_RefreshRateInHz = DisplayMode.RefreshRate;
 
-            if (FAILED(hr = m_pD3DEx->CreateDeviceEx(m_CurrentAdapter, D3DDEVTYPE_HAL, m_FocusThread->GetFocusWindow(),
-                            D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS | D3DCREATE_NOWINDOWCHANGES,
-                            &pp, &DisplayMode, &m_pD3DDevEx))) {
-                _Error += GetWindowsErrorMessage(hr, m_hD3D9);
-                return hr;
+            if (bTryToReset) {
+                if (!m_pD3DDevEx || FAILED(hr = m_pD3DDevEx->ResetEx(&pp, &DisplayMode))) {
+                    bTryToReset = false;
+                    m_pD3DDev = nullptr;
+                    m_pD3DDevEx = nullptr;
+                }
             }
+            if (!bTryToReset) {
+                if (FAILED(hr = m_pD3DEx->CreateDeviceEx(m_CurrentAdapter, D3DDEVTYPE_HAL, m_FocusThread->GetFocusWindow(),
+                                D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS | D3DCREATE_NOWINDOWCHANGES,
+                                &pp, &DisplayMode, &m_pD3DDevEx))) {
+                    _Error += GetWindowsErrorMessage(hr, m_hD3D9);
+                    return hr;
+                }
+            }
+
             if (m_pD3DDevEx) {
                 m_pD3DDev = m_pD3DDevEx;
                 m_BackbufferType = pp.BackBufferFormat;
                 m_DisplayType = DisplayMode.Format;
             }
         } else {
-            if (FAILED(hr = m_pD3D->CreateDevice(m_CurrentAdapter, D3DDEVTYPE_HAL, m_FocusThread->GetFocusWindow(),
-                                                 D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_NOWINDOWCHANGES,
-                                                 &pp, &m_pD3DDev))) {
-                _Error += GetWindowsErrorMessage(hr, m_hD3D9);
-                return hr;
+            if (bTryToReset) {
+                if (!m_pD3DDev || FAILED(hr = m_pD3DDev->Reset(&pp))) {
+                    bTryToReset = false;
+                }
+            }
+            if (!bTryToReset) {
+                if (FAILED(hr = m_pD3D->CreateDevice(m_CurrentAdapter, D3DDEVTYPE_HAL, m_FocusThread->GetFocusWindow(),
+                                                     D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_NOWINDOWCHANGES,
+                                                     &pp, &m_pD3DDev))) {
+                    _Error += GetWindowsErrorMessage(hr, m_hD3D9);
+                    return hr;
+                }
             }
             DEBUG_ONLY(_tprintf_s(_T("Created full-screen device\n")));
             if (m_pD3DDev) {
@@ -568,21 +594,38 @@ HRESULT CBaseAP::CreateDXDevice(CString& _Error)
             pp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
         }
         if (m_pD3DEx) {
-            if (FAILED(hr = m_pD3DEx->CreateDeviceEx(m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
-                            D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
-                            &pp, nullptr, &m_pD3DDevEx))) {
-                _Error += GetWindowsErrorMessage(hr, m_hD3D9);
-                return hr;
+            if (bTryToReset) {
+                if (!m_pD3DDevEx || FAILED(hr = m_pD3DDevEx->ResetEx(&pp, nullptr))) {
+                    bTryToReset = false;
+                    m_pD3DDev = nullptr;
+                    m_pD3DDevEx = nullptr;
+                }
             }
+            if (!bTryToReset) {
+                if (FAILED(hr = m_pD3DEx->CreateDeviceEx(m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
+                                D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_ENABLE_PRESENTSTATS,
+                                &pp, nullptr, &m_pD3DDevEx))) {
+                    _Error += GetWindowsErrorMessage(hr, m_hD3D9);
+                    return hr;
+                }
+            }
+
             if (m_pD3DDevEx) {
                 m_pD3DDev = m_pD3DDevEx;
             }
         } else {
-            if (FAILED(hr = m_pD3D->CreateDevice(m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
-                                                 D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED,
-                                                 &pp, &m_pD3DDev))) {
-                _Error += GetWindowsErrorMessage(hr, m_hD3D9);
-                return hr;
+            if (bTryToReset) {
+                if (!m_pD3DDev || FAILED(hr = m_pD3DDev->Reset(&pp))) {
+                    bTryToReset = false;
+                }
+            }
+            if (!bTryToReset) {
+                if (FAILED(hr = m_pD3D->CreateDevice(m_CurrentAdapter, D3DDEVTYPE_HAL, m_hWnd,
+                                                     D3DCREATE_HARDWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED,
+                                                     &pp, &m_pD3DDev))) {
+                    _Error += GetWindowsErrorMessage(hr, m_hD3D9);
+                    return hr;
+                }
             }
             DEBUG_ONLY(_tprintf_s(_T("Created windowed device\n")));
         }
@@ -742,7 +785,7 @@ HRESULT CBaseAP::ResetDXDevice(CString& _Error)
     }
 
     m_RefreshRate = d3ddm.RefreshRate;
-    m_dD3DRefreshCycle = 1000.0 / (double)m_RefreshRate; // In ms
+    m_dD3DRefreshCycle = 1000.0 / m_RefreshRate; // In ms
     m_ScreenSize.SetSize(d3ddm.Width, d3ddm.Height);
     m_pGenlock->SetDisplayResolution(d3ddm.Width, d3ddm.Height);
     CSize szDesktopSize(GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
@@ -1429,7 +1472,7 @@ void CBaseAP::SyncStats(LONGLONG syncTime)
     m_nNextJitter = (m_nNextJitter + 1) % NB_JITTER;
     LONGLONG jitter = syncTime - m_llLastSyncTime;
     m_pllJitter[m_nNextJitter] = jitter;
-    double syncDeviation = ((double)m_pllJitter[m_nNextJitter] - m_fJitterMean) / 10000.0;
+    double syncDeviation = (m_pllJitter[m_nNextJitter] - m_fJitterMean) / 10000.0;
     if (abs(syncDeviation) > (GetDisplayCycle() / 2)) {
         m_uSyncGlitches++;
     }
@@ -1445,11 +1488,11 @@ void CBaseAP::SyncStats(LONGLONG syncTime)
     double DeviationSum = 0;
 
     for (int i = 0; i < NB_JITTER; i++) {
-        LONGLONG DevInt = m_pllJitter[i] - (LONGLONG)m_fJitterMean;
-        double Deviation = (double)DevInt;
-        DeviationSum += Deviation * Deviation;
-        m_MaxJitter = std::max(m_MaxJitter, DevInt);
-        m_MinJitter = std::min(m_MinJitter, DevInt);
+        double deviation = m_pllJitter[i] - m_fJitterMean;
+        DeviationSum += deviation * deviation;
+        LONGLONG deviationInt = std::llround(deviation);
+        m_MaxJitter = std::max(m_MaxJitter, deviationInt);
+        m_MinJitter = std::min(m_MinJitter, deviationInt);
     }
 
     m_fJitterStdDev = sqrt(DeviationSum / NB_JITTER);
@@ -1792,7 +1835,7 @@ STDMETHODIMP_(bool) CBaseAP::Paint(bool fAll)
     }
 
     // Adjust sync
-    double frameCycle = (double)((m_llSampleTime - m_llLastSampleTime) / 10000.0);
+    double frameCycle = (m_llSampleTime - m_llLastSampleTime) / 10000.0;
     if (frameCycle < 0) {
         frameCycle = 0.0;    // Happens when searching.
     }
@@ -1905,6 +1948,8 @@ STDMETHODIMP_(bool) CBaseAP::ResetDevice()
 
 STDMETHODIMP_(bool) CBaseAP::DisplayChange()
 {
+    m_bPendingResetDevice = true;
+    SendResetRequest();
     return true;
 }
 
@@ -1913,47 +1958,16 @@ void CBaseAP::DrawText(const RECT& rc, const CString& strText, int _Priority)
     if (_Priority < 1) {
         return;
     }
-    int Quality = 1;
+
     D3DXCOLOR Color1(1.0f, 0.2f, 0.2f, 1.0f);
     D3DXCOLOR Color0(0.0f, 0.0f, 0.0f, 1.0f);
     RECT Rect1 = rc;
     RECT Rect2 = rc;
-    if (Quality == 1) {
-        OffsetRect(&Rect2 , 2, 2);
-    } else {
-        OffsetRect(&Rect2 , -1, -1);
-    }
-    if (Quality > 0) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
-    OffsetRect(&Rect2 , 1, 0);
-    if (Quality > 3) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
-    OffsetRect(&Rect2 , 1, 0);
-    if (Quality > 2) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
-    OffsetRect(&Rect2 , 0, 1);
-    if (Quality > 3) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
-    OffsetRect(&Rect2 , 0, 1);
-    if (Quality > 1) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
-    OffsetRect(&Rect2 , -1, 0);
-    if (Quality > 3) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
-    OffsetRect(&Rect2 , -1, 0);
-    if (Quality > 2) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
-    OffsetRect(&Rect2 , 0, -1);
-    if (Quality > 3) {
-        m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
-    }
+    OffsetRect(&Rect2, 2, 2);
+
+    // Draw shadow
+    m_pFont->DrawText(m_pSprite, strText, -1, &Rect2, DT_NOCLIP, Color0);
+    // Draw text
     m_pFont->DrawText(m_pSprite, strText, -1, &Rect1, DT_NOCLIP, Color1);
 }
 
@@ -2257,7 +2271,7 @@ void CBaseAP::EstimateRefreshTimings()
                 done = true;
             }
         }
-        m_dDetectedScanlineTime = (double)(endTime - startTime) / (double)((endLine - startLine) * 10000.0);
+        m_dDetectedScanlineTime = (endTime - startTime) / ((endLine - startLine) * 10000.0);
 
         // Estimate the display refresh rate from the vsyncs
         m_pD3DDev->GetRasterStatus(0, &rasterStatus);
@@ -2278,7 +2292,7 @@ void CBaseAP::EstimateRefreshTimings()
             // Now we're at the next vsync
         }
         endTime = rd->GetPerfCounter();
-        m_dEstRefreshCycle = (double)(endTime - startTime) / ((i - 1) * 10000.0);
+        m_dEstRefreshCycle = (endTime - startTime) / ((i - 1) * 10000.0);
     }
 }
 
@@ -2958,9 +2972,6 @@ HRESULT CSyncAP::CreateProposedOutputType(IMFMediaType* pMixerType, IMFMediaType
     CSize videoSize;
     videoSize.cx = VideoFormat->videoInfo.dwWidth;
     videoSize.cy = VideoFormat->videoInfo.dwHeight;
-    CSize aspectRatio;
-    aspectRatio.cx = VideoFormat->videoInfo.PixelAspectRatio.Numerator;
-    aspectRatio.cy = VideoFormat->videoInfo.PixelAspectRatio.Denominator;
 
     if (SUCCEEDED(hr)) {
         i64Size.HighPart = videoSize.cx;
@@ -2976,26 +2987,25 @@ HRESULT CSyncAP::CreateProposedOutputType(IMFMediaType* pMixerType, IMFMediaType
         }
 
         m_LastSetOutputRange = r.m_AdvRendSets.iEVROutputRange;
-        i64Size.HighPart = aspectRatio.cx;
-        i64Size.LowPart  = aspectRatio.cy;
+        i64Size.HighPart = VideoFormat->videoInfo.PixelAspectRatio.Numerator;
+        i64Size.LowPart = VideoFormat->videoInfo.PixelAspectRatio.Denominator;
         m_pMediaType->SetUINT64(MF_MT_PIXEL_ASPECT_RATIO, i64Size.QuadPart);
 
         MFVideoArea Area = GetArea(0, 0, videoSize.cx, videoSize.cy);
         m_pMediaType->SetBlob(MF_MT_GEOMETRIC_APERTURE, (UINT8*)&Area, sizeof(MFVideoArea));
     }
 
-    aspectRatio.cx *= videoSize.cx;
-    aspectRatio.cy *= videoSize.cy;
-
-    int gcd = GCD(aspectRatio.cx, aspectRatio.cy);
+    UINT64 dwARx = UINT64(VideoFormat->videoInfo.PixelAspectRatio.Numerator)   * videoSize.cx;
+    UINT64 dwARy = UINT64(VideoFormat->videoInfo.PixelAspectRatio.Denominator) * videoSize.cy;
+    UINT64 gcd = GCD(dwARx, dwARy);
     if (gcd > 1) {
-        aspectRatio.cx /= gcd;
-        aspectRatio.cy /= gcd;
+        dwARx /= gcd;
+        dwARy /= gcd;
     }
+    CSize aspectRatio((LONG)dwARx, (LONG)dwARy);
 
     if (videoSize != m_NativeVideoSize || aspectRatio != m_AspectRatio) {
-        m_NativeVideoSize = videoSize;
-        m_AspectRatio = aspectRatio;
+        SetVideoSize(videoSize, aspectRatio);
 
         // Notify the graph about the change
         if (m_pSink) {
@@ -3289,8 +3299,8 @@ STDMETHODIMP CSyncAP::GetNativeVideoSize(SIZE* pszVideo, SIZE* pszARVideo)
         pszVideo->cy    = m_NativeVideoSize.cy;
     }
     if (pszARVideo) {
-        pszARVideo->cx  = m_NativeVideoSize.cx * m_AspectRatio.cx;
-        pszARVideo->cy  = m_NativeVideoSize.cy * m_AspectRatio.cy;
+        pszARVideo->cx  = m_AspectRatio.cx;
+        pszARVideo->cy  = m_AspectRatio.cy;
     }
     return S_OK;
 }
@@ -3531,7 +3541,7 @@ STDMETHODIMP CSyncAP::InitializeDevice(AM_MEDIA_TYPE* pMediaType)
     int w = vih2->bmiHeader.biWidth;
     int h = abs(vih2->bmiHeader.biHeight);
 
-    m_NativeVideoSize = CSize(w, h);
+    SetVideoSize(CSize(w, h), m_AspectRatio);
     if (m_bHighColorResolution) {
         hr = AllocSurfaces(D3DFMT_A2R10G10B10);
     } else {
@@ -3670,7 +3680,7 @@ void CSyncAP::RenderThread()
                                 lLastVsyncTime = - lDisplayCycle;    // To even out glitches in the beginning
                             }
 
-                            LONGLONG llNextSampleWait = (LONGLONG)(((double)lLastVsyncTime + GetDisplayCycle() - dTargetSyncOffset) * 10000); // Time from now util next safe time to Paint()
+                            LONGLONG llNextSampleWait = (LONGLONG)((lLastVsyncTime + GetDisplayCycle() - dTargetSyncOffset) * 10000); // Time from now util next safe time to Paint()
                             while ((llRefClockTime + llNextSampleWait) < (m_llSampleTime + m_llHysteresis)) { // While the proposed time is in the past of sample presentation time
                                 llNextSampleWait = llNextSampleWait + (LONGLONG)(GetDisplayCycle() * 10000); // Try the next possible time, one display cycle ahead
                             }
@@ -3988,6 +3998,8 @@ HRESULT CreateSyncRenderer(const CLSID& clsid, HWND hWnd, bool bFullscreen, ISub
 CSyncRenderer::CSyncRenderer(const TCHAR* pName, LPUNKNOWN pUnk, HRESULT& hr, VMR9AlphaBitmap* pVMR9AlphaBitmap, CSyncAP* pAllocatorPresenter): CUnknown(pName, pUnk)
 {
     hr = m_pEVR.CoCreateInstance(CLSID_EnhancedVideoRenderer, GetOwner());
+    CComQIPtr<IBaseFilter> pEVRBase = m_pEVR;
+    m_pEVRBase = pEVRBase; // Don't keep a second reference on the EVR filter
     m_pVMR9AlphaBitmap = pVMR9AlphaBitmap;
     m_pAllocatorPresenter = pAllocatorPresenter;
 }
@@ -3998,144 +4010,96 @@ CSyncRenderer::~CSyncRenderer()
 
 HRESULT STDMETHODCALLTYPE CSyncRenderer::GetState(DWORD dwMilliSecsTimeout, __out  FILTER_STATE* State)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->GetState(dwMilliSecsTimeout, State);
+    if (m_pEVRBase) {
+        return m_pEVRBase->GetState(dwMilliSecsTimeout, State);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::EnumPins(__out IEnumPins** ppEnum)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->EnumPins(ppEnum);
+    if (m_pEVRBase) {
+        return m_pEVRBase->EnumPins(ppEnum);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::FindPin(LPCWSTR Id, __out  IPin** ppPin)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->FindPin(Id, ppPin);
+    if (m_pEVRBase) {
+        return m_pEVRBase->FindPin(Id, ppPin);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::QueryFilterInfo(__out  FILTER_INFO* pInfo)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->QueryFilterInfo(pInfo);
+    if (m_pEVRBase) {
+        return m_pEVRBase->QueryFilterInfo(pInfo);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::JoinFilterGraph(__in_opt  IFilterGraph* pGraph, __in_opt  LPCWSTR pName)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->JoinFilterGraph(pGraph, pName);
+    if (m_pEVRBase) {
+        return m_pEVRBase->JoinFilterGraph(pGraph, pName);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::QueryVendorInfo(__out  LPWSTR* pVendorInfo)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->QueryVendorInfo(pVendorInfo);
+    if (m_pEVRBase) {
+        return m_pEVRBase->QueryVendorInfo(pVendorInfo);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::Stop()
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->Stop();
+    if (m_pEVRBase) {
+        return m_pEVRBase->Stop();
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::Pause()
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->Pause();
+    if (m_pEVRBase) {
+        return m_pEVRBase->Pause();
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::Run(REFERENCE_TIME tStart)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->Run(tStart);
+    if (m_pEVRBase) {
+        return m_pEVRBase->Run(tStart);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::SetSyncSource(__in_opt IReferenceClock* pClock)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->SetSyncSource(pClock);
+    if (m_pEVRBase) {
+        return m_pEVRBase->SetSyncSource(pClock);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::GetSyncSource(__deref_out_opt IReferenceClock** pClock)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->GetSyncSource(pClock);
+    if (m_pEVRBase) {
+        return m_pEVRBase->GetSyncSource(pClock);
     }
     return E_NOTIMPL;
 }
 
 STDMETHODIMP CSyncRenderer::GetClassID(__RPC__out CLSID* pClassID)
 {
-    CComPtr<IBaseFilter> pEVRBase;
-    if (m_pEVR) {
-        m_pEVR->QueryInterface(&pEVRBase);
-    }
-    if (pEVRBase) {
-        return pEVRBase->GetClassID(pClassID);
+    if (m_pEVRBase) {
+        return m_pEVRBase->GetClassID(pClassID);
     }
     return E_NOTIMPL;
 }

@@ -29,6 +29,9 @@ class CPlayerBar : public CSizingControlBarG
 
     DECLARE_DYNAMIC(CPlayerBar)
 
+    EventClient m_eventc;
+    void EventCallback(MpcEvent ev);
+
     bool m_bAutohidden;
     bool m_bHasActivePopup;
 
@@ -49,6 +52,8 @@ public:
     virtual ~CPlayerBar();
 
     BOOL Create(LPCTSTR lpszWindowName, CWnd* pParentWnd, UINT nID, UINT defDockBarID, CString const& strSettingName);
+
+    virtual void ReloadTranslatableResources() PURE;
 
     virtual void LoadState(CFrameWnd* pParent);
     virtual void SaveState();

@@ -37,6 +37,7 @@ CPPageSubtitles::CPPageSubtitles()
     , m_fSPCPow2Tex(FALSE)
     , m_fSPCAllowAnimationWhenBuffering(TRUE)
     , m_nSubDelayInterval(0)
+    , m_bSubtitleARCompensation(TRUE)
 {
 }
 
@@ -60,6 +61,7 @@ void CPPageSubtitles::DoDataExchange(CDataExchange* pDX)
     DDX_Check(pDX, IDC_CHECK_SPCPOW2TEX, m_fSPCPow2Tex);
     DDX_Check(pDX, IDC_CHECK_SPCANIMWITHBUFFER, m_fSPCAllowAnimationWhenBuffering);
     DDX_Text(pDX, IDC_EDIT4, m_nSubDelayInterval);
+    DDX_Check(pDX, IDC_CHECK_SUB_AR_COMPENSATION, m_bSubtitleARCompensation);
 }
 
 
@@ -88,12 +90,14 @@ int TranslateResIn(int _In)
         case 3:
         case 4:
         case 5:
-            return _In + 4;
+            return _In + 5;
         case 6:
         case 7:
         case 8:
         case 9:
-            return _In - 5;
+            return _In - 4;
+        case 10:
+            return 1;
     }
     return _In;
 }
@@ -104,16 +108,18 @@ int TranslateResOut(int _In)
         case 0:
             return 0;
         case 1:
+            return 10;
         case 2:
         case 3:
         case 4:
-            return _In + 5;
         case 5:
+            return _In + 4;
         case 6:
         case 7:
         case 8:
         case 9:
-            return _In - 4;
+        case 10:
+            return _In - 5;
     }
     return _In;
 }
@@ -134,6 +140,7 @@ BOOL CPPageSubtitles::OnInitDialog()
     m_nSPCSize = s.m_RenderersSettings.nSPCSize;
     m_nSPCSizeCtrl.SetRange32(0, 60);
     m_spmaxres.AddString(_T("Desktop"));
+    m_spmaxres.AddString(_T("Video"));
     m_spmaxres.AddString(_T("2560x1600"));
     m_spmaxres.AddString(_T("1920x1080"));
     m_spmaxres.AddString(_T("1320x900"));
@@ -147,6 +154,7 @@ BOOL CPPageSubtitles::OnInitDialog()
     m_fSPCPow2Tex = s.m_RenderersSettings.fSPCPow2Tex;
     m_fSPCAllowAnimationWhenBuffering = s.m_RenderersSettings.fSPCAllowAnimationWhenBuffering;
     m_nSubDelayInterval = s.nSubDelayInterval;
+    m_bSubtitleARCompensation = s.bSubtitleARCompensation;
 
     UpdateData(FALSE);
 
@@ -162,25 +170,27 @@ BOOL CPPageSubtitles::OnApply()
 
     CAppSettings& s = AfxGetAppSettings();
 
+    s.m_RenderersSettings.nSPCSize = m_nSPCSize;
+    s.nSubDelayInterval = m_nSubDelayInterval;
+    s.m_RenderersSettings.nSPCMaxRes = TranslateResOut(m_spmaxres.GetCurSel());
+    s.m_RenderersSettings.fSPCPow2Tex = !!m_fSPCPow2Tex;
+    s.m_RenderersSettings.fSPCAllowAnimationWhenBuffering = !!m_fSPCAllowAnimationWhenBuffering;
+
+    if (s.bSubtitleARCompensation != !!m_bSubtitleARCompensation) {
+        s.bSubtitleARCompensation = !!m_bSubtitleARCompensation;
+        if (auto pMainFrame = dynamic_cast<CMainFrame*>(AfxGetMainWnd())) {
+            pMainFrame->UpdateSubAspectRatioCompensation();
+        }
+    }
+
     if (s.fOverridePlacement != !!m_fOverridePlacement
             || s.nHorPos != m_nHorPos
-            || s.nVerPos != m_nVerPos
-            || s.m_RenderersSettings.nSPCSize != m_nSPCSize
-            || s.nSubDelayInterval != m_nSubDelayInterval
-            || s.m_RenderersSettings.nSPCMaxRes != TranslateResOut(m_spmaxres.GetCurSel())
-            || s.m_RenderersSettings.fSPCPow2Tex != !!m_fSPCPow2Tex
-            || s.m_RenderersSettings.fSPCAllowAnimationWhenBuffering != !!m_fSPCAllowAnimationWhenBuffering) {
+            || s.nVerPos != m_nVerPos) {
         s.fOverridePlacement = !!m_fOverridePlacement;
         s.nHorPos = m_nHorPos;
         s.nVerPos = m_nVerPos;
-        s.m_RenderersSettings.nSPCSize = m_nSPCSize;
-        s.nSubDelayInterval = m_nSubDelayInterval;
-        s.m_RenderersSettings.nSPCMaxRes = TranslateResOut(m_spmaxres.GetCurSel());
-        s.m_RenderersSettings.fSPCPow2Tex = !!m_fSPCPow2Tex;
-        s.m_RenderersSettings.fSPCAllowAnimationWhenBuffering = !!m_fSPCAllowAnimationWhenBuffering;
-
-        if (CMainFrame* pFrame = (CMainFrame*)GetParentFrame()) {
-            pFrame->SetSubtitle(0, true, true);
+        if (auto pMainFrame = dynamic_cast<CMainFrame*>(AfxGetMainWnd())) {
+            pMainFrame->UpdateSubOverridePlacement();
         }
     }
 

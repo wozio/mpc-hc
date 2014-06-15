@@ -1,13 +1,13 @@
 # MPC-HC - Strings extracted from dialogs
-# Copyright (C) 2002 - 2014 see Authors.txt
+# Copyright (C) 2002 - 2013 see Authors.txt
 # This file is distributed under the same license as the MPC-HC package.
 # Translators:
 # arestarh1986 <arestarh@ukr.net>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2013-12-15 20:40:48+0000\n"
-"PO-Revision-Date: 2014-02-05 11:27+0000\n"
+"POT-Creation-Date: 2014-05-28 21:39:34+0000\n"
+"PO-Revision-Date: 2014-05-30 08:21+0000\n"
 "Last-Translator: arestarh1986 <arestarh@ukr.net>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/projects/p/mpc-hc/language/uk/)\n"
 "MIME-Version: 1.0\n"
@@ -34,7 +34,7 @@ msgstr "Відео"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_BUTTON1"
 msgid "Set"
-msgstr "Збер"
+msgstr "Встановити"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_STATIC"
 msgid "Audio"
@@ -42,11 +42,11 @@ msgstr "Аудіо"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_STATIC"
 msgid "Output"
-msgstr "Збереження"
+msgstr "Вивід"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_CHECK1"
 msgid "Record Video"
-msgstr "Відео"
+msgstr "Запис Відео"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_CHECK2"
 msgid "Preview"
@@ -54,7 +54,7 @@ msgstr "Перегляд"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_CHECK3"
 msgid "Record Audio"
-msgstr "Аудіо"
+msgstr "Запис Аудіо"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_CHECK4"
 msgid "Preview"
@@ -62,7 +62,7 @@ msgstr "Перегляд"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_STATIC"
 msgid "V/A Buffers:"
-msgstr "V/A буфер:"
+msgstr "В/А буфери:"
 
 msgctxt "IDD_CAPTURE_DLG_IDC_CHECK5"
 msgid "Audio to wav"
@@ -247,6 +247,10 @@ msgstr "один програвач для всіх файлів"
 msgctxt "IDD_PPAGEPLAYER_IDC_RADIO2"
 msgid "Open a new player for each media file played"
 msgstr "новий програвач для кожного файлу"
+
+msgctxt "IDD_PPAGEPLAYER_IDC_STATIC"
+msgid "Language"
+msgstr "Мова"
 
 msgctxt "IDD_PPAGEPLAYER_IDC_STATIC"
 msgid "Title bar"
@@ -466,7 +470,7 @@ msgstr "Автозавантаження звуку"
 
 msgctxt "IDD_PPAGEPLAYBACK_IDC_CHECK3"
 msgid "Use the built-in subtitle renderer"
-msgstr ""
+msgstr "Використовувати вбудований рендерер субтитрів"
 
 msgctxt "IDD_PPAGEPLAYBACK_IDC_STATIC"
 msgid "Control"
@@ -531,6 +535,14 @@ msgstr "Дозволити анімацію при буферизації"
 msgctxt "IDD_PPAGESUBTITLES_IDC_CHECK_SPCPOW2TEX"
 msgid "Round up to power of two"
 msgstr "Заокруглювати до кратності 2"
+
+msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
+msgid "Renderer Layout"
+msgstr ""
+
+msgctxt "IDD_PPAGESUBTITLES_IDC_CHECK_SUB_AR_COMPENSATION"
+msgid "Apply aspect ratio compensation for anamorphic videos"
+msgstr "Застосовувати компенсацію співвідношення сторін для анаморфного відео"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
 msgid "Warning"
@@ -912,6 +924,10 @@ msgctxt "IDD_SAVESUBTITLESFILEDIALOGTEMPL_IDC_STATIC"
 msgid "ms"
 msgstr "мс"
 
+msgctxt "IDD_SAVESUBTITLESFILEDIALOGTEMPL_IDC_CHECK1"
+msgid "Save custom style"
+msgstr ""
+
 msgctxt "IDD_SAVETHUMBSDIALOGTEMPL_IDC_STATIC"
 msgid "Thumbnails:"
 msgstr "Мініатюри:"
@@ -1163,34 +1179,6 @@ msgstr "Обертання"
 msgctxt "IDD_PPAGEOUTPUT_IDC_STATIC"
 msgid "* External filters (such as VSFilter) can display subtitles on all renderers."
 msgstr "* Зовнішні фільтри (як то VSFilter) допускають показ субтитрів для всіх рендерерів."
-
-msgctxt "IDD_AUTH_DLG_CAPTION"
-msgid "Authentication needed"
-msgstr "Необхідна авторизація"
-
-msgctxt "IDD_AUTH_DLG_IDOK"
-msgid "OK"
-msgstr "Гаразд"
-
-msgctxt "IDD_AUTH_DLG_IDCANCEL"
-msgid "Cancel"
-msgstr "Скасувати"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Restricted area"
-msgstr "Зона з обмеженим доступом"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Username:"
-msgstr "Логін:"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Password:"
-msgstr "Гасло:"
-
-msgctxt "IDD_AUTH_DLG_IDC_CHECK1"
-msgid "Remember my password"
-msgstr "Запам'ятати гасло"
 
 msgctxt "IDD_PPAGEWEBSERVER_IDC_CHECK1"
 msgid "Listen on port:"

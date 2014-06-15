@@ -3349,12 +3349,15 @@ void File_MpegPs::video_stream()
         //New parsers
         switch (Streams[stream_id].stream_type)
         {
-            case 0x10 : Streams[stream_id].Parsers.push_back(ChooseParser_Mpeg4v()); break;
-            case 0x1B : Streams[stream_id].Parsers.push_back(ChooseParser_Avc()   ); break;
-            case 0x27 : Streams[stream_id].Parsers.push_back(ChooseParser_Hevc()  ); break;
             case 0x01 :
             case 0x02 :
             case 0x80 : Streams[stream_id].Parsers.push_back(ChooseParser_Mpegv() ); break;
+            case 0x10 :
+                        Streams[stream_id].Parsers.push_back(ChooseParser_Mpeg4v()); break;
+            case 0x1B :
+                        Streams[stream_id].Parsers.push_back(ChooseParser_Avc()   ); break;
+            case 0x24 :
+            case 0x27 : Streams[stream_id].Parsers.push_back(ChooseParser_Hevc()  ); break;
             default   :
                         #if defined(MEDIAINFO_MPEGV_YES)
                             Streams[stream_id].Parsers.push_back(ChooseParser_Mpegv());
@@ -4000,7 +4003,7 @@ void File_MpegPs::xxx_stream_Parse(ps_stream &Temp, int8u &stream_Count)
                 //Demux of substream data
                 if (FromTS_stream_type==0x1B && SubStream_Demux)
                 {
-                    if (!SubStream_Demux->Buffers.empty() && !SubStream_Demux->Buffers.empty() && SubStream_Demux->Buffers[0] && SubStream_Demux->Buffers[0]->DTS<FrameInfo.DTS)
+                    if (!SubStream_Demux->Buffers.empty() && SubStream_Demux->Buffers[0] && SubStream_Demux->Buffers[0]->DTS<FrameInfo.DTS)
                     {
                         Demux(SubStream_Demux->Buffers[0]->Buffer, SubStream_Demux->Buffers[0]->Buffer_Size, ContentType_SubStream);
                         delete SubStream_Demux->Buffers[0]->Buffer; SubStream_Demux->Buffers[0]->Buffer=NULL;

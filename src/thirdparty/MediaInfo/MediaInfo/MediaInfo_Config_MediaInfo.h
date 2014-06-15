@@ -37,6 +37,7 @@ namespace MediaInfoLib
 
 #if MEDIAINFO_EVENTS
     class File__Analyze;
+    class MediaInfo_Config_PerPackage;
 #endif //MEDIAINFO_EVENTS
 
 //***************************************************************************
@@ -89,6 +90,11 @@ public :
     #if MEDIAINFO_ADVANCED
         void          File_IgnoreSequenceFileSize_Set (bool NewValue);
         bool          File_IgnoreSequenceFileSize_Get ();
+    #endif //MEDIAINFO_ADVANCED
+
+    #if MEDIAINFO_ADVANCED
+        void          File_IgnoreSequenceFilesCount_Set (bool NewValue);
+        bool          File_IgnoreSequenceFilesCount_Get ();
     #endif //MEDIAINFO_ADVANCED
 
     #if MEDIAINFO_ADVANCED
@@ -283,9 +289,13 @@ public :
     bool          File_IsNotGrowingAnymore;
     int64u        File_Current_Offset;
     int64u        File_Current_Size;
+    int64u        File_IgnoreFramesBefore;
+    int64u        File_IgnoreFramesAfter;
+    float64       File_IgnoreFramesRate;
     int64u        File_Size;
     float32       ParseSpeed;
     #if MEDIAINFO_EVENTS
+    MediaInfo_Config_PerPackage* Config_PerPackage;
     Ztring        File_Names_RootDirectory;
     #endif //MEDIAINFO_EVENTS
     #if MEDIAINFO_DEMUX
@@ -313,6 +323,7 @@ private :
     bool                    File_ID_OnlyRoot;
     #if MEDIAINFO_ADVANCED
         bool                File_IgnoreSequenceFileSize;
+        bool                File_IgnoreSequenceFilesCount;
         float64             File_DefaultFrameRate;
         bool                File_Source_List;
         bool                File_RiskyBitRateEstimation;

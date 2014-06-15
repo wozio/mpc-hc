@@ -20,26 +20,31 @@
 
 #pragma once
 
-#include "BaseSub.h"
+#include "RLECodedSubtitle.h"
+#include "CompositionObject.h"
 
 class CGolombBuffer;
 
-class CDVBSub : public CBaseSub
+class CDVBSub : public CRLECodedSubtitle
 {
 public:
-    CDVBSub();
+    CDVBSub(CCritSec* pLock, const CString& name, LCID lcid);
     ~CDVBSub();
 
-    virtual HRESULT        ParseSample(IMediaSample* pSample);
-    virtual void           EndOfStream();
-    virtual void           Render(SubPicDesc& spd, REFERENCE_TIME rt, RECT& bbox);
-    virtual HRESULT        GetTextureSize(POSITION pos, SIZE& MaxTextureSize, SIZE& VideoSize, POINT& VideoTopLeft);
-    virtual POSITION       GetStartPosition(REFERENCE_TIME rt, double fps);
-    virtual POSITION       GetNext(POSITION pos);
-    virtual REFERENCE_TIME GetStart(POSITION nPos);
-    virtual REFERENCE_TIME GetStop(POSITION nPos);
-    virtual void           Reset();
+    // ISubPicProvider
+    STDMETHODIMP_(POSITION)       GetStartPosition(REFERENCE_TIME rt, double fps);
+    STDMETHODIMP_(POSITION)       GetNext(POSITION pos);
+    STDMETHODIMP_(REFERENCE_TIME) GetStart(POSITION pos, double fps);
+    STDMETHODIMP_(REFERENCE_TIME) GetStop(POSITION pos, double fps);
+    STDMETHODIMP_(bool)           IsAnimated(POSITION pos);
+    STDMETHODIMP                  Render(SubPicDesc& spd, REFERENCE_TIME rt, double fps, RECT& bbox);
+    STDMETHODIMP                  GetTextureSize(POSITION pos, SIZE& MaxTextureSize, SIZE& VirtualSize, POINT& VirtualTopLeft);
 
+    virtual HRESULT ParseSample(IMediaSample* pSample);
+    virtual void    EndOfStream();
+    virtual void    Reset();
+
+private:
     // EN 300-743, table 2
     enum DVB_SEGMENT_TYPE {
         NO_SEGMENT     = 0xFFFF,
@@ -182,16 +187,16 @@ public:
     class DVB_PAGE
     {
     public:
-        REFERENCE_TIME               rtStart;
-        REFERENCE_TIME               rtStop;
-        BYTE                         pageTimeOut;
-        BYTE                         pageVersionNumber;
-        BYTE                         pageState;
-        CAtlList<DVB_REGION_POS>     regionsPos;
-        CAtlList<DVB_REGION*>        regions;
-        CAtlList<CompositionObject*> objects;
-        CAtlList<DVB_CLUT*>          CLUTs;
-        bool                         rendered;
+        REFERENCE_TIME                  rtStart;
+        REFERENCE_TIME                  rtStop;
+        BYTE                            pageTimeOut;
+        BYTE                            pageVersionNumber;
+        BYTE                            pageState;
+        CAtlList<DVB_REGION_POS>        regionsPos;
+        CAutoPtrList<DVB_REGION>        regions;
+        CAutoPtrList<CompositionObject> objects;
+        CAutoPtrList<DVB_CLUT>          CLUTs;
+        bool                            rendered;
 
         DVB_PAGE()
             : pageTimeOut(0)
@@ -201,45 +206,33 @@ public:
             , rtStart(0)
             , rtStop(0) {
         }
-
-        ~DVB_PAGE() {
-            while (!regions.IsEmpty()) {
-                delete regions.RemoveHead();
-            }
-            while (!objects.IsEmpty()) {
-                delete objects.RemoveHead();
-            }
-            while (!CLUTs.IsEmpty()) {
-                delete CLUTs.RemoveHead();
-            }
-        }
     };
 
-private:
-    int                 m_nBufferSize;
-    int                 m_nBufferReadPos;
-    int                 m_nBufferWritePos;
-    BYTE*               m_pBuffer;
-    CAtlList<DVB_PAGE*> m_pages;
-    CAutoPtr<DVB_PAGE>  m_pCurrentPage;
-    DVB_DISPLAY         m_displayInfo;
-    REFERENCE_TIME      m_rtStart;
-    REFERENCE_TIME      m_rtStop;
+    int                    m_nBufferSize;
+    int                    m_nBufferReadPos;
+    int                    m_nBufferWritePos;
+    BYTE*                  m_pBuffer;
+    CAutoPtrList<DVB_PAGE> m_pages;
+    CAutoPtr<DVB_PAGE>     m_pCurrentPage;
+    DVB_DISPLAY            m_displayInfo;
+    REFERENCE_TIME         m_rtStart;
+    REFERENCE_TIME         m_rtStop;
 
-    HRESULT             AddToBuffer(BYTE* pData, int nSize);
-    DVB_PAGE*           FindPage(REFERENCE_TIME rt);
-    DVB_REGION*         FindRegion(DVB_PAGE* pPage, BYTE bRegionId);
-    DVB_CLUT*           FindClut(DVB_PAGE* pPage, BYTE bClutId);
-    CompositionObject*  FindObject(DVB_PAGE* pPage, short sObjectId);
+    HRESULT  AddToBuffer(BYTE* pData, int nSize);
 
-    HRESULT             ParsePage(CGolombBuffer& gb, WORD wSegLength, CAutoPtr<DVB_PAGE>& pPage);
-    HRESULT             ParseDisplay(CGolombBuffer& gb, WORD wSegLength);
-    HRESULT             ParseRegion(CGolombBuffer& gb, WORD wSegLength);
-    HRESULT             ParseClut(CGolombBuffer& gb, WORD wSegLength);
-    HRESULT             ParseObject(CGolombBuffer& gb, WORD wSegLength);
+    POSITION FindPage(REFERENCE_TIME rt) const;
+    POSITION FindRegion(const CAutoPtr<DVB_PAGE>& pPage, BYTE bRegionId) const;
+    POSITION FindClut(const CAutoPtr<DVB_PAGE>& pPage, BYTE bClutId) const;
+    POSITION FindObject(const CAutoPtr<DVB_PAGE>& pPage, short sObjectId) const;
 
-    HRESULT             EnqueuePage(REFERENCE_TIME rtStop);
-    HRESULT             UpdateTimeStamp(REFERENCE_TIME rtStop);
+    HRESULT  ParsePage(CGolombBuffer& gb, WORD wSegLength, CAutoPtr<DVB_PAGE>& pPage);
+    HRESULT  ParseDisplay(CGolombBuffer& gb, WORD wSegLength);
+    HRESULT  ParseRegion(CGolombBuffer& gb, WORD wSegLength);
+    HRESULT  ParseClut(CGolombBuffer& gb, WORD wSegLength);
+    HRESULT  ParseObject(CGolombBuffer& gb, WORD wSegLength);
 
-    void                RemoveOldPages(REFERENCE_TIME rt);
+    HRESULT  EnqueuePage(REFERENCE_TIME rtStop);
+    HRESULT  UpdateTimeStamp(REFERENCE_TIME rtStop);
+
+    void     RemoveOldPages(REFERENCE_TIME rt);
 };

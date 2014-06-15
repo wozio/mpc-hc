@@ -2,13 +2,14 @@
 # Copyright (C) 2002 - 2013 see Authors.txt
 # This file is distributed under the same license as the MPC-HC package.
 # Translators:
-# anxo_cruel <feiticeiro2010@hotmail.es>, 2014
+# Rubén <feiticeiro2010@hotmail.es>, 2014
+# Toño Calo <enfeitizador@gmail.com>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-02-16 23:19:09+0000\n"
-"PO-Revision-Date: 2014-02-28 21:56+0000\n"
-"Last-Translator: anxo_cruel <feiticeiro2010@hotmail.es>\n"
+"POT-Creation-Date: 2014-06-04 20:22:52+0000\n"
+"PO-Revision-Date: 2014-06-07 20:50+0000\n"
+"Last-Translator: Rubén <feiticeiro2010@hotmail.es>\n"
 "Language-Team: Galician (http://www.transifex.com/projects/p/mpc-hc/language/gl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -62,7 +63,7 @@ msgstr "Propiedades"
 
 msgctxt "IDS_SUBTITLES_DEFAULT_STYLE"
 msgid "&Default Style"
-msgstr "Estilo por &Defecto"
+msgstr "Estilo pre&definido"
 
 msgctxt "IDS_FAVFILES"
 msgid "Files"
@@ -97,7 +98,7 @@ msgid "Bitrate"
 msgstr "Taxa de bits"
 
 msgctxt "IDS_STATSBAR_BITRATE_AVG_CUR"
-msgid " (avg/cur)"
+msgid "(avg/cur)"
 msgstr "(promedio/actual)"
 
 msgctxt "IDS_STATSBAR_SIGNAL"
@@ -362,11 +363,11 @@ msgstr "&Abrir"
 
 msgctxt "IDS_PLAYLIST_ADD"
 msgid "A&dd"
-msgstr "E&ngadir"
+msgstr "Enga&dir"
 
 msgctxt "IDS_PLAYLIST_REMOVE"
 msgid "&Remove"
-msgstr "&Eliminar"
+msgstr "Elimina&r"
 
 msgctxt "IDS_PLAYLIST_CLEAR"
 msgid "C&lear"
@@ -374,7 +375,7 @@ msgstr "&Limpar"
 
 msgctxt "IDS_PLAYLIST_COPYTOCLIPBOARD"
 msgid "&Copy to clipboard"
-msgstr "&Copiar ao Portapapeis"
+msgstr "&Copiar ao portapapeis"
 
 msgctxt "IDS_PLAYLIST_SAVEAS"
 msgid "&Save As..."
@@ -390,7 +391,7 @@ msgstr "Agrupar por R&utas"
 
 msgctxt "IDS_PLAYLIST_RANDOMIZE"
 msgid "R&andomize"
-msgstr "&Aleatorio"
+msgstr "Ale&atoriamente"
 
 msgctxt "IDS_PLAYLIST_RESTORE"
 msgid "R&estore"
@@ -786,7 +787,7 @@ msgstr "Faltan porcións do arquivo"
 
 msgctxt "IDC_TEXTURESURF2D"
 msgid "Video surface will be allocated as a texture but still the 2d functions will be used to copy and stretch it onto the backbuffer. Requires a video card which can allocate 32bit, RGBA, non-power-of-two sized textures and at least in the resolution of the video."
-msgstr "A superficie de vídeo será distribuida como unha textura pero ainda asi as funcións 2D serán usadas para copiar e alargar no backbuffer. Require unha tarxeta de vídeo que poida aplicar      RGBA de 32 bits, polo menos á resolución do vídeo."
+msgstr "A superficie de vídeo será distribuida como unha textura pero ainda asi as funcións 2D serán usadas para copiar e alongar no backbuffer. Require unha tarxeta de vídeo que poida aplicar RGBA de 32 bits, polo menos á resolución do vídeo."
 
 msgctxt "IDC_TEXTURESURF3D"
 msgid "Video surface will be allocated as a texture and drawn as two triangles in 3d. Antialiasing turned on at the display settings may have a bad effect on the rendering speed."
@@ -902,7 +903,7 @@ msgstr "&Orixinal"
 
 msgctxt "IDS_SUBRESYNC_CURRENT"
 msgid "&Current"
-msgstr "&Actual"
+msgstr "A&ctual"
 
 msgctxt "IDS_SUBRESYNC_EDIT"
 msgid "&Edit"
@@ -918,7 +919,7 @@ msgstr "&Non"
 
 msgctxt "IDS_SUBRESYNC_DECREASE"
 msgid "&Decrease"
-msgstr "&Disminuir"
+msgstr "&Diminuír"
 
 msgctxt "IDS_SUBRESYNC_INCREASE"
 msgid "&Increase"
@@ -934,15 +935,15 @@ msgstr "Escoller &sombreadores..."
 
 msgctxt "IDS_SHADERS_DEBUG"
 msgid "&Debug Shaders..."
-msgstr "&Sombreadores de depuración..."
+msgstr "Sombreadores de &depuración..."
 
 msgctxt "IDS_FAVORITES_ADD"
 msgid "&Add to Favorites..."
-msgstr "&Engadir a Favoritos"
+msgstr "Eng&adir a favoritos"
 
 msgctxt "IDS_FAVORITES_ORGANIZE"
 msgid "&Organize Favorites..."
-msgstr "&Organizar Favoritos..."
+msgstr "&Organizar favoritos..."
 
 msgctxt "IDS_PLAYLIST_SHUFFLE"
 msgid "Shuffle"
@@ -1062,7 +1063,7 @@ msgstr "&Opcións..."
 
 msgctxt "IDS_SUBTITLES_STYLES"
 msgid "&Styles..."
-msgstr "&Estilos..."
+msgstr "E&stilos..."
 
 msgctxt "IDS_SUBTITLES_RELOAD"
 msgid "&Reload"
@@ -1236,6 +1237,22 @@ msgctxt "IDS_STATSBAR_PLAYBACK_RATE"
 msgid "Playback rate"
 msgstr "Velocidade de reprodución"
 
+msgctxt "IDS_FILTERS_COPY_TO_CLIPBOARD"
+msgid "&Copy filters list to clipboard"
+msgstr "&Copiar a lista de filtros para área de transferencia"
+
+msgctxt "IDS_CREDENTIALS_SERVER"
+msgid "Enter server credentials"
+msgstr "Introduza as credenciais do servidor"
+
+msgctxt "IDS_CREDENTIALS_CONNECT"
+msgid "Enter your credentials to connect"
+msgstr "Introduza o seu nome de usuario para iniciar sesión"
+
+msgctxt "IDS_SUB_SAVE_EXTERNAL_STYLE_FILE"
+msgid "Save custom style"
+msgstr "Gravar estilo personalizado"
+
 msgctxt "IDS_AG_OPEN_DEVICE"
 msgid "Open Device"
 msgstr "Abrir Dispositivo"
@@ -1390,11 +1407,11 @@ msgstr "Miniaturas gardadas satisfactoriamente"
 
 msgctxt "IDS_MENU_VIDEO_STREAM"
 msgid "&Video Stream"
-msgstr "&Secuencia de Vídeo"
+msgstr "Secuencia de &vídeo"
 
 msgctxt "IDS_MENU_VIDEO_ANGLE"
 msgid "Video Ang&le"
-msgstr "Ángu&lo de Vídeo"
+msgstr "Ángu&lo de vídeo"
 
 msgctxt "IDS_RESET_SETTINGS"
 msgid "Reset settings"
@@ -2072,51 +2089,55 @@ msgctxt "IDS_MAINFRM_46"
 msgid "Select the path for the DVD/BD:"
 msgstr "Selecciona a ruta para o DVD/BD:"
 
-msgctxt "IDS_MAINFRM_47"
+msgctxt "IDS_SUB_LOADED_SUCCESS"
 msgid " loaded successfully"
 msgstr " cargado con exito"
 
-msgctxt "IDS_MAINFRM_48"
+msgctxt "IDS_ALL_FILES_FILTER"
 msgid "All files (*.*)|*.*||"
 msgstr "Todos os Ficheiros (*.*)|*.*||"
 
-msgctxt "IDS_MAINFRM_49"
+msgctxt "IDS_GETDIB_FAILED"
 msgid "GetDIB failed, hr = %08x"
 msgstr "Fallo en GetDIB, hr = %08x"
 
-msgctxt "IDS_MAINFRM_51"
+msgctxt "IDS_GETCURRENTIMAGE_FAILED"
 msgid "GetCurrentImage failed, hr = %08x"
 msgstr "Fallo en GetCurrentImage, hr = %08x"
 
-msgctxt "IDS_MAINFRM_53"
+msgctxt "IDS_SCREENSHOT_ERROR"
 msgid "Cannot create file"
 msgstr "Imposible crear ficheiro"
 
-msgctxt "IDS_MAINFRM_54"
+msgctxt "IDS_THUMBNAILS_NO_DURATION"
 msgid "Cannot create thumbnails for files with no duration"
 msgstr "Imposible crear miniaturas para os ficheiros sen duración"
 
-msgctxt "IDS_MAINFRM_55"
+msgctxt "IDS_THUMBNAILS_NO_FRAME_SIZE"
 msgid "Failed to get video frame size"
 msgstr "Imposible obter o tamaño do cadro do vídeo"
 
-msgctxt "IDS_MAINFRM_56"
+msgctxt "IDS_OUT_OF_MEMORY"
 msgid "Out of memory, go buy some more!"
 msgstr "Memoria insufficiente,vai mercar outra!"
 
-msgctxt "IDS_MAINFRM_57"
+msgctxt "IDS_THUMBNAILS_INVALID_FORMAT"
 msgid "Invalid image format, cannot create thumbnails out of %d bpp dibs."
 msgstr "Formato de imaxe inválido, imposible crear as miniaturas de %d bpp dibs."
 
-msgctxt "IDS_MAINFRM_58"
+msgctxt "IDS_THUMBNAILS_INFO_FILESIZE"
 msgid "File Size: %s (%s bytes)\\N"
 msgstr "Tamaño do ficheiro: %s (%s bytes)\\N"
 
-msgctxt "IDS_MAINFRM_59"
+msgctxt "IDS_THUMBNAILS_INFO_HEADER"
 msgid "{\\an7\\1c&H000000&\\fs16\\b0\\bord0\\shad0}File Name: %s\\N%sResolution: %dx%d %s\\NDuration: %02d:%02d:%02d"
 msgstr "{\\an7\\1c&H000000&\\fs16\\b0\\bord0\\shad0}Nome do Ficheiro: %s\\N%sResolución: %dx%d %s\\NDuración: %02d:%02d:%02d"
 
-msgctxt "IDS_MAINFRM_60"
+msgctxt "IDS_THUMBNAIL_TOO_SMALL"
+msgid "The thumbnails would be too small, impossible to create the file.\n\nTry lowering the number of thumbnails or increasing the total size."
+msgstr "Non se pode crear o ficheiro, as miniaturas son demasiado pequenas.\n\nintente reducir o número de miniaturas ou aumentar o tamaño total."
+
+msgctxt "IDS_CANNOT_LOAD_SUB"
 msgid "To load subtitles you have to change the video renderer type and reopen the file.\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR or Haali\n- RealMedia: Special renderer for RealMedia, or open it through DirectShow\n- QuickTime: DX7 or DX9 renderer for QuickTime\n- ShockWave: n/a"
 msgstr "Para cargar os subtítulos tes que cambiar o tipo de renderizador de video e reabrir o ficheiro.\n- DirectShow: VMR-7/VMR-9 (sen renderizador), EVR (CP), Sync, madVR ou Haali\n- RealMedia: Renderizador especial para RealMedia, ou abrilo con DirectShow\n- QuickTime: DX7 ou DX9 renderizador paraQuickTime\n- ShockWave: non dispoñible"
 
@@ -2322,7 +2343,7 @@ msgstr "(Comentario do Director N° 2)"
 
 msgctxt "IDS_DVD_SUBTITLES_ENABLE"
 msgid "Enable DVD subtitles"
-msgstr ""
+msgstr "Activar subtítulos DVD"
 
 msgctxt "IDS_AG_ANGLE"
 msgid "Angle %d"
@@ -2454,7 +2475,7 @@ msgstr "Trocar Zoom do VidFrm"
 
 msgctxt "IDS_ENABLE_ALL_FILTERS"
 msgid "&Enable all filters"
-msgstr "&Habilitar todos os filtros"
+msgstr "Activ&e todos os filtros"
 
 msgctxt "IDS_NAVIGATE_TUNERSCAN"
 msgid "Tuner scan"
@@ -2574,7 +2595,7 @@ msgstr "Amosar Menú &&Subtítulos"
 
 msgctxt "IDS_VIEW_HIDEMENU"
 msgid "Hide &Menu"
-msgstr "Agochar &Menú"
+msgstr "Agochar &menú"
 
 msgctxt "IDS_TIME_TOOLTIP_ABOVE"
 msgid "Above seekbar"
@@ -3118,7 +3139,7 @@ msgstr "Servidor non atopado.\n\nPor favor verifique se está conectado ou tént
 
 msgctxt "IDS_UPDATE_CLOSE"
 msgid "&Close"
-msgstr "&Pechar"
+msgstr "Pe&char"
 
 msgctxt "IDS_OSD_ZOOM"
 msgid "Zoom: %.0lf%%"
@@ -3386,11 +3407,11 @@ msgstr "Divisores externos poden ter as súas propias opcións de preferencia de
 
 msgctxt "IDS_NAVIGATE_BD_PLAYLISTS"
 msgid "&Blu-Ray playlists"
-msgstr "&Lista de reprodución Blu-ray"
+msgstr "Lista de reprodución &Blu-ray"
 
 msgctxt "IDS_NAVIGATE_PLAYLIST"
 msgid "&Playlist"
-msgstr "&Lista de reprodución"
+msgstr "Lista de re&produción"
 
 msgctxt "IDS_NAVIGATE_CHAPTERS"
 msgid "&Chapters"

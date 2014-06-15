@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -142,6 +142,8 @@ protected:
     // don't set the "hide subtitles" stream until we are finished with loading
     bool m_fLoading;
 
+    CString m_videoFileName;
+
     bool Open();
 
     int FindPreferedLanguage(bool fHideToo = true);
@@ -149,9 +151,9 @@ protected:
 
     CCritSec m_csSubLock;
     CInterfaceList<ISubStream> m_pSubStreams;
-    DWORD_PTR m_nSubtitleId;
-    void UpdateSubtitle(bool fApplyDefStyle = true);
-    void SetSubtitle(ISubStream* pSubStream, bool fApplyDefStyle = true);
+    CComQIPtr<ISubStream> m_pCurrentSubStream;
+    void UpdateSubtitle();
+    void SetSubtitle(ISubStream* pSubStream);
     void InvalidateSubtitle(REFERENCE_TIME rtInvalidate = -1, DWORD_PTR nSubtitleId = DWORD_PTR_MAX);
 
     // the text input pin is using these

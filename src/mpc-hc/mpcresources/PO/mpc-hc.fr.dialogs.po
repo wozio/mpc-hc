@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-03-21 18:23:35+0000\n"
-"PO-Revision-Date: 2014-03-24 22:10+0000\n"
+"POT-Creation-Date: 2014-06-03 21:36:02+0000\n"
+"PO-Revision-Date: 2014-06-05 08:51+0000\n"
 "Last-Translator: Underground78\n"
 "Language-Team: French (http://www.transifex.com/projects/p/mpc-hc/language/fr/)\n"
 "MIME-Version: 1.0\n"
@@ -247,6 +247,10 @@ msgstr "Utiliser le même lecteur pour chaque fichier multimédia lu"
 msgctxt "IDD_PPAGEPLAYER_IDC_RADIO2"
 msgid "Open a new player for each media file played"
 msgstr "Ouvrir un nouveau lecteur pour chaque fichier multimédia lu"
+
+msgctxt "IDD_PPAGEPLAYER_IDC_STATIC"
+msgid "Language"
+msgstr "Langue"
 
 msgctxt "IDD_PPAGEPLAYER_IDC_STATIC"
 msgid "Title bar"
@@ -531,6 +535,14 @@ msgstr "Autoriser les animations en cas de mise en cache"
 msgctxt "IDD_PPAGESUBTITLES_IDC_CHECK_SPCPOW2TEX"
 msgid "Round up to power of two"
 msgstr "Arrondir à la puissance de deux"
+
+msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
+msgid "Renderer Layout"
+msgstr "Options de rendu"
+
+msgctxt "IDD_PPAGESUBTITLES_IDC_CHECK_SUB_AR_COMPENSATION"
+msgid "Apply aspect ratio compensation for anamorphic videos"
+msgstr "Corriger le ratio d'aspect pour les vidéos anamorphiques"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
 msgid "Warning"
@@ -912,6 +924,10 @@ msgctxt "IDD_SAVESUBTITLESFILEDIALOGTEMPL_IDC_STATIC"
 msgid "ms"
 msgstr "ms"
 
+msgctxt "IDD_SAVESUBTITLESFILEDIALOGTEMPL_IDC_CHECK1"
+msgid "Save custom style"
+msgstr "Exporter le style personnalisé"
+
 msgctxt "IDD_SAVETHUMBSDIALOGTEMPL_IDC_STATIC"
 msgid "Thumbnails:"
 msgstr "Miniatures :"
@@ -1163,34 +1179,6 @@ msgstr "Rotation"
 msgctxt "IDD_PPAGEOUTPUT_IDC_STATIC"
 msgid "* External filters (such as VSFilter) can display subtitles on all renderers."
 msgstr "* Les filtres externes (VSFilter par exemple) peuvent afficher les sous-titres pour tous les moteurs de rendu."
-
-msgctxt "IDD_AUTH_DLG_CAPTION"
-msgid "Authentication needed"
-msgstr "Authentification nécessaire"
-
-msgctxt "IDD_AUTH_DLG_IDOK"
-msgid "OK"
-msgstr "OK"
-
-msgctxt "IDD_AUTH_DLG_IDCANCEL"
-msgid "Cancel"
-msgstr "Annuler"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Restricted area"
-msgstr "Zone protégée "
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Username:"
-msgstr "Utilisateur :"
-
-msgctxt "IDD_AUTH_DLG_IDC_STATIC"
-msgid "Password:"
-msgstr "Mot de passe :"
-
-msgctxt "IDD_AUTH_DLG_IDC_CHECK1"
-msgid "Remember my password"
-msgstr "Enregistrer le mot de passe"
 
 msgctxt "IDD_PPAGEWEBSERVER_IDC_CHECK1"
 msgid "Listen on port:"

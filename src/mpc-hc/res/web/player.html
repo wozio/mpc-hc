@@ -4,10 +4,18 @@
         <meta charset="utf-8">
         <title>MPC-HC WebServer - Player</title>
         <link rel="stylesheet" href="default.css">
-        <link rel="shortcut icon" href="favicon.ico">
+        <link rel="icon" href="favicon.ico">
         <script src="javascript.js"></script>
     </head>
     <body onload="playerInit()">
+        <!--[if lt IE 8]>
+            <div class="browser-warning"><strong>Warning!</strong> You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+        <![endif]-->
+        <noscript>
+            <p>
+                <strong>JavaScript is disabled; nothing will work in this page!</strong>
+            </p>
+        </noscript>
         <div>
             <table id="player">
                 <tr>
@@ -16,7 +24,7 @@
                             <tr>
                                 <td id="headerIcon"></td>
                                 <td id="headerBack"><div class="nobr" id="title">&nbsp;</div></td>
-                                <td id="headerClose" onclick="OnCommand(816)"></td>
+                                <td id="headerClose" onclick="onCommand(816)"></td>
                             </tr>
                         </table>
                     </td>
@@ -34,14 +42,14 @@
                                             <td>Play</td>
                                             <td>Navigate</td>
                                             <td>Favorites</td>
-                                            <td id="menu-help" class="align-right">Help</td>
+                                            <td id="menu-help" class="text-right">Help</td>
                                         </tr>
                                     </table>
                                 </td>
                             </tr>
                             <tr>
-                                <td id="video" onclick="OnCommand(889)">
-                                    <img src="snapshot.jpg" id="snapshot" alt="snapshot" onload="OnLoadSnapshot()" onabort="OnAbortErrorSnapshot()" onerror="OnAbortErrorSnapshot()">
+                                <td id="video" onclick="onCommand(889)">
+                                    <img src="snapshot.jpg" id="snapshot" alt="snapshot" onload="onLoadSnapshot()" onabort="onAbortErrorSnapshot()" onerror="onAbortErrorSnapshot()">
                                 </td>
                             </tr>
                             <tr>
@@ -49,9 +57,9 @@
                                     <table id="seekbar">
                                         <tr>
                                             <td id="seekbarleft"><img src="img/seekbarleft.png" alt="seekbarleft"></td>
-                                            <td id="seekbarchleft" width="0%"></td>
+                                            <td id="seekbarchleft"></td>
                                             <td id="seekbargrip"><img src="img/seekbargrip.png" alt="seekbargrip"></td>
-                                            <td id="seekbarchright" width="100%"></td>
+                                            <td id="seekbarchright"></td>
                                             <td id="seekbarright"><img src="img/seekbarright.png" alt="seekbarright"></td>
                                         </tr>
                                     </table>
@@ -61,16 +69,16 @@
                                 <td>
                                     <table id="controlbar">
                                         <tr>
-                                            <td id="controlbuttonplay" onclick="OnCommand(887)"></td>
-                                            <td id="controlbuttonpause" onclick="OnCommand(888)"></td>
-                                            <td id="controlbuttonstop" onclick="OnCommand(890)"></td>
-                                            <td id="controlbuttonskipback" onclick="OnCommand(920)"></td>
-                                            <td id="controlbuttondecrate" onclick="OnCommand(894)"></td>
-                                            <td id="controlbuttonincrate" onclick="OnCommand(895)"></td>
-                                            <td id="controlbuttonskipforward" onclick="OnCommand(921)"></td>
-                                            <td id="controlbuttonstep" onclick="OnCommand(891)"></td>
+                                            <td id="controlbuttonplay" onclick="onCommand(887)" title="Play"></td>
+                                            <td id="controlbuttonpause" onclick="onCommand(888)" title="Pause"></td>
+                                            <td id="controlbuttonstop" onclick="onCommand(890)" title="Stop"></td>
+                                            <td id="controlbuttonskipback" onclick="onCommand(920)" title="Skip back"></td>
+                                            <td id="controlbuttondecrate" onclick="onCommand(894)" title="Decrease speed"></td>
+                                            <td id="controlbuttonincrate" onclick="onCommand(895)" title="Increase speed"></td>
+                                            <td id="controlbuttonskipforward" onclick="onCommand(921)" title="Skip forward"></td>
+                                            <td id="controlbuttonstep" onclick="onCommand(891)" title="Step"></td>
                                             <td>&nbsp;</td>
-                                            <td id="controlvolumemute" onclick="OnCommand(909)"></td>
+                                            <td id="controlvolumemute" onclick="onCommand(909)" title="Mute"></td>
                                             <td id="controlvolumebar">
                                                 <img src="img/controlvolumegrip.png" id="controlvolumegrip" alt="control volume grip">
                                             </td>
@@ -83,7 +91,7 @@
                                     <table id="statusbar">
                                         <tr>
                                             <td><div id="status"></div></td>
-                                            <td class="align-right"><div id="timer">&nbsp;</div></td>
+                                            <td class="text-right"><div id="timer">&nbsp;</div></td>
                                         </tr>
                                     </table>
                                 </td>

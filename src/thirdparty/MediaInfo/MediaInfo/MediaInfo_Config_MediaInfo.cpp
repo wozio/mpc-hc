@@ -57,6 +57,7 @@ MediaInfo_Config_MediaInfo::MediaInfo_Config_MediaInfo()
     File_ID_OnlyRoot=false;
     #if MEDIAINFO_ADVANCED
         File_IgnoreSequenceFileSize=false;
+        File_IgnoreSequenceFilesCount=false;
         File_DefaultFrameRate=0;
         File_Source_List=false;
         File_RiskyBitRateEstimation=false;
@@ -140,8 +141,14 @@ MediaInfo_Config_MediaInfo::MediaInfo_Config_MediaInfo()
     File_IsNotGrowingAnymore=false;
     File_Current_Offset=0;
     File_Current_Size=(int64u)-1;
+    File_IgnoreFramesBefore=0;
+    File_IgnoreFramesAfter=(int64u)-1;
+    File_IgnoreFramesRate=0;
     File_Size=(int64u)-1;
     ParseSpeed=MediaInfoLib::Config.ParseSpeed_Get();
+    #if MEDIAINFO_EVENTS
+        Config_PerPackage=NULL;
+    #endif //MEDIAINFO_EVENTS
     #if MEDIAINFO_DEMUX
         Demux_EventWasSent=false;
         Demux_Offset_Frame=(int64u)-1;
@@ -280,10 +287,10 @@ Ztring MediaInfo_Config_MediaInfo::Option (const String &Option, const String &V
     {
         return File_ID_OnlyRoot_Get()?"1":"0";
     }
-    else if (Option_Lower==__T("file_ignoresequencefilesize"))
+    else if (Option_Lower==__T("file_ignoresequencefilescount"))
     {
         #if MEDIAINFO_MD5
-            File_IgnoreSequenceFileSize_Set(!(Value==__T("0") || Value.empty()));
+            File_IgnoreSequenceFilesCount_Set(!(Value==__T("0") || Value.empty()));
             return Ztring();
         #else //MEDIAINFO_MD5
             return __T("Disabled due to compilation options");
@@ -1076,6 +1083,21 @@ bool MediaInfo_Config_MediaInfo::File_IgnoreSequenceFileSize_Get ()
 
 //---------------------------------------------------------------------------
 #if MEDIAINFO_ADVANCED
+void MediaInfo_Config_MediaInfo::File_IgnoreSequenceFilesCount_Set (bool NewValue)
+{
+    CriticalSectionLocker CSL(CS);
+    File_IgnoreSequenceFilesCount=NewValue;
+}
+
+bool MediaInfo_Config_MediaInfo::File_IgnoreSequenceFilesCount_Get ()
+{
+    CriticalSectionLocker CSL(CS);
+    return File_IgnoreSequenceFilesCount;
+}
+#endif //MEDIAINFO_ADVANCED
+
+//---------------------------------------------------------------------------
+#if MEDIAINFO_ADVANCED
 void MediaInfo_Config_MediaInfo::File_DefaultFrameRate_Set (float64 NewValue)
 {
     CriticalSectionLocker CSL(CS);
@@ -1731,28 +1753,59 @@ void MediaInfo_Config_MediaInfo::Event_Send (File__Analyze* Source, const int8u*
 
     if (Source==NULL)
     {
+        MediaInfo_Event_Generic* Temp=(MediaInfo_Event_Generic*)Data_Content;
+
         if (Demux_Offset_Frame!=(int64u)-1)
         {
-            MediaInfo_Event_Generic* Temp=(MediaInfo_Event_Generic*)Data_Content;
             if (Temp->FrameNumber!=(int64u)-1)
                 Temp->FrameNumber+=Demux_Offset_Frame;
             if (Temp->FrameNumber_PresentationOrder!=(int64u)-1)
                 Temp->FrameNumber_PresentationOrder+=Demux_Offset_Frame;
         }
-        if (Demux_Offset_DTS!=(int64u)-1) // && (Demux_Offset_DTS_FromStream==(int64u)-1 || Demux_Offset_DTS!=Demux_Offset_DTS_FromStream))
+        if (Demux_Offset_DTS!=(int64u)-1)
         {
-            MediaInfo_Event_Generic* Temp=(MediaInfo_Event_Generic*)Data_Content;
+            if (Temp->DTS!=(int64u)-1)
+                Temp->DTS+=Demux_Offset_DTS;
+            if (Temp->PTS!=(int64u)-1)
+                Temp->PTS+=Demux_Offset_DTS;
+            if (Demux_Offset_DTS_FromStream!=(int64u)-1)
+            {
+                if (Temp->DTS!=(int64u)-1)
+                    Temp->DTS-=Demux_Offset_DTS_FromStream;
+                if (Temp->PTS!=(int64u)-1)
+                    Temp->PTS-=Demux_Offset_DTS_FromStream;
+            }
+        }
+        if (File_IgnoreFramesBefore)
+        {
+            if (Temp->FrameNumber!=(int64u)-1)
+            {
+                if (Temp->FrameNumber>File_IgnoreFramesBefore)
+                    Temp->FrameNumber-=File_IgnoreFramesBefore;
+                else
+                    Temp->FrameNumber=0;
+            }
             if (Temp->DTS!=(int64u)-1)
             {
-                Temp->DTS+=Demux_Offset_DTS;
-                if (Demux_Offset_DTS_FromStream!=(int64u)-1)
-                    Temp->DTS-=Demux_Offset_DTS_FromStream;
+                if (File_IgnoreFramesBefore && File_IgnoreFramesRate)
+                {
+                    int64u TimeOffset=float64_int64s(((float64)File_IgnoreFramesBefore)/File_IgnoreFramesRate*1000000000);
+                    if (Temp->DTS>TimeOffset)
+                        Temp->DTS-=TimeOffset;
+                    else
+                        Temp->DTS=0;
+                }
             }
             if (Temp->PTS!=(int64u)-1)
             {
-                Temp->PTS+=Demux_Offset_DTS;
-                if (Demux_Offset_DTS_FromStream!=(int64u)-1)
-                    Temp->PTS-=Demux_Offset_DTS_FromStream;
+                if (File_IgnoreFramesBefore && File_IgnoreFramesRate)
+                {
+                    int64u TimeOffset=float64_int64s(((float64)File_IgnoreFramesBefore)/File_IgnoreFramesRate*1000000000);
+                    if (Temp->PTS>TimeOffset)
+                        Temp->PTS-=TimeOffset;
+                    else
+                        Temp->PTS=0;
+                }
             }
         }
     }

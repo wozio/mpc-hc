@@ -766,9 +766,6 @@ HRESULT CEVRAllocatorPresenter::CreateProposedOutputType(IMFMediaType* pMixerTyp
     CSize videoSize;
     videoSize.cx = VideoFormat->videoInfo.dwWidth;
     videoSize.cy = VideoFormat->videoInfo.dwHeight;
-    CSize aspectRatio;
-    aspectRatio.cx = VideoFormat->videoInfo.PixelAspectRatio.Numerator;
-    aspectRatio.cy = VideoFormat->videoInfo.PixelAspectRatio.Denominator;
 
     if (SUCCEEDED(hr)) {
         i64Size.HighPart = videoSize.cx;
@@ -800,8 +797,8 @@ HRESULT CEVRAllocatorPresenter::CreateProposedOutputType(IMFMediaType* pMixerTyp
 
         m_LastSetOutputRange = r.m_AdvRendSets.iEVROutputRange;
 
-        i64Size.HighPart = aspectRatio.cx;
-        i64Size.LowPart  = aspectRatio.cy;
+        i64Size.HighPart = VideoFormat->videoInfo.PixelAspectRatio.Numerator;
+        i64Size.LowPart = VideoFormat->videoInfo.PixelAspectRatio.Denominator;
         pMediaType->SetUINT64(MF_MT_PIXEL_ASPECT_RATIO, i64Size.QuadPart);
 
         MFVideoArea Area = MakeArea(0, 0, videoSize.cx, videoSize.cy);
@@ -809,18 +806,17 @@ HRESULT CEVRAllocatorPresenter::CreateProposedOutputType(IMFMediaType* pMixerTyp
 
     }
 
-    aspectRatio.cx *= videoSize.cx;
-    aspectRatio.cy *= videoSize.cy;
-
-    int gcd = GCD(aspectRatio.cx, aspectRatio.cy);
+    UINT64 dwARx = UINT64(VideoFormat->videoInfo.PixelAspectRatio.Numerator)   * videoSize.cx;
+    UINT64 dwARy = UINT64(VideoFormat->videoInfo.PixelAspectRatio.Denominator) * videoSize.cy;
+    UINT64 gcd = GCD(dwARx, dwARy);
     if (gcd > 1) {
-        aspectRatio.cx /= gcd;
-        aspectRatio.cy /= gcd;
+        dwARx /= gcd;
+        dwARy /= gcd;
     }
+    CSize aspectRatio((LONG)dwARx, (LONG)dwARy);
 
     if (videoSize != m_NativeVideoSize || aspectRatio != m_AspectRatio) {
-        m_NativeVideoSize = videoSize;
-        m_AspectRatio = aspectRatio;
+        SetVideoSize(videoSize, aspectRatio);
 
         // Notify the graph about the change
         if (m_pSink) {
@@ -1287,8 +1283,8 @@ STDMETHODIMP CEVRAllocatorPresenter::GetNativeVideoSize(SIZE* pszVideo, SIZE* ps
         pszVideo->cy = m_NativeVideoSize.cy;
     }
     if (pszARVideo) {
-        pszARVideo->cx  = m_NativeVideoSize.cx * m_AspectRatio.cx;
-        pszARVideo->cy  = m_NativeVideoSize.cy * m_AspectRatio.cy;
+        pszARVideo->cx  = m_AspectRatio.cx;
+        pszARVideo->cy  = m_AspectRatio.cy;
     }
     return S_OK;
 }
@@ -1538,7 +1534,7 @@ STDMETHODIMP CEVRAllocatorPresenter::InitializeDevice(IMFMediaType* pMediaType)
 
     D3DFORMAT Format;
     if (SUCCEEDED(hr)) {
-        m_NativeVideoSize = CSize(Width, Height);
+        SetVideoSize(CSize(Width, Height), m_AspectRatio);
         hr = GetMediaTypeFourCC(pMediaType, (DWORD*)&Format);
     }
 
@@ -1966,6 +1962,8 @@ STDMETHODIMP_(bool) CEVRAllocatorPresenter::DisplayChange()
     CAutoLock lock2(&m_ImageProcessingLock);
     CAutoLock cRenderLock(&m_RenderLock);
 
+    bool bResult = __super::DisplayChange();
+
     m_DetectedFrameRate = 0.0;
     m_DetectedFrameTime = 0.0;
     m_DetectedFrameTimeStdDev = 0.0;
@@ -1992,8 +1990,6 @@ STDMETHODIMP_(bool) CEVRAllocatorPresenter::DisplayChange()
     m_fSyncOffsetStdDev = 0.0;
     m_fSyncOffsetAvr    = 0.0;
     m_bSyncStatsAvailable = false;
-
-    bool bResult = __super::DisplayChange();
 
     return bResult;
 }
@@ -2328,7 +2324,6 @@ void CEVRAllocatorPresenter::RenderThread()
                             }
                         } else if (m_nRenderState == Paused) {
                             if (bForcePaint) {
-                                bForcePaint = false;
                                 bStepForward = true;
                                 // Ensure that the renderer is properly updated after seeking when paused
                                 if (!g_bExternalSubtitleTime) {
@@ -2347,6 +2342,8 @@ void CEVRAllocatorPresenter::RenderThread()
                         } else {
                             MoveToScheduledList(pMFSample, true);
                         }
+
+                        bForcePaint = false;
                     } else if (m_bLastSampleOffsetValid && m_LastSampleOffset < -10000000) { // Only starve if we are 1 seconds behind
                         if (m_nRenderState == Started && !g_bNoDuration) {
                             m_pSink->Notify(EC_STARVATION, 0, 0);

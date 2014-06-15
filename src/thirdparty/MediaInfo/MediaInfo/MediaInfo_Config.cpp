@@ -34,7 +34,7 @@ namespace MediaInfoLib
 {
 
 //---------------------------------------------------------------------------
-const Char*  MediaInfo_Version=__T("MediaInfoLib - v0.7.67");
+const Char*  MediaInfo_Version=__T("MediaInfoLib - v0.7.69");
 const Char*  MediaInfo_Url=__T("http://MediaArea.net/MediaInfo");
       Ztring EmptyZtring;       //Use it when we can't return a reference to a true Ztring
 const Ztring EmptyZtring_Const; //Use it when we can't return a reference to a true Ztring, const version
@@ -56,6 +56,7 @@ void MediaInfo_Config_CodecID_Audio_Riff      (InfoMap &Info);
 void MediaInfo_Config_CodecID_Text_Matroska   (InfoMap &Info);
 void MediaInfo_Config_CodecID_Text_Mpeg4      (InfoMap &Info);
 void MediaInfo_Config_CodecID_Text_Riff       (InfoMap &Info);
+void MediaInfo_Config_CodecID_Other_Mpeg4     (InfoMap &Info);
 void MediaInfo_Config_Codec                   (InfoMap &Info);
 void MediaInfo_Config_DefaultLanguage         (Translation &Info);
 void MediaInfo_Config_Iso639_1                (InfoMap &Info);
@@ -1635,6 +1636,13 @@ const Ztring &MediaInfo_Config::CodecID_Get (stream_t KindOfStream, infocodecid_
                                         case InfoCodecID_Format_Matroska : MediaInfo_Config_CodecID_Text_Matroska(CodecID[Format][KindOfStream]); break;
                                         case InfoCodecID_Format_Mpeg4    : MediaInfo_Config_CodecID_Text_Mpeg4(CodecID[Format][KindOfStream]); break;
                                         case InfoCodecID_Format_Riff     : MediaInfo_Config_CodecID_Text_Riff(CodecID[Format][KindOfStream]); break;
+                                        default: ;
+                                    }
+                                    break;
+            case Stream_Other   :
+                                    switch (Format)
+                                    {
+                                        case InfoCodecID_Format_Mpeg4    : MediaInfo_Config_CodecID_Other_Mpeg4(CodecID[Format][KindOfStream]); break;
                                         default: ;
                                     }
                                     break;

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -35,94 +35,75 @@
 #define PROGID _T("mplayerc")
 #endif // _WIN64
 
-LPCTSTR CFileAssoc::strRegisteredAppName  = _T("Media Player Classic");
-LPCTSTR CFileAssoc::strOldAssocKey        = _T("PreviousRegistration");
-LPCTSTR CFileAssoc::strRegisteredAppKey   = _T("Software\\Clients\\Media\\Media Player Classic\\Capabilities");
-LPCTSTR CFileAssoc::strRegAppFileAssocKey = _T("Software\\Clients\\Media\\Media Player Classic\\Capabilities\\FileAssociations");
-
-bool CFileAssoc::m_bNoRecentDocs = false;
-
-const CString CFileAssoc::strOpenCommand    = CFileAssoc::GetOpenCommand();
-const CString CFileAssoc::strEnqueueCommand = CFileAssoc::GetEnqueueCommand();
-
-CComPtr<IApplicationAssociationRegistration> CFileAssoc::m_pAAR;
-
-CString CFileAssoc::m_iconLibPath;
-HMODULE CFileAssoc::m_hIconLib = nullptr;
-CFileAssoc::GetIconIndexFunc CFileAssoc::GetIconIndex = nullptr;
-CFileAssoc::GetIconLibVersionFunc CFileAssoc::GetIconLibVersion = nullptr;
-
-CString CFileAssoc::GetOpenCommand()
+CFileAssoc::IconLib::IconLib(GetIconIndexFunc fnGetIconIndex, GetIconLibVersionFunc fnGetIconLibVersion, HMODULE hLib)
+    : m_fnGetIconIndex(fnGetIconIndex)
+    , m_fnGetIconLibVersion(fnGetIconLibVersion)
+    , m_hLib(hLib)
 {
-    return _T("\"") + GetProgramPath(true) + _T("\" \"%1\"");
+    ASSERT(fnGetIconIndex && fnGetIconLibVersion && hLib);
 }
 
-CString CFileAssoc::GetEnqueueCommand()
+CFileAssoc::IconLib::~IconLib()
 {
-    return _T("\"") + GetProgramPath(true) + _T("\" /add \"%1\"");
+    VERIFY(FreeLibrary(m_hLib));
 }
 
-IApplicationAssociationRegistration* CFileAssoc::CreateRegistrationManager()
+int CFileAssoc::IconLib::GetIconIndex(const CString& str) const
 {
-    IApplicationAssociationRegistration* pAAR = nullptr;
+    return m_fnGetIconIndex(str);
+}
 
+UINT CFileAssoc::IconLib::GetVersion() const
+{
+    return m_fnGetIconLibVersion();
+}
+
+void CFileAssoc::IconLib::SaveVersion() const
+{
+    AfxGetApp()->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_ICON_LIB_VERSION, m_fnGetIconLibVersion());
+}
+
+CFileAssoc::CFileAssoc()
+    : m_iconLibPath(GetProgramPath() + _T("mpciconlib.dll"))
+    , m_strRegisteredAppName(_T("Media Player Classic"))
+    , m_strOldAssocKey(_T("PreviousRegistration"))
+    , m_strRegisteredAppKey(_T("Software\\Clients\\Media\\Media Player Classic\\Capabilities"))
+    , m_strRegAppFileAssocKey(_T("Software\\Clients\\Media\\Media Player Classic\\Capabilities\\FileAssociations"))
+    , m_strOpenCommand(_T("\"") + GetProgramPath(true) + _T("\" \"%1\""))
+    , m_strEnqueueCommand(_T("\"") + GetProgramPath(true) + _T("\" /add \"%1\""))
+    , m_bNoRecentDocs(false)
+    , m_checkIconsAssocInactiveEvent(TRUE, TRUE) // initially set, manual reset
+{
     // Default manager (requires at least Vista)
-    HRESULT hr = CoCreateInstance(CLSID_ApplicationAssociationRegistration,
-                                  nullptr,
-                                  CLSCTX_INPROC,
-                                  IID_PPV_ARGS(&pAAR));
-    UNREFERENCED_PARAMETER(hr);
+    VERIFY(CoCreateInstance(CLSID_ApplicationAssociationRegistration, nullptr,
+                            CLSCTX_INPROC, IID_PPV_ARGS(&m_pAAR)) != CO_E_NOTINITIALIZED);
 
-    return pAAR;
+    m_handlers[0] = { _T("VideoFiles"), _T(" %1"), IDS_AUTOPLAY_PLAYVIDEO };
+    m_handlers[1] = { _T("MusicFiles"), _T(" %1"), IDS_AUTOPLAY_PLAYMUSIC };
+    m_handlers[2] = { _T("CDAudio"), _T(" %1 /cd"), IDS_AUTOPLAY_PLAYAUDIOCD };
+    m_handlers[3] = { _T("DVDMovie"), _T(" %1 /dvd"), IDS_AUTOPLAY_PLAYDVDMOVIE };
 }
 
-bool CFileAssoc::LoadIconLib()
+CFileAssoc::~CFileAssoc()
 {
-    bool loaded = false;
+    HANDLE hEvent = m_checkIconsAssocInactiveEvent;
+    DWORD dwEvent;
+    VERIFY(CoWaitForMultipleHandles(0, INFINITE, 1, &hEvent, &dwEvent) == S_OK);
+}
 
-    FreeIconLib();
-
-    m_iconLibPath = GetProgramPath() + _T("mpciconlib.dll");
-    m_hIconLib = LoadLibrary(m_iconLibPath);
-    if (m_hIconLib) {
-        GetIconIndex = (GetIconIndexFunc)GetProcAddress(m_hIconLib, "GetIconIndex");
-        GetIconLibVersion = (GetIconLibVersionFunc)GetProcAddress(m_hIconLib, "GetIconLibVersion");
-
-        if (GetIconIndex && GetIconLibVersion) {
-            loaded = true;
+std::shared_ptr<const CFileAssoc::IconLib> CFileAssoc::GetIconLib() const
+{
+    std::shared_ptr<IconLib> ret;
+    if (HMODULE hLib = LoadLibrary(m_iconLibPath)) {
+        auto fnGetIconIndex = reinterpret_cast<IconLib::GetIconIndexFunc>(GetProcAddress(hLib, "GetIconIndex"));
+        auto fnGetIconLibVersion = reinterpret_cast<IconLib::GetIconLibVersionFunc>(GetProcAddress(hLib, "GetIconLibVersion"));
+        if (fnGetIconIndex && fnGetIconLibVersion) {
+            ret = std::make_shared<IconLib>(fnGetIconIndex, fnGetIconLibVersion, hLib);
         } else {
-            FreeIconLib();
+            VERIFY(FreeLibrary(hLib));
         }
     }
-
-    return loaded;
-}
-
-bool CFileAssoc::FreeIconLib()
-{
-    bool unloaded = false;
-
-    if (m_hIconLib && FreeLibrary(m_hIconLib)) {
-        unloaded = true;
-        m_iconLibPath.Empty();
-        m_hIconLib = nullptr;
-        GetIconIndex = nullptr;
-        GetIconLibVersion = nullptr;
-    }
-
-    return unloaded;
-}
-
-bool CFileAssoc::SaveIconLibVersion()
-{
-    bool saved = false;
-
-    if (m_hIconLib) {
-        AfxGetApp()->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_ICON_LIB_VERSION, GetIconLibVersion());
-        saved = true;
-    }
-
-    return saved;
+    return ret;
 }
 
 void CFileAssoc::SetNoRecentDocs(bool bNoRecentDocs, bool bUpdateAssocs /*= false*/)
@@ -155,10 +136,6 @@ bool CFileAssoc::RegisterApp()
 {
     bool success = false;
 
-    if (!m_pAAR) {
-        m_pAAR = CFileAssoc::CreateRegistrationManager();
-    }
-
     if (m_pAAR) {
         CString appIcon = "\"" + GetProgramPath(true) + "\",0";
 
@@ -166,9 +143,9 @@ bool CFileAssoc::RegisterApp()
         CRegKey key;
 
         if (ERROR_SUCCESS == key.Open(HKEY_LOCAL_MACHINE, _T("SOFTWARE\\RegisteredApplications"))) {
-            key.SetStringValue(_T("Media Player Classic"), strRegisteredAppKey);
+            key.SetStringValue(_T("Media Player Classic"), m_strRegisteredAppKey);
 
-            if (ERROR_SUCCESS == key.Create(HKEY_LOCAL_MACHINE, strRegisteredAppKey)) {
+            if (ERROR_SUCCESS == key.Create(HKEY_LOCAL_MACHINE, m_strRegisteredAppKey)) {
                 // ==>>  TODO icon !!!
                 key.SetStringValue(_T("ApplicationDescription"), ResStr(IDS_APP_DESCRIPTION), REG_EXPAND_SZ);
                 key.SetStringValue(_T("ApplicationIcon"), appIcon, REG_EXPAND_SZ);
@@ -196,7 +173,7 @@ bool CFileAssoc::Register(CString ext, CString strLabel, bool bRegister, bool bR
         key.Attach(HKEY_CLASSES_ROOT);
         key.RecurseDeleteKey(strProgID);
 
-        if (ERROR_SUCCESS == key.Open(HKEY_LOCAL_MACHINE, strRegAppFileAssocKey)) {
+        if (ERROR_SUCCESS == key.Open(HKEY_LOCAL_MACHINE, m_strRegAppFileAssocKey)) {
             key.DeleteValue(ext);
         }
 
@@ -222,7 +199,7 @@ bool CFileAssoc::Register(CString ext, CString strLabel, bool bRegister, bool bR
                     || ERROR_SUCCESS != key.SetStringValue(nullptr, ResStr(IDS_ADD_TO_PLAYLIST))
                     || ERROR_SUCCESS != key.SetStringValue(_T("Icon"), appIcon)
                     || ERROR_SUCCESS != key.Create(HKEY_CLASSES_ROOT, strProgID + _T("\\shell\\enqueue\\command"))
-                    || ERROR_SUCCESS != key.SetStringValue(nullptr, strEnqueueCommand)) {
+                    || ERROR_SUCCESS != key.SetStringValue(nullptr, m_strEnqueueCommand)) {
                 return false;
             }
         } else {
@@ -248,18 +225,18 @@ bool CFileAssoc::Register(CString ext, CString strLabel, bool bRegister, bool bR
         }
 
         if (ERROR_SUCCESS != key.Create(HKEY_CLASSES_ROOT, strProgID + _T("\\shell\\open\\command"))
-                || ERROR_SUCCESS != key.SetStringValue(nullptr, strOpenCommand)) {
+                || ERROR_SUCCESS != key.SetStringValue(nullptr, m_strOpenCommand)) {
             return false;
         }
 
-        if (ERROR_SUCCESS != key.Create(HKEY_LOCAL_MACHINE, strRegAppFileAssocKey)
+        if (ERROR_SUCCESS != key.Create(HKEY_LOCAL_MACHINE, m_strRegAppFileAssocKey)
                 || key.SetStringValue(ext, strProgID)) {
             return false;
         }
 
         if (bAssociatedWithIcon) {
-            if (m_hIconLib) {
-                int iconIndex = GetIconIndex(ext);
+            if (auto iconLib = GetIconLib()) {
+                int iconIndex = iconLib->GetIconIndex(ext);
 
                 /* icon_index value -1 means no icon was found in the iconlib for the file extension */
                 if (iconIndex >= 0 && ExtractIcon(AfxGetApp()->m_hInstance, m_iconLibPath, iconIndex)) {
@@ -295,10 +272,6 @@ bool CFileAssoc::SetFileAssociation(CString strExt, CString strProgID, bool bReg
     ULONG   len = _countof(buff);
     ZeroMemory(buff, sizeof(buff));
 
-    if (!m_pAAR) {
-        m_pAAR = CFileAssoc::CreateRegistrationManager();
-    }
-
     if (m_pAAR) {
         // The Vista/Seven way
         CString strNewApp;
@@ -316,7 +289,7 @@ bool CFileAssoc::SetFileAssociation(CString strExt, CString strProgID, bool bReg
                     return false;
                 }
 
-                key.SetStringValue(strOldAssocKey, pszCurrentAssociation);
+                key.SetStringValue(m_strOldAssocKey, pszCurrentAssociation);
 
                 /*
                 // Get current icon for file type
@@ -333,13 +306,13 @@ bool CFileAssoc::SetFileAssociation(CString strExt, CString strProgID, bool bReg
                 */
                 CoTaskMemFree(pszCurrentAssociation);
             }
-            strNewApp = strRegisteredAppName;
+            strNewApp = m_strRegisteredAppName;
         } else {
             if (ERROR_SUCCESS != key.Open(HKEY_CLASSES_ROOT, strProgID)) {
                 return false;
             }
 
-            if (ERROR_SUCCESS == key.QueryStringValue(strOldAssocKey, buff, &len)) {
+            if (ERROR_SUCCESS == key.QueryStringValue(m_strOldAssocKey, buff, &len)) {
                 strNewApp = buff;
             }
 
@@ -382,7 +355,7 @@ bool CFileAssoc::SetFileAssociation(CString strExt, CString strProgID, bool bReg
             if (ERROR_SUCCESS != key.Create(HKEY_CLASSES_ROOT, strProgID)) {
                 return false;
             }
-            key.SetStringValue(strOldAssocKey, extOldReg);
+            key.SetStringValue(m_strOldAssocKey, extOldReg);
 
             /*
             if (!extOldIcon.IsEmpty() && (ERROR_SUCCESS == key.Create(HKEY_CLASSES_ROOT, strProgID + _T("\\DefaultIcon"))))
@@ -395,7 +368,7 @@ bool CFileAssoc::SetFileAssociation(CString strExt, CString strProgID, bool bReg
             if (ERROR_SUCCESS != key.Create(HKEY_CLASSES_ROOT, strProgID)) {
                 return false;
             }
-            if (ERROR_SUCCESS == key.QueryStringValue(strOldAssocKey, buff, &len) && !CString(buff).Trim().IsEmpty()) {
+            if (ERROR_SUCCESS == key.QueryStringValue(m_strOldAssocKey, buff, &len) && !CString(buff).Trim().IsEmpty()) {
                 extOldReg = buff;
             }
 
@@ -410,21 +383,17 @@ bool CFileAssoc::SetFileAssociation(CString strExt, CString strProgID, bool bReg
     return SUCCEEDED(hr);
 }
 
-bool CFileAssoc::IsRegistered(CString ext)
+bool CFileAssoc::IsRegistered(CString ext) const
 {
     BOOL bIsDefault = FALSE;
     CString strProgID = PROGID + ext;
-
-    if (!m_pAAR) {
-        m_pAAR = CFileAssoc::CreateRegistrationManager();
-    }
 
     if (SysVersion::Is8OrLater()) {
         // The Eight way
         bIsDefault = TRUE; // Check only if MPC-HC is registered as able to handle that format, not if it's the default.
     } else if (m_pAAR) {
         // The Vista/Seven way
-        m_pAAR->QueryAppIsDefault(ext, AT_FILEEXTENSION, AL_EFFECTIVE, strRegisteredAppName, &bIsDefault);
+        m_pAAR->QueryAppIsDefault(ext, AT_FILEEXTENSION, AL_EFFECTIVE, m_strRegisteredAppName, &bIsDefault);
     } else {
         // The XP way
         CRegKey key;
@@ -450,7 +419,7 @@ bool CFileAssoc::IsRegistered(CString ext)
         bIsDefault = FALSE;
         if (ERROR_SUCCESS == key.Open(HKEY_CLASSES_ROOT, strProgID + _T("\\shell\\open\\command"), KEY_READ)) {
             if (ERROR_SUCCESS == key.QueryStringValue(nullptr, buff, &len)) {
-                bIsDefault = (strOpenCommand.CompareNoCase(CString(buff)) == 0);
+                bIsDefault = (m_strOpenCommand.CompareNoCase(CString(buff)) == 0);
             }
         }
     }
@@ -458,7 +427,7 @@ bool CFileAssoc::IsRegistered(CString ext)
     return !!bIsDefault;
 }
 
-bool CFileAssoc::AreRegisteredFileContextMenuEntries(CString strExt)
+bool CFileAssoc::AreRegisteredFileContextMenuEntries(CString strExt) const
 {
     CRegKey key;
     TCHAR   buff[MAX_PATH];
@@ -497,7 +466,7 @@ bool CFileAssoc::Register(const CMediaFormatCategory& mfc, bool bRegister, bool 
     return res;
 }
 
-CFileAssoc::reg_state_t CFileAssoc::IsRegistered(const CMediaFormatCategory& mfc)
+CFileAssoc::reg_state_t CFileAssoc::IsRegistered(const CMediaFormatCategory& mfc) const
 {
     CAtlList<CString> exts;
     ExplodeMin(mfc.GetExtsWithPeriod(), exts, ' ');
@@ -523,7 +492,7 @@ CFileAssoc::reg_state_t CFileAssoc::IsRegistered(const CMediaFormatCategory& mfc
     return res;
 }
 
-CFileAssoc::reg_state_t CFileAssoc::AreRegisteredFileContextMenuEntries(const CMediaFormatCategory& mfc)
+CFileAssoc::reg_state_t CFileAssoc::AreRegisteredFileContextMenuEntries(const CMediaFormatCategory& mfc) const
 {
     CAtlList<CString> exts;
     ExplodeMin(mfc.GetExtsWithPeriod(), exts, ' ');
@@ -564,7 +533,7 @@ bool CFileAssoc::RegisterFolderContextMenuEntries(bool bRegister)
             key.SetStringValue(_T("Icon"), appIcon);
 
             if (ERROR_SUCCESS == key.Create(HKEY_CLASSES_ROOT, _T("Directory\\shell\\") PROGID _T(".enqueue\\command"))) {
-                key.SetStringValue(nullptr, strEnqueueCommand);
+                key.SetStringValue(nullptr, m_strEnqueueCommand);
                 success = true;
             }
         }
@@ -576,7 +545,7 @@ bool CFileAssoc::RegisterFolderContextMenuEntries(bool bRegister)
             key.SetStringValue(_T("Icon"), appIcon);
 
             if (ERROR_SUCCESS == key.Create(HKEY_CLASSES_ROOT, _T("Directory\\shell\\") PROGID _T(".play\\command"))) {
-                key.SetStringValue(nullptr, strOpenCommand);
+                key.SetStringValue(nullptr, m_strOpenCommand);
                 success = true;
             }
         }
@@ -590,7 +559,7 @@ bool CFileAssoc::RegisterFolderContextMenuEntries(bool bRegister)
     return success;
 }
 
-bool CFileAssoc::AreRegisteredFolderContextMenuEntries()
+bool CFileAssoc::AreRegisteredFolderContextMenuEntries() const
 {
     CRegKey key;
     TCHAR   buff[MAX_PATH];
@@ -599,30 +568,19 @@ bool CFileAssoc::AreRegisteredFolderContextMenuEntries()
 
     if (ERROR_SUCCESS == key.Open(HKEY_CLASSES_ROOT, _T("Directory\\shell\\") PROGID _T(".play\\command"), KEY_READ)) {
         if (ERROR_SUCCESS == key.QueryStringValue(nullptr, buff, &len)) {
-            registered = (strOpenCommand.CompareNoCase(CString(buff)) == 0);
+            registered = (m_strOpenCommand.CompareNoCase(CString(buff)) == 0);
         }
     }
 
     return registered;
 }
 
-static struct {
-    CString verb;
-    CString cmd;
-    UINT action;
-} handlers[] = {
-    { _T("VideoFiles"), _T(" %1"),      IDS_AUTOPLAY_PLAYVIDEO },
-    { _T("MusicFiles"), _T(" %1"),      IDS_AUTOPLAY_PLAYMUSIC },
-    { _T("CDAudio"),    _T(" %1 /cd"),  IDS_AUTOPLAY_PLAYAUDIOCD },
-    { _T("DVDMovie"),   _T(" %1 /dvd"), IDS_AUTOPLAY_PLAYDVDMOVIE }
-};
-
 bool CFileAssoc::RegisterAutoPlay(autoplay_t ap, bool bRegister)
 {
     CString exe = GetProgramPath(true);
 
-    int i = (int)ap;
-    if (i < 0 || i >= _countof(handlers)) {
+    size_t i = (size_t)ap;
+    if (i >= m_handlers.size()) {
         return false;
     }
 
@@ -635,67 +593,67 @@ bool CFileAssoc::RegisterAutoPlay(autoplay_t ap, bool bRegister)
         key.Close();
 
         if (ERROR_SUCCESS != key.Create(HKEY_CLASSES_ROOT,
-                                        _T("MediaPlayerClassic.Autorun\\Shell\\Play") + handlers[i].verb + _T("\\Command"))) {
+                                        _T("MediaPlayerClassic.Autorun\\Shell\\Play") + m_handlers[i].verb + _T("\\Command"))) {
             return false;
         }
-        key.SetStringValue(nullptr, _T("\"") + exe + _T("\"") + handlers[i].cmd);
+        key.SetStringValue(nullptr, _T("\"") + exe + _T("\"") + m_handlers[i].cmd);
         key.Close();
 
         if (ERROR_SUCCESS != key.Create(HKEY_LOCAL_MACHINE,
-                                        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\Handlers\\MPCPlay") + handlers[i].verb + _T("OnArrival"))) {
+                                        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\Handlers\\MPCPlay") + m_handlers[i].verb + _T("OnArrival"))) {
             return false;
         }
-        key.SetStringValue(_T("Action"), ResStr(handlers[i].action));
+        key.SetStringValue(_T("Action"), ResStr(m_handlers[i].action));
         key.SetStringValue(_T("Provider"), _T("Media Player Classic"));
         key.SetStringValue(_T("InvokeProgID"), _T("MediaPlayerClassic.Autorun"));
-        key.SetStringValue(_T("InvokeVerb"), _T("Play") + handlers[i].verb);
+        key.SetStringValue(_T("InvokeVerb"), _T("Play") + m_handlers[i].verb);
         key.SetStringValue(_T("DefaultIcon"), exe + _T(",0"));
         key.Close();
 
         if (ERROR_SUCCESS != key.Create(HKEY_LOCAL_MACHINE,
-                                        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\EventHandlers\\Play") + handlers[i].verb + _T("OnArrival"))) {
+                                        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\EventHandlers\\Play") + m_handlers[i].verb + _T("OnArrival"))) {
             return false;
         }
-        key.SetStringValue(CString("MPCPlay") + handlers[i].verb + _T("OnArrival"), _T(""));
+        key.SetStringValue(CString("MPCPlay") + m_handlers[i].verb + _T("OnArrival"), _T(""));
         key.Close();
     } else {
         if (ERROR_SUCCESS != key.Create(HKEY_LOCAL_MACHINE,
-                                        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\EventHandlers\\Play") + handlers[i].verb + _T("OnArrival"))) {
+                                        _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\EventHandlers\\Play") + m_handlers[i].verb + _T("OnArrival"))) {
             return false;
         }
-        key.DeleteValue(_T("MPCPlay") + handlers[i].verb + _T("OnArrival"));
+        key.DeleteValue(_T("MPCPlay") + m_handlers[i].verb + _T("OnArrival"));
         key.Close();
     }
 
     return true;
 }
 
-bool CFileAssoc::IsAutoPlayRegistered(autoplay_t ap)
+bool CFileAssoc::IsAutoPlayRegistered(autoplay_t ap) const
 {
     ULONG len;
     TCHAR buff[MAX_PATH];
     CString exe = GetProgramPath(true);
 
-    int i = (int)ap;
-    if (i < 0 || i >= _countof(handlers)) {
+    size_t i = (size_t)ap;
+    if (i >= m_handlers.size()) {
         return false;
     }
 
     CRegKey key;
 
     if (ERROR_SUCCESS != key.Open(HKEY_LOCAL_MACHINE,
-                                  _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\EventHandlers\\Play") + handlers[i].verb + _T("OnArrival"),
+                                  _T("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\AutoplayHandlers\\EventHandlers\\Play") + m_handlers[i].verb + _T("OnArrival"),
                                   KEY_READ)) {
         return false;
     }
     len = _countof(buff);
-    if (ERROR_SUCCESS != key.QueryStringValue(_T("MPCPlay") + handlers[i].verb + _T("OnArrival"), buff, &len)) {
+    if (ERROR_SUCCESS != key.QueryStringValue(_T("MPCPlay") + m_handlers[i].verb + _T("OnArrival"), buff, &len)) {
         return false;
     }
     key.Close();
 
     if (ERROR_SUCCESS != key.Open(HKEY_CLASSES_ROOT,
-                                  _T("MediaPlayerClassic.Autorun\\Shell\\Play") + handlers[i].verb + _T("\\Command"),
+                                  _T("MediaPlayerClassic.Autorun\\Shell\\Play") + m_handlers[i].verb + _T("\\Command"),
                                   KEY_READ)) {
         return false;
     }
@@ -711,7 +669,7 @@ bool CFileAssoc::IsAutoPlayRegistered(autoplay_t ap)
     return true;
 }
 
-bool CFileAssoc::GetAssociatedExtensions(const CMediaFormats& mf, CAtlList<CString>& exts)
+bool CFileAssoc::GetAssociatedExtensions(const CMediaFormats& mf, CAtlList<CString>& exts) const
 {
     exts.RemoveAll();
 
@@ -722,7 +680,7 @@ bool CFileAssoc::GetAssociatedExtensions(const CMediaFormats& mf, CAtlList<CStri
         POSITION pos = mfcExts.GetHeadPosition();
         while (pos) {
             const CString ext = mfcExts.GetNext(pos);
-            if (CFileAssoc::IsRegistered(ext)) {
+            if (IsRegistered(ext)) {
                 exts.AddTail(ext);
             }
         }
@@ -731,7 +689,7 @@ bool CFileAssoc::GetAssociatedExtensions(const CMediaFormats& mf, CAtlList<CStri
     return !exts.IsEmpty();
 }
 
-bool CFileAssoc::GetAssociatedExtensionsFromRegistry(CAtlList<CString>& exts)
+bool CFileAssoc::GetAssociatedExtensionsFromRegistry(CAtlList<CString>& exts) const
 {
     exts.RemoveAll();
 
@@ -748,7 +706,7 @@ bool CFileAssoc::GetAssociatedExtensionsFromRegistry(CAtlList<CString>& exts)
             if (keyName.Find(PROGID) == 0) {
                 ext = keyName.Mid(_countof(PROGID) - 1);
 
-                if (CFileAssoc::IsRegistered(ext)) {
+                if (IsRegistered(ext)) {
                     exts.AddTail(ext);
                 }
             }
@@ -763,10 +721,11 @@ bool CFileAssoc::GetAssociatedExtensionsFromRegistry(CAtlList<CString>& exts)
 
 bool CFileAssoc::ReAssocIcons(const CAtlList<CString>& exts)
 {
-    if (!LoadIconLib()) {
+    auto iconLib = GetIconLib();
+    if (!iconLib) {
         return false;
     }
-    SaveIconLibVersion();
+    iconLib->SaveVersion();
 
     const CString progPath = GetProgramPath(true);
 
@@ -778,7 +737,7 @@ bool CFileAssoc::ReAssocIcons(const CAtlList<CString>& exts)
         const CString strProgID = PROGID + ext;
         CString appIcon;
 
-        int iconIndex = GetIconIndex(ext);
+        int iconIndex = iconLib->GetIconIndex(ext);
 
         /* icon_index value -1 means no icon was found in the iconlib for the file extension */
         if (iconIndex >= 0 && ExtractIcon(AfxGetApp()->m_hInstance, m_iconLibPath, iconIndex)) {
@@ -798,8 +757,6 @@ bool CFileAssoc::ReAssocIcons(const CAtlList<CString>& exts)
         key.Close();
     }
 
-    FreeIconLib();
-
     return true;
 }
 
@@ -812,13 +769,13 @@ static HRESULT CALLBACK TaskDialogCallbackProc(HWND hwnd, UINT uNotification, WP
     return S_OK;
 }
 
-UINT CFileAssoc::RunCheckIconsAssocThread(LPVOID /*pParam*/)
+void CFileAssoc::CheckIconsAssocThread()
 {
     UINT nLastVersion = AfxGetApp()->GetProfileInt(IDS_R_SETTINGS, IDS_RS_ICON_LIB_VERSION, 0);
 
-    if (LoadIconLib()) {
-        UINT nCurrentVersion = GetIconLibVersion();
-        SaveIconLibVersion(); // Ensure we don't try to fix the icons more than once
+    if (auto iconLib = GetIconLib()) {
+        UINT nCurrentVersion = iconLib->GetVersion();
+        iconLib->SaveVersion(); // Ensure we don't try to fix the icons more than once
 
         CAtlList<CString> registeredExts;
 
@@ -859,19 +816,24 @@ UINT CFileAssoc::RunCheckIconsAssocThread(LPVOID /*pParam*/)
                 SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
             }
         }
-
-        FreeIconLib();
     }
 
-    return 0;
+    m_checkIconsAssocInactiveEvent.SetEvent();
 }
 
 void CFileAssoc::CheckIconsAssoc()
 {
-    AfxBeginThread(RunCheckIconsAssocThread, nullptr);
+    std::lock_guard<std::mutex> lock(m_checkIconsAssocMutex);
+    HANDLE hEvent = m_checkIconsAssocInactiveEvent;
+    DWORD dwEvent;
+    VERIFY(CoWaitForMultipleHandles(0, INFINITE, 1, &hEvent, &dwEvent) == S_OK);
+    m_checkIconsAssocInactiveEvent.ResetEvent();
+    std::thread(
+        [this] { CheckIconsAssocThread(); }
+    ).detach();
 }
 
-bool CFileAssoc::ShowWindowsAssocDialog()
+bool CFileAssoc::ShowWindowsAssocDialog() const
 {
     IApplicationAssociationRegistrationUI* pAARUI;
     HRESULT hr = CoCreateInstance(CLSID_ApplicationAssociationRegistrationUI,
@@ -882,7 +844,7 @@ bool CFileAssoc::ShowWindowsAssocDialog()
     bool success = (SUCCEEDED(hr) && pAARUI != nullptr);
 
     if (success) {
-        pAARUI->LaunchAdvancedAssociationUI(strRegisteredAppName);
+        pAARUI->LaunchAdvancedAssociationUI(m_strRegisteredAppName);
         pAARUI->Release();
     }
 

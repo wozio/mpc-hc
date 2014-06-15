@@ -39,6 +39,7 @@ optgroup{font-weight:700}
 /* END OF normalize.css 2.1.3 */
 
 
+/* common */
 * {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -52,11 +53,8 @@ optgroup{font-weight:700}
     box-sizing: border-box;
 }
 
-body,
-th,
-td,
-.sectionInfo {
-    font: 0.9em Arial, Verdana, Helvetica, Sans-Serif;
+body {
+    font: 14px Arial, Verdana, Helvetica, Sans-Serif;
 }
 
 img {
@@ -64,14 +62,84 @@ img {
     padding: 0;
 }
 
-/* common */
-.align-center {
+.text-center {
     text-align: center;
 }
 
-.align-right {
+.text-right {
     text-align: right;
 }
+
+.browser-warning {
+    background-color: red;
+    padding: 10px;
+}
+
+
+/* browser.html */
+.browser-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.browser-table,
+.browser-table th,
+.browser-table td {
+    border: 2px solid black;
+    padding: 4px;
+}
+
+.browser-table th {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.browser-table th:first-child {
+    width: 100%;
+}
+
+.dirname {
+    font-weight: bold;
+}
+
+
+
+/* controls.html */
+#slider {
+    background: url(img/sliderback.png) no-repeat;
+    width: 515px;
+    height: 20px;
+}
+
+#slider img {
+    cursor: pointer;
+}
+
+#v {
+    background: url(img/vbg.png) no-repeat;
+    width: 110px;
+    height: 20px;
+    cursor: pointer;
+}
+
+#v img {
+    cursor: pointer;
+}
+
+#muted {
+    min-width: 29px;
+}
+
+.nobr {
+    white-space: nowrap;
+}
+
+form input {
+    min-width: 20px;
+    min-height: 24px;
+    vertical-align: middle;
+}
+
 
 
 /* player.html */
@@ -229,6 +297,7 @@ img {
     background: url(img/controlvolumebar.png) no-repeat;
     width: 55px;
     height: 28px;
+    cursor: pointer;
 }
 
 #seekbar {
@@ -239,7 +308,7 @@ img {
 }
 
 #seekbar td {
-    font-size:0;
+    font-size: 0;
 }
 
 #leftside {
@@ -271,49 +340,5 @@ img {
 
 #center,
 #header {
-    width: 100%;
-}
-
-#slider {
-    background: url(img/sliderback.png) no-repeat;
-    width: 515px;
-    height: 20px;
-}
-
-#v {
-    background: url(img/vbg.png) no-repeat;
-    width: 110px;
-    height: 20px;
-}
-
-#muted {
-    min-width: 24px;
-}
-
-.nobr {
-    white-space: nowrap;
-}
-
-
-/* browser.html */
-.browser-table {
-    border-collapse: separate;
-    border-spacing: 1px;
-    padding: 1px;
-    width: 100%;
-}
-
-.browser-table,
-.browser-table th,
-.browser-table td {
-    border: 1px solid black;
-}
-
-.browser-table th {
-    font-weight: bold;
-    white-space: nowrap;
-}
-
-.browser-table th:first-child {
     width: 100%;
 }

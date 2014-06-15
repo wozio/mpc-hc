@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,29 +21,9 @@
 
 #pragma once
 
+#include "ColorButton.h"
 #include "PPageBase.h"
 #include "../Subtitles/STS.h"
-
-
-class CColorStatic : public CStatic
-{
-    COLORREF* m_pColor;
-
-public:
-    CColorStatic(CWnd* pParent = nullptr) : m_pColor(nullptr) {}
-    virtual ~CColorStatic() {}
-
-    void SetColorPtr(COLORREF* pColor) { m_pColor = pColor; }
-
-    //  DECLARE_MESSAGE_MAP()
-
-protected:
-    virtual void DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct) {
-        CRect r;
-        GetClientRect(r);
-        CDC::FromHandle(lpDrawItemStruct->hDC)->FillSolidRect(r, m_pColor ? *m_pColor : ::GetSysColor(COLOR_BTNFACE));
-    }
-};
 
 // CPPageSubStyle dialog
 
@@ -54,7 +34,7 @@ class CPPageSubStyle : public CPPageBase
 private:
     CString m_title;
     STSStyle m_stss;
-    bool m_fUseDefaultStyle;
+    bool m_bDefaultStyle;
 
     void AskColor(int i);
 
@@ -62,7 +42,7 @@ public:
     CPPageSubStyle();
     virtual ~CPPageSubStyle();
 
-    void InitStyle(CString title, const STSStyle& stss);
+    void InitStyle(const CString& title, const STSStyle& stss);
     void GetStyle(STSStyle& stss) { stss = m_stss; }
 
     // Dialog Data
@@ -89,7 +69,7 @@ public:
     CSpinButtonCtrl m_marginrightspin;
     CSpinButtonCtrl m_margintopspin;
     CSpinButtonCtrl m_marginbottomspin;
-    CColorStatic m_color[4];
+    CColorButton m_color[4];
     int m_alpha[4];
     CSliderCtrl m_alphasliders[4];
     BOOL m_linkalphasliders;
@@ -108,5 +88,4 @@ protected:
     afx_msg void OnStnClickedColorshad();
     afx_msg void OnBnClickedCheck1();
     afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-public:
 };

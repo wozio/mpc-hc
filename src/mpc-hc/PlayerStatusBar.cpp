@@ -74,6 +74,13 @@ BOOL CPlayerStatusBar::PreCreateWindow(CREATESTRUCT& cs)
     return TRUE;
 }
 
+CSize CPlayerStatusBar::CalcFixedLayout(BOOL bStretch, BOOL bHorz)
+{
+    CSize ret = __super::CalcFixedLayout(bStretch, bHorz);
+    ret.cy = std::max<long>(ret.cy, 24);
+    return ret;
+}
+
 int CPlayerStatusBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
     if (CDialogBar::OnCreate(lpCreateStruct) == -1) {
@@ -113,7 +120,7 @@ void CPlayerStatusBar::Relayout()
 
     if (m_type.GetIcon()) {
         r2.SetRect(6, r.top + 4, 6 + m_pMainFrame->m_dpi.ScaleX(16), r.bottom - 4);
-        m_type.MoveWindow(r2, FALSE);
+        m_type.MoveWindow(r2);
     }
 
     r.DeflateRect(11 + m_pMainFrame->m_dpi.ScaleX(16), 5, bm.bmWidth + 8, 4);
@@ -148,7 +155,7 @@ void CPlayerStatusBar::Relayout()
         ASSERT(FALSE);
     }
 
-    Invalidate();
+    InvalidateRect(r);
     UpdateWindow();
 }
 
@@ -156,10 +163,8 @@ void CPlayerStatusBar::Clear()
 {
     m_status.SetWindowText(_T(""));
     m_time.SetWindowText(_T(""));
+    SetStatusTypeIcon(nullptr);
     SetStatusBitmap(0);
-    SetStatusTypeIcon(0);
-
-    Relayout();
 }
 
 void CPlayerStatusBar::SetStatusBitmap(UINT id)
@@ -179,6 +184,7 @@ void CPlayerStatusBar::SetStatusBitmap(UINT id)
     }
     m_bmid = id;
 
+    Invalidate();
     Relayout();
 }
 
@@ -325,6 +331,13 @@ END_MESSAGE_MAP()
 
 BOOL CPlayerStatusBar::OnEraseBkgnd(CDC* pDC)
 {
+    return TRUE;
+}
+
+void CPlayerStatusBar::OnPaint()
+{
+    CPaintDC dc(this); // device context for painting
+
     for (CWnd* pChild = GetWindow(GW_CHILD); pChild; pChild = pChild->GetNextWindow()) {
         if (!pChild->IsWindowVisible()) {
             continue;
@@ -333,34 +346,25 @@ BOOL CPlayerStatusBar::OnEraseBkgnd(CDC* pDC)
         CRect r;
         pChild->GetClientRect(&r);
         pChild->MapWindowPoints(this, &r);
-        pDC->ExcludeClipRect(&r);
+        dc.ExcludeClipRect(&r);
     }
 
     CRect r;
     GetClientRect(&r);
 
-    CMainFrame* pFrame = ((CMainFrame*)GetParentFrame());
-
-    if (pFrame->m_pLastBar != this || pFrame->m_fFullScreen) {
+    if (m_pMainFrame->m_pLastBar != this || m_pMainFrame->m_fFullScreen) {
         r.InflateRect(0, 0, 0, 1);
     }
 
-    if (pFrame->m_fFullScreen) {
+    if (m_pMainFrame->m_fFullScreen) {
         r.InflateRect(1, 0, 1, 0);
     }
 
-    pDC->Draw3dRect(&r, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHILIGHT));
+    dc.Draw3dRect(&r, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHILIGHT));
 
     r.DeflateRect(1, 1);
 
-    pDC->FillSolidRect(&r, 0);
-
-    return TRUE;
-}
-
-void CPlayerStatusBar::OnPaint()
-{
-    CPaintDC dc(this); // device context for painting
+    dc.FillSolidRect(&r, 0);
 
     if (m_bm.m_hObject) {
         BITMAP bm;
@@ -377,20 +381,13 @@ void CPlayerStatusBar::OnPaint()
                   statusRect.CenterPoint().y - bm.bmHeight / 2,
                   bm.bmWidth, bm.bmHeight, &memdc, 0, 0, SRCCOPY);
     }
-    /*
-    if (m_hIcon) {
-        GetClientRect(&r);
-        r.SetRect(6, r.top+4, 22-1, r.bottom-4-1);
-        DrawIconEx(dc, r.left, r.top, m_hIcon, r.Width(), r.Height(), 0, nullptr, DI_NORMAL|DI_COMPAT);
-    }
-    */
-    // Do not call CDialogBar::OnPaint() for painting messages
 }
 
 void CPlayerStatusBar::OnSize(UINT nType, int cx, int cy)
 {
     CDialogBar::OnSize(nType, cx, cy);
 
+    Invalidate();
     Relayout();
 }
 

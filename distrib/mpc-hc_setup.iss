@@ -80,6 +80,10 @@
   #define OutFilename   = app_name + "." + app_ver + ".x86"
 #endif
 
+#if defined(MPCHC_LITE)
+  #define bindir        = bindir + " Lite"
+#endif
+
 #ifnexist AddBackslash(bindir) + mpchc_exe
   #error Compile MPC-HC first
 #endif
@@ -191,6 +195,7 @@ Name: ru;    MessagesFile: compiler:Languages\Russian.isl
 Name: sk;    MessagesFile: Languages\Slovak.isl
 Name: sl;    MessagesFile: compiler:Languages\Slovenian.isl
 Name: sv;    MessagesFile: Languages\Swedish.isl
+Name: tt;    MessagesFile: Languages\Tatar.isl
 Name: tr;    MessagesFile: Languages\Turkish.isl
 Name: uk;    MessagesFile: compiler:Languages\Ukrainian.isl
 Name: vi;    MessagesFile: Languages\Vietnamese.isl

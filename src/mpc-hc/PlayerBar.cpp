@@ -22,21 +22,30 @@
 #include "PlayerBar.h"
 #include "MainFrm.h"
 
-void CPlayerBar::SetAutohidden(bool bValue)
-{
-    m_bAutohidden = bValue;
-}
-
 IMPLEMENT_DYNAMIC(CPlayerBar, CSizingControlBarG)
 CPlayerBar::CPlayerBar()
     : m_defDockBarID(0)
     , m_bAutohidden(false)
     , m_bHasActivePopup(false)
 {
+    EventRouter::EventSelection receives;
+    receives.insert(MpcEvent::CHANGING_UI_LANGUAGE);
+    GetEventd().Connect(m_eventc, receives, std::bind(&CPlayerBar::EventCallback, this, std::placeholders::_1));
 }
 
 CPlayerBar::~CPlayerBar()
 {
+}
+
+void CPlayerBar::EventCallback(MpcEvent ev)
+{
+    switch (ev) {
+        case MpcEvent::CHANGING_UI_LANGUAGE:
+            ReloadTranslatableResources();
+            break;
+        default:
+            ASSERT(FALSE);
+    }
 }
 
 BEGIN_MESSAGE_MAP(CPlayerBar, CSizingControlBarG)
@@ -139,6 +148,11 @@ void CPlayerBar::SaveState()
     }
 
     pApp->WriteProfileInt(section, _T("DockState"), dockBarID);
+}
+
+void CPlayerBar::SetAutohidden(bool bValue)
+{
+    m_bAutohidden = bValue;
 }
 
 bool CPlayerBar::IsAutohidden() const

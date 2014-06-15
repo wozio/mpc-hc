@@ -58,6 +58,7 @@
 #include "IBufferInfo.h"
 
 #include "WebServer.h"
+#include <afxmt.h>
 #include <d3d9.h>
 #include <vmr9.h>
 #include <evr.h>
@@ -70,6 +71,8 @@
 #include "sizecbar/scbarg.h"
 #include "DSMPropertyBag.h"
 #include "SkypeMoodMsgHandler.h"
+
+#include <memory>
 
 
 class CFullscreenWnd;
@@ -149,13 +152,13 @@ public:
   }
 };
 struct SubtitleInput {
-    CComQIPtr<ISubStream> subStream;
-    CComPtr<IBaseFilter> sourceFilter;
+    CComQIPtr<ISubStream> pSubStream;
+    CComPtr<IBaseFilter> pSourceFilter;
 
     SubtitleInput() {};
-    SubtitleInput(CComQIPtr<ISubStream> subStream) : subStream(subStream) {};
-    SubtitleInput(CComQIPtr<ISubStream> subStream, CComPtr<IBaseFilter> sourceFilter)
-        : subStream(subStream), sourceFilter(sourceFilter) {};
+    SubtitleInput(CComQIPtr<ISubStream> pSubStream) : pSubStream(pSubStream) {};
+    SubtitleInput(CComQIPtr<ISubStream> pSubStream, CComPtr<IBaseFilter> pSourceFilter)
+        : pSubStream(pSubStream), pSourceFilter(pSourceFilter) {};
 };
 
 interface ISubClock;
@@ -178,6 +181,9 @@ public:
         DELAY_IDLE,
         ACTIVE_SHADER_FILES_CHANGE_COOLDOWN,
         DELAY_PLAYPAUSE_AFTER_AUTOCHANGE_MODE,
+        DVBINFO_UPDATE,
+        STATUS_ERASE,
+        PLACE_FULLSCREEN_UNDER_ACTIVE_WINDOW,
     };
     OneTimeTimerPool<TimerOneTimeSubscriber> m_timerOneTime;
 
@@ -189,8 +195,6 @@ private:
         TIMER_STREAMPOSPOLLER = 1,
         TIMER_STREAMPOSPOLLER2,
         TIMER_STATS,
-        TIMER_STATUSERASER,
-        TIMER_DVBINFO_UPDATER,
         TIMER_UNLOAD_UNUSED_EXTERNAL_OBJECTS,
         TIMER_32HZ,
         TIMER_ONETIME_START,
@@ -266,7 +270,7 @@ private:
 
     CList<SubtitleInput> m_pSubStreams;
     POSITION m_posFirstExtSub;
-    ISubStream* m_pCurrentSubStream;
+    SubtitleInput m_pCurrentSubInput;
 
     SubtitleInput* GetSubtitleInput(int& i, bool bIsOffset = false);
 
@@ -281,7 +285,9 @@ private:
     void SetDefaultWindowRect(int iMonitor = 0);
     void SetDefaultFullscreenState();
     void RestoreDefaultWindowRect();
-    void ZoomVideoWindow(bool snap = true, double scale = ZOOM_DEFAULT_LEVEL);
+    CSize GetZoomWindowSize(double dScale);
+    CRect GetZoomWindowRect(const CSize& size);
+    void ZoomVideoWindow(double dScale = ZOOM_DEFAULT_LEVEL);
     double GetZoomAutoFitScale(bool bLargerOnly = false);
 
     void SetAlwaysOnTop(int iOnTop);
@@ -299,7 +305,6 @@ private:
     void SetupFavoritesSubMenu();
     void SetupShadersSubMenu();
     void SetupRecentFilesSubMenu();
-    void SetupLanguageMenu();
 
     IBaseFilter* FindSourceSelectableFilter();
     void SetupNavStreamSelectSubMenu(CMenu& subMenu, UINT id, DWORD dwSelGroup);
@@ -308,7 +313,6 @@ private:
     CMenu m_mainPopupMenu, m_popupMenu;
     CMenu m_openCDsMenu;
     CMenu m_filtersMenu, m_subtitlesMenu, m_audiosMenu, m_videoStreamsMenu;
-    CMenu m_languageMenu;
     CMenu m_chaptersMenu, m_titlesMenu, m_playlistMenu, m_BDPlaylistMenu, m_channelsMenu;
     CMenu m_favoritesMenu;
     CMenu m_shadersMenu;
@@ -346,7 +350,6 @@ private:
 
     bool m_fEndOfStream;
 
-    LARGE_INTEGER m_liLastSaveTime;
     bool m_bRememberFilePos;
 
     DWORD m_dwLastRun;
@@ -383,6 +386,8 @@ private:
     void SendNowPlayingToSkype();
 
     MLS m_eMediaLoadState;
+
+    REFTIME GetAvgTimePerFrame() const;
 
 public:
     void StartWebServer(int nPort);
@@ -432,7 +437,6 @@ protected:
     bool m_bPausedForAutochangeMonitorMode;
 
     bool m_fAudioOnly;
-    dispmode m_dmBeforeFullscreen;
     CString m_LastOpenBDPath;
     CAutoPtr<OpenMediaData> m_lastOMD;
     HMONITOR m_LastWindow_HM;
@@ -467,11 +471,11 @@ protected:
     void OpenSetupWindowTitle(bool reset = false);
 
 public:
-    static bool GetCurDispMode(const CString& displayName, dispmode& dm);
-    static bool GetDispMode(CString displayName, int i, dispmode& dm);
+    static bool GetCurDispMode(const CString& displayName, DisplayMode& dm);
+    static bool GetDispMode(CString displayName, int i, DisplayMode& dm);
 
 protected:
-    void SetDispMode(CString displayName, const dispmode& dm);
+    void SetDispMode(CString displayName, const DisplayMode& dm);
     void AutoChangeMonitorMode();
 
     bool GraphEventComplete();
@@ -524,13 +528,16 @@ public:
     int SetupAudioStreams();
     int SetupSubtitleStreams();
 
-    bool LoadSubtitle(CString fn, ISubStream** actualStream = nullptr, bool bAutoLoad = false);
-    bool SetSubtitle(int i, bool bIsOffset = false, bool bDisplayMessage = false, bool bApplyDefStyle = false);
-    void SetSubtitle(ISubStream* pSubStream, bool bApplyDefStyle = false);
+    bool LoadSubtitle(CString fn, SubtitleInput* pSubInput = nullptr, bool bAutoLoad = false);
+    bool SetSubtitle(int i, bool bIsOffset = false, bool bDisplayMessage = false);
+    void SetSubtitle(const SubtitleInput& subInput);
     void ToggleSubtitleOnOff(bool bDisplayMessage = false);
     void ReplaceSubtitle(const ISubStream* pSubStreamOld, ISubStream* pSubStreamNew);
     void InvalidateSubtitle(DWORD_PTR nSubtitleId = DWORD_PTR_MAX, REFERENCE_TIME rtInvalidate = -1);
     void ReloadSubtitle();
+    void UpdateSubOverridePlacement();
+    void UpdateSubDefaultStyle();
+    void UpdateSubAspectRatioCompensation();
     HRESULT InsertTextPassThruFilter(IBaseFilter* pBF, IPin* pPin, IPin* pPinto);
 
     void SetAudioTrackIdx(int index);
@@ -591,7 +598,7 @@ protected:  // control bar embedded members
     CPlayerNavigationBar m_wndNavigationBar;
     CEditListEditor m_wndEditListEditor;
 
-    CDebugShadersDlg* m_pDebugShaders;
+    std::unique_ptr<CDebugShadersDlg> m_pDebugShaders;
 
     CFileDropTarget m_fileDropTarget;
     // TODO
@@ -875,6 +882,7 @@ public:
     afx_msg void OnUpdatePlayResetRate(CCmdUI* pCmdUI);
     afx_msg void OnPlayChangeAudDelay(UINT nID);
     afx_msg void OnUpdatePlayChangeAudDelay(CCmdUI* pCmdUI);
+    afx_msg void OnPlayFiltersCopyToClipboard();
     afx_msg void OnPlayFilters(UINT nID);
     afx_msg void OnUpdatePlayFilters(CCmdUI* pCmdUI);
     afx_msg void OnPlayShadersSelect();
@@ -933,14 +941,10 @@ public:
 
     afx_msg void OnClose();
 
-    afx_msg void OnLanguage(UINT nID);
-    afx_msg void OnUpdateLanguage(CCmdUI* pCmdUI);
-
     CMPC_Lcd m_Lcd;
 
     // ==== Added by CASIMIR666
     CWnd*           m_pVideoWnd;            // Current Video (main display screen or 2nd)
-    SIZE            m_fullWndSize;
     CFullscreenWnd* m_pFullscreenWnd;
     CVMROSD     m_OSD;
     bool        m_bRemainingTime;
@@ -992,16 +996,18 @@ public:
 
 protected:
     // GDI+
-    ULONG_PTR m_gdiplusToken;
     virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     void WTSRegisterSessionNotification();
     void WTSUnRegisterSessionNotification();
 
     CMenu* m_pActiveContextMenu;
+    CMenu* m_pActiveSystemMenu;
 
     void UpdateSkypeHandler();
     void UpdateSeekbarChapterBag();
     void UpdateAudioSwitcher();
+
+    void UpdateUILanguage();
 
     bool m_bAltDownClean;
     bool m_bShowingFloatingMenubar;
@@ -1018,8 +1024,15 @@ protected:
         }
     };
 
+    bool IsAeroSnapped();
+
     CPoint m_snapStartPoint;
     CRect m_snapStartRect;
+
+    double m_dLastVideoScaleFactor;
+    int m_nLastVideoWidth;
+
+    bool m_bExtOnTop; // 'true' if the "on top" flag was set by an external tool
 
 public:
     afx_msg UINT OnPowerBroadcast(UINT nPowerEvent, LPARAM nEventData);

@@ -110,7 +110,6 @@ extern LCID ISO6392ToLcid(LPCSTR code);
 extern CString ISO6391To6392(LPCSTR code);
 extern CString ISO6392To6391(LPCSTR code);
 extern CString LanguageToISO6392(LPCTSTR lang);
-extern int  MakeAACInitData(BYTE* pData, int profile, int freq, int channels);
 extern BOOL CFileGetStatus(LPCTSTR lpszFileName, CFileStatus& status);
 extern bool DeleteRegKey(LPCTSTR pszKey, LPCTSTR pszSubkey);
 extern bool SetRegKeyValue(LPCTSTR pszKey, LPCTSTR pszSubkey, LPCTSTR pszValueName, LPCTSTR pszValue);
@@ -194,44 +193,44 @@ public:
         AM_MEDIA_TYPE* pMediaType = nullptr;                                                                               \
         for (; S_OK == pEnumMediaTypes->Next(1, &pMediaType, nullptr); DeleteMediaType(pMediaType), pMediaType = nullptr) {
 
-#define EndEnumMediaTypes(pMediaType)                                                                          \
-        }                                                                                                      \
-        if (pMediaType) {                                                                                      \
-            DeleteMediaType(pMediaType);                                                                       \
-        }                                                                                                      \
-    }                                                                                                          \
+#define EndEnumMediaTypes(pMediaType)                                                                               \
+        }                                                                                                           \
+        if (pMediaType) {                                                                                           \
+            DeleteMediaType(pMediaType);                                                                            \
+        }                                                                                                           \
+    }                                                                                                               \
 }
 
-#define BeginEnumSysDev(clsid, pMoniker)                                                                          \
-{                                                                                                                 \
-    CComPtr<ICreateDevEnum> pDevEnum4$##clsid;                                                                    \
-    pDevEnum4$##clsid.CoCreateInstance(CLSID_SystemDeviceEnum);                                                   \
-    CComPtr<IEnumMoniker> pClassEnum4$##clsid;                                                                    \
-    if (SUCCEEDED(pDevEnum4$##clsid->CreateClassEnumerator(clsid, &pClassEnum4$##clsid, 0))                       \
-        && pClassEnum4$##clsid) {                                                                                 \
+#define BeginEnumSysDev(clsid, pMoniker)                                                                            \
+{                                                                                                                   \
+    CComPtr<ICreateDevEnum> pDevEnum4$##clsid;                                                                      \
+    pDevEnum4$##clsid.CoCreateInstance(CLSID_SystemDeviceEnum);                                                     \
+    CComPtr<IEnumMoniker> pClassEnum4$##clsid;                                                                      \
+    if (SUCCEEDED(pDevEnum4$##clsid->CreateClassEnumerator(clsid, &pClassEnum4$##clsid, 0))                         \
+        && pClassEnum4$##clsid) {                                                                                   \
         for (CComPtr<IMoniker> pMoniker; pClassEnum4$##clsid->Next(1, &pMoniker, 0) == S_OK; pMoniker = nullptr) {
 
 #define EndEnumSysDev }}}
 
-#define PauseGraph                                                                                         \
-    CComQIPtr<IMediaControl> _pMC(m_pGraph);                                                               \
-    OAFilterState _fs = -1;                                                                                \
-    if (_pMC)                                                                                              \
-        _pMC->GetState(1000, &_fs);                                                                        \
-    if (_fs == State_Running)                                                                              \
-        _pMC->Pause();                                                                                     \
-                                                                                                           \
-    HRESULT _hr = E_FAIL;                                                                                  \
-    CComQIPtr<IMediaSeeking> _pMS((IUnknown*)(INonDelegatingUnknown*)m_pGraph);                            \
-    REFERENCE_TIME _rtNow = 0;                                                                             \
-    if (_pMS)                                                                                              \
+#define PauseGraph                                                                                              \
+    CComQIPtr<IMediaControl> _pMC(m_pGraph);                                                                    \
+    OAFilterState _fs = -1;                                                                                     \
+    if (_pMC)                                                                                                   \
+        _pMC->GetState(1000, &_fs);                                                                             \
+    if (_fs == State_Running)                                                                                   \
+        _pMC->Pause();                                                                                          \
+                                                                                                                \
+    HRESULT _hr = E_FAIL;                                                                                       \
+    CComQIPtr<IMediaSeeking> _pMS((IUnknown*)(INonDelegatingUnknown*)m_pGraph);                                 \
+    REFERENCE_TIME _rtNow = 0;                                                                                  \
+    if (_pMS)                                                                                                   \
         _hr = _pMS->GetCurrentPosition(&_rtNow);
 
-#define ResumeGraph                                                                                        \
-    if (SUCCEEDED(_hr) && _pMS && _fs != State_Stopped)                                                    \
-        _hr = _pMS->SetPositions(&_rtNow, AM_SEEKING_AbsolutePositioning, nullptr, AM_SEEKING_NoPositioning); \
-                                                                                                           \
-    if (_fs == State_Running && _pMS)                                                                      \
+#define ResumeGraph                                                                                             \
+    if (SUCCEEDED(_hr) && _pMS && _fs != State_Stopped)                                                         \
+        _hr = _pMS->SetPositions(&_rtNow, AM_SEEKING_AbsolutePositioning, nullptr, AM_SEEKING_NoPositioning);   \
+                                                                                                                \
+    if (_fs == State_Running && _pMS)                                                                           \
         _pMC->Run();
 
 #define CallQueue(call)         \
@@ -267,10 +266,12 @@ static CUnknown* WINAPI CreateInstance(LPUNKNOWN lpunk, HRESULT* phr)
     return punk;
 }
 
-inline int GCD(int a, int b)
+template <class T>
+typename std::enable_if<std::is_unsigned<T>::value, T>::type GCD(T a, T b)
 {
+    static_assert(std::is_integral<T>::value, "GCD supports integral types only");
     if (a == 0 || b == 0) {
-        return 1;
+        return std::max(std::max(a, b), T(1));
     }
     while (a != b) {
         if (a < b) {
@@ -280,6 +281,14 @@ inline int GCD(int a, int b)
         }
     }
     return a;
+}
+
+template <class T>
+typename std::enable_if<std::is_signed<T>::value, T>::type GCD(T a, T b)
+{
+    typedef std::make_unsigned<T>::type uT;
+
+    return T(GCD(uT(std::abs(a)), uT(std::abs(b))));
 }
 
 namespace CStringUtils

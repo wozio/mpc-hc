@@ -55,16 +55,19 @@ public:
     CompositionObject();
     ~CompositionObject();
 
+    void  Init();
+    void  Reset();
+
     void  SetRLEData(const BYTE* pBuffer, int nSize, int nTotalSize);
     void  AppendRLEData(const BYTE* pBuffer, int nSize);
-    const BYTE* GetRLEData() { return m_pRLEData; };
-    int   GetRLEDataSize() { return m_nRLEDataSize; };
-    bool  IsRLEComplete() { return m_nRLEPos >= m_nRLEDataSize; };
+    const BYTE* GetRLEData() const { return m_pRLEData; };
+    int   GetRLEDataSize() const { return m_nRLEDataSize; };
+    bool  IsRLEComplete() const { return m_nRLEPos >= m_nRLEDataSize; };
     void  RenderHdmv(SubPicDesc& spd);
     void  RenderDvb(SubPicDesc& spd, short nX, short nY);
     void  WriteSeg(SubPicDesc& spd, short nX, short nY, short nCount, short nPaletteIndex);
     void  SetPalette(int nNbEntry, const HDMV_PALETTE* pPalette, bool BT709, int sourceBlackLevel, int sourceWhiteLevel, int targetBlackLevel, int targetWhiteLevel);
-    bool  HavePalette() { return m_nColorNumber > 0; };
+    bool  HavePalette() const { return m_nColorNumber > 0; };
 
     CompositionObject* Copy() {
         CompositionObject* pCompositionObject = DEBUG_NEW CompositionObject(*this);
@@ -75,6 +78,12 @@ public:
 
         return pCompositionObject;
     }
+
+    // Forbid the use of direct affectation for now, it would be dangerous because
+    // of possible leaks and double frees. We could do a deep copy to be safe but
+    // it could possibly hurt the performance if we forgot about this and start
+    // using affectation a lot.
+    CompositionObject& operator=(const CompositionObject&) = delete;
 
 private:
     BYTE* m_pRLEData;

@@ -1,5 +1,5 @@
 /*
- * (C) 2012-2013 see Authors.txt
+ * (C) 2012-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,6 +25,7 @@
 #include "FGFilterLAV.h"
 #endif
 #include "mplayerc.h"
+#include "FileVersionInfo.h"
 #include "VersionInfo.h"
 #include "SysVersion.h"
 #include "WinAPIUtils.h"
@@ -102,10 +103,12 @@ BOOL CAboutDlg::OnInitDialog()
 #endif
 #elif defined(_MSC_VER)
 #if (_MSC_VER == 1800)              // 2013
-#if (_MSC_FULL_VER == 180021005)
-    m_MPCCompiler = _T("MSVC 2013");
+#if (_MSC_FULL_VER == 180030501)
+    m_MPCCompiler = _T("MSVC 2013 Update 2");
 #elif (_MSC_FULL_VER < 180021005)
     m_MPCCompiler = _T("MSVC 2013 Preview/Beta/RC");
+#else
+    m_MPCCompiler = _T("MSVC 2013");
 #endif
 #elif (_MSC_VER <= 1700)
 #error Compiler is not supported!
@@ -220,7 +223,43 @@ void CAboutDlg::OnCopyToClipboard()
 #endif
     info += _T("Operating system:\r\n");
     info += _T("    Name:               ") + m_OSName + _T("\r\n");
-    info += _T("    Version:            ") + m_OSVersion + _T("\r\n");
+    info += _T("    Version:            ") + m_OSVersion + _T("\r\n\r\n");
+
+    info += _T("Hardware:\r\n");
+
+    CRegKey key;
+    if (key.Open(HKEY_LOCAL_MACHINE, _T("HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0"), KEY_READ) == ERROR_SUCCESS) {
+        ULONG nChars = 0;
+        if (key.QueryStringValue(_T("ProcessorNameString"), nullptr, &nChars) == ERROR_SUCCESS) {
+            CString cpuName;
+            if (key.QueryStringValue(_T("ProcessorNameString"), cpuName.GetBuffer(nChars), &nChars) == ERROR_SUCCESS) {
+                cpuName.ReleaseBuffer(nChars);
+                cpuName.Trim();
+                info.AppendFormat(_T("    CPU:                %s\r\n"), cpuName);
+            }
+        }
+    }
+
+    if (CComPtr<IDirect3D9> pD3D9 = Direct3DCreate9(D3D_SDK_VERSION)) {
+        for (UINT adapter = 0, adapterCount = pD3D9->GetAdapterCount(); adapter < adapterCount; adapter++) {
+            D3DADAPTER_IDENTIFIER9 adapterIdentifier;
+            if (pD3D9->GetAdapterIdentifier(adapter, 0, &adapterIdentifier) == D3D_OK) {
+                CString deviceName = adapterIdentifier.Description;
+                deviceName.Trim();
+
+                if (adapterCount > 1) {
+                    info.AppendFormat(_T("    GPU%u:               %s"), adapter + 1, deviceName);
+                } else {
+                    info.AppendFormat(_T("    GPU:                %s"), deviceName);
+                }
+                if (adapterIdentifier.DriverVersion.QuadPart) {
+                    info.AppendFormat(_T(" (driver version: %s)"),
+                                      FileVersionInfo::FormatVersionString(adapterIdentifier.DriverVersion.LowPart, adapterIdentifier.DriverVersion.HighPart));
+                }
+                info += _T("\r\n");
+            }
+        }
+    }
 
     // Allocate a global memory object for the text
     int len = info.GetLength() + 1;

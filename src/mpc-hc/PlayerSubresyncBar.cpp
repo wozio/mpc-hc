@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -80,19 +80,58 @@ BOOL CPlayerSubresyncBar::PreTranslateMessage(MSG* pMsg)
     return __super::PreTranslateMessage(pMsg);
 }
 
+void CPlayerSubresyncBar::ReloadTranslatableResources()
+{
+    SetWindowText(ResStr(IDS_SUBRESYNC_CAPTION));
+
+    CHeaderCtrl* pHeaderCtrl = m_list.GetHeaderCtrl();
+    if (pHeaderCtrl && pHeaderCtrl->GetItemCount() > 4) {
+        auto setColumnHeaderText = [pHeaderCtrl](int nPos, CString str) {
+            HDITEM item;
+            item.mask = HDI_TEXT;
+            item.pszText = (LPTSTR)(LPCTSTR)str;
+            item.cchTextMax = str.GetLength() + 1;
+            VERIFY(pHeaderCtrl->SetItem(nPos, &item));
+        };
+
+        setColumnHeaderText(COL_START, ResStr(IDS_SUBRESYNC_CLN_TIME));
+        setColumnHeaderText(COL_END, ResStr(IDS_SUBRESYNC_CLN_END));
+        setColumnHeaderText(COL_PREVSTART, ResStr(IDS_SUBRESYNC_CLN_PREVIEW));
+        setColumnHeaderText(COL_PREVEND, ResStr(IDS_SUBRESYNC_CLN_END));
+        if (m_mode == VOBSUB) {
+            ASSERT(pHeaderCtrl->GetItemCount() == COL_COUNT_VOBSUB);
+            setColumnHeaderText(COL_VOBID, ResStr(IDS_SUBRESYNC_CLN_VOB_ID));
+            setColumnHeaderText(COL_CELLID, ResStr(IDS_SUBRESYNC_CLN_CELL_ID));
+            setColumnHeaderText(COL_FORCED, ResStr(IDS_SUBRESYNC_CLN_FORCED));
+        } else if (m_mode == TEXTSUB) {
+            ASSERT(pHeaderCtrl->GetItemCount() == COL_COUNT_TEXTSUB);
+            setColumnHeaderText(COL_TEXT, ResStr(IDS_SUBRESYNC_CLN_TEXT));
+            setColumnHeaderText(COL_STYLE, ResStr(IDS_SUBRESYNC_CLN_STYLE));
+            setColumnHeaderText(COL_FONT, ResStr(IDS_SUBRESYNC_CLN_FONT));
+            setColumnHeaderText(COL_CHARSET, ResStr(IDS_SUBRESYNC_CLN_CHARSET));
+            setColumnHeaderText(COL_UNICODE, ResStr(IDS_SUBRESYNC_CLN_UNICODE));
+            setColumnHeaderText(COL_LAYER, ResStr(IDS_SUBRESYNC_CLN_LAYER));
+            setColumnHeaderText(COL_ACTOR, ResStr(IDS_SUBRESYNC_CLN_ACTOR));
+            setColumnHeaderText(COL_EFFECT, ResStr(IDS_SUBRESYNC_CLN_EFFECT));
+        }
+    }
+}
+
 void CPlayerSubresyncBar::SetTime(REFERENCE_TIME rt)
 {
-    m_rt = rt;
-    int curSegment;
+    if (m_rt != rt) {
+        m_rt = rt;
+        int curSegment;
 
-    if (!m_sts.SearchSubs((int)(rt / 10000), 25, &curSegment)) {
-        curSegment = -1;
-    }
+        if (!m_sts.SearchSubs((int)(rt / 10000), 25, &curSegment)) {
+            curSegment = -1;
+        }
 
-    if (m_lastSegment != curSegment) {
-        m_list.Invalidate();
+        if (m_lastSegment != curSegment) {
+            m_list.Invalidate();
+        }
+        m_lastSegment = curSegment;
     }
-    m_lastSegment = curSegment;
 }
 
 void CPlayerSubresyncBar::SetFPS(double fps)
@@ -426,7 +465,7 @@ void CPlayerSubresyncBar::UpdateStrings()
             m_list.SetItemText(i, COL_FONT, stss.fontName);
             str.Format(_T("%d"), stss.charSet);
             m_list.SetItemText(i, COL_CHARSET, str);
-            m_list.SetItemText(i, COL_UNICODE, m_sts.IsEntryUnicode(i) ? _T("yes") : _T("no"));
+            m_list.SetItemText(i, COL_UNICODE, m_sts.IsEntryUnicode(i) ? ResStr(IDS_SUBRESYNC_YES) : ResStr(IDS_SUBRESYNC_NO));
             str.Format(_T("%d"), m_sts[i].layer);
             m_list.SetItemText(i, COL_LAYER, str);
             m_list.SetItemText(i, COL_ACTOR, m_sts[i].actor);
@@ -452,7 +491,7 @@ void CPlayerSubresyncBar::UpdateStrings()
                 str.Format(_T("%d"), cellid);
             }
             m_list.SetItemText(i, COL_CELLID, str);
-            str = forced ? _T("Yes") : _T("");
+            str = forced ? ResStr(IDS_SUBRESYNC_YES) : ResStr(IDS_SUBRESYNC_NO);
             m_list.SetItemText(i, COL_FORCED, str);
         }
     }
@@ -1055,7 +1094,7 @@ void CPlayerSubresyncBar::OnRclickList(NMHDR* pNMHDR, LRESULT* pResult)
                             }
                         }
 
-                        CPropertySheet dlg(_T("Styles..."), this, iSelPage);
+                        CPropertySheet dlg(ResStr(IDS_SUBTITLES_STYLES_CAPTION), this, iSelPage);
                         for (size_t i = 0, l = pages.GetCount(); i < l; i++) {
                             dlg.AddPage(pages[i]);
                         }
@@ -1082,7 +1121,7 @@ void CPlayerSubresyncBar::OnRclickList(NMHDR* pNMHDR, LRESULT* pResult)
                     } else if (id == UNICODEYES || id == UNICODENO) {
                         m_sts.ConvertUnicode(iItem, id == UNICODEYES);
                         m_list.SetItemText(iItem, COL_TEXT, m_sts.GetStrW(iItem, true));
-                        m_list.SetItemText(iItem, COL_UNICODE, m_sts.IsEntryUnicode(iItem) ? _T("yes") : _T("no"));
+                        m_list.SetItemText(iItem, COL_UNICODE, m_sts.IsEntryUnicode(iItem) ? ResStr(IDS_SUBRESYNC_YES) : ResStr(IDS_SUBRESYNC_NO));
                         fNeedsUpdate = true;
                     } else if (id == LAYERDEC || id == LAYERINC) {
                         int d = (id == LAYERDEC) ? -1 : 1;
@@ -1370,5 +1409,5 @@ bool CPlayerSubresyncBar::ShiftSubtitle(int nItem, long lValue, REFERENCE_TIME& 
 
 bool CPlayerSubresyncBar::SaveToDisk()
 {
-    return m_sts.SaveAs(m_sts.m_path, m_sts.m_exttype);
+    return m_sts.SaveAs(m_sts.m_path, m_sts.m_subtitleType);
 }

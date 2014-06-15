@@ -5,13 +5,15 @@
 # Alex_Silva <alex.mooca@hotmail.com>, 2014
 # Alex_Silva <alex.mooca@hotmail.com>, 2014
 # brunoarmanelli <brunoarmanelli@me.com>, 2014
-# rfrfrf <lipe2000@outlook.com>, 2013
+# rfrfrf <lipe2000@outlook.com>, 2013-2014
+# mvpetri <mvpetri@gmail.com>, 2014
+# Rhapy <raphael.mendonca@hotmail.com>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-02-16 23:19:09+0000\n"
-"PO-Revision-Date: 2014-02-24 11:28+0000\n"
-"Last-Translator: brunoarmanelli <brunoarmanelli@me.com>\n"
+"POT-Creation-Date: 2014-05-11 20:22:10+0000\n"
+"PO-Revision-Date: 2014-05-12 18:44+0000\n"
+"Last-Translator: mvpetri <mvpetri@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/mpc-hc/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -100,8 +102,8 @@ msgid "Bitrate"
 msgstr "Taxa de bits"
 
 msgctxt "IDS_STATSBAR_BITRATE_AVG_CUR"
-msgid " (avg/cur)"
-msgstr " (Média/Atual)"
+msgid "(avg/cur)"
+msgstr "(Média/Atual)"
 
 msgctxt "IDS_STATSBAR_SIGNAL"
 msgid "Signal"
@@ -481,39 +483,39 @@ msgstr "Isto irá corrigir os ícones que aparecem incorretamente após uma atua
 
 msgctxt "IDS_PPAGE_OUTPUT_OLDRENDERER"
 msgid "Old Video Renderer"
-msgstr "Processador de vídeo antigo"
+msgstr "Video Renderer Antigo"
 
 msgctxt "IDS_PPAGE_OUTPUT_OVERLAYMIXER"
 msgid "Overlay Mixer Renderer"
-msgstr "Processador Overlay Mixer"
+msgstr "Overlay Mixer Renderer"
 
 msgctxt "IDS_PPAGE_OUTPUT_VMR7WINDOWED"
 msgid "Video Mixing Renderer 7 (windowed)"
-msgstr "Processador misturador de Video 7 (Janela)"
+msgstr "Video Mixing Renderer 7 (Janela)"
 
 msgctxt "IDS_PPAGE_OUTPUT_VMR9WINDOWED"
 msgid "Video Mixing Renderer 9 (windowed)"
-msgstr "Processador misturador de Video 9 (Janela)"
+msgstr "Video Mixing Renderer 9 (Janela)"
 
 msgctxt "IDS_PPAGE_OUTPUT_VMR7RENDERLESS"
 msgid "Video Mixing Renderer 7 (renderless)"
-msgstr "Processador misturador de Video 7 (sem processamento)"
+msgstr "Video Mixing Renderer 7 (sem render)"
 
 msgctxt "IDS_PPAGE_OUTPUT_VMR9RENDERLESS"
 msgid "Video Mixing Renderer 9 (renderless)"
-msgstr "Processador misturador de Video 9 (sem processamento)"
+msgstr "Video Mixing Renderer 9 (sem render)"
 
 msgctxt "IDS_PPAGE_OUTPUT_EVR"
 msgid "Enhanced Video Renderer"
-msgstr "Processador de Vídeo aprimorado"
+msgstr "Video Renderer Aprimorado"
 
 msgctxt "IDS_PPAGE_OUTPUT_EVR_CUSTOM"
 msgid "Enhanced Video Renderer (custom presenter)"
-msgstr "Processador de Vídeo aprimorado (personalizado)"
+msgstr "Video Renderer Aprimorado (personalizado)"
 
 msgctxt "IDS_PPAGE_OUTPUT_DXR"
 msgid "Haali Video Renderer"
-msgstr "Haali Video"
+msgstr "Haali Video Renderer"
 
 msgctxt "IDS_PPAGE_OUTPUT_NULL_COMP"
 msgid "Null (anything)"
@@ -657,7 +659,7 @@ msgstr "A saída do mecanismo da Real será renderizado pelo \"Allocator-Present
 
 msgctxt "IDC_QTSYSDEF"
 msgid "QuickTime's own renderer. Gets a little slow when its video area is resized or partially covered by another window. When Overlay is not available it likes to fall back to GDI."
-msgstr "O próprio Processador vídeo do QuickTime. Torna-se um pouco lento quando sua área de vídeo é redimensionada ou parcialmente coberta por outra janela. quando o Overlay não esta disponível ele retorna ao GDI."
+msgstr "O Processador de vídeo do QuickTime. Torna-se um pouco lento quando sua área de vídeo é redimensionada ou parcialmente coberta por outra janela. quando o Overlay não esta disponível ele retorna ao GDI."
 
 msgctxt "IDC_QTDX7"
 msgid "The output of QuickTime's engine rendered by the DX7-based Allocator-Presenter of VMR-7 (renderless)."
@@ -677,7 +679,7 @@ msgstr "MPC Audio Renderer está danificado, não use."
 
 msgctxt "IDS_PPAGE_OUTPUT_SYNC"
 msgid "Sync Renderer"
-msgstr "Sync Processamento"
+msgstr "Sync Renderer"
 
 msgctxt "IDS_MPC_BUG_REPORT_TITLE"
 msgid "MPC-HC - Reporting a bug"
@@ -685,7 +687,7 @@ msgstr "MPC-HC - Reportar um bug"
 
 msgctxt "IDS_MPC_BUG_REPORT"
 msgid "MPC-HC just crashed but this build was compiled without debug information.\nIf you want to report this bug, you should first try an official build.\n\nDo you want to visit the download page now?"
-msgstr "MPC-HC travou mas esta compilação está sem informação de depuração.\nSe quiser reportar este bug, você deve primeiro instalar uma compilação oficial.\n\nDo you want to visit the download page now?"
+msgstr "MPC-HC travou mas esta compilação está sem informação de depuração.\nSe quiser reportar este bug, você deve primeiro instalar uma compilação oficial.\n\nGostaria de visitar a página de download agora?"
 
 msgctxt "IDS_PPAGE_OUTPUT_SURF_OFFSCREEN"
 msgid "Regular offscreen plain surface"
@@ -729,7 +731,7 @@ msgstr "**Indisponível**"
 
 msgctxt "IDS_PPAGE_OUTPUT_UNAVAILABLEMSG"
 msgid "The selected renderer is not installed."
-msgstr "O Processador selecionado não está instalado."
+msgstr "O Renderer selecionado não está instalado."
 
 msgctxt "IDS_PPAGE_OUTPUT_AUD_NULL_COMP"
 msgid "Null (anything)"
@@ -741,7 +743,7 @@ msgstr "Nulo (sem compressão)"
 
 msgctxt "IDS_PPAGE_OUTPUT_AUD_MPC_HC_REND"
 msgid "MPC-HC Audio Renderer"
-msgstr "Renderizador de Áudio do MPC-HC"
+msgstr "Áudio Renderer do MPC-HC"
 
 msgctxt "IDS_EMB_RESOURCES_VIEWER_NAME"
 msgid "Name"
@@ -753,7 +755,7 @@ msgstr "Tipo MIME"
 
 msgctxt "IDS_EMB_RESOURCES_VIEWER_INFO"
 msgid "In order to view an embedded resource in your browser you have to enable the web interface.\n\nUse the \"Save As\" button if you only want to save the information."
-msgstr "De maneira a ver um recurso embutido no seu navegador web, você tem de habilitar a interface web.\n\nUse o botão \"Salvar Como\" se gostaria apenas de salvar a informação."
+msgstr "De maneira a ver um recurso embutido no seu navegador, você tem de habilitar a interface web.\n\nUse o botão \"Salvar Como\" se gostaria apenas de salvar a informação."
 
 msgctxt "IDS_DOWNLOAD_SUBS"
 msgid "Download subtitles"
@@ -821,7 +823,7 @@ msgstr "Abre VTS_xx_0.ifo para carregar todos os arquivos VTS_xx_x.vob de uma s�
 
 msgctxt "IDS_SRC_RFS"
 msgid "Based on RARFileSource, doesn't support compressed files"
-msgstr "Baseado no RARFileSource, não suporta arquivos. comprimidos"
+msgstr "Baseado no RARFileSource, não suporta arquivos comprimidos"
 
 msgctxt "IDS_INTERNAL_LAVF"
 msgid "Uses LAV Filters"
@@ -1239,6 +1241,22 @@ msgctxt "IDS_STATSBAR_PLAYBACK_RATE"
 msgid "Playback rate"
 msgstr "Taxa de Reprodução"
 
+msgctxt "IDS_FILTERS_COPY_TO_CLIPBOARD"
+msgid "&Copy filters list to clipboard"
+msgstr "&Copiar a lista de filtros para área de transferência"
+
+msgctxt "IDS_CREDENTIALS_SERVER"
+msgid "Enter server credentials"
+msgstr ""
+
+msgctxt "IDS_CREDENTIALS_CONNECT"
+msgid "Enter your credentials to connect"
+msgstr ""
+
+msgctxt "IDS_SUB_SAVE_EXTERNAL_STYLE_FILE"
+msgid "Save custom style"
+msgstr ""
+
 msgctxt "IDS_AG_OPEN_DEVICE"
 msgid "Open Device"
 msgstr "Abrir dispositivo"
@@ -1337,7 +1355,7 @@ msgstr "Mover para a Lixeira"
 
 msgctxt "IDS_AG_SAVE_COPY"
 msgid "Save a Copy"
-msgstr "Salvar e Copiar"
+msgstr "Salvar uma Copia"
 
 msgctxt "IDS_FASTSEEK_LATEST"
 msgid "Latest keyframe"
@@ -2075,51 +2093,55 @@ msgctxt "IDS_MAINFRM_46"
 msgid "Select the path for the DVD/BD:"
 msgstr "Selecione o caminho para o DVD/BD:"
 
-msgctxt "IDS_MAINFRM_47"
+msgctxt "IDS_SUB_LOADED_SUCCESS"
 msgid " loaded successfully"
 msgstr "Carregado com sucesso"
 
-msgctxt "IDS_MAINFRM_48"
+msgctxt "IDS_ALL_FILES_FILTER"
 msgid "All files (*.*)|*.*||"
 msgstr "Todos os arquivos (*.*)|*.*||"
 
-msgctxt "IDS_MAINFRM_49"
+msgctxt "IDS_GETDIB_FAILED"
 msgid "GetDIB failed, hr = %08x"
 msgstr "GetDIB falhou, hr = %08x"
 
-msgctxt "IDS_MAINFRM_51"
+msgctxt "IDS_GETCURRENTIMAGE_FAILED"
 msgid "GetCurrentImage failed, hr = %08x"
 msgstr "GetCurrentImage falhou, hr = %08x"
 
-msgctxt "IDS_MAINFRM_53"
+msgctxt "IDS_SCREENSHOT_ERROR"
 msgid "Cannot create file"
 msgstr "Não foi possível criar arquivo"
 
-msgctxt "IDS_MAINFRM_54"
+msgctxt "IDS_THUMBNAILS_NO_DURATION"
 msgid "Cannot create thumbnails for files with no duration"
 msgstr "Não foi possível criar miniaturas para os arquivos sem duração"
 
-msgctxt "IDS_MAINFRM_55"
+msgctxt "IDS_THUMBNAILS_NO_FRAME_SIZE"
 msgid "Failed to get video frame size"
 msgstr "Não foi possível obter o tamanho do quadro do vídeo"
 
-msgctxt "IDS_MAINFRM_56"
+msgctxt "IDS_OUT_OF_MEMORY"
 msgid "Out of memory, go buy some more!"
 msgstr "Não há memória suficiente!"
 
-msgctxt "IDS_MAINFRM_57"
+msgctxt "IDS_THUMBNAILS_INVALID_FORMAT"
 msgid "Invalid image format, cannot create thumbnails out of %d bpp dibs."
 msgstr "Formato de imagem inválido, impossível criar as miniaturas de %d bpp dibs."
 
-msgctxt "IDS_MAINFRM_58"
+msgctxt "IDS_THUMBNAILS_INFO_FILESIZE"
 msgid "File Size: %s (%s bytes)\\N"
 msgstr "Tamanho do Arquivo: %s (%s bytes)\\N"
 
-msgctxt "IDS_MAINFRM_59"
+msgctxt "IDS_THUMBNAILS_INFO_HEADER"
 msgid "{\\an7\\1c&H000000&\\fs16\\b0\\bord0\\shad0}File Name: %s\\N%sResolution: %dx%d %s\\NDuration: %02d:%02d:%02d"
 msgstr "{\\an7\\1c&H000000&\\fs16\\b0\\bord0\\shad0}Nome do Arquivo: %s\\N%sResolução: %dx%d %s\\NDuração: %02d:%02d:%02d"
 
-msgctxt "IDS_MAINFRM_60"
+msgctxt "IDS_THUMBNAIL_TOO_SMALL"
+msgid "The thumbnails would be too small, impossible to create the file.\n\nTry lowering the number of thumbnails or increasing the total size."
+msgstr ""
+
+msgctxt "IDS_CANNOT_LOAD_SUB"
 msgid "To load subtitles you have to change the video renderer type and reopen the file.\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR or Haali\n- RealMedia: Special renderer for RealMedia, or open it through DirectShow\n- QuickTime: DX7 or DX9 renderer for QuickTime\n- ShockWave: n/a"
 msgstr "Para carregar legendas voce deve mudar o tipo de processador de vídeo e reabrir o arquivo.\n- DirectShow: VMR-7/VMR-9 (Sem processamento), EVR (CP), Sync, madVR or Haali\n- RealMedia: Processador especial para RealMedia, ou o abra atraves do DirectShow\n- QuickTime: Processador DX7 ou DX9 para QuickTime\n- ShockWave: n/a"
 
@@ -2325,7 +2347,7 @@ msgstr "(Comentário do Diretor N° 2)"
 
 msgctxt "IDS_DVD_SUBTITLES_ENABLE"
 msgid "Enable DVD subtitles"
-msgstr ""
+msgstr "Habilitar legendas do DVD"
 
 msgctxt "IDS_AG_ANGLE"
 msgid "Angle %d"

@@ -45,6 +45,7 @@ CSubPicAllocatorPresenterImpl::CSubPicAllocatorPresenterImpl(HWND hWnd, HRESULT&
     , m_bDeviceResetRequested(false)
     , m_bPendingResetDevice(false)
     , m_rtNow(0)
+    , m_SubtitleTextureLimit(STATIC)
 {
     if (!IsWindow(m_hWnd)) {
         hr = E_INVALIDARG;
@@ -74,10 +75,13 @@ STDMETHODIMP CSubPicAllocatorPresenterImpl::NonDelegatingQueryInterface(REFIID r
 
 void CSubPicAllocatorPresenterImpl::InitMaxSubtitleTextureSize(int maxSize, CSize desktopSize)
 {
+    m_SubtitleTextureLimit = STATIC;
+
     switch (maxSize) {
         case 0:
         default:
             m_maxSubtitleTextureSize = desktopSize;
+            m_SubtitleTextureLimit = DESKTOP;
             break;
         case 1:
             m_maxSubtitleTextureSize.SetSize(1024, 768);
@@ -106,6 +110,9 @@ void CSubPicAllocatorPresenterImpl::InitMaxSubtitleTextureSize(int maxSize, CSiz
         case 9:
             m_maxSubtitleTextureSize.SetSize(1280, 720);
             break;
+        case 10:
+            m_SubtitleTextureLimit = VIDEO;
+            break;
     }
 }
 
@@ -121,6 +128,26 @@ void CSubPicAllocatorPresenterImpl::AlphaBltSubPic(const CRect& windowRect, cons
 }
 
 // ISubPicAllocatorPresenter
+
+STDMETHODIMP_(void) CSubPicAllocatorPresenterImpl::SetVideoSize(CSize szVideo, CSize szAspectRatio /* = CSize(0, 0) */)
+{
+    if (szAspectRatio == CSize(0, 0)) {
+        szAspectRatio = szVideo;
+    }
+
+    bool fVideoSizeChanged = !!(m_NativeVideoSize != szVideo);
+    bool fAspectRatioChanged = !!(m_AspectRatio != szAspectRatio);
+
+    m_NativeVideoSize = szVideo;
+    m_AspectRatio = szAspectRatio;
+
+    if (fVideoSizeChanged || fAspectRatioChanged) {
+        if (m_SubtitleTextureLimit == VIDEO) {
+            m_maxSubtitleTextureSize = GetVideoSize();
+            m_pAllocator->SetMaxTextureSize(m_maxSubtitleTextureSize);
+        }
+    }
+}
 
 STDMETHODIMP_(SIZE) CSubPicAllocatorPresenterImpl::GetVideoSize(bool fCorrectAR)
 {
@@ -486,4 +513,11 @@ STDMETHODIMP CSubPicAllocatorPresenterImpl::DeliverFrame(REFERENCE_TIME start, R
     }
 
     return hr;
+}
+
+// ISubRenderConsumer2
+
+STDMETHODIMP CSubPicAllocatorPresenterImpl::Clear(REFERENCE_TIME clearNewerThan /* = 0 */)
+{
+    return m_pSubPicQueue->Invalidate(clearNewerThan);
 }

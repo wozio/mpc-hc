@@ -344,8 +344,10 @@ class __declspec(uuid("537DCACA-2812-4a4f-B2C6-1A34C17ADEB0"))
     int m_ktype, m_kstart, m_kend;
     int m_nPolygon;
     int m_polygonBaselineOffset;
-    STSStyle* m_pStyleOverride; // the app can decide to use this style instead of a built-in one
-    bool m_doOverrideStyle;
+    STSStyle m_styleOverride; // the app can decide to use this style instead of a built-in one
+    bool m_bOverrideStyle;
+    bool m_bOverridePlacement;
+    CSize m_overridePlacement;
 
     void ParseEffect(CSubtitle* sub, CString str);
     void ParseString(CSubtitle* sub, CStringW str, STSStyle& style);
@@ -362,18 +364,21 @@ protected:
     virtual void OnChanged();
 
 public:
-    CRenderedTextSubtitle(CCritSec* pLock, STSStyle* styleOverride = nullptr, bool doOverride = false);
+    CRenderedTextSubtitle(CCritSec* pLock);
     virtual ~CRenderedTextSubtitle();
 
     virtual void Copy(CSimpleTextSubtitle& sts);
     virtual void Empty();
 
     // call to signal this RTS to ignore any of the styles and apply the given override style
-    void SetOverride(bool doOverride = true, STSStyle* styleOverride = nullptr) {
-        m_doOverrideStyle = doOverride;
-        if (styleOverride != nullptr) {
-            m_pStyleOverride = styleOverride;
-        }
+    void SetOverride(bool bOverride, const STSStyle& styleOverride) {
+        m_bOverrideStyle = bOverride;
+        m_styleOverride = styleOverride;
+    }
+
+    void SetAlignment(bool bOverridePlacement, LONG lHorPos, LONG lVerPos) {
+        m_bOverridePlacement = bOverridePlacement;
+        m_overridePlacement.SetSize(lHorPos, lVerPos);
     }
 
 public:

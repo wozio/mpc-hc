@@ -27,6 +27,7 @@
 #include "MiniDump.h"
 #include "SysVersion.h"
 #include "WinAPIUtils.h"
+#include "Translations.h"
 #include "UpdateChecker.h"
 #include "moreuuids.h"
 
@@ -78,6 +79,7 @@ CAppSettings::CAppSettings()
     , fOverridePlacement(0)
     , nHorPos(50)
     , nVerPos(90)
+    , bSubtitleARCompensation(true)
     , nSubDelayInterval(500)
     , fPrioritizeExternalSubtitles(true)
     , fDisableInternalSubtitles(true)
@@ -108,6 +110,7 @@ CAppSettings::CAppSettings()
     , iThumbRows(4)
     , iThumbCols(4)
     , iThumbWidth(1024)
+    , bSubSaveExternalStyleFile(false)
     , bShufflePlaylistItems(false)
     , bHidePlaylistFullScreen(false)
     , nLastWindowType(SIZE_RESTORED)
@@ -120,7 +123,6 @@ CAppSettings::CAppSettings()
     , bAllowOverridingExternalSplitterChoice(false)
     , iAnalogCountry(1)
     , iDefaultCaptureDevice(0)
-    , fRestoreResAfterExit(true)
     , fExitFullScreenAtTheEnd(true)
     , fLaunchfullscreen(false)
     , fD3DFullscreen(false)
@@ -190,7 +192,6 @@ CAppSettings::CAppSettings()
     , bHideFullscreenDockedPanels(true)
     , bHideWindowedControls(false)
     , bHideWindowedMousePointer(true)
-    , uAutoChangeFullscrResDelay(0)
 {
     // Internal source filter
 #if INTERNAL_SOURCEFILTER_CDDA
@@ -658,12 +659,17 @@ void CAppSettings::SaveSettings()
 
     VERIFY(pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_HIDE_WINDOWED_MOUSE_POINTER, bHideWindowedMousePointer));
 
-    pApp->WriteProfileBinary(IDS_R_SETTINGS, IDS_RS_FULLSCREENRES, (BYTE*)&AutoChangeFullscrRes, sizeof(AutoChangeFullscrRes));
-    VERIFY(pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_FULLSCREENRES_DELAY, (int)uAutoChangeFullscrResDelay));
+    // Auto-change fullscreen mode
+    SaveSettingsAutoChangeFullScreenMode();
+
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_EXITFULLSCREENATTHEEND, fExitFullScreenAtTheEnd);
-    pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_RESTORERESAFTEREXIT, fRestoreResAfterExit);
+
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_REMEMBERWINDOWPOS, fRememberWindowPos);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_REMEMBERWINDOWSIZE, fRememberWindowSize);
+    if (fRememberWindowSize || fRememberWindowPos) {
+        pApp->WriteProfileBinary(IDS_R_SETTINGS, IDS_RS_LASTWINDOWRECT, (BYTE*)&rcLastWindowPos, sizeof(rcLastWindowPos));
+        pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_LASTWINDOWTYPE, nLastWindowType);
+    }
     if (fSavePnSZoom) {
         CString str;
         str.Format(_T("%.3f,%.3f"), dZoomX, dZoomY);
@@ -672,8 +678,6 @@ void CAppSettings::SaveSettings()
         pApp->WriteProfileString(IDS_R_SETTINGS, IDS_RS_PANSCANZOOM, nullptr);
     }
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_SNAPTODESKTOPEDGES, fSnapToDesktopEdges);
-    pApp->WriteProfileBinary(IDS_R_SETTINGS, IDS_RS_LASTWINDOWRECT, (BYTE*)&rcLastWindowPos, sizeof(rcLastWindowPos));
-    pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_LASTWINDOWTYPE, nLastWindowType);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_ASPECTRATIO_X, sizeAspectRatio.cx);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_ASPECTRATIO_Y, sizeAspectRatio.cy);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_KEEPHISTORY, fKeepHistory);
@@ -708,6 +712,7 @@ void CAppSettings::SaveSettings()
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_SPOVERRIDEPLACEMENT, fOverridePlacement);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_SPHORPOS, nHorPos);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_SPVERPOS, nVerPos);
+    pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_SUBTITLEARCOMPENSATION, bSubtitleARCompensation);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_SUBDELAYINTERVAL, nSubDelayInterval);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_ENABLESUBTITLES, fEnableSubtitles);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_PREFER_FORCED_DEFAULT_SUBTITLES, bPreferDefaultForcedSubtitles);
@@ -890,6 +895,8 @@ void CAppSettings::SaveSettings()
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_THUMBROWS, iThumbRows);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_THUMBCOLS, iThumbCols);
     pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_THUMBWIDTH, iThumbWidth);
+
+    VERIFY(pApp->WriteProfileInt(IDS_R_SETTINGS, IDS_RS_SUBSAVEEXTERNALSTYLEFILE, bSubSaveExternalStyleFile));
 
     pApp->WriteProfileString(IDS_R_SETTINGS, IDS_RS_ISDB, strISDb);
 
@@ -1089,6 +1096,47 @@ void CAppSettings::SaveExternalFilters(CAutoPtrList<FilterOverride>& filters, LP
     }
 }
 
+void CAppSettings::SaveSettingsAutoChangeFullScreenMode()
+{
+    auto pApp = AfxGetMyApp();
+    ASSERT(pApp);
+
+    // Ensure the section is cleared before saving the new settings
+    for (size_t i = 0;; i++) {
+        CString section;
+        section.Format(IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE, i);
+
+        // WriteProfileString doesn't return false when INI is used and the section doesn't exist
+        // so instead check for the a value inside that section
+        if (!pApp->HasProfileEntry(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_CHECKED)) {
+            break;
+        } else {
+            VERIFY(pApp->WriteProfileString(section, nullptr, nullptr));
+        }
+    }
+    pApp->WriteProfileString(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, nullptr, nullptr);
+
+    VERIFY(pApp->WriteProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_ENABLE, autoChangeFSMode.bEnabled));
+    VERIFY(pApp->WriteProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_APPLYDEFMODEATFSEXIT, autoChangeFSMode.bApplyDefaultModeAtFSExit));
+    VERIFY(pApp->WriteProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_RESTORERESAFTEREXIT, autoChangeFSMode.bRestoreResAfterProgExit));
+    VERIFY(pApp->WriteProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_DELAY, (int)autoChangeFSMode.uDelay));
+
+    for (size_t i = 0; i < autoChangeFSMode.modes.size(); i++) {
+        const auto& mode = autoChangeFSMode.modes[i];
+        CString section;
+        section.Format(IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE, i);
+
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_CHECKED, mode.bChecked));
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_FRAMERATESTART, std::lround(mode.dFrameRateStart * 1000000)));
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_FRAMERATESTOP, std::lround(mode.dFrameRateStop * 1000000)));
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_BPP, mode.dm.bpp));
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_FREQ, mode.dm.freq));
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_SIZEX, mode.dm.size.cx));
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_SIZEY, mode.dm.size.cy));
+        VERIFY(pApp->WriteProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_FLAGS, (int)mode.dm.dwDisplayFlags));
+    }
+}
+
 void CAppSettings::LoadSettings()
 {
     CWinApp* pApp = AfxGetApp();
@@ -1104,12 +1152,14 @@ void CAppSettings::LoadSettings()
     // Set interface language first!
     language = (LANGID)pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_LANGUAGE, -1);
     if (language == LANGID(-1)) {
-        CMPlayerCApp::SetDefaultLanguage();
+        language = Translations::SetDefaultLanguage();
     } else if (language != 0) {
-        if (language <= 23) { // Here for compatibility with old settings
-            CMPlayerCApp::SetLanguage(CMPlayerCApp::GetLanguageResourceByResourceID(language + ID_LANGUAGE_ENGLISH));
-        } else {
-            CMPlayerCApp::SetLanguage(CMPlayerCApp::GetLanguageResourceByLocaleID(language));
+        if (language <= 23) {
+            // We must be updating from a really old version, use the default language
+            language = Translations::SetDefaultLanguage();
+        } else if (!Translations::SetLanguage(Translations::GetLanguageResourceByLocaleID(language))) {
+            // In case of error, reset the language to English
+            language = 0;
         }
     }
 
@@ -1185,20 +1235,37 @@ void CAppSettings::LoadSettings()
     // Last Open Dir
     strLastOpenDir = pApp->GetProfileString(IDS_R_SETTINGS, IDS_RS_LAST_OPEN_DIR, _T("C:\\"));
 
-    if (pApp->GetProfileBinary(IDS_R_SETTINGS, IDS_RS_FULLSCREENRES, &ptr, &len)) {
-        if (len == sizeof(AChFR)) {
-            memcpy(&AutoChangeFullscrRes, ptr, sizeof(AChFR));
-        } else {
-            AutoChangeFullscrRes.bEnabled = false;
+    // Auto-change fullscreen mode
+    autoChangeFSMode.bEnabled = !!pApp->GetProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_ENABLE, FALSE);
+    autoChangeFSMode.bApplyDefaultModeAtFSExit = !!pApp->GetProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_APPLYDEFMODEATFSEXIT, TRUE);
+    autoChangeFSMode.bRestoreResAfterProgExit  = !!pApp->GetProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_RESTORERESAFTEREXIT, TRUE);
+    autoChangeFSMode.uDelay = pApp->GetProfileInt(IDS_R_SETTINGS_FULLSCREEN_AUTOCHANGE_MODE, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_DELAY, 0);
+
+    autoChangeFSMode.modes.clear();
+    for (size_t i = 0;; i++) {
+        CString section;
+        section.Format(IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE, i);
+
+        int iChecked = (int)pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_CHECKED, INT_ERROR);
+        if (iChecked == INT_ERROR) {
+            break;
         }
-        delete [] ptr;
-    } else {
-        AutoChangeFullscrRes.bEnabled = false;
+
+        double dFrameRateStart = pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_FRAMERATESTART, 0) / 1000000.0;
+        double dFrameRateStop = pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_FRAMERATESTOP, 0) / 1000000.0;
+        DisplayMode dm;
+        dm.bValid = true;
+        dm.bpp = (int)pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_BPP, 0);
+        dm.freq = (int)pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_FREQ, 0);
+        dm.size.cx = (LONG)pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_SIZEX, 0);
+        dm.size.cy = (LONG)pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_SIZEY, 0);
+        dm.dwDisplayFlags = pApp->GetProfileInt(section, IDS_RS_FULLSCREEN_AUTOCHANGE_MODE_MODE_DM_FLAGS, 0);
+
+        autoChangeFSMode.modes.emplace_back(!!iChecked, dFrameRateStart, dFrameRateStop, dm);
     }
-    uAutoChangeFullscrResDelay = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_FULLSCREENRES_DELAY, 0);
 
     fExitFullScreenAtTheEnd = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_EXITFULLSCREENATTHEEND, TRUE);
-    fRestoreResAfterExit = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_RESTORERESAFTEREXIT, TRUE);
+
     fRememberWindowPos = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_REMEMBERWINDOWPOS, FALSE);
     fRememberWindowSize = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_REMEMBERWINDOWSIZE, FALSE);
     CString str = pApp->GetProfileString(IDS_R_SETTINGS, IDS_RS_PANSCANZOOM);
@@ -1216,7 +1283,7 @@ void CAppSettings::LoadSettings()
     sizeAspectRatio.cy = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_ASPECTRATIO_Y, 0);
 
     fKeepHistory = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_KEEPHISTORY, TRUE);
-    CFileAssoc::SetNoRecentDocs(!fKeepHistory);
+    fileAssoc.SetNoRecentDocs(!fKeepHistory);
 
     if (pApp->GetProfileBinary(IDS_R_SETTINGS, IDS_RS_LASTWINDOWRECT, &ptr, &len)) {
         if (len == sizeof(CRect)) {
@@ -1252,6 +1319,7 @@ void CAppSettings::LoadSettings()
     fOverridePlacement = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_SPOVERRIDEPLACEMENT, FALSE);
     nHorPos = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_SPHORPOS, 50);
     nVerPos = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_SPVERPOS, 90);
+    bSubtitleARCompensation = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_SUBTITLEARCOMPENSATION, TRUE);
     nSubDelayInterval = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_SUBDELAYINTERVAL, 500);
 
     fEnableSubtitles = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_ENABLESUBTITLES, TRUE);
@@ -1327,14 +1395,14 @@ void CAppSettings::LoadSettings()
     }
 
     if (m_pnspresets.IsEmpty()) {
-        double _4p3 = 4.0 / 3.0;
-        double _16p9 = 16.0 / 9.0;
-        double _185p1 = 1.85 / 1.0;
-        double _235p1 = 2.35 / 1.0;
+        const double _4p3 = 4.0 / 3.0;
+        const double _16p9 = 16.0 / 9.0;
+        const double _185p1 = 1.85 / 1.0;
+        const double _235p1 = 2.35 / 1.0;
         UNREFERENCED_PARAMETER(_185p1);
 
         CString str2;
-        str2.Format(IDS_SCALE_16_9, 0.5, 0.5, _4p3 / _4p3, _16p9 / _4p3);
+        str2.Format(IDS_SCALE_16_9, 0.5, 0.5, /*_4p3 / _4p3 =*/ 1.0, _16p9 / _4p3);
         m_pnspresets.Add(str2);
         str2.Format(IDS_SCALE_WIDESCREEN, 0.5, 0.5, _16p9 / _4p3, _16p9 / _4p3);
         m_pnspresets.Add(str2);
@@ -1443,6 +1511,8 @@ void CAppSettings::LoadSettings()
     iThumbRows = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_THUMBROWS, 4);
     iThumbCols = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_THUMBCOLS, 4);
     iThumbWidth = pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_THUMBWIDTH, 1024);
+
+    bSubSaveExternalStyleFile = !!pApp->GetProfileInt(IDS_R_SETTINGS, IDS_RS_SUBSAVEEXTERNALSTYLEFILE, FALSE);
 
     strISDb = pApp->GetProfileString(IDS_R_SETTINGS, IDS_RS_ISDB, _T("www.opensubtitles.org/isdb"));
 
@@ -2124,6 +2194,9 @@ void CAppSettings::UpdateSettings()
             for (int iChannel = 0; ; iChannel++) {
                 CString strTemp, strChannel;
                 strTemp.Format(_T("%d"), iChannel);
+                if (!pApp->HasProfileEntry(oldSection, strTemp)) {
+                    break;
+                }
                 strChannel = pApp->GetProfileString(oldSection, strTemp);
                 if (strChannel.IsEmpty()) {
                     break;
@@ -2165,6 +2238,79 @@ void CAppSettings::UpdateSettings()
                     VERIFY(pApp->WriteProfileInt(section, _T("HideFullscreenControlsDelay"), nTimeout * 1000));
                 }
             }
+        }
+        // no break
+        case 3: {
+#pragma pack(push, 1)
+            struct dispmode {
+                bool fValid;
+                CSize size;
+                int bpp, freq;
+                DWORD dmDisplayFlags;
+            };
+
+            struct fpsmode {
+                double vfr_from;
+                double vfr_to;
+                bool fChecked;
+                dispmode dmFSRes;
+                bool fIsData;
+            };
+
+            struct AChFR {
+                bool bEnabled;
+                fpsmode dmFullscreenRes[30];
+                bool bApplyDefault;
+            }; //AutoChangeFullscrRes
+#pragma pack(pop)
+
+            LPBYTE ptr;
+            UINT len;
+            bool bSetDefault = true;
+            if (pApp->GetProfileBinary(IDS_R_SETTINGS, _T("FullscreenRes"), &ptr, &len)) {
+                if (len == sizeof(AChFR)) {
+                    AChFR autoChangeFullscrRes;
+                    memcpy(&autoChangeFullscrRes, ptr, sizeof(AChFR));
+
+                    autoChangeFSMode.bEnabled = autoChangeFullscrRes.bEnabled;
+                    autoChangeFSMode.bApplyDefaultModeAtFSExit = autoChangeFullscrRes.bApplyDefault;
+
+                    for (size_t i = 0; i < _countof(autoChangeFullscrRes.dmFullscreenRes); i++) {
+                        const auto& modeOld = autoChangeFullscrRes.dmFullscreenRes[i];
+                        // The old settings could be corrupted quite easily so be careful when converting them
+                        if (modeOld.fIsData
+                                && modeOld.vfr_from >= 0.0 && modeOld.vfr_from <= 126.0
+                                && modeOld.vfr_to >= 0.0 && modeOld.vfr_to <= 126.0
+                                && modeOld.dmFSRes.fValid
+                                && modeOld.dmFSRes.bpp == 32
+                                && modeOld.dmFSRes.size.cx >= 640 && modeOld.dmFSRes.size.cx < 10000
+                                && modeOld.dmFSRes.size.cy >= 380 && modeOld.dmFSRes.size.cy < 10000
+                                && modeOld.dmFSRes.freq > 0 && modeOld.dmFSRes.freq < 1000) {
+                            DisplayMode dm;
+                            dm.bValid = true;
+                            dm.size = modeOld.dmFSRes.size;
+                            dm.bpp = 32;
+                            dm.freq = modeOld.dmFSRes.freq;
+                            dm.dwDisplayFlags = modeOld.dmFSRes.dmDisplayFlags & DM_INTERLACED;
+
+                            autoChangeFSMode.modes.emplace_back(modeOld.fChecked, modeOld.vfr_from, modeOld.vfr_to, dm);
+                        }
+                    }
+
+                    bSetDefault = autoChangeFSMode.modes.empty() || autoChangeFSMode.modes[0].dFrameRateStart != 0.0 || autoChangeFSMode.modes[0].dFrameRateStop != 0.0;
+                }
+                delete [] ptr;
+            }
+
+            if (bSetDefault) {
+                autoChangeFSMode.bEnabled = false;
+                autoChangeFSMode.bApplyDefaultModeAtFSExit = true;
+                autoChangeFSMode.modes.clear();
+            }
+            autoChangeFSMode.bRestoreResAfterProgExit = !!pApp->GetProfileInt(IDS_R_SETTINGS, _T("RestoreResAfterExit"), TRUE);
+            autoChangeFSMode.uDelay = pApp->GetProfileInt(IDS_R_SETTINGS, _T("FullscreenResDelay"), 0);
+
+            SaveSettingsAutoChangeFullScreenMode();
         }
         // no break
         default:

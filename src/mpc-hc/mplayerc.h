@@ -25,24 +25,46 @@
 #error include 'stdafx.h' before including this file for PCH
 #endif
 
-#include "resource.h"       // main symbols
-#include <afxadv.h>
-#include <atlsync.h>
-#include "FakeFilterMapper2.h"
-#include "AppSettings.h"
-#include <d3d9.h>
-#include <vmr9.h>
-#include <dxva2api.h> //#include <evr9.h>
-#include <map>
-#include <afxmt.h>
-
 #include "EventDispatcher.h"
+#include "RenderersSettings.h"
+#include "resource.h"
+
+#include <atlsync.h>
+#include <d3d9.h> // needed for dxva2api.h and vmr9.h
+#include <dxva2api.h>
+#include <vmr9.h>
+
+#include <map>
+#include <memory>
+#include <mutex>
 
 #define MPC_WND_CLASS_NAME L"MediaPlayerClassicW"
 
-//define the default logo we use
+// define the default logo we use
 #define DEF_LOGO IDF_LOGO3
 
+extern HICON LoadIcon(CString fn, bool fSmall);
+extern bool LoadType(CString fn, CString& type);
+extern bool LoadResource(UINT resid, CStringA& str, LPCTSTR restype);
+extern CStringA GetContentType(CString fn, CAtlList<CString>* redir = nullptr);
+extern WORD AssignedToCmd(UINT keyOrMouseValue, bool bIsFullScreen = false, bool bCheckMouse = true);
+extern void SetAudioRenderer(int AudioDevNo);
+extern void SetHandCursor(HWND m_hWnd, UINT nID);
+
+__inline DXVA2_Fixed32 IntToFixed(__in const int _int_, __in const short divisor = 1)
+{
+    // special converter that is resistant to MS bugs
+    DXVA2_Fixed32 _fixed_;
+    _fixed_.Value = SHORT(_int_ / divisor);
+    _fixed_.Fraction = USHORT((_int_ % divisor * 0x10000 + divisor / 2) / divisor);
+    return _fixed_;
+}
+
+__inline int FixedToInt(__in const DXVA2_Fixed32& _fixed_, __in const short factor = 1)
+{
+    // special converter that is resistant to MS bugs
+    return (int)_fixed_.Value * factor + ((int)_fixed_.Fraction * factor + 0x8000) / 0x10000;
+}
 
 enum {
     WM_GRAPHNOTIFY = WM_RESET_DEVICE + 1,
@@ -54,14 +76,6 @@ enum {
     WM_TUNER_STATS,
     WM_TUNER_NEW_CHANNEL
 };
-
-///////////////
-
-extern HICON LoadIcon(CString fn, bool fSmall);
-extern bool LoadType(CString fn, CString& type);
-extern bool LoadResource(UINT resid, CStringA& str, LPCTSTR restype);
-extern CStringA GetContentType(CString fn, CAtlList<CString>* redir = nullptr);
-extern WORD AssignedToCmd(UINT keyOrMouseValue, bool bIsFullScreen = false, bool bCheckMouse = true);
 
 enum ControlType {
     ProcAmp_Brightness = 0x1,
@@ -79,31 +93,7 @@ struct COLORPROPERTY_RANGE {
     int   StepSize;
 };
 
-__inline DXVA2_Fixed32 IntToFixed(__in const int _int_, __in const short divisor = 1)
-{
-    // special converter that is resistant to MS bugs
-    DXVA2_Fixed32 _fixed_;
-    _fixed_.Value = SHORT(_int_ / divisor);
-    _fixed_.Fraction = USHORT((_int_ % divisor * 0x10000 + divisor / 2) / divisor);
-    return _fixed_;
-}
-
-__inline int FixedToInt(__in const DXVA2_Fixed32& _fixed_, __in const short factor = 1)
-{
-    // special converter that is resistant to MS bugs
-    return (int)_fixed_.Value * factor + ((int)_fixed_.Fraction * factor + 0x8000) / 0x10000;
-}
-
-extern void SetAudioRenderer(int AudioDevNo);
-
-extern void SetHandCursor(HWND m_hWnd, UINT nID);
-
-struct LanguageResource {
-    UINT resourceID;
-    LANGID localeID; // Check http://msdn.microsoft.com/en-us/goglobal/bb964664
-    LPCTSTR name;
-    LPCTSTR dllPath;
-};
+class CAppSettings;
 
 class CMPlayerCApp : public CWinApp
 {
@@ -126,6 +116,7 @@ class CMPlayerCApp : public CWinApp
     bool m_bDelayingIdle;
     void DelayedIdle();
     virtual BOOL IsIdleMessage(MSG* pMsg) override;
+    virtual BOOL OnIdle(LONG lCount) override;
     virtual BOOL PumpMessage() override;
 
 public:
@@ -145,11 +136,14 @@ public:
 
 private:
     std::map<CString, std::map<CString, CString, CStringUtils::IgnoreCaseLess>, CStringUtils::IgnoreCaseLess> m_ProfileMap;
-    bool m_fProfileInitialized;
+    bool m_bProfileInitialized;
+    bool m_bQueuedProfileFlush;
     void InitProfile();
-    ::CCriticalSection m_ProfileCriticalSection;
+    std::recursive_mutex m_profileMutex;
+    DWORD m_dwProfileLastAccessTick;
+
 public:
-    void FlushProfile();
+    void FlushProfile(bool bForce = true);
     virtual BOOL GetProfileBinary(LPCTSTR lpszSection, LPCTSTR lpszEntry, LPBYTE* ppData, UINT* pBytes) override;
     virtual UINT GetProfileInt(LPCTSTR lpszSection, LPCTSTR lpszEntry, int nDefault) override;
     virtual CString GetProfileString(LPCTSTR lpszSection, LPCTSTR lpszEntry, LPCTSTR lpszDefault = nullptr) override;
@@ -165,7 +159,7 @@ public:
     CString     m_strVersion;
     CString     m_AudioRendererDisplayName_CL;
 
-    CAppSettings m_s;
+    std::unique_ptr<CAppSettings> m_s;
 
     typedef UINT(*PTR_GetRemoteControlCode)(UINT nInputcode, HRAWINPUT hRawInput);
 
@@ -176,27 +170,14 @@ public:
     VMR9ProcAmpControlRange*    GetVMR9ColorControl(ControlType nFlag);
     DXVA2_ValueRange*           GetEVRColorControl(ControlType nFlag);
 
-    static const LanguageResource languageResources[];
-    static const size_t languageResourcesCount;
-
-    static const LanguageResource& GetLanguageResourceByResourceID(UINT resourceID);
-    static const LanguageResource& GetLanguageResourceByLocaleID(LANGID localeID);
-    static bool SetLanguage(const LanguageResource& languageResource, bool showErrorMsg = true);
-    static void SetDefaultLanguage();
-
     static void RunAsAdministrator(LPCTSTR strCommand, LPCTSTR strArgs, bool bWaitProcess);
 
     void RegisterHotkeys();
     void UnregisterHotkeys();
-    // Overrides
-    // ClassWizard generated virtual function overrides
-    //{{AFX_VIRTUAL(CMPlayerCApp)
-public:
-    virtual BOOL InitInstance();
-    virtual int ExitInstance();
-    //}}AFX_VIRTUAL
 
-    // Implementation
+public:
+    virtual BOOL InitInstance() override;
+    virtual int ExitInstance() override;
 
 public:
     DECLARE_MESSAGE_MAP()
@@ -223,7 +204,7 @@ public:
     int TransposeScaledY(int y) { return MulDiv(y, m_dpix, m_dpiy); }
 };
 
-#define AfxGetAppSettings() static_cast<CMPlayerCApp*>(AfxGetApp())->m_s
+#define AfxGetAppSettings() (*static_cast<CMPlayerCApp*>(AfxGetApp())->m_s.get())
 #define AfxGetMyApp()       static_cast<CMPlayerCApp*>(AfxGetApp())
 #define AfxGetMainFrame()   dynamic_cast<CMainFrame*>(AfxGetMainWnd())
 

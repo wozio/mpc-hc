@@ -30,7 +30,10 @@
 #include "MediaPositionList.h"
 #include "../filters/switcher/AudioSwitcher/AudioSwitcher.h"
 #include "Shaders.h"
+#include "FileAssoc.h"
+#include "FakeFilterMapper2.h"
 
+#include <afxadv.h>
 #include <afxsock.h>
 
 // flags for CAppSettings::nCS
@@ -177,29 +180,63 @@ enum DVB_StopFilterGraph {
     DVB_STOP_FG_ALWAYS
 };
 
-#pragma pack(push, 1)
-struct dispmode {
-    bool fValid;
+struct DisplayMode {
+    bool  bValid = false;
     CSize size;
-    int bpp, freq;
-    DWORD dmDisplayFlags;
+    int   bpp = 0, freq = 0;
+    DWORD dwDisplayFlags = 0;
+
+    bool operator == (const DisplayMode& dm) const {
+        return (bValid == dm.bValid && size == dm.size && bpp == dm.bpp && freq == dm.freq && dwDisplayFlags == dm.dwDisplayFlags);
+    };
+
+    bool operator < (const DisplayMode& dm) const {
+        bool bRet = false;
+
+        // Ignore bValid when sorting
+        if (size.cx < dm.size.cx) {
+            bRet = true;
+        } else if (size.cx == dm.size.cx) {
+            if (size.cy < dm.size.cy) {
+                bRet = true;
+            } else if (size.cy == dm.size.cy) {
+                if (freq < dm.freq) {
+                    bRet = true;
+                } else if (freq == dm.freq) {
+                    if (bpp < dm.bpp) {
+                        bRet = true;
+                    } else if (bpp == dm.bpp) {
+                        bRet = (dwDisplayFlags & DM_INTERLACED) && !(dm.dwDisplayFlags & DM_INTERLACED);
+                    }
+                }
+            }
+        }
+
+        return bRet;
+    };
 };
 
-struct fpsmode {
-    double vfr_from;
-    double vfr_to;
-    bool fChecked;
-    dispmode dmFSRes;
-    bool fIsData;
+struct AutoChangeMode {
+    AutoChangeMode(bool bChecked, double dFrameRateStart, double dFrameRateStop, DisplayMode dm)
+        : bChecked(bChecked)
+        , dFrameRateStart(dFrameRateStart)
+        , dFrameRateStop(dFrameRateStop)
+        , dm(dm) {
+    };
+
+    bool        bChecked;
+    double      dFrameRateStart;
+    double      dFrameRateStop;
+    DisplayMode dm;
 };
 
-#define MAX_FPS_COUNT 30
-struct AChFR {
-    bool bEnabled;
-    fpsmode dmFullscreenRes[MAX_FPS_COUNT];
-    bool bApplyDefault;
-}; //AutoChangeFullscrRes
-#pragma pack(pop)
+struct AutoChangeFullscreenMode {
+    bool                        bEnabled = false;
+    std::vector<AutoChangeMode> modes;
+    bool                        bApplyDefaultModeAtFSExit = true;
+    bool                        bRestoreResAfterProgExit = true;
+    unsigned                    uDelay = 0u;
+};
 
 class wmcmd : public ACCEL
 {
@@ -335,7 +372,7 @@ public:
     CUIceClient();
 };
 
-#define APPSETTINGS_VERSION 3
+#define APPSETTINGS_VERSION 4
 
 class CAppSettings
 {
@@ -479,9 +516,7 @@ public:
     bool            bHideFullscreenDockedPanels;
     bool            fExitFullScreenAtTheEnd;
     CStringW        strFullScreenMonitor;
-    AChFR           AutoChangeFullscrRes;
-    unsigned        uAutoChangeFullscrResDelay;
-    bool            fRestoreResAfterExit;
+    AutoChangeFullscreenMode autoChangeFSMode;
 
     // Sync Renderer Settings
 
@@ -528,6 +563,7 @@ public:
     // Subtitles
     bool            fOverridePlacement;
     int             nHorPos, nVerPos;
+    bool            bSubtitleARCompensation;
     int             nSubDelayInterval;
 
     // Default Style
@@ -599,6 +635,8 @@ public:
     CString         strSnapshotPath, strSnapshotExt;
     // Save Thumbnails...
     int             iThumbRows, iThumbCols, iThumbWidth;
+    // Save Subtitle
+    bool            bSubSaveExternalStyleFile;
     // Shaders
     ShaderList      m_ShadersExtraList;
     ShaderSelection m_Shaders;
@@ -630,6 +668,8 @@ public:
     bool            IsISRAutoLoadEnabled() const;
     bool            IsISRAvailable() const;
 
+    CFileAssoc      fileAssoc;
+
 private:
     struct FilterKey {
         CString name;
@@ -658,12 +698,17 @@ private:
     void            LoadExternalFilters(CAutoPtrList<FilterOverride>& filters, LPCTSTR baseKey = IDS_R_EXTERNAL_FILTERS);
     void            ConvertOldExternalFiltersList();
 
+    void            SaveSettingsAutoChangeFullScreenMode();
+
     void            UpdateRenderersData(bool fSave);
     friend void     CRenderersSettings::UpdateData(bool bSave);
 
 public:
     CAppSettings();
-    virtual ~CAppSettings();
+    CAppSettings(const CAppSettings&) = delete;
+    ~CAppSettings();
+
+    CAppSettings& operator = (const CAppSettings&) = delete;
 
     void            SaveSettings();
     void            LoadSettings();

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -336,6 +336,7 @@ bool CVobSubFile::Open(CString fn)
                 int packetsize = 0, datasize = 0;
                 BYTE* buff = GetPacket((int)j, packetsize, datasize, i);
                 if (!buff) {
+                    sp[j].fValid = false;
                     continue;
                 }
 
@@ -347,6 +348,7 @@ bool CVobSubFile::Open(CString fn)
 
                 sp[j].stop = sp[j].start + m_img.delay;
                 sp[j].fForced = m_img.fForced;
+                sp[j].bAnimated = m_img.bAnimated;
 
                 if (j > 0 && sp[j - 1].stop > sp[j].start) {
                     sp[j - 1].stop = sp[j].start;
@@ -1181,7 +1183,23 @@ BYTE* CVobSubFile::GetPacket(int idx, int& packetsize, int& datasize, int iLang)
     return ret;
 }
 
-bool CVobSubFile::GetFrame(int idx, int iLang)
+const CVobSubFile::SubPos* CVobSubFile::GetFrameInfo(int idx, int iLang /*= -1*/) const
+{
+    if (iLang < 0 || iLang >= 32) {
+        iLang = m_iLang;
+    }
+    const CAtlArray<SubPos>& sp = m_langs[iLang].subpos;
+
+    if (idx < 0 || (size_t)idx >= sp.GetCount()
+            || !sp[idx].fValid
+            || (m_fOnlyShowForcedSubs && !sp[idx].fForced)) {
+        return nullptr;
+    }
+
+    return &sp[idx];
+}
+
+bool CVobSubFile::GetFrame(int idx, int iLang /*= -1*/, REFERENCE_TIME rt /*= -1*/)
 {
     if (iLang < 0 || iLang >= 32) {
         iLang = m_iLang;
@@ -1192,7 +1210,8 @@ bool CVobSubFile::GetFrame(int idx, int iLang)
         return false;
     }
 
-    if (m_img.iLang != iLang || m_img.iIdx != idx) {
+    if (m_img.iLang != iLang || m_img.iIdx != idx
+            || (sp[idx].bAnimated && sp[idx].start + m_img.tCurrent <= rt)) {
         int packetsize = 0, datasize = 0;
         CAutoVectorPtr<BYTE> buff;
         buff.Attach(GetPacket(idx, packetsize, datasize, iLang));
@@ -1201,11 +1220,10 @@ bool CVobSubFile::GetFrame(int idx, int iLang)
         }
 
         m_img.start = sp[idx].start;
-        m_img.delay = (size_t)idx < (sp.GetCount() - 1)
-                      ? sp[idx + 1].start - sp[idx].start
-                      : 3000;
+        m_img.delay = (size_t)idx < (sp.GetCount() - 1) ? sp[idx + 1].start - sp[idx].start : 3000;
 
-        bool ret = m_img.Decode(buff, packetsize, datasize, m_fCustomPal, m_tridx, m_orgpal, m_cuspal, true);
+        bool ret = m_img.Decode(buff, packetsize, datasize, rt >= 0 ? int(rt - sp[idx].start) : INT_MAX,
+                                m_fCustomPal, m_tridx, m_orgpal, m_cuspal, true);
 
         if ((size_t)idx < (sp.GetCount() - 1)) {
             m_img.delay = std::min(m_img.delay, sp[idx + 1].start - m_img.start);
@@ -1282,20 +1300,19 @@ STDMETHODIMP CVobSubFile::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 
 // ISubPicProvider
 
-// TODO: return segments for the fade-in/out time (with animated set to "true" of course)
-
 STDMETHODIMP_(POSITION) CVobSubFile::GetStartPosition(REFERENCE_TIME rt, double fps)
 {
     rt /= 10000;
 
     int i = GetFrameIdxByTimeStamp(rt);
 
-    if (!GetFrame(i)) {
+    const SubPos* sp = GetFrameInfo(i);
+    if (!sp) {
         return nullptr;
     }
 
-    if (rt >= (m_img.start + m_img.delay)) {
-        if (!GetFrame(++i)) {
+    if (rt >= sp->stop) {
+        if (!GetFrameInfo(++i)) {
             return nullptr;
         }
     }
@@ -1306,24 +1323,28 @@ STDMETHODIMP_(POSITION) CVobSubFile::GetStartPosition(REFERENCE_TIME rt, double 
 STDMETHODIMP_(POSITION) CVobSubFile::GetNext(POSITION pos)
 {
     int i = (int)pos;
-    return (GetFrame(i) ? (POSITION)(i + 1) : nullptr);
+    return (GetFrameInfo(i) ? (POSITION)(i + 1) : nullptr);
 }
 
 STDMETHODIMP_(REFERENCE_TIME) CVobSubFile::GetStart(POSITION pos, double fps)
 {
     int i = (int)pos - 1;
-    return (GetFrame(i) ? 10000i64 * m_img.start : 0);
+    const SubPos* sp = GetFrameInfo(i);
+    return (sp ? 10000i64 * sp->start : 0);
 }
 
 STDMETHODIMP_(REFERENCE_TIME) CVobSubFile::GetStop(POSITION pos, double fps)
 {
     int i = (int)pos - 1;
-    return (GetFrame(i) ? 10000i64 * (m_img.start + m_img.delay) : 0);
+    const SubPos* sp = GetFrameInfo(i);
+    return (sp ? 10000i64 * sp->stop : 0);
 }
 
 STDMETHODIMP_(bool) CVobSubFile::IsAnimated(POSITION pos)
 {
-    return false;
+    int i = (int)pos - 1;
+    const SubPos* sp = GetFrameInfo(i);
+    return (sp ? sp->bAnimated : false);
 }
 
 STDMETHODIMP CVobSubFile::Render(SubPicDesc& spd, REFERENCE_TIME rt, double fps, RECT& bbox)
@@ -1334,7 +1355,7 @@ STDMETHODIMP CVobSubFile::Render(SubPicDesc& spd, REFERENCE_TIME rt, double fps,
 
     rt /= 10000;
 
-    if (!GetFrame(GetFrameIdxByTimeStamp(rt))) {
+    if (!GetFrame(GetFrameIdxByTimeStamp(rt), -1, rt)) {
         return E_FAIL;
     }
 
@@ -1645,7 +1666,7 @@ void CVobSubSettings::GetDestrect(CRect& r, int w, int h)
     r.bottom = MulDiv(r.bottom, h, m_size.cy);
 }
 
-void CVobSubSettings::SetAlignment(bool fAlign, int x, int y, int hor, int ver)
+void CVobSubSettings::SetAlignment(bool fAlign, int x, int y, int hor /*= 1*/, int ver /*= 1*/)
 {
     m_fAlign = fAlign;
     if (fAlign) {
@@ -2428,6 +2449,7 @@ void CVobSubStream::Add(REFERENCE_TIME tStart, REFERENCE_TIME tStop, BYTE* pData
     CAutoPtr<SubPic> p(DEBUG_NEW SubPic());
     p->tStart = tStart;
     p->tStop = vsi.delay > 0 ? (tStart + 10000i64 * vsi.delay) : tStop;
+    p->bAnimated = vsi.bAnimated;
     p->pData.SetCount(len);
     memcpy(p->pData.GetData(), pData, p->pData.GetCount());
 
@@ -2507,7 +2529,8 @@ STDMETHODIMP_(REFERENCE_TIME) CVobSubStream::GetStop(POSITION pos, double fps)
 
 STDMETHODIMP_(bool) CVobSubStream::IsAnimated(POSITION pos)
 {
-    return false;
+    CAutoLock cAutoLock(&m_csSubPics);
+    return m_subpics.GetAt(pos)->bAnimated;
 }
 
 STDMETHODIMP CVobSubStream::Render(SubPicDesc& spd, REFERENCE_TIME rt, double fps, RECT& bbox)
@@ -2520,10 +2543,10 @@ STDMETHODIMP CVobSubStream::Render(SubPicDesc& spd, REFERENCE_TIME rt, double fp
     for (; pos; m_subpics.GetPrev(pos)) {
         SubPic* sp = m_subpics.GetAt(pos);
         if (sp->tStart <= rt && rt < sp->tStop) {
-            if (m_img.iIdx != (int)pos) {
+            if (m_img.iIdx != (int)pos || (sp->bAnimated && sp->tStart + m_img.tCurrent * 10000i64 <= rt)) {
                 BYTE* pData = sp->pData.GetData();
                 m_img.Decode(
-                    pData, (pData[0] << 8) | pData[1], (pData[2] << 8) | pData[3],
+                    pData, (pData[0] << 8) | pData[1], (pData[2] << 8) | pData[3], int((rt - sp->tStart) / 10000i64),
                     m_fCustomPal, m_tridx, m_orgpal, m_cuspal, true);
                 m_img.iIdx = (int)pos;
             }

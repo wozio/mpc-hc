@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-02-16 20:48:44+0000\n"
-"PO-Revision-Date: 2014-03-24 16:10+0000\n"
+"POT-Creation-Date: 2014-04-22 11:15:01+0000\n"
+"PO-Revision-Date: 2014-06-02 10:52+0000\n"
 "Last-Translator: ever_green\n"
 "Language-Team: Japanese (http://www.transifex.com/projects/p/mpc-hc/language/ja/)\n"
 "MIME-Version: 1.0\n"
@@ -118,7 +118,7 @@ msgstr "ファイル情報(&I)"
 
 msgctxt "ID_VIEW_STATISTICS"
 msgid "&Statistics"
-msgstr "統計(&S)"
+msgstr "統計情報(&S)"
 
 msgctxt "ID_VIEW_STATUS"
 msgid "St&atus"
@@ -130,7 +130,7 @@ msgstr "字幕編集(&B)"
 
 msgctxt "ID_VIEW_PLAYLIST"
 msgid "Pla&ylist"
-msgstr "プレイリスト(&Y)"
+msgstr "再生リスト(&Y)"
 
 msgctxt "ID_VIEW_CAPTURE"
 msgid "Captu&re"
@@ -162,7 +162,7 @@ msgstr "標準(&N)"
 
 msgctxt "ID_VIEW_FULLSCREEN"
 msgid "F&ull Screen"
-msgstr "フル スクリーン(&U)"
+msgstr "全画面表示(&U)"
 
 msgctxt "POPUP"
 msgid "&Zoom"
@@ -170,15 +170,15 @@ msgstr "拡大(&Z)"
 
 msgctxt "ID_VIEW_ZOOM_50"
 msgid "&50%"
-msgstr "50%(&5)"
+msgstr "&50%"
 
 msgctxt "ID_VIEW_ZOOM_100"
 msgid "&100%"
-msgstr "100%(&1)"
+msgstr "&100%"
 
 msgctxt "ID_VIEW_ZOOM_200"
 msgid "&200%"
-msgstr "200%(&2)"
+msgstr "&200%"
 
 msgctxt "ID_VIEW_ZOOM_AUTOFIT"
 msgid "Auto &Fit"
@@ -187,10 +187,6 @@ msgstr "自動調整(&F)"
 msgctxt "ID_VIEW_ZOOM_AUTOFIT_LARGER"
 msgid "Auto Fit (&Larger Only)"
 msgstr "自動調整 (超過サイズのみ) (&L)"
-
-msgctxt "ID_MENU_LANGUAGE"
-msgid "&Language"
-msgstr "言語 (&Language)"
 
 msgctxt "POPUP"
 msgid "R&enderer Settings"
@@ -202,7 +198,7 @@ msgstr "テアリング テスト(&T)"
 
 msgctxt "ID_VIEW_DISPLAYSTATS"
 msgid "&Display Stats"
-msgstr "統計の表示(&D)"
+msgstr "統計情報の表示(&D)"
 
 msgctxt "ID_VIEW_REMAINING_TIME"
 msgid "&Remaining Time"
@@ -226,11 +222,11 @@ msgstr "プレゼンテーション(&P)"
 
 msgctxt "ID_VIEW_D3DFULLSCREEN"
 msgid "D3D Fullscreen &Mode"
-msgstr "D3D フルスクリーン モード(&M)"
+msgstr "Direct3D フルスクリーン モード(&M)"
 
 msgctxt "ID_VIEW_FULLSCREENGUISUPPORT"
 msgid "D3D Fullscreen &GUI Support"
-msgstr "D3D フルスクリーン GUI 対応(&G)"
+msgstr "Direct3D フルスクリーン GUI 対応(&G)"
 
 msgctxt "ID_VIEW_HIGHCOLORRESOLUTION"
 msgid "10-bit &RGB Output"
@@ -254,11 +250,11 @@ msgstr "デスクトップ コンポジション (Aero) の無効化(&A)"
 
 msgctxt "ID_VIEW_ENABLEFRAMETIMECORRECTION"
 msgid "Enable Frame Time &Correction"
-msgstr "フレーム時間補正を有効にする(&C)"
+msgstr "フレーム時間の補正を有効にする(&C)"
 
 msgctxt "POPUP"
 msgid "&Color Management"
-msgstr "カラー マネージメント(&C)"
+msgstr "カラー調整(&C)"
 
 msgctxt "ID_VIEW_CM_ENABLE"
 msgid "&Enable"
@@ -266,7 +262,7 @@ msgstr "有効(&E)"
 
 msgctxt "POPUP"
 msgid "&Input Type"
-msgstr "入力 タイプ(&I)"
+msgstr "入力タイプ(&I)"
 
 msgctxt "ID_VIEW_CM_INPUT_AUTO"
 msgid "&Auto-Detect"
@@ -306,7 +302,7 @@ msgstr "色空間変換の方法(&R)"
 
 msgctxt "ID_VIEW_CM_INTENT_PERCEPTUAL"
 msgid "&Perceptual"
-msgstr "知覚(&P)"
+msgstr "知覚的(&P)"
 
 msgctxt "ID_VIEW_CM_INTENT_RELATIVECOLORIMETRIC"
 msgid "&Relative Colorimetric"
@@ -366,7 +362,7 @@ msgstr "リセット(&E)"
 
 msgctxt "ID_VIEW_RESET_DEFAULT"
 msgid "Reset to &default renderer settings"
-msgstr "デフォルトのレンダラ設定にリセット(&D)"
+msgstr "既定のレンダラ設定にリセット(&D)"
 
 msgctxt "ID_VIEW_RESET_OPTIMAL"
 msgid "Reset to &optimal renderer settings"
@@ -378,15 +374,15 @@ msgstr "ビデオ フレーム(&F)"
 
 msgctxt "ID_VIEW_VF_HALF"
 msgid "&Half Size"
-msgstr "1/2 サイズ(&H)"
+msgstr "1/2 のサイズ(&H)"
 
 msgctxt "ID_VIEW_VF_NORMAL"
 msgid "&Normal Size"
-msgstr "標準 サイズ(&N)"
+msgstr "標準のサイズ(&N)"
 
 msgctxt "ID_VIEW_VF_DOUBLE"
 msgid "&Double Size"
-msgstr "2倍 サイズ(&D)"
+msgstr "2 倍のサイズ(&D)"
 
 msgctxt "ID_VIEW_VF_STRETCH"
 msgid "&Stretch To Window"
@@ -410,11 +406,11 @@ msgstr "縦か横に合わせてカット(&O)"
 
 msgctxt "ID_VIEW_VF_KEEPASPECTRATIO"
 msgid "&Keep Aspect Ratio"
-msgstr "アスペクト比を保持(&K)"
+msgstr "縦横比を保持(&K)"
 
 msgctxt "POPUP"
 msgid "Override &Aspect Ratio"
-msgstr "アスペクト比を調整(&A)"
+msgstr "縦横比を調整(&A)"
 
 msgctxt "ID_ASPECTRATIO_SOURCE"
 msgid "&Default"
@@ -442,7 +438,7 @@ msgstr "185:100(&8)"
 
 msgctxt "ID_VIEW_VF_COMPMONDESKARDIFF"
 msgid "&Correct Monitor/Desktop AR Diff"
-msgstr "モニターとデスクトップのアスペクト比の相違を補正(&C)"
+msgstr "モニタとデスクトップの縦横比の相違を補正(&C)"
 
 msgctxt "POPUP"
 msgid "Pa&n&&Scan"
@@ -634,7 +630,7 @@ msgstr "フォルダ内を順次再生(&F)"
 
 msgctxt "POPUP"
 msgid "&Navigate"
-msgstr "操作(&N)"
+msgstr "移動(&N)"
 
 msgctxt "ID_NAVIGATE_SKIPBACK"
 msgid "&Previous"
@@ -646,7 +642,7 @@ msgstr "次へ(&N)"
 
 msgctxt "ID_NAVIGATE_GOTO"
 msgid "&Go To..."
-msgstr "移動(&G)..."
+msgstr "再生位置を移動(&G)..."
 
 msgctxt "ID_NAVIGATE_TITLEMENU"
 msgid "&Title Menu"
@@ -686,7 +682,7 @@ msgstr "ホームページ(&H)"
 
 msgctxt "ID_HELP_CHECKFORUPDATE"
 msgid "Check for &updates"
-msgstr "更新のチェック(&U)"
+msgstr "更新を確認する(&U)"
 
 msgctxt "ID_HELP_SHOWCOMMANDLINESWITCHES"
 msgid "&Command Line Switches"

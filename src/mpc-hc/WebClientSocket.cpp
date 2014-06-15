@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -656,10 +656,10 @@ bool CWebClientSocket::OnBrowser(CStringA& hdr, CStringA& body, CStringA& mime)
                     files += "<tr class=\"noext\">\r\n";
                 }
                 files +=
-                    "<td class=\"browser-td\"><a href=\"[path]?path=" + UTF8Arg(fullpath) + "\">" + UTF8(fd.cFileName) + "</a></td>\r\n"
-                    "<td class=\"browser-td\"><span class=\"nobr\">" + UTF8(type) + "</span></td>\r\n"
-                    "<td class=\"browser-td align-right\"><span class=\"nobr\">" + size + "</span></td>\r\n"
-                    "<td class=\"browser-td\"><span class=\"nobr\">" + CStringA(CTime(fd.ftLastWriteTime).Format(_T("%Y.%m.%d %H:%M"))) + "</span></td>\r\n";
+                    "<td><a href=\"[path]?path=" + UTF8Arg(fullpath) + "\">" + UTF8(fd.cFileName) + "</a></td>\r\n"
+                    "<td><span class=\"nobr\">" + UTF8(type) + "</span></td>\r\n"
+                    "<td><span class=\"nobr\">" + size + "</span></td>\r\n"
+                    "<td><span class=\"nobr\">" + CStringA(CTime(fd.ftLastWriteTime).Format(_T("%Y.%m.%d %H:%M"))) + "</span></td>\r\n";
                 files += "</tr>\r\n";
             } while (FindNextFile(hFind, &fd));
 
@@ -956,5 +956,66 @@ bool CWebClientSocket::OnViewRes(CStringA& hdr, CStringA& body, CStringA& mime)
     body = CStringA((const char*)res->data.GetData(), (int)res->data.GetCount());
     mime = CStringA(res->mime);
 
+    return true;
+}
+
+static CStringA GetChannelsJSON(const CAtlList<CDVBChannel>& channels)
+{
+    // begin the JSON object with the "channels" array inside
+    CStringA jsonChannels = "{ \"channels\" : [";
+
+    POSITION channelPos = channels.GetHeadPosition();
+    while (channelPos) {
+        // fill the array with individual channel objects
+        jsonChannels += channels.GetNext(channelPos).ToJSON();
+        if (channelPos) {
+            jsonChannels += ",";
+        }
+    }
+
+    // terminate the array and the object, and return.
+    jsonChannels += "] }";
+    return jsonChannels;
+}
+
+bool CWebClientSocket::OnDVBChannels(CStringA& hdr, CStringA& body, CStringA& mime)
+{
+    if (m_pMainFrame->GetPlaybackMode() == PM_DIGITAL_CAPTURE) {
+        mime = "application/json";
+        body = GetChannelsJSON(AfxGetAppSettings().m_DVBChannels);
+    } else {
+        // if we're not currently running the capture, report the service as
+        // unavailable and return.
+        hdr = "HTTP/1.0 503 Service Unavailable\r\n";
+    }
+
+    // the request is always "handled", successfully or not.
+    return true;
+}
+
+bool CWebClientSocket::OnDVBSetChannel(CStringA& hdr, CStringA& body, CStringA& mime)
+{
+    CString requestParam;
+    int channelIdx;
+    if (m_pMainFrame->GetPlaybackMode() == PM_DIGITAL_CAPTURE) {
+        // the 'idx' GET parameter should contain a valid integer of the
+        // channel to switch to.
+        if (m_get.Lookup("idx", requestParam)
+                && _stscanf_s(requestParam, _T("%d"), &channelIdx) == 1
+                && channelIdx >= 0) {
+            if (AfxGetAppSettings().FindChannelByPref(channelIdx)) {
+                m_pMainFrame->SendMessage(WM_COMMAND, channelIdx + ID_NAVIGATE_JUMPTO_SUBITEM_START);
+            } else {
+                // Return a 404 if requested channel number was not found.
+                hdr = "HTTP/1.0 404 Not Found\r\n";
+            }
+        } else {
+            // invalid parameters.
+            hdr = "HTTP/1.0 400 Bad Request\r\n";
+        }
+    } else {
+        // not running the capture - don't report channels.
+        hdr = "HTTP/1.0 503 Service Unavailable\r\n";
+    }
     return true;
 }

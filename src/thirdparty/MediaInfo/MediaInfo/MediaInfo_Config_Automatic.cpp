@@ -940,9 +940,12 @@ void MediaInfo_Config_DefaultLanguage (Translation &Info)
     "Save;Save\n"
     "ScanType;Scan type\n"
     "ScanType_Original;Original scan type\n"
+    "ScanType_StoreMethod;Scan type, store method\n"
     "ScanOrder;Scan order\n"
-    "ScanOrder_StoredDisplayedInverted;Scan order, stored/displayed inverted\n"
     "ScanOrder_Original;Original scan order\n"
+    "ScanOrder_Stored;Stored scan order\n"
+    "ScanOrder_StoredDisplayedInverted;Scan order, stored/displayed order inverted\n"
+    "ScanOrder_StoreMethod;Scan order, store method\n"
     "ScreenplayBy;Screenplay by\n"
     "Season;Season\n"
     "see below;see below\n"
@@ -974,6 +977,10 @@ void MediaInfo_Config_DefaultLanguage (Translation &Info)
     "Source_StreamSize;Source stream size\n"
     "Source_StreamSize_Encoded;Source encoded stream size\n"
     "Standard;Standard\n"
+    "StoreMethod_InterleavedFields;Interleaved fields\n"
+    "StoreMethod_SeparatedFields;Separated fields\n"
+    "StoreMethod_SeparatedFields_1;Separated fields (1 fields per block)\n"
+    "StoreMethod_SeparatedFields_2;Separated fields (2 fields per block)\n"
     "Stream;Stream\n"
     "Stream_MoreInfo;More information about the stream\n"
     "StreamCount;Count of stream of this kind\n"
@@ -1094,13 +1101,14 @@ void MediaInfo_Config_Format (InfoMap &Info)
     "LXF;;;M;Lxf;;lxf;video/lxf;\n"
     "Matroska;;;M;Mk;;mkv mk3d mka mks;;http://packs.matroska.org/\n"
     "MPEG-PS;;;M;MpegPs;;mpeg mpg m2p vob pss;video/MP2P;\n"
-    "MPEG-TS;;;M;MpegTs;;ts m2t m2s m4t m4s ts tp trp;video/MP2T;\n"
+    "MPEG-TS;;;M;MpegTs;;ts m2t m2s m2ts m4t m4s ts tp trp;video/MP2T;\n"
     "MPEG-4;;;M;Mpeg4;;mp4 m4v m4a m4b m4p 3gpp 3gp 3gpp2 3g2 k3g jpm jpx mqv ismv isma f4v;video/mp4;\n"
     "MTV;;;M;Other;Chinese hack of MPEG-1 layer 3;mtv;;http://en.wikipedia.org/wiki/Chinese_MP4/MTV_Player\n"
     "MXF;;;M;Mxf;;mxf;application/mxf;\n"
     "NSV;;;M;Nsv;Nullsoft Streaming Video;nsv;;http://winamp.com\n"
     "Ogg;;;M;Ogg;;ogg ogm opus;video/ogg;http://www.free-codecs.com/Ogg_DirectShow_Filters_download.htm\n"
     "PMP;;;M;Pmp;Playstation Portable;pmp;;\n"
+    "PTX;;;M;Ptx;;ptx;;\n"
     "QuickTime;;;M;Mpeg4;Original Apple specifications;mov qt;video/quicktime;http://www.apple.com/quicktime/download/standalone.html\n"
     "RealMedia;;;M;Rm;;rm rmvb ra;application/vnd.rn-realmedia;\n"
     "RIFF-MMP;;;M;Riff;RIFF Multimedia Movie;;;\n"
@@ -1153,6 +1161,7 @@ void MediaInfo_Config_Format (InfoMap &Info)
     "Module;;;A;Module;;mod;;\n"
     "Monkey's Audio;;;A;Ape;;ape mac;;http://www.monkeysaudio.com/;Lossless\n"
     "MPEG Audio;;;A;Mpega;;m1a mpa1 mp1 m2a mpa2 mp2 mp3;audio/mpeg;;Lossy\n"
+    "OpenMG;;;A;OpenMG;;oma omg aa3;;;Lossy\n"
     "Musepack SV7;;;A;Mpc;;mpc;;http://www.musepack.net;Lossy\n"
     "Musepack SV8;;;A;Mpc;;mp+;;http://www.musepack.net;Lossy\n"
     "QCELP;;;A;;;;audio/QCELP;\n"
@@ -1170,7 +1179,9 @@ void MediaInfo_Config_Format (InfoMap &Info)
     "Wave;;;A;Riff;;wav;audio/vnd.wave;\n"
     "Wave64;;;A;Riff;;w64;;\n"
     "WavPack;;;A;Wvpk;;wv wvc;;http://www.wavpack.com\n"
+    "Arri Raw;;;I;ArriRaw;;ari;;\n"
     "Bitmap;;;I;Bmp;;bmp;image/bmp;;Lossless\n"
+    "DDS;;;I;Dds;DirectDraw Surface;dds;;\n"
     "DPX;;;I;Dpx;;dpx cin;;;Lossless\n"
     "EXR;;;I;Exr;;exr;;;Lossless\n"
     "DIB;;;I;Riff;RIFF Device Independent Bitmap;;;;Lossless\n"
@@ -1208,6 +1219,7 @@ void MediaInfo_Config_Format (InfoMap &Info)
     "SubRip;;;T;SubRip;;srt;;http://ffdshow.sourceforge.net/tikiwiki/tiki-index.php?page=Getting+ffdshow;Lossless\n"
     "TTML;;;T;TTML;;dfxp;;;Lossless\n"
     "SSA;;;T;Other;;ssa;;http://ffdshow.sourceforge.net/tikiwiki/tiki-index.php?page=Getting+ffdshow;Lossless\n"
+    "WebVTT;;;T;WebVTT;;vtt;;;Lossless\n"
     "Blender;;;O;Other;;blenders;;http://www.blender3d.com\n"
     "AutoCAD;;;O;Other;;;;http://www.autodesk.com\n"
     "PlayLater Video;;;V;Other;;;;http://www.playon.tv/playlater\n"
@@ -1512,9 +1524,10 @@ void MediaInfo_Config_CodecID_Video_Riff (InfoMap &Info)
     Info.Separator_Set(0, __T("\n"));
     Info.Write(Ztring().From_UTF8(
     "0x00000000;RGB;;Basic Windows bitmap format. 1, 4 and 8 bpp versions are palettised. 16, 24 and 32bpp contain raw RGB samples;http://www.fourcc.org/indexrgb.htm;;;;\n"
-    "0x00000001;RLE;;Run length encoded 8bpp RGB image;http://www.fourcc.org/indexrgb.htm;;;;\n"
-    "0x00000002;RLE;;Run length encoded 4bpp RGB image;http://www.fourcc.org/indexrgb.htm;;;;\n"
-    "0x00000003;RGB;;Raw RGB with arbitrary sample packing within a pixel. Packing and precision of R, G and B components is determined by bit masks for each;http://www.fourcc.org/indexrgb.htm;;;;\n"
+    "0x01000000;RLE;;Run length encoded 8bpp RGB image;http://www.fourcc.org/indexrgb.htm;;;;\n"
+    "0x02000010;MPEG Video;;;;;;YUV;4:2:0\n"
+    "0x02000000;RLE;;Run length encoded 4bpp RGB image;http://www.fourcc.org/indexrgb.htm;;;;\n"
+    "0x03000000;RGB;;Raw RGB with arbitrary sample packing within a pixel. Packing and precision of R, G and B components is determined by bit masks for each;http://www.fourcc.org/indexrgb.htm;;;;\n"
     "1978;RGB;A.M.Paredes predictor;;http://www.pegasusimaging.com/cgi-bin/download2.cgi?LVIDB;;;RGB;\n"
     " BIT;RGB;;;;;;RGB;\n"
     " JPG;JPEG;;;;;;YUV\n"
@@ -2633,6 +2646,16 @@ void MediaInfo_Config_CodecID_Text_Riff (InfoMap &Info)
     Info.Separator_Set(0, __T("\n"));
     Info.Write(Ztring().From_UTF8(
     "DXSB;DivX Subtitle;;Subtitle in AVI from DivX networks;http://www.divx.com\n"
+    ));
+    Info.Separator_Set(0, ZenLib::EOL);
+}
+
+//---------------------------------------------------------------------------
+void MediaInfo_Config_CodecID_Other_Mpeg4 (InfoMap &Info)
+{
+    Info.Separator_Set(0, __T("\n"));
+    Info.Write(Ztring().From_UTF8(
+    "rtp ;RTP\n"
     ));
     Info.Separator_Set(0, ZenLib::EOL);
 }
@@ -4315,9 +4338,14 @@ void MediaInfo_Config_Video (ZtringListList &Info)
     "ScanType/String;;;Y NT;;\n"
     "ScanType_Original;;;N YT;;\n"
     "ScanType_Original/String;;;Y NT;;\n"
+    "ScanType_StoreMethod;;;N YT;;;;Separated fields or Interleaved fields\n"
+    "ScanType_StoreMethod_FieldsPerBlock;;;N YT;;;;Count of fields per container block\n"
+    "ScanType_StoreMethod/String;;;Y NT;;;;Separated fields or Interleaved fields\n"
     "ScanOrder;;;N YT;;;\n"
     "ScanOrder/String;;;Y NT;;;\n"
-    "ScanOrder_StoredDisplayedInverted;;;Y YT;;;\n"
+    "ScanOrder_Stored;;;N YT;;;;In case the stored order is not same as the display order\n"
+    "ScanOrder_Stored/String;;;Y NT;;;;In case the stored order is not same as the display order\n"
+    "ScanOrder_StoredDisplayedInverted;;;N NT;;;\n"
     "ScanOrder_Original;;;N YT;;;\n"
     "ScanOrder_Original/String;;;Y NT;;;\n"
     "Interlacement;;;N NT;;;Deprecated, do not use in new projects\n"

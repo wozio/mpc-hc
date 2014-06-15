@@ -1,6 +1,6 @@
 # Media Player Classic - Home Cinema
 
-[![GitHub version](https://badge.fury.io/gh/mpc-hc%2Fmpc-hc.png)](http://badge.fury.io/gh/mpc-hc%2Fmpc-hc)
+[![GitHub version](https://badge.fury.io/gh/mpc-hc%2Fmpc-hc.svg)](http://badge.fury.io/gh/mpc-hc%2Fmpc-hc)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/259/badge.svg)](https://scan.coverity.com/projects/259)
 
 
@@ -31,7 +31,7 @@ See [CONTRIBUTING.md](/CONTRIBUTING.md) for more info.
 * Multi-Monitor support
 * Various [pixel shaders](http://en.wikipedia.org/wiki/Shader#Pixel_shaders)
 * [Color management](http://en.wikipedia.org/wiki/Color_management)
-* 32 translations available
+* 33 translations available
 
 
 ## System Requirements:
@@ -108,7 +108,7 @@ MPC-HC makes use of the following third-party code:
     <tr>
       <td>Mhook</td>
       <td>MIT License</td>
-      <td>http://codefromthe70s.org/mhook23.aspx</td>
+      <td>https://github.com/martona/mhook</td>
     </tr>
     <tr>
       <td>MultiMon</td>

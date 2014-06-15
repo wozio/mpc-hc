@@ -565,7 +565,7 @@ int32u EbuCore_AudioCompressionCodeCS_termID(MediaInfo_Internal &MI, size_t Stre
         return 0;
     }
     if (Format==__T("PCM"))
-        return 80000;
+        return 110000;
 
     return 0;
 }
@@ -733,7 +733,6 @@ Ztring EbuCore_Transform_Video(Ztring &ToReturn, MediaInfo_Internal &MI, size_t 
         }
         else
             typeLabel=MI.Get(Stream_Video, StreamPos, Video_Format_Profile);
-        ToReturn+=__T("\t\t\t\t<!-- (Previous proposal) <ebucore:videoEncoding typeLabel=\"")+MI.Get(Stream_Video, StreamPos, Video_Format_Profile)+__T("\"/> -->\n");
         ToReturn+=__T("\t\t\t\t<ebucore:videoEncoding typeLabel=\"")+typeLabel+__T("\"");
         if (!TermID_String.empty())
             ToReturn+=__T(" typeLink=\"http://www.ebu.ch/metadata/cs/ebu_VideoCompressionCodeCS.xml#")+TermID_String+__T("\"");
@@ -741,12 +740,17 @@ Ztring EbuCore_Transform_Video(Ztring &ToReturn, MediaInfo_Internal &MI, size_t 
     }
 
     //codec
-    if (!MI.Get(Stream_Video, StreamPos, Video_CodecID).empty())
+    if (!MI.Get(Stream_Video, StreamPos, Video_CodecID).empty() || !MI.Get(Stream_Video, StreamPos, Video_Format_Commercial_IfAny).empty())
     {
         ToReturn+=__T("\t\t\t\t<ebucore:codec>\n");
-        ToReturn+=__T("\t\t\t\t\t<ebucore:codecIdentifier>\n");
-        ToReturn+=__T("\t\t\t\t\t\t<dc:identifier>")+MI.Get(Stream_Video, StreamPos, Video_CodecID)+__T("</dc:identifier>\n");
-        ToReturn+=__T("\t\t\t\t\t</ebucore:codecIdentifier>\n");
+        if (!MI.Get(Stream_Video, StreamPos, Video_CodecID).empty())
+        {
+            ToReturn+=__T("\t\t\t\t\t<ebucore:codecIdentifier>\n");
+            ToReturn+=__T("\t\t\t\t\t\t<dc:identifier>")+MI.Get(Stream_Video, StreamPos, Video_CodecID)+__T("</dc:identifier>\n");
+            ToReturn+=__T("\t\t\t\t\t</ebucore:codecIdentifier>\n");
+        }
+        if (!MI.Get(Stream_Video, StreamPos, Video_Format_Commercial_IfAny).empty())
+            ToReturn+=__T("\t\t\t\t\t<ebucore:name>")+MI.Get(Stream_Video, StreamPos, Video_Format_Commercial_IfAny)+__T("</ebucore:name>\n");
         ToReturn+=__T("\t\t\t\t</ebucore:codec>\n");
     }
 
@@ -773,6 +777,8 @@ Ztring EbuCore_Transform_Video(Ztring &ToReturn, MediaInfo_Internal &MI, size_t 
     if (!MI.Get(Stream_Video, StreamPos, Video_ScanType).empty())
     {
         Ztring ScanType=MI.Get(Stream_Video, 0, Video_ScanType);
+        if (ScanType==__T("MBAFF"))
+            ScanType=__T("Interlaced");
         ScanType.MakeLowerCase();
         ToReturn+=__T("\t\t\t\t<ebucore:scanningFormat>")+ScanType+__T("</ebucore:scanningFormat>\n");
      }
@@ -845,7 +851,6 @@ Ztring EbuCore_Transform_Audio(Ztring &ToReturn, MediaInfo_Internal &MI, size_t 
         }
         else
             typeLabel=MI.Get(Stream_Audio, StreamPos, Audio_Format_Profile);
-        ToReturn+=__T("\t\t\t\t<!-- (Previous proposal) <ebucore:audioEncoding typeLabel=\"")+MI.Get(Stream_Audio, StreamPos, Audio_Format_Profile)+__T("\"/> -->\n");
         ToReturn+=__T("\t\t\t\t<ebucore:audioEncoding typeLabel=\"")+typeLabel+__T("\"");
         if (!TermID_String.empty())
             ToReturn+=__T(" typeLink=\"http://www.ebu.ch/metadata/cs/ebu_AudioCompressionCodeCS.xml#")+TermID_String+__T("\"");
@@ -853,12 +858,17 @@ Ztring EbuCore_Transform_Audio(Ztring &ToReturn, MediaInfo_Internal &MI, size_t 
     }
 
     //codec
-    if (!MI.Get(Stream_Audio, StreamPos, Audio_CodecID).empty())
+    if (!MI.Get(Stream_Audio, StreamPos, Audio_CodecID).empty() || !MI.Get(Stream_Audio, StreamPos, Audio_Format_Commercial_IfAny).empty())
     {
         ToReturn+=__T("\t\t\t\t<ebucore:codec>\n");
-        ToReturn+=__T("\t\t\t\t\t<ebucore:codecIdentifier>\n");
-        ToReturn+=__T("\t\t\t\t\t\t<dc:identifier>")+MI.Get(Stream_Audio, StreamPos, Audio_CodecID)+__T("</dc:identifier>\n");
-        ToReturn+=__T("\t\t\t\t\t</ebucore:codecIdentifier>\n");
+        if (!MI.Get(Stream_Audio, StreamPos, Audio_CodecID).empty())
+        {
+            ToReturn+=__T("\t\t\t\t\t<ebucore:codecIdentifier>\n");
+            ToReturn+=__T("\t\t\t\t\t\t<dc:identifier>")+MI.Get(Stream_Audio, StreamPos, Audio_CodecID)+__T("</dc:identifier>\n");
+            ToReturn+=__T("\t\t\t\t\t</ebucore:codecIdentifier>\n");
+        }
+        if (!MI.Get(Stream_Audio, StreamPos, Audio_Format_Commercial_IfAny).empty())
+            ToReturn+=__T("\t\t\t\t\t<ebucore:name>")+MI.Get(Stream_Audio, StreamPos, Audio_Format_Commercial_IfAny)+__T("</ebucore:name>\n");
         ToReturn+=__T("\t\t\t\t</ebucore:codec>\n");
     }
 
@@ -866,7 +876,7 @@ Ztring EbuCore_Transform_Audio(Ztring &ToReturn, MediaInfo_Internal &MI, size_t 
     if (!MI.Get(Stream_Audio, StreamPos, Audio_ChannelPositions).empty())
     {
         Ztring ChannelPositions=MI.Get(Stream_Audio, StreamPos, Audio_ChannelPositions);
-        ToReturn+=__T("\t\t\t\t<ebucore:audioTrackConfiguration typeLabel=\">")+ChannelPositions+__T(" (TODO: use the names from specs)\"/>\n");
+        ToReturn+=__T("\t\t\t\t<ebucore:audioTrackConfiguration typeLabel=\"")+ChannelPositions+__T("\"/>\n");
     }
 
     //samplingRate
@@ -938,9 +948,9 @@ Ztring EbuCore_Transform_Text(Ztring &ToReturn, MediaInfo_Internal &MI, size_t S
 
     //subtitlingTrack
     {
-        ToReturn+=__T("\t\t\t\t<ebucore:subtitlingFormat");
+        ToReturn+=__T("\t\t\t\t<ebucore:captioningFormat");
         if (!MI.Get(Stream_Text, StreamPos, Text_Format).empty())
-            ToReturn+=__T(" subtitlingFormatName=\"")+MI.Get(Stream_Text, StreamPos, Text_Format)+__T("\"");
+            ToReturn+=__T(" captioningFormatName=\"")+MI.Get(Stream_Text, StreamPos, Text_Format)+__T("\"");
         if (!MI.Get(Stream_Text, StreamPos, Text_ID).empty())
             ToReturn+=__T(" trackId=\"")+MI.Get(Stream_Text, StreamPos, Text_ID)+__T("\"");
         if (!MI.Get(Stream_Text, StreamPos, Text_Title).empty())
@@ -948,6 +958,19 @@ Ztring EbuCore_Transform_Text(Ztring &ToReturn, MediaInfo_Internal &MI, size_t S
         if (!MI.Get(Stream_Text, StreamPos, Text_Language).empty())
             ToReturn+=__T(" language=\"")+MI.Get(Stream_Text, StreamPos, Text_Language)+__T("\"");
         ToReturn+=__T("/>\n");
+        if (!MI.Get(Stream_Text, StreamPos, Text_CodecID).empty() || !MI.Get(Stream_Text, StreamPos, Text_Format_Commercial_IfAny).empty())
+        {
+            ToReturn+=__T("\t\t\t\t<ebucore:codec>\n");
+            if (!MI.Get(Stream_Text, StreamPos, Text_CodecID).empty())
+            {
+                ToReturn+=__T("\t\t\t\t\t<ebucore:codecIdentifier>\n");
+                ToReturn+=__T("\t\t\t\t\t\t<dc:identifier>")+MI.Get(Stream_Text, StreamPos, Text_CodecID)+__T("</dc:identifier>\n");
+                ToReturn+=__T("\t\t\t\t\t</ebucore:codecIdentifier>\n");
+            }
+            if (!MI.Get(Stream_Text, StreamPos, Text_Format_Commercial_IfAny).empty())
+                ToReturn+=__T("\t\t\t\t\t<ebucore:name>")+MI.Get(Stream_Text, StreamPos, Text_Format_Commercial_IfAny)+__T("</ebucore:name>\n");
+            ToReturn+=__T("\t\t\t\t</ebucore:codec>\n");
+        }
     }
 
     ToReturn+=__T("\t\t\t</ebucore:dataFormat>\n");
@@ -965,17 +988,13 @@ Ztring Export_EbuCore::Transform(MediaInfo_Internal &MI)
     DateTime.FindAndReplace(__T(" "), __T("T"));
     Ztring Date=DateTime.substr(0, 10);
     Ztring Time=DateTime.substr(11, 8);
-    DateTime+=__T("+00:00");
 
     Ztring ToReturn;
 
     //ebuCoreMain
     ToReturn+=__T("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    ToReturn+=__T("<!-- Generated at ")+DateTime+__T(" by ")+MediaInfoLib::Config.Info_Version_Get()+__T(" -->\n");
-    ToReturn+=__T("<ebucore:ebuCoreMain xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:ebucore=\"urn:ebu:metadata-schema:ebuCore_2012\" xmlns:xalan=\"http://xml.apache.org/xalan\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:ebu:metadata-schema:ebuCore_2012 EBU_CORE_20130107.xsd\" version=\"1.4\" dateLastModified=\"")+Date+__T("\"");
-    ToReturn+=__T(">");
-    ToReturn+=__T("<!-- (Not in XSD) timeLastModified=\"")+Time+__T("\" -->");
-    ToReturn+=__T("\n");
+    ToReturn+=__T("<!-- Generated by ")+MediaInfoLib::Config.Info_Version_Get()+__T(" -->\n");
+    ToReturn+=__T("<ebucore:ebuCoreMain xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:ebucore=\"urn:ebu:metadata-schema:ebuCore_2014\" xmlns:xalan=\"http://xml.apache.org/xalan\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:ebu:metadata-schema:ebuCore_2014 http://www.ebu.ch/metadata/schemas/EBUCore/20140318/EBU_CORE_20140318.xsd\" version=\"1.5\" dateLastModified=\"")+Date+__T("\" timeLastModified=\"")+Time+__T("Z\">\n");
 
     //coreMetadata
     ToReturn+=__T("\t<ebucore:coreMetadata>\n");
@@ -995,15 +1014,80 @@ Ztring Export_EbuCore::Transform(MediaInfo_Internal &MI)
     ToReturn+=__T("\t\t\t<ebucore:containerFormat");
     if (!MI.Get(Stream_General, 0, General_Format).empty())
         ToReturn+=__T(" formatLabel=\"")+MI.Get(Stream_General, 0, General_Format)+__T("\"");
-    ToReturn+=__T("/>");
     if (!MI.Get(Stream_General, 0, General_ID).empty())
-        ToReturn+=__T("<!-- (Not in XSD) containerFormatId=\"")+MI.Get(Stream_General, 0, General_ID)+__T("\" -->");
-    ToReturn+=__T("\n");
+        ToReturn+=__T(" containerFormatId=\"")+MI.Get(Stream_General, 0, General_ID)+__T("\"");
+    if (!MI.Get(Stream_General, 0, General_CodecID).empty() || !MI.Get(Stream_General, 0, General_Format_Commercial_IfAny).empty())
+    {
+        ToReturn+=__T(">\n");
+        if (!MI.Get(Stream_General, 0, General_CodecID).empty() || (!MI.Get(Stream_General, 0, General_Format_Commercial_IfAny).empty()))
+        {
+            ToReturn+=__T("\t\t\t\t<ebucore:codec>\n");
+            if (!MI.Get(Stream_General, 0, General_CodecID).empty())
+            {
+                ToReturn+=__T("\t\t\t\t\t<ebucore:codecIdentifier>\n");
+                ToReturn+=__T("\t\t\t\t\t\t<dc:identifier>")+MI.Get(Stream_General, 0, General_CodecID)+__T("</dc:identifier>\n");
+                ToReturn+=__T("\t\t\t\t\t</ebucore:codecIdentifier>\n");
+            }
+            if (!MI.Get(Stream_General, 0, General_Format_Commercial_IfAny).empty())
+                ToReturn+=__T("\t\t\t\t\t<ebucore:name>")+MI.Get(Stream_General, 0, General_Format_Commercial_IfAny)+__T("</ebucore:name>\n");
+            ToReturn+=__T("\t\t\t\t</ebucore:codec>\n");
+        }
+        ToReturn+=__T("\t\t\t</ebucore:containerFormat>\n");
+    }
+    else
+        ToReturn+=__T("/>\n");
 
     //format - dataFormat
     for (size_t Pos=0; Pos<MI.Count_Get(Stream_Text); Pos++)
         EbuCore_Transform_Text(ToReturn, MI, Pos);
 
+    //format - start
+    bool startCount=0;
+    for (size_t StreamPos=0; StreamPos<MI.Count_Get(Stream_Other); ++StreamPos)
+    {
+        if (MI.Get(Stream_Other, StreamPos, Other_Type)==__T("Time code"))
+        {
+            if (startCount)
+                ToReturn+=__T("\t\t\t<!-- (Not in XSD)\n");
+            if (!(!MI.Get(Stream_Video, StreamPos, Video_ID).empty() || !MI.Get(Stream_Video, StreamPos, Video_Title).empty())) //No extra out of spec fields
+                ToReturn+=__T("\t\t\t<ebucore:start>\n");
+            else if (startCount) //No out of spec in all cases
+            {
+                ToReturn+=__T("\t\t\t<ebucore:start");
+                if (!MI.Get(Stream_Video, StreamPos, Video_ID).empty() || !MI.Get(Stream_Video, StreamPos, Video_Title).empty())
+                {
+                    if (!MI.Get(Stream_Video, StreamPos, Video_ID).empty())
+                        ToReturn+=__T(" trackId=\"")+MI.Get(Stream_Video, StreamPos, Video_ID)+__T("\"");
+                    if (!MI.Get(Stream_Video, StreamPos, Video_Title).empty())
+                        ToReturn+=__T(" trackName=\"")+MI.Get(Stream_Video, StreamPos, Video_Title)+__T("\"");
+                }
+                ToReturn+=__T(">\n");
+            }
+            else //Extra out of spec fields
+            {
+                ToReturn+=__T("\t\t\t<ebucore:start><!-- (Not in XSD)");
+                if (!MI.Get(Stream_Video, StreamPos, Video_ID).empty())
+                    ToReturn+=__T(" trackId=\"")+MI.Get(Stream_Video, StreamPos, Video_ID)+__T("\"");
+                if (!MI.Get(Stream_Video, StreamPos, Video_Title).empty())
+                    ToReturn+=__T(" trackName=\"")+MI.Get(Stream_Video, StreamPos, Video_Title)+__T("\"");
+                ToReturn+=__T("-->\n");
+            }
+            ToReturn+=__T("\t\t\t\t<ebucore:timecode>")+MI.Get(Stream_Other, StreamPos, Other_TimeCode_FirstFrame)+__T("</ebucore:timecode>\n");
+            if (!MI.Get(Stream_Other, 0, Other_MuxingMode).empty())
+            {
+                if (!startCount)
+                    ToReturn+=__T("\t\t\t\t<!-- (Not in XSD)\n");
+                ToReturn+=__T("\t\t\t\t<ebucore:source>")+MI.Get(Stream_Other, StreamPos, Other_MuxingMode)+__T("</ebucore:source>\n");
+                if (!startCount)
+                    ToReturn+=__T("\t\t\t\t-->\n");
+            }
+            ToReturn+=__T("\t\t\t</ebucore:start>\n");
+            if (startCount)
+                ToReturn+=__T("\t\t\t-->\n");
+            startCount++;
+        }
+    }
+    
     //format - duration
     if (!MI.Get(Stream_General, 0, General_Duration).empty())
     {
@@ -1028,6 +1112,23 @@ Ztring Export_EbuCore::Transform(MediaInfo_Internal &MI)
         ToReturn+=__T("\t\t\t<ebucore:fileSize>")+MI.Get(Stream_General, 0, General_FileSize)+__T("</ebucore:fileSize>\n");
 
     //format - fileName
+    if (!MI.Get(Stream_General, 0, General_FileName).empty())
+    {
+        Ztring Name=MI.Get(Stream_General, 0, General_FileName);
+        if (!MI.Get(Stream_General, 0, General_FileExtension).empty())
+        {
+            Name+=__T('.');
+            Name+=MI.Get(Stream_General, 0, General_FileExtension);
+        }
+        Name.FindAndReplace(__T("&"), __T("&amp;"), 0, Ztring_Recursive);
+        Name.FindAndReplace(__T("<"), __T("&lt;"), 0, Ztring_Recursive);
+        Name.FindAndReplace(__T(">"), __T("&gt;"), 0, Ztring_Recursive);
+        Name.FindAndReplace(__T("\""), __T("&quot;"), 0, Ztring_Recursive);
+        Name.FindAndReplace(__T("'"), __T("&apos;"), 0, Ztring_Recursive);
+        ToReturn+=__T("\t\t\t<ebucore:fileName>")+Name+__T("</ebucore:fileName>\n");
+    }
+
+    //format - locator
     if (!MI.Get(Stream_General, 0, General_CompleteName).empty())
     {
         Ztring Name=MI.Get(Stream_General, 0, General_CompleteName);
@@ -1036,7 +1137,37 @@ Ztring Export_EbuCore::Transform(MediaInfo_Internal &MI)
         Name.FindAndReplace(__T(">"), __T("&gt;"), 0, Ztring_Recursive);
         Name.FindAndReplace(__T("\""), __T("&quot;"), 0, Ztring_Recursive);
         Name.FindAndReplace(__T("'"), __T("&apos;"), 0, Ztring_Recursive);
-        ToReturn+=__T("\t\t\t<ebucore:fileName>")+Name+__T("</ebucore:fileName>\n");
+        ToReturn+=__T("\t\t\t<ebucore:locator>")+Name+__T("</ebucore:locator>\n");
+    }
+
+    //format - technicalAttributeString - overallBitRate
+    if (!MI.Get(Stream_General, 0, General_OverallBitRate).empty())
+    {
+        ToReturn+=__T("\t\t\t<ebucore:technicalAttributeString typeLabel=\"overallBitRate\">\">")+MI.Get(Stream_General, 0, General_OverallBitRate)+__T("</ebucore:technicalAttributeString>\n");
+    }
+
+    //format - dateCreated
+    if (!MI.Get(Stream_General, 0, General_Encoded_Date).empty())
+    {
+        Ztring DateTime=MI.Get(Stream_General, 0, General_Encoded_Date);
+        DateTime.FindAndReplace(__T("UTC "), __T(""));
+        DateTime.FindAndReplace(__T(" "), __T("T"));
+        Ztring Date=DateTime.substr(0, 10);
+        Ztring Time=DateTime.substr(11, 8);
+
+        ToReturn+=__T("\t\t\t<ebucore:dateCreated startDate=\"")+Date+__T("\" startTime=\"")+Time+__T("Z\"/>\n");
+    }
+
+    //format - dateModified
+    if (!MI.Get(Stream_General, 0, General_Tagged_Date).empty())
+    {
+        Ztring DateTime=MI.Get(Stream_General, 0, General_Tagged_Date);
+        DateTime.FindAndReplace(__T("UTC "), __T(""));
+        DateTime.FindAndReplace(__T(" "), __T("T"));
+        Ztring Date=DateTime.substr(0, 10);
+        Ztring Time=DateTime.substr(11, 8);
+
+        ToReturn+=__T("\t\t\t<ebucore:dateModified startDate=\"")+Date+__T("\" startTime=\"")+Time+__T("Z\"/>\n");
     }
 
     //format

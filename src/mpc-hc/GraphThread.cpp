@@ -29,7 +29,7 @@ BOOL CGraphThread::InitInstance()
 {
     SetThreadName(DWORD(-1), "GraphThread");
     AfxSocketInit();
-    return SUCCEEDED(CoInitialize(0)) ? TRUE : FALSE;
+    return SUCCEEDED(CoInitialize(nullptr)) ? TRUE : FALSE;
 }
 
 int CGraphThread::ExitInstance()
@@ -61,6 +61,9 @@ void CGraphThread::OnDisplayChange(WPARAM wParam, LPARAM lParam)
 {
     if (m_pMainFrame) {
         m_pMainFrame->DisplayChange();
+    }
+    if (CAMEvent* e = (CAMEvent*)lParam) {
+        e->Set();
     }
 }
 

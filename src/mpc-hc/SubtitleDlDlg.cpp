@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -411,8 +411,8 @@ void CSubtitleDlDlg::OnOK()
         pMF->m_pSubStreams.RemoveAll();
     }
 
-    CAppSettings& s = AfxGetAppSettings();
-    CComPtr<ISubStream> pSubStreamToSet;
+    const CAppSettings& s = AfxGetAppSettings();
+    SubtitleInput subInputToSet;
 
     POSITION pos = m_selsubs.GetHeadPosition();
     while (pos) {
@@ -425,19 +425,19 @@ void CSubtitleDlDlg::OnOK()
         url.Append(args);
 
         if (OpenUrl(is, CString(url), str)) {
-            CAutoPtr<CRenderedTextSubtitle> pRTS(DEBUG_NEW CRenderedTextSubtitle(&pMF->m_csSubLock, &s.subtitlesDefStyle, s.fUseDefaultSubtitlesStyle));
+            CAutoPtr<CRenderedTextSubtitle> pRTS(DEBUG_NEW CRenderedTextSubtitle(&pMF->m_csSubLock));
             if (pRTS && pRTS->Open((BYTE*)(LPCSTR)str, str.GetLength(), DEFAULT_CHARSET, CString(sub.name)) && pRTS->GetStreamCount() > 0) {
                 SubtitleInput subElement(pRTS.Detach());
                 pMF->m_pSubStreams.AddTail(subElement);
-                if (!pSubStreamToSet) {
-                    pSubStreamToSet = subElement.subStream;
+                if (!subInputToSet.pSubStream) {
+                    subInputToSet = subElement;
                 }
             }
         }
     }
 
-    if (pSubStreamToSet) {
-        pMF->SetSubtitle(pSubStreamToSet);
+    if (subInputToSet.pSubStream) {
+        pMF->SetSubtitle(subInputToSet);
     }
 
     __super::OnOK();
