@@ -22,7 +22,7 @@
 #pragma once
 
 #include <atlbase.h>
-#include <service.h>
+#include <yamicontainer.h>
 #include <boost/circular_buffer.hpp>
 #include <boost/shared_array.hpp>
 
@@ -42,9 +42,8 @@ public:
 };
 
 class CLibraryStreamPush
-  : public CSourceStream,
-  //public CSourceSeeking,
-  public home_system::service
+  : public CSourceStream
+  //public CSourceSeeking
 {
   CCritSec buffer_lock_;
 
@@ -63,5 +62,5 @@ public:
   HRESULT GetMediaType(CMediaType* pmt);
   HRESULT OnThreadStartPlay();
 
-  void on_msg(yami::incoming_message & im);
+  void operator()(yami::incoming_message & im);
 };

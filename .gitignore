@@ -32,3 +32,5 @@
 ipch
 /src/filters/reader/LibraryReaderPush/*.log
 *.log
+/Debug
+/src/filters/reader/LibraryReader/Debug

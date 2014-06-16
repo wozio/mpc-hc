@@ -132,8 +132,12 @@ using namespace MediaInfoLib;
 using namespace MediaInfoDLL;
 #endif
 
-//#include "logger.h"
-#include "../../common/src/discovery.h"
+#include "yamicontainer.h"
+#include "discovery.h"
+
+home_system::yc_t _yc;
+home_system::discovery_t _discovery;
+
 class CSubClock : public CUnknown, public ISubClock
 {
     STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv) {
@@ -779,6 +783,9 @@ CMainFrame::CMainFrame()
     // disabled menu items are always re-enabled by CFrameWnd.
     m_bAutoMenuEnable = FALSE;
 
+    _yc = home_system::yami_container::create();
+    _discovery = home_system::discovery::create();
+
     EventRouter::EventSelection receives;
     receives.insert(MpcEvent::SHADER_SELECTION_CHANGED);
     receives.insert(MpcEvent::SHADER_PRERESIZE_SELECTION_CHANGED);
@@ -805,13 +812,13 @@ CMainFrame::CMainFrame()
 
 CMainFrame::~CMainFrame()
 {
+  
+  _discovery.reset();
+  _yc.reset();
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-  //home_system::logger::configure("mpc-hc.log", "debug", false);
-  DISCOVERY;
-
     if (__super::OnCreate(lpCreateStruct) == -1) {
         return -1;
     }
@@ -1856,6 +1863,10 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
                         g_bExternalSubtitleTime = true;
                         m_pMS->GetCurrentPosition(&rtNow);
                         break;
+                    case PM_LIBRARY:
+                      g_bExternalSubtitleTime = true;
+                      m_pMS->GetCurrentPosition(&rtNow);
+                      break;
                     default:
                         ASSERT(FALSE);
                         break;
@@ -1904,6 +1915,9 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
                     m_wndStatusBar.SetStatusTimer(str);
                     }
                         break;
+                    case PM_LIBRARY:
+                      m_wndStatusBar.SetStatusTimer(ResStr(IDS_CAPTURE_LIVE));
+                      break;
                     default:
                         ASSERT(FALSE);
                         break;

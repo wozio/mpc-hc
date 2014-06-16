@@ -384,10 +384,10 @@
     <ClCompile Include="DebugShadersDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ColorButton.cpp">
-      <Filter>Controls</Filter>
-    </ClCompile>
     <ClCompile Include="Translations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ColorButton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -785,10 +785,10 @@
     <ClInclude Include="DebugShadersDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ColorButton.h">
-      <Filter>Controls</Filter>
-    </ClInclude>
     <ClInclude Include="Translations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorButton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

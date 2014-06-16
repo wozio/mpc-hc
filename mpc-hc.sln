@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
+# Visual Studio Express 2013 for Windows Desktop
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{A21F07E6-A891-479C-98EA-EDB58CE4EFAB}"
@@ -119,25 +119,13 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LibraryReader", "src\filters\reader\LibraryReader\LibraryReader.vcxproj", "{921A5E4F-EC03-47D5-A709-422926B4BE76}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LibraryReaderPush", "src\filters\reader\LibraryReaderPush\LibraryReaderPush.vcxproj", "{92D5FCEB-1E51-45A3-8915-8DBF37F25403}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A0F3FB87-8030-42AE-BB78-5977DD717F86} = {A0F3FB87-8030-42AE-BB78-5977DD717F86}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "home-system", "home-system", "{4AD43B81-24BF-49BB-8F95-2DF7C8A305FB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "src\home-system\common\common.vcxproj", "{A0F3FB87-8030-42AE-BB78-5977DD717F86}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B} = {1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yami4-core", "src\home-system\yami4\yami4-core\yami4-core.vcxproj", "{0655382B-3807-4751-BAF3-EAC93186C312}"
-	ProjectSection(ProjectDependencies) = postProject
-		{DE28111C-3652-416E-87C8-373260FADBDA} = {DE28111C-3652-416E-87C8-373260FADBDA}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yami4-cpp", "src\home-system\yami4\yami4-cpp\yami4-cpp.vcxproj", "{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{0655382B-3807-4751-BAF3-EAC93186C312} = {0655382B-3807-4751-BAF3-EAC93186C312}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yami4-core-windows", "src\home-system\yami4\yami4-core\windows\windows.vcxproj", "{DE28111C-3652-416E-87C8-373260FADBDA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "src\thirdparty\common\common\common.vcxproj", "{A0F3FB87-8030-42AE-BB78-5977DD717F86}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1207,60 +1195,6 @@ Global
 		{A0F3FB87-8030-42AE-BB78-5977DD717F86}.Release|Win32.ActiveCfg = Release|Win32
 		{A0F3FB87-8030-42AE-BB78-5977DD717F86}.Release|Win32.Build.0 = Release|Win32
 		{A0F3FB87-8030-42AE-BB78-5977DD717F86}.Release|x64.ActiveCfg = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug Filter|Win32.ActiveCfg = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug Filter|Win32.Build.0 = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug Filter|x64.ActiveCfg = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug Lite|Win32.ActiveCfg = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug Lite|Win32.Build.0 = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug Lite|x64.ActiveCfg = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug|Win32.ActiveCfg = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug|Win32.Build.0 = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Debug|x64.ActiveCfg = Debug|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release Filter|Win32.ActiveCfg = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release Filter|Win32.Build.0 = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release Filter|x64.ActiveCfg = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release Lite|Win32.ActiveCfg = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release Lite|Win32.Build.0 = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release Lite|x64.ActiveCfg = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release|Win32.ActiveCfg = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release|Win32.Build.0 = Release|Win32
-		{0655382B-3807-4751-BAF3-EAC93186C312}.Release|x64.ActiveCfg = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug Filter|Win32.ActiveCfg = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug Filter|Win32.Build.0 = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug Filter|x64.ActiveCfg = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug Lite|Win32.ActiveCfg = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug Lite|Win32.Build.0 = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug Lite|x64.ActiveCfg = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug|Win32.ActiveCfg = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug|Win32.Build.0 = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Debug|x64.ActiveCfg = Debug|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release Filter|Win32.ActiveCfg = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release Filter|Win32.Build.0 = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release Filter|x64.ActiveCfg = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release Lite|Win32.ActiveCfg = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release Lite|Win32.Build.0 = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release Lite|x64.ActiveCfg = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release|Win32.ActiveCfg = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release|Win32.Build.0 = Release|Win32
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B}.Release|x64.ActiveCfg = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug Filter|Win32.ActiveCfg = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug Filter|Win32.Build.0 = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug Filter|x64.ActiveCfg = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug Lite|Win32.ActiveCfg = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug Lite|Win32.Build.0 = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug Lite|x64.ActiveCfg = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug|Win32.Build.0 = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Debug|x64.ActiveCfg = Debug|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release Filter|Win32.ActiveCfg = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release Filter|Win32.Build.0 = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release Filter|x64.ActiveCfg = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release Lite|Win32.ActiveCfg = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release Lite|Win32.Build.0 = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release Lite|x64.ActiveCfg = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release|Win32.ActiveCfg = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release|Win32.Build.0 = Release|Win32
-		{DE28111C-3652-416E-87C8-373260FADBDA}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1322,9 +1256,5 @@ Global
 		{9DCFD02A-16A0-4766-BC18-66163E21929D} = {F9F42BF2-3F13-4654-82C5-E27B8879EC4E}
 		{F6B06383-3FFD-403B-9867-4AA82A20AA83} = {F9F42BF2-3F13-4654-82C5-E27B8879EC4E}
 		{F671100C-469F-4723-AAC4-B7FE4F5B8DC4} = {F9F42BF2-3F13-4654-82C5-E27B8879EC4E}
-		{A0F3FB87-8030-42AE-BB78-5977DD717F86} = {4AD43B81-24BF-49BB-8F95-2DF7C8A305FB}
-		{0655382B-3807-4751-BAF3-EAC93186C312} = {4AD43B81-24BF-49BB-8F95-2DF7C8A305FB}
-		{1DC4E131-49FC-4342-9F20-F1C7BA34DD4B} = {4AD43B81-24BF-49BB-8F95-2DF7C8A305FB}
-		{DE28111C-3652-416E-87C8-373260FADBDA} = {4AD43B81-24BF-49BB-8F95-2DF7C8A305FB}
 	EndGlobalSection
 EndGlobal

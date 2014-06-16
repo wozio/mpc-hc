@@ -31,3 +31,6 @@
 #include <afxwin.h>                         // MFC core and standard components
 
 #include "BaseClasses/streams.h"
+
+#include <thread>
+#include <fstream>

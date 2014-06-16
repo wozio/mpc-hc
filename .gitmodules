@@ -7,3 +7,6 @@
 [submodule "LAVFilters"]
     path = src/thirdparty/LAVFilters/src
     url = https://github.com/mpc-hc/LAVFilters.git
+[submodule "src/thirdparty/common"]
+	path = src/thirdparty/common
+	url = https://github.com/wozio/common.git

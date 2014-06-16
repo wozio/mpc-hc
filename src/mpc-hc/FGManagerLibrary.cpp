@@ -8,8 +8,6 @@
 #include "SysVersion.h"
 #include "../filters/switcher/AudioSwitcher/AudioSwitcher.h"
 #include "../filters/reader/LibraryReaderPush/LibraryReaderPush.h"
-#include "logger.h"
-
 
 /// Format, Video MPEG2
 static const MPEG2VIDEOINFO sMpv_fmt = {
@@ -159,9 +157,6 @@ static const AM_MEDIA_TYPE mt_Subtitle = {
 CFGManagerLibrary::CFGManagerLibrary(LPCTSTR pName, LPUNKNOWN pUnk, HWND hWnd)
   : CFGManagerPlayer(pName, pUnk, hWnd)
 {
-  home_system::logger::configure("mpc-hc.log", "debug", false);
-
-  LOG("\nStarting session ------------------------------------------------->");
   m_DVBStreams[DVB_MPV]  = CLibraryStream2(L"mpv",  &mt_Mpv);
   m_DVBStreams[DVB_H264] = CLibraryStream2(L"h264", &mt_H264);
   m_DVBStreams[DVB_MPA]  = CLibraryStream2(L"mpa",  &mt_Mpa);
@@ -190,13 +185,11 @@ CFGManagerLibrary::CFGManagerLibrary(LPCTSTR pName, LPUNKNOWN pUnk, HWND hWnd)
     }
     m_transform.GetNext(pos);
   }
-  LOG("CFGManagerLibrary object created.");
 }
 
 CFGManagerLibrary::~CFGManagerLibrary()
 {
   m_DVBStreams.RemoveAll();
-  LOG("CFGManagerBDA object destroyed.");
 }
 
 HRESULT CFGManagerLibrary::ConnectFilters(IBaseFilter* pOutFilter, IBaseFilter* pInFilter)
@@ -217,8 +210,6 @@ HRESULT CFGManagerLibrary::ConnectFilters(IBaseFilter* pOutFilter, IBaseFilter* 
               pOutPin->QueryPinInfo (&InfoPinOut);
               InfoPinIn.pFilter->QueryFilterInfo(&InfoFilterIn);
               InfoPinOut.pFilter->QueryFilterInfo(&InfoFilterOut);
-
-              LOG("Connectting filers: " << InfoFilterOut.achName << ":" << InfoPinOut.achName << "->" << InfoFilterIn.achName << ":" << InfoPinIn.achName << " result hr=" << hr);
 
               InfoPinIn.pFilter->Release();
               InfoPinOut.pFilter->Release();
@@ -255,22 +246,8 @@ STDMETHODIMP CFGManagerLibrary::RenderFile(LPCWSTR lpcwstrFile, LPCWSTR lpcwstrP
   // Create Mpeg2 demux
   if (FAILED(hr = CreateMicrosoftDemux(pSource, pMpeg2Demux)))
   {
-    LOG("Microsoft demux creation: " << hr);
     return hr;
   }
-
-#ifdef _DEBUG
-  LOG("Filter list:");
-  BeginEnumFilters(this, pEF, pBF){
-    size_t origsize = wcslen(GetFilterName(pBF)) + 1;
-    const size_t newsize = 100;
-    size_t convertedChars = 0;
-    char nstring[newsize];
-    wcstombs_s(&convertedChars, nstring, origsize, GetFilterName(pBF), _TRUNCATE);
-    LOG(nstring);
-  }
-  EndEnumFilters;
-#endif
 
   return S_OK;
 }
@@ -495,8 +472,6 @@ HRESULT CFGManagerLibrary::CreateMicrosoftDemux(IBaseFilter* pSource, CComPtr<IB
   //  pDemux->DeleteOutputPin((LPWSTR)(LPCWSTR)strPin);
   //}
 
-  LOG("Source -> Demux connected.");
-
   POSITION pos = m_DVBStreams.GetStartPosition();
   while (pos) {
     CComPtr<IPin> pPin;
@@ -512,7 +487,6 @@ HRESULT CFGManagerLibrary::CreateMicrosoftDemux(IBaseFilter* pSource, CComPtr<IB
       if (nType == m_nCurVideoType || nType == m_nCurAudioType) {
         CheckNoLog(Connect(pPin, NULL, true));
         Stream.SetPin(pPin);
-        LOG("Graph completed for stream type " << nType);
       } else {
         /*CheckNoLog(Connect(pPin, NULL, false));
         Stream.SetPin(pPin);
@@ -620,11 +594,9 @@ HRESULT CFGManagerLibrary::ChangeState(FILTER_STATE nRequested)
       if (SUCCEEDED(hr = pMC->Stop())) {
         ((CMainFrame*)AfxGetMainWnd())->KillTimersStop();
       }
-      LOG("IMediaControl stop: " << hr);
       return hr;
                         }
     case State_Paused: {
-      LOG("IMediaControl pause.");
       return pMC->Pause();
                        }
     case State_Running: {
@@ -639,7 +611,6 @@ HRESULT CFGManagerLibrary::ChangeState(FILTER_STATE nRequested)
       if (SUCCEEDED(hr)) {
         ((CMainFrame*)AfxGetMainWnd())->SetTimersPlay();
       }
-      LOG("IMediaControl play: %d." << hr);
       return hr;
                         }
     }

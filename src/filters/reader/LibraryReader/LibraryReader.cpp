@@ -24,7 +24,6 @@
 #include "../../../DSUtil/DSUtil.h"
 #include <discovery.h>
 #include <yamicontainer.h>
-#include <logger.h>
 #include <boost/thread.hpp>
 #include <sstream>
 
@@ -160,8 +159,6 @@ void CLibraryStream::Append(BYTE* buff, int len)
   }
 
   m_len += len;
-
-  LOG("Append " << len << " bytes, total size " << m_len << " buffer size " << m_buffer.size());
 }
 
 bool CLibraryStream::Load(const WCHAR* fnw)
@@ -178,8 +175,6 @@ bool CLibraryStream::Load(const WCHAR* fnw)
 
   try
   {
-    LOG("sending create_streaming_session");
-
     yami::parameters params;
 
     params.set_long_long("local_channel", 37830072008705);
@@ -192,7 +187,6 @@ bool CLibraryStream::Load(const WCHAR* fnw)
 
     if (message->get_state() == yami::replied)
     {
-      LOG("got session id, sending start_streaming_session");
       int session_id = message->get_reply().get_integer("session");
       params.clear();
 
@@ -207,7 +201,6 @@ bool CLibraryStream::Load(const WCHAR* fnw)
   }
   catch (const home_system::service_not_found&)
   {
-    LOG("Service not found");
     return false;
   }
 
@@ -232,7 +225,6 @@ bool CLibraryStream::Load(const WCHAR* fnw)
       m_buffer.push_back(buf[i]);
     }
 
-    LOG("size " << m_len);
     Sleep(10);
   }
 
@@ -259,7 +251,6 @@ void CLibraryStream::operator()()
       m_len++;
     }
 
-    LOG("Append: current size = " << m_len);
     Sleep(10);
   }
 }
@@ -268,11 +259,8 @@ HRESULT CLibraryStream::SetPointer(LONGLONG llPos)
 {
   CAutoLock cAutoLock(&m_csLock);
 
-  LOG("SetPointer " << llPos << " current length " << m_len);
-
   if (llPos >= m_len)
   {
-    LOG("CLibraryStream: SetPointer error");
     return E_FAIL;
   }
 
@@ -283,8 +271,6 @@ HRESULT CLibraryStream::SetPointer(LONGLONG llPos)
 
 HRESULT CLibraryStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead)
 {
-  LOG("Read " << dwBytesToRead << " current pos " << m_pos << " current length " << m_len << " bytes available " << m_len - m_pos);
-
   *pdwBytesRead = dwBytesToRead;
 
   while (dwBytesToRead > m_len - m_pos)
@@ -331,7 +317,6 @@ void CLibraryStream::Unlock()
 
 void CLibraryStream::on_msg(yami::incoming_message & im)
 {
-  LOG("On message: " << im.get_message_name().c_str());
   if (im.get_message_name() == "stream_part")
   {
     try
@@ -339,13 +324,9 @@ void CLibraryStream::on_msg(yami::incoming_message & im)
       size_t len = 0;
       const void* buf = im.get_parameters().get_binary("payload", len);
       Append((BYTE*)buf, len);
-      std::wstringstream s;
-      s << L"Appended " << len << L" bytes. Current buffer size: " << m_len << std::endl;
-      LOG("Appended " << len << " bytes. Current buffer size: " << m_len);
     }
     catch (const std::exception& e)
     {
-      LOG("CLibraryStream: Exception: " << e.what());
     }
   }
   else
