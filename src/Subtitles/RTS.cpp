@@ -21,8 +21,7 @@
 
 #include "stdafx.h"
 #include <math.h>
-#include <time.h>
-#include <emmintrin.h>
+#include <intrin.h>
 #include <algorithm>
 #include "RTS.h"
 #include "../DSUtil/WinAPIUtils.h"
@@ -53,7 +52,7 @@ CMyFont::CMyFont(STSStyle& style)
 
     if (!CreateFontIndirect(&lf)) {
         _tcscpy_s(lf.lfFaceName, _T("Arial"));
-        CreateFontIndirect(&lf);
+        VERIFY(CreateFontIndirect(&lf));
     }
 
     HFONT hOldFont = SelectFont(g_hDC, *this);
@@ -67,7 +66,7 @@ CMyFont::CMyFont(STSStyle& style)
 // CWord
 
 CWord::CWord(STSStyle& style, CStringW str, int ktype, int kstart, int kend, double scalex, double scaley,
-             COutlineCache& outlineCache, COverlayCache& overlayCache)
+             RenderingCaches& renderingCaches)
     : m_style(style)
     , m_str(str)
     , m_width(0)
@@ -83,8 +82,7 @@ CWord::CWord(STSStyle& style, CStringW str, int ktype, int kstart, int kend, dou
     , m_pOpaqueBox(nullptr)
     , m_scalex(scalex)
     , m_scaley(scaley)
-    , m_outlineCache(outlineCache)
-    , m_overlayCache(overlayCache)
+    , m_renderingCaches(renderingCaches)
 {
     if (str.IsEmpty()) {
         m_fWhiteSpaceChar = m_fLineBreak = true;
@@ -93,9 +91,7 @@ CWord::CWord(STSStyle& style, CStringW str, int ktype, int kstart, int kend, dou
 
 CWord::~CWord()
 {
-    if (m_pOpaqueBox) {
-        delete m_pOpaqueBox;
-    }
+    delete m_pOpaqueBox;
 }
 
 bool CWord::Append(CWord* w)
@@ -116,7 +112,7 @@ bool CWord::Append(CWord* w)
     return true;
 }
 
-void CWord::Paint(CPoint p, CPoint org)
+void CWord::Paint(const CPoint& p, const CPoint& org)
 {
     if (!m_str) {
         return;
@@ -124,8 +120,8 @@ void CWord::Paint(CPoint p, CPoint org)
 
     COverlayKey overlayKey(this, p, org);
 
-    if (m_overlayCache.Lookup(overlayKey, m_overlayData)) {
-        m_fDrawn = m_outlineCache.Lookup(overlayKey, m_outlineData);
+    if (m_renderingCaches.overlayCache.Lookup(overlayKey, m_pOverlayData)) {
+        m_fDrawn = m_renderingCaches.outlineCache.Lookup(overlayKey, m_pOutlineData);
         if (m_style.borderStyle == 1) {
             if (!CreateOpaqueBox()) {
                 return;
@@ -133,7 +129,7 @@ void CWord::Paint(CPoint p, CPoint org)
         }
     } else {
         if (!m_fDrawn) {
-            if (m_outlineCache.Lookup(overlayKey, m_outlineData)) {
+            if (m_renderingCaches.outlineCache.Lookup(overlayKey, m_pOutlineData)) {
                 if (m_style.borderStyle == 1) {
                     if (!CreateOpaqueBox()) {
                         return;
@@ -151,7 +147,19 @@ void CWord::Paint(CPoint p, CPoint org)
                 }
 
                 if (m_style.borderStyle == 0 && (m_style.outlineWidthX + m_style.outlineWidthY > 0)) {
-                    if (!CreateWidenedRegion((int)(m_style.outlineWidthX + 0.5), (int)(m_style.outlineWidthY + 0.5))) {
+                    int rx = std::max<int>(0, std::lround(m_style.outlineWidthX));
+                    int ry = std::max<int>(0, std::lround(m_style.outlineWidthY));
+
+                    if (!m_pEllipse || m_pEllipse->GetXRadius() != rx || m_pEllipse->GetYRadius() != ry) {
+                        CEllipseKey ellipseKey(rx, ry);
+                        if (!m_renderingCaches.ellipseCache.Lookup(ellipseKey, m_pEllipse)) {
+                            m_pEllipse = std::make_shared<CEllipse>(rx, ry);
+
+                            m_renderingCaches.ellipseCache.SetAt(ellipseKey, m_pEllipse);
+                        }
+                    }
+
+                    if (!CreateWidenedRegion(rx, ry)) {
                         return;
                     }
                 } else if (m_style.borderStyle == 1) {
@@ -160,7 +168,7 @@ void CWord::Paint(CPoint p, CPoint org)
                     }
                 }
 
-                m_outlineCache.SetAt(overlayKey, m_outlineData);
+                m_renderingCaches.outlineCache.SetAt(overlayKey, m_pOutlineData);
             }
 
             m_fDrawn = true;
@@ -168,10 +176,10 @@ void CWord::Paint(CPoint p, CPoint org)
             if (!Rasterize(p.x & 7, p.y & 7, m_style.fBlur, m_style.fGaussianBlur)) {
                 return;
             }
-            m_overlayCache.SetAt(overlayKey, m_overlayData);
+            m_renderingCaches.overlayCache.SetAt(overlayKey, m_pOverlayData);
         } else if ((m_p.x & 7) != (p.x & 7) || (m_p.y & 7) != (p.y & 7)) {
             Rasterize(p.x & 7, p.y & 7, m_style.fBlur, m_style.fGaussianBlur);
-            m_overlayCache.SetAt(overlayKey, m_overlayData);
+            m_renderingCaches.overlayCache.SetAt(overlayKey, m_pOverlayData);
         }
     }
 
@@ -184,7 +192,7 @@ void CWord::Paint(CPoint p, CPoint org)
 
 void CWord::Transform(CPoint org)
 {
-    if (fSSE2) {    // SSE code
+    if (m_bUseSSE2) {    // SSE code
         Transform_SSE2(org);
     } else {        // C-code
         Transform_C(org);
@@ -214,24 +222,24 @@ bool CWord::CreateOpaqueBox()
                (m_width + w + 4) / 8, (m_ascent + m_descent + h + 4) / 8,
                -(w + 4) / 8, (m_ascent + m_descent + h + 4) / 8);
 
-    m_pOpaqueBox = DEBUG_NEW CPolygon(style, str, 0, 0, 0, 1.0, 1.0, 0, m_outlineCache, m_overlayCache);
+    m_pOpaqueBox = DEBUG_NEW CPolygon(style, str, 0, 0, 0, 1.0, 1.0, 0, m_renderingCaches);
 
     return !!m_pOpaqueBox;
 }
 
 void CWord::Transform_C(const CPoint& org)
 {
-    double scalex = m_style.fontScaleX / 100.0;
-    double scaley = m_style.fontScaleY / 100.0;
-    double xzoomf = m_scalex * 20000.0;
-    double yzoomf = m_scaley * 20000.0;
+    const double scalex = m_style.fontScaleX / 100.0;
+    const double scaley = m_style.fontScaleY / 100.0;
+    const double xzoomf = m_scalex * 20000.0;
+    const double yzoomf = m_scaley * 20000.0;
 
-    double caz = cos((M_PI / 180.0) * m_style.fontAngleZ);
-    double saz = sin((M_PI / 180.0) * m_style.fontAngleZ);
-    double cax = cos((M_PI / 180.0) * m_style.fontAngleX);
-    double sax = sin((M_PI / 180.0) * m_style.fontAngleX);
-    double cay = cos((M_PI / 180.0) * m_style.fontAngleY);
-    double say = sin((M_PI / 180.0) * m_style.fontAngleY);
+    const double caz = cos((M_PI / 180.0) * m_style.fontAngleZ);
+    const double saz = sin((M_PI / 180.0) * m_style.fontAngleZ);
+    const double cax = cos((M_PI / 180.0) * m_style.fontAngleX);
+    const double sax = sin((M_PI / 180.0) * m_style.fontAngleX);
+    const double cay = cos((M_PI / 180.0) * m_style.fontAngleY);
+    const double say = sin((M_PI / 180.0) * m_style.fontAngleY);
 
     double dOrgX = static_cast<double>(org.x), dOrgY = static_cast<double>(org.y);
     for (ptrdiff_t i = 0; i < mPathPoints; i++) {
@@ -241,7 +249,7 @@ void CWord::Transform_C(const CPoint& org)
         y = mpPathPoints[i].y;
         z = 0;
 
-        double dPPx = m_style.fontShiftX * y + x;
+        const double dPPx = m_style.fontShiftX * y + x;
         y = scaley * (m_style.fontShiftY * x + y) - dOrgY;
         x = scalex * dPPx - dOrgX;
 
@@ -257,14 +265,12 @@ void CWord::Transform_C(const CPoint& org)
         yy = y;
         zz = x * say - z * cay;
 
-        x = xx * xzoomf / (zz + xzoomf);
-        y = yy * yzoomf / (zz + yzoomf);
+        x = xx * xzoomf / std::max((zz + xzoomf), 1000.0);
+        y = yy * yzoomf / std::max((zz + yzoomf), 1000.0);
 
         // round to integer
-        double xro = (x < 0.0) ? -0.5 : 0.5;
-        double yro = (y < 0.0) ? -0.5 : 0.5;
-        mpPathPoints[i].x = static_cast<LONG>(x + xro) + org.x;
-        mpPathPoints[i].y = static_cast<LONG>(y + yro) + org.y;
+        mpPathPoints[i].x = std::lround(x) + org.x;
+        mpPathPoints[i].y = std::lround(y) + org.y;
     }
 }
 
@@ -272,37 +278,26 @@ void CWord::Transform_SSE2(const CPoint& org)
 {
     // SSE code
     // speed up ~1.5-1.7x
-    double scalex = m_style.fontScaleX / 100.0;
-    double scaley = m_style.fontScaleY / 100.0;
-    double xzoomf = m_scalex * 20000.0;
-    double yzoomf = m_scaley * 20000.0;
+    const __m128 __xshift = _mm_set_ps1((float)m_style.fontShiftX);
+    const __m128 __yshift = _mm_set_ps1((float)m_style.fontShiftY);
 
-    double caz = cos((M_PI / 180.0) * m_style.fontAngleZ);
-    double saz = sin((M_PI / 180.0) * m_style.fontAngleZ);
-    double cax = cos((M_PI / 180.0) * m_style.fontAngleX);
-    double sax = sin((M_PI / 180.0) * m_style.fontAngleX);
-    double cay = cos((M_PI / 180.0) * m_style.fontAngleY);
-    double say = sin((M_PI / 180.0) * m_style.fontAngleY);
+    const __m128 __xorg = _mm_set_ps1((float)org.x);
+    const __m128 __yorg = _mm_set_ps1((float)org.y);
 
-    __m128 __xshift = _mm_set_ps1((float)m_style.fontShiftX);
-    __m128 __yshift = _mm_set_ps1((float)m_style.fontShiftY);
+    const __m128 __xscale = _mm_set_ps1((float)(m_style.fontScaleX / 100.0));
+    const __m128 __yscale = _mm_set_ps1((float)(m_style.fontScaleY / 100.0));
+    const __m128 __xzoomf = _mm_set_ps1((float)(m_scalex * 20000.0));
+    const __m128 __yzoomf = _mm_set_ps1((float)(m_scaley * 20000.0));
 
-    __m128 __xorg   = _mm_set_ps1((float)org.x);
-    __m128 __yorg   = _mm_set_ps1((float)org.y);
+    const __m128 __caz = _mm_set_ps1((float)cos((M_PI / 180.0) * m_style.fontAngleZ));
+    const __m128 __saz = _mm_set_ps1((float)sin((M_PI / 180.0) * m_style.fontAngleZ));
+    const __m128 __cax = _mm_set_ps1((float)cos((M_PI / 180.0) * m_style.fontAngleX));
+    const __m128 __sax = _mm_set_ps1((float)sin((M_PI / 180.0) * m_style.fontAngleX));
+    const __m128 __cay = _mm_set_ps1((float)cos((M_PI / 180.0) * m_style.fontAngleY));
+    const __m128 __say = _mm_set_ps1((float)sin((M_PI / 180.0) * m_style.fontAngleY));
 
-    __m128 __xscale = _mm_set_ps1((float)scalex);
-    __m128 __yscale = _mm_set_ps1((float)scaley);
-    __m128 __xzoomf = _mm_set_ps1((float)xzoomf);
-    __m128 __yzoomf = _mm_set_ps1((float)yzoomf);
+    const __m128 __1000 = _mm_set_ps1(1000.0f);
 
-    __m128 __caz = _mm_set_ps1((float)caz);
-    __m128 __saz = _mm_set_ps1((float)saz);
-    __m128 __cax = _mm_set_ps1((float)cax);
-    __m128 __sax = _mm_set_ps1((float)sax);
-    __m128 __cay = _mm_set_ps1((float)cay);
-    __m128 __say = _mm_set_ps1((float)say);
-
-    // this can be paralleled for openmp
     int mPathPointsD4 = mPathPoints / 4;
     int mPathPointsM4 = mPathPoints % 4;
 
@@ -342,7 +337,7 @@ void CWord::Transform_SSE2(const CPoint& org)
         __pointx = _mm_sub_ps(__pointx, __xorg);
 
         if (m_style.fontShiftY != 0) {
-            __tmpy = _mm_mul_ps(__yshift, __tmpy); // __tmpy is a copy of __pointx here, because it may otherwise be modified
+            __tmpy = _mm_mul_ps(__yshift, __tmpy);   // __tmpy is a copy of __pointx here, because it may otherwise be modified
             __pointy = _mm_add_ps(__pointy, __tmpy);
         }
         __pointy = _mm_mul_ps(__pointy, __yscale);
@@ -387,37 +382,34 @@ void CWord::Transform_SSE2(const CPoint& org)
         __zz     = _mm_mul_ps(__zz, __cay);          // z * cay
         __zz     = _mm_sub_ps(__tmpx, __zz);         // zz = x * say - z * cay
 
-        // x = (xx * xzoomf) / (zz + xzoomf);
-        // y = (yy * yzoomf) / (zz + yzoomf);
+        // x = xx * xzoomf / std::max((zz + xzoomf), 1000.0);
+        // y = yy * yzoomf / std::max((zz + yzoomf), 1000.0);
         __m128 __tmpzz = _mm_add_ps(__zz, __xzoomf); // zz + xzoomf
 
         __xx     = _mm_mul_ps(__xx, __xzoomf);       // xx * xzoomf
-        __pointx = _mm_div_ps(__xx, __tmpzz);        // x = (xx * xzoomf) / (zz + xzoomf)
+        __pointx = _mm_div_ps(__xx, _mm_max_ps(__tmpzz, __1000)); // x = (xx * xzoomf) / std::max((zz + xzoomf), 1000.0)
 
         __tmpzz  = _mm_add_ps(__zz, __yzoomf);       // zz + yzoomf
 
         __yy     = _mm_mul_ps(__yy, __yzoomf);       // yy * yzoomf
-        __pointy = _mm_div_ps(__yy, __tmpzz);        // y = (yy * yzoomf) / (zz + yzoomf);
+        __pointy = _mm_div_ps(__yy, _mm_max_ps(__tmpzz, __1000)); // y = yy * yzoomf / std::max((zz + yzoomf), 1000.0);
 
-        // mpPathPoints[i].x = (LONG)(x + org.x + 0.5);
-        // mpPathPoints[i].y = (LONG)(y + org.y + 0.5);
-        __pointx = _mm_add_ps(__pointx, __xorg);      // x = x + org.x
-        __pointy = _mm_add_ps(__pointy, __yorg);      // y = y + org.y
+        __pointx = _mm_add_ps(__pointx, __xorg);     // x = x + org.x
+        __pointy = _mm_add_ps(__pointy, __yorg);     // y = y + org.y
 
-        __m128 __05 = _mm_set_ps1(0.5);
-
-        __pointx = _mm_add_ps(__pointx, __05);        // x = x + 0.5
-        __pointy = _mm_add_ps(__pointy, __05);        // y = y + 0.5
+        // round to integer
+        __m128i __pointxRounded = _mm_cvtps_epi32(__pointx);
+        __m128i __pointyRounded = _mm_cvtps_epi32(__pointy);
 
         if (i == mPathPointsD4) { // last cycle
             for (int k = 0; k < mPathPointsM4; k++) {
-                mpPathPoints[i * 4 + k].x = static_cast<LONG>(__pointx.m128_f32[3 - k]);
-                mpPathPoints[i * 4 + k].y = static_cast<LONG>(__pointy.m128_f32[3 - k]);
+                mpPathPoints[i * 4 + k].x = __pointxRounded.m128i_i32[3 - k];
+                mpPathPoints[i * 4 + k].y = __pointyRounded.m128i_i32[3 - k];
             }
         } else {
             for (int k = 0; k < 4; k++) {
-                mpPathPoints[i * 4 + k].x = static_cast<LONG>(__pointx.m128_f32[3 - k]);
-                mpPathPoints[i * 4 + k].y = static_cast<LONG>(__pointy.m128_f32[3 - k]);
+                mpPathPoints[i * 4 + k].x = __pointxRounded.m128i_i32[3 - k];
+                mpPathPoints[i * 4 + k].y = __pointyRounded.m128i_i32[3 - k];
             }
         }
     }
@@ -426,8 +418,8 @@ void CWord::Transform_SSE2(const CPoint& org)
 // CText
 
 CText::CText(STSStyle& style, CStringW str, int ktype, int kstart, int kend, double scalex, double scaley,
-             CTextDimsCache& textDimsCache, COutlineCache& outlineCache, COverlayCache& overlayCache)
-    : CWord(style, str, ktype, kstart, kend, scalex, scaley, outlineCache, overlayCache)
+             RenderingCaches& renderingCaches)
+    : CWord(style, str, ktype, kstart, kend, scalex, scaley, renderingCaches)
 {
     if (m_str == L" ") {
         m_fWhiteSpaceChar = true;
@@ -435,7 +427,7 @@ CText::CText(STSStyle& style, CStringW str, int ktype, int kstart, int kend, dou
 
     CTextDimsKey textDimsKey(m_str, m_style);
     CTextDims textDims;
-    if (!textDimsCache.Lookup(textDimsKey, textDims)) {
+    if (!renderingCaches.textDimsCache.Lookup(textDimsKey, textDims)) {
         CMyFont font(m_style);
         m_ascent  = font.m_ascent;
         m_descent = font.m_descent;
@@ -469,7 +461,7 @@ CText::CText(STSStyle& style, CStringW str, int ktype, int kstart, int kend, dou
         textDims.descent = m_descent;
         textDims.width   = m_width;
 
-        textDimsCache.SetAt(textDimsKey, textDims);
+        renderingCaches.textDimsCache.SetAt(textDimsKey, textDims);
     } else {
         m_ascent  = textDims.ascent;
         m_descent = textDims.descent;
@@ -537,23 +529,21 @@ bool CText::CreatePath()
 // CPolygon
 
 CPolygon::CPolygon(STSStyle& style, CStringW str, int ktype, int kstart, int kend, double scalex, double scaley, int baseline,
-                   COutlineCache& outlineCache, COverlayCache& overlayCache)
-    : CWord(style, str, ktype, kstart, kend, scalex, scaley, outlineCache, overlayCache)
+                   RenderingCaches& renderingCaches)
+    : CWord(style, str, ktype, kstart, kend, scalex, scaley, renderingCaches)
     , m_baseline(baseline)
 {
     ParseStr();
 }
 
 CPolygon::CPolygon(CPolygon& src)
-    : CWord(src.m_style, src.m_str, src.m_ktype, src.m_kstart, src.m_kend, src.m_scalex, src.m_scaley, src.m_outlineCache, src.m_overlayCache)
+    : CWord(src.m_style, src.m_str, src.m_ktype, src.m_kstart, src.m_kend, src.m_scalex, src.m_scaley, src.m_renderingCaches)
+    , m_baseline(src.m_baseline)
+    , m_pPolygonPath(src.m_pPolygonPath)
 {
-    m_baseline = src.m_baseline;
     m_width = src.m_width;
     m_ascent = src.m_ascent;
     m_descent = src.m_descent;
-
-    m_pathTypesOrg.Copy(src.m_pathTypesOrg);
-    m_pathPointsOrg.Copy(src.m_pathPointsOrg);
 }
 
 CPolygon::~CPolygon()
@@ -578,174 +568,184 @@ bool CPolygon::Append(CWord* w)
     //return true;
 }
 
-bool CPolygon::GetLONG(CStringW& str, LONG& ret)
+bool CPolygon::GetPOINT(LPCWSTR& str, POINT& point) const
 {
-    LPCWSTR s = str;
-    LPWSTR e = nullptr;
+    LPWSTR xEnd = nullptr;
+    LPWSTR yEnd = nullptr;
 
-    ret = wcstol(s, &e, 10);
+    point.x = std::lround(wcstod(str, &xEnd) * m_scalex) * 64;
+    if (xEnd <= str) {
+        return false;
+    }
+    point.y = std::lround(wcstod(xEnd, &yEnd) * m_scaley) * 64;
 
-    int nRead = int(e - s);
-    str.Delete(0, nRead);
+    bool ret = yEnd > xEnd;
+    str = yEnd;
 
-    return (nRead > 0);
-}
-
-bool CPolygon::GetPOINT(CStringW& str, POINT& ret)
-{
-    return (GetLONG(str, ret.x) && GetLONG(str, ret.y));
+    return ret;
 }
 
 bool CPolygon::ParseStr()
 {
-    if (!m_pathTypesOrg.IsEmpty()) {
+    if (m_pPolygonPath && !m_pPolygonPath->typesOrg.IsEmpty()) {
         return true;
     }
 
-    CPoint p;
-    int i, j, lastsplinestart = -1, firstmoveto = -1, lastmoveto = -1;
+    CPolygonPathKey polygonPathKey(m_str, m_scalex, m_scaley);
+    if (!m_renderingCaches.polygonCache.Lookup(polygonPathKey, m_pPolygonPath)) {
+        m_pPolygonPath = std::make_shared<CPolygonPath>();
+        CPoint p;
+        bool bFoundMove = false;
+        size_t i, j, lastSplineStart = SIZE_T_ERROR;
 
-    CStringW str = m_str;
-    str.SpanIncluding(L"mnlbspc 0123456789");
-    str.Replace(L"m", L"*m");
-    str.Replace(L"n", L"*n");
-    str.Replace(L"l", L"*l");
-    str.Replace(L"b", L"*b");
-    str.Replace(L"s", L"*s");
-    str.Replace(L"p", L"*p");
-    str.Replace(L"c", L"*c");
+        auto isValidAction = [](const WCHAR c) {
+            return c == L'm' || c == L'n' || c == L'l' || c == L'b'
+                   || c == L's' || c == L'p' || c == L'c';
+        };
 
-    int k = 0;
-    for (CStringW s = str.Tokenize(L"*", k); !s.IsEmpty(); s = str.Tokenize(L"*", k)) {
-        WCHAR c = s[0];
-        s.TrimLeft(L"mnlbspc ");
-        switch (c) {
-            case 'm':
-                lastmoveto = (int)m_pathTypesOrg.GetCount();
-                if (firstmoveto == -1) {
-                    firstmoveto = lastmoveto;
-                }
-                while (GetPOINT(s, p)) {
-                    m_pathTypesOrg.Add(PT_MOVETO);
-                    m_pathPointsOrg.Add(p);
-                }
-                break;
-            case 'n':
-                while (GetPOINT(s, p)) {
-                    m_pathTypesOrg.Add(PT_MOVETONC);
-                    m_pathPointsOrg.Add(p);
-                }
-                break;
-            case 'l':
-                if (m_pathPointsOrg.GetCount() < 1) {
+        for (LPCWSTR str = m_str; *str;) {
+            // Trim left whitespace
+            while (CStringW::StrTraits::IsSpace(*str)) {
+                str++;
+            }
+            const WCHAR c = *str;
+            do {
+                str++;
+            } while (isValidAction(*str));
+            switch (c) {
+                case L'm':
+                    if (!bFoundMove) {
+                        if (m_pPolygonPath->typesOrg.GetCount() > 0) {
+                            // move command not first so we abort
+                            m_pPolygonPath = nullptr;
+                            return false;
+                        }
+                        bFoundMove = true;
+                    }
+                    while (GetPOINT(str, p)) {
+                        m_pPolygonPath->typesOrg.Add(PT_MOVETO);
+                        m_pPolygonPath->pointsOrg.Add(p);
+                    }
                     break;
-                }
-                while (GetPOINT(s, p)) {
-                    m_pathTypesOrg.Add(PT_LINETO);
-                    m_pathPointsOrg.Add(p);
-                }
-                break;
-            case 'b':
-                j = (int)m_pathTypesOrg.GetCount();
-                if (j < 1) {
+                case L'n':
+                    while (GetPOINT(str, p)) {
+                        m_pPolygonPath->typesOrg.Add(PT_MOVETONC);
+                        m_pPolygonPath->pointsOrg.Add(p);
+                    }
                     break;
-                }
-                while (GetPOINT(s, p)) {
-                    m_pathTypesOrg.Add(PT_BEZIERTO);
-                    m_pathPointsOrg.Add(p);
-                    j++;
-                }
-                j = (int)(m_pathTypesOrg.GetCount() - ((m_pathTypesOrg.GetCount() - j) % 3));
-                m_pathTypesOrg.SetCount(j);
-                m_pathPointsOrg.SetCount(j);
-                break;
-            case 's':
-                if (m_pathPointsOrg.GetCount() < 1) {
+                case L'l':
+                    if (m_pPolygonPath->pointsOrg.GetCount() < 1) {
+                        break;
+                    }
+                    while (GetPOINT(str, p)) {
+                        m_pPolygonPath->typesOrg.Add(PT_LINETO);
+                        m_pPolygonPath->pointsOrg.Add(p);
+                    }
                     break;
-                }
-                j = lastsplinestart = (int)m_pathTypesOrg.GetCount();
-                i = 3;
-                while (i-- && GetPOINT(s, p)) {
-                    m_pathTypesOrg.Add(PT_BSPLINETO);
-                    m_pathPointsOrg.Add(p);
-                    j++;
-                }
-                if (m_pathTypesOrg.GetCount() - lastsplinestart < 3) {
-                    m_pathTypesOrg.SetCount(lastsplinestart);
-                    m_pathPointsOrg.SetCount(lastsplinestart);
-                    lastsplinestart = -1;
-                }
-            // no break
-            case 'p':
-                if (m_pathPointsOrg.GetCount() < 3) {
+                case L'b':
+                    j = m_pPolygonPath->typesOrg.GetCount();
+                    if (j < 1) {
+                        break;
+                    }
+                    while (GetPOINT(str, p)) {
+                        m_pPolygonPath->typesOrg.Add(PT_BEZIERTO);
+                        m_pPolygonPath->pointsOrg.Add(p);
+                        ++j;
+                    }
+                    j = m_pPolygonPath->typesOrg.GetCount() - ((m_pPolygonPath->typesOrg.GetCount() - j) % 3);
+                    m_pPolygonPath->typesOrg.SetCount(j);
+                    m_pPolygonPath->pointsOrg.SetCount(j);
                     break;
-                }
-                while (GetPOINT(s, p)) {
-                    m_pathTypesOrg.Add(PT_BSPLINEPATCHTO);
-                    m_pathPointsOrg.Add(p);
-                }
-                break;
-            case 'c':
-                if (lastsplinestart > 0) {
-                    m_pathTypesOrg.Add(PT_BSPLINEPATCHTO);
-                    m_pathTypesOrg.Add(PT_BSPLINEPATCHTO);
-                    m_pathTypesOrg.Add(PT_BSPLINEPATCHTO);
-                    p = m_pathPointsOrg[lastsplinestart - 1]; // we need p for temp storage, because operator [] will return a reference to CPoint and Add() may reallocate its internal buffer (this is true for MFC 7.0 but not for 6.0, hehe)
-                    m_pathPointsOrg.Add(p);
-                    p = m_pathPointsOrg[lastsplinestart];
-                    m_pathPointsOrg.Add(p);
-                    p = m_pathPointsOrg[lastsplinestart + 1];
-                    m_pathPointsOrg.Add(p);
-                    lastsplinestart = -1;
-                }
-                break;
-            default:
-                break;
+                case L's':
+                    if (m_pPolygonPath->pointsOrg.GetCount() < 1) {
+                        break;
+                    }
+                    j = lastSplineStart = m_pPolygonPath->typesOrg.GetCount();
+                    i = 3;
+                    while (i-- && GetPOINT(str, p)) {
+                        m_pPolygonPath->typesOrg.Add(PT_BSPLINETO);
+                        m_pPolygonPath->pointsOrg.Add(p);
+                        ++j;
+                    }
+                    if (m_pPolygonPath->typesOrg.GetCount() - lastSplineStart < 3) {
+                        m_pPolygonPath->typesOrg.SetCount(lastSplineStart);
+                        m_pPolygonPath->pointsOrg.SetCount(lastSplineStart);
+                        lastSplineStart = SIZE_T_ERROR;
+                    }
+                // no break
+                case L'p':
+                    if (m_pPolygonPath->pointsOrg.GetCount() < 3) {
+                        break;
+                    }
+                    while (GetPOINT(str, p)) {
+                        m_pPolygonPath->typesOrg.Add(PT_BSPLINEPATCHTO);
+                        m_pPolygonPath->pointsOrg.Add(p);
+                    }
+                    break;
+                case L'c':
+                    if (lastSplineStart != SIZE_T_ERROR && lastSplineStart > 0) {
+                        m_pPolygonPath->typesOrg.Add(PT_BSPLINEPATCHTO);
+                        m_pPolygonPath->typesOrg.Add(PT_BSPLINEPATCHTO);
+                        m_pPolygonPath->typesOrg.Add(PT_BSPLINEPATCHTO);
+                        p = m_pPolygonPath->pointsOrg[lastSplineStart - 1]; // we need p for temp storage, because operator [] will return a reference to CPoint and Add() may reallocate its internal buffer (this is true for MFC 7.0 but not for 6.0, hehe)
+                        m_pPolygonPath->pointsOrg.Add(p);
+                        p = m_pPolygonPath->pointsOrg[lastSplineStart];
+                        m_pPolygonPath->pointsOrg.Add(p);
+                        p = m_pPolygonPath->pointsOrg[lastSplineStart + 1];
+                        m_pPolygonPath->pointsOrg.Add(p);
+                        lastSplineStart = SIZE_T_ERROR;
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
+
+        if (!bFoundMove) {
+            // move command not found so we abort
+            m_pPolygonPath = nullptr;
+            return false;
+        }
+
+        int minx = INT_MAX, miny = INT_MAX, maxx = INT_MIN, maxy = INT_MIN;
+
+        for (size_t m = 0; m < m_pPolygonPath->typesOrg.GetCount(); m++) {
+            if (minx > m_pPolygonPath->pointsOrg[m].x) {
+                minx = m_pPolygonPath->pointsOrg[m].x;
+            }
+            if (miny > m_pPolygonPath->pointsOrg[m].y) {
+                miny = m_pPolygonPath->pointsOrg[m].y;
+            }
+            if (maxx < m_pPolygonPath->pointsOrg[m].x) {
+                maxx = m_pPolygonPath->pointsOrg[m].x;
+            }
+            if (maxy < m_pPolygonPath->pointsOrg[m].y) {
+                maxy = m_pPolygonPath->pointsOrg[m].y;
+            }
+        }
+
+        m_pPolygonPath->size.SetSize(std::max(maxx - minx, 0), std::max(maxy - miny, 0));
+
+        m_renderingCaches.polygonCache.SetAt(polygonPathKey, m_pPolygonPath);
     }
 
-    if (lastmoveto == -1 || firstmoveto > 0) {
-        m_pathTypesOrg.RemoveAll();
-        m_pathPointsOrg.RemoveAll();
-        return false;
-    }
+    m_width = m_pPolygonPath->size.cx;
+    m_ascent = m_pPolygonPath->size.cy;
 
-    int minx = INT_MAX, miny = INT_MAX, maxx = -INT_MAX, maxy = -INT_MAX;
-
-    for (size_t m = 0; m < m_pathTypesOrg.GetCount(); m++) {
-        m_pathPointsOrg[m].x = (int)(64 * m_scalex * m_pathPointsOrg[m].x);
-        m_pathPointsOrg[m].y = (int)(64 * m_scaley * m_pathPointsOrg[m].y);
-        if (minx > m_pathPointsOrg[m].x) {
-            minx = m_pathPointsOrg[m].x;
-        }
-        if (miny > m_pathPointsOrg[m].y) {
-            miny = m_pathPointsOrg[m].y;
-        }
-        if (maxx < m_pathPointsOrg[m].x) {
-            maxx = m_pathPointsOrg[m].x;
-        }
-        if (maxy < m_pathPointsOrg[m].y) {
-            maxy = m_pathPointsOrg[m].y;
-        }
-    }
-
-    m_width = std::max(maxx - minx, 0);
-    m_ascent = std::max(maxy - miny, 0);
-
-    int baseline = (int)(64 * m_scaley * m_baseline);
+    int baseline = std::lround(m_scaley * m_baseline) * 64;
     m_descent = baseline;
     m_ascent -= baseline;
 
-    m_width = ((int)(m_style.fontScaleX / 100 * m_width) + 4) >> 3;
-    m_ascent = ((int)(m_style.fontScaleY / 100 * m_ascent) + 4) >> 3;
-    m_descent = ((int)(m_style.fontScaleY / 100 * m_descent) + 4) >> 3;
+    m_width = ((int)(m_style.fontScaleX / 100.0 * m_width) + 4) >> 3;
+    m_ascent = ((int)(m_style.fontScaleY / 100.0 * m_ascent) + 4) >> 3;
+    m_descent = ((int)(m_style.fontScaleY / 100.0 * m_descent) + 4) >> 3;
 
     return true;
 }
 
 bool CPolygon::CreatePath()
 {
-    int len = (int)m_pathTypesOrg.GetCount();
+    int len = m_pPolygonPath ? (int)m_pPolygonPath->typesOrg.GetCount() : 0;
     if (len == 0) {
         return false;
     }
@@ -764,42 +764,40 @@ bool CPolygon::CreatePath()
         mPathPoints = len;
     }
 
-    memcpy(mpPathTypes, m_pathTypesOrg.GetData(), len * sizeof(BYTE));
-    memcpy(mpPathPoints, m_pathPointsOrg.GetData(), len * sizeof(POINT));
+    memcpy(mpPathTypes, m_pPolygonPath->typesOrg.GetData(), len * sizeof(BYTE));
+    memcpy(mpPathPoints, m_pPolygonPath->pointsOrg.GetData(), len * sizeof(POINT));
 
     return true;
 }
 
 // CClipper
 
-CClipper::CClipper(CStringW str, CSize size, double scalex, double scaley, bool inverse, CPoint cpOffset,
-                   COutlineCache& outlineCache, COverlayCache& overlayCache)
-    : CPolygon(STSStyle(), str, 0, 0, 0, scalex, scaley, 0, outlineCache, overlayCache)
-    , m_inverse(false)
+CClipper::CClipper(CStringW str, const CSize& size, double scalex, double scaley, bool inverse, const CPoint& cpOffset,
+                   RenderingCaches& renderingCaches)
+    : CPolygon(STSStyle(), str, 0, 0, 0, scalex, scaley, 0, renderingCaches)
+    , m_size(size)
+    , m_inverse(inverse)
+    , m_cpOffset(cpOffset)
+    , m_pAlphaMask(nullptr)
 {
-    m_size.cx = m_size.cy = 0;
-    m_pAlphaMask = nullptr;
-
-    if (size.cx < 0 || size.cy < 0) {
+    if (m_size.cx <= 0 || m_size.cy <= 0) {
         return;
     }
 
-    m_pAlphaMask = DEBUG_NEW BYTE[size.cx * size.cy];
-    if (!m_pAlphaMask) {
+    const size_t alphaMaskSize = size_t(m_size.cx) * m_size.cy;
+
+    try {
+        m_pAlphaMask = DEBUG_NEW BYTE[alphaMaskSize];
+    } catch (CMemoryException* e) {
+        e->Delete();
         return;
     }
-
-    m_size = size;
-    m_inverse = inverse;
-    m_cpOffset = cpOffset;
-
-    ZeroMemory(m_pAlphaMask, size.cx * size.cy);
 
     Paint(CPoint(0, 0), CPoint(0, 0));
 
-    int w = m_overlayData.mOverlayWidth, h = m_overlayData.mOverlayHeight;
+    int w = m_pOverlayData->mOverlayWidth, h = m_pOverlayData->mOverlayHeight;
 
-    int x = (m_overlayData.mOffsetX + cpOffset.x + 4) >> 3, y = (m_overlayData.mOffsetY + cpOffset.y + 4) >> 3;
+    int x = (m_pOverlayData->mOffsetX + m_cpOffset.x + 4) >> 3, y = (m_pOverlayData->mOffsetY + m_cpOffset.y + 4) >> 3;
     int xo = 0, yo = 0;
 
     if (x < 0) {
@@ -823,22 +821,25 @@ CClipper::CClipper(CStringW str, CSize size, double scalex, double scaley, bool 
         return;
     }
 
-    const BYTE* src = m_overlayData.mpOverlayBufferBody + m_overlayData.mOverlayPitch * yo + xo;
+    memset(m_pAlphaMask, (m_inverse ? 0x40 : 0), alphaMaskSize);
+
+    const BYTE* src = m_pOverlayData->mpOverlayBufferBody + m_pOverlayData->mOverlayPitch * yo + xo;
     BYTE* dst = m_pAlphaMask + m_size.cx * y + x;
 
-    while (h--) {
-        for (ptrdiff_t wt = 0; wt < w; ++wt) {
-            dst[wt] = src[wt];
+    if (m_inverse) {
+        for (ptrdiff_t i = 0; i < h; ++i) {
+            for (ptrdiff_t wt = 0; wt < w; ++wt) {
+                dst[wt] = 0x40 - src[wt];
+            }
+
+            src += m_pOverlayData->mOverlayPitch;
+            dst += m_size.cx;
         }
-
-        src += m_overlayData.mOverlayPitch;
-        dst += m_size.cx;
-    }
-
-    if (inverse) {
-        BYTE* inv_dst = m_pAlphaMask;
-        for (ptrdiff_t i = ptrdiff_t(size.cx) * size.cy; i > 0; --i, ++inv_dst) {
-            *inv_dst = 0x40 - *inv_dst;    // mask is 6 bit
+    } else {
+        for (ptrdiff_t i = 0; i < h; ++i) {
+            memcpy(dst, src, w * sizeof(BYTE));
+            src += m_pOverlayData->mOverlayPitch;
+            dst += m_size.cx;
         }
     }
 }
@@ -850,7 +851,7 @@ CClipper::~CClipper()
 
 CWord* CClipper::Copy()
 {
-    return DEBUG_NEW CClipper(m_str, m_size, m_scalex, m_scaley, m_inverse, m_cpOffset, m_outlineCache, m_overlayCache);
+    return DEBUG_NEW CClipper(m_str, m_size, m_scalex, m_scaley, m_inverse, m_cpOffset, m_renderingCaches);
 }
 
 bool CClipper::Append(CWord* w)
@@ -1093,8 +1094,8 @@ CRect CLine::PaintBody(SubPicDesc& spd, CRect& clipRect, BYTE* pAlphaMask, CPoin
 
 // CSubtitle
 
-CSubtitle::CSubtitle(COutlineCache& outlineCache, COverlayCache& overlayCache)
-    : m_outlineCache(outlineCache)
+CSubtitle::CSubtitle(RenderingCaches& renderingCaches)
+    : m_renderingCaches(renderingCaches)
     , m_pClipper(nullptr)
     , m_clipInverse(false)
     , m_scalex(1.0)
@@ -1102,10 +1103,9 @@ CSubtitle::CSubtitle(COutlineCache& outlineCache, COverlayCache& overlayCache)
     , m_scrAlignment(0)
     , m_wrapStyle(0)
     , m_fAnimated(false)
-    , m_relativeTo(1)
+    , m_relativeTo(STSStyle::AUTO)
     , m_topborder(0)
     , m_bottomborder(0)
-    , m_overlayCache(overlayCache)
 {
     ZeroMemory(m_effects, sizeof(Effect*)*EF_NUMBEROFEFFECTS);
     m_bIsAnimated = false;
@@ -1136,11 +1136,8 @@ void CSubtitle::Empty()
 void CSubtitle::EmptyEffects()
 {
     for (ptrdiff_t i = 0; i < EF_NUMBEROFEFFECTS; i++) {
-        if (m_effects[i]) {
-            delete m_effects[i];
-        }
+        SAFE_DELETE(m_effects[i]);
     }
-    ZeroMemory(m_effects, sizeof(Effect*)*EF_NUMBEROFEFFECTS);
 }
 
 int CSubtitle::GetFullWidth()
@@ -1208,8 +1205,11 @@ CLine* CSubtitle::GetNextLine(POSITION& pos, int maxwidth)
         return nullptr;
     }
 
-    CLine* ret = DEBUG_NEW CLine();
-    if (!ret) {
+    CLine* ret;
+    try {
+        ret = DEBUG_NEW CLine();
+    } catch (CMemoryException* e) {
+        e->Delete();
         return nullptr;
     }
 
@@ -1302,8 +1302,10 @@ void CSubtitle::CreateClippers(CSize size)
         if (!m_pClipper) {
             CStringW str;
             str.Format(L"m %d %d l %d %d %d %d %d %d", 0, 0, w, 0, w, h, 0, h);
-            m_pClipper = DEBUG_NEW CClipper(str, size, 1, 1, false, CPoint(0, 0), m_outlineCache, m_overlayCache);
-            if (!m_pClipper) {
+            try {
+                m_pClipper = DEBUG_NEW CClipper(str, size, 1, 1, false, CPoint(0, 0), m_renderingCaches);
+            } catch (CMemoryException* e) {
+                e->Delete();
                 return;
             }
         }
@@ -1339,8 +1341,11 @@ void CSubtitle::CreateClippers(CSize size)
         if (!m_pClipper) {
             CStringW str;
             str.Format(L"m %d %d l %d %d %d %d %d %d", 0, 0, w, 0, w, h, 0, h);
-            m_pClipper = DEBUG_NEW CClipper(str, size, 1, 1, false, CPoint(0, 0), m_outlineCache, m_overlayCache);
-            if (!m_pClipper) {
+            try {
+                m_pClipper = DEBUG_NEW CClipper(str, size, 1, 1, false, CPoint(0, 0),
+                                                m_renderingCaches);
+            } catch (CMemoryException* e) {
+                e->Delete();
                 return;
             }
         }
@@ -1538,10 +1543,6 @@ CRenderedTextSubtitle::CRenderedTextSubtitle(CCritSec* pLock)
     , m_kend(0)
     , m_nPolygon(0)
     , m_polygonBaselineOffset(0)
-    , m_textDimsCache(2048)
-    , m_SSATagsCache(2048)
-    , m_outlineCache(128)
-    , m_overlayCache(128)
 {
     m_size = CSize(0, 0);
 
@@ -1710,15 +1711,18 @@ void CRenderedTextSubtitle::ParseEffect(CSubtitle* sub, CString str)
             return;
         }
 
-        Effect* e = DEBUG_NEW Effect;
-        if (!e) {
+        Effect* e;
+        try {
+            e = DEBUG_NEW Effect;
+        } catch (CMemoryException* e) {
+            e->Delete();
             return;
         }
 
         sub->m_effects[e->type = EF_BANNER] = e;
-        e->param[0] = (int)(std::max(1.0 * delay / sub->m_scalex, 1.0));
+        e->param[0] = std::lround(std::max(1.0 * delay / sub->m_scalex, 1.0));
         e->param[1] = lefttoright;
-        e->param[2] = (int)(sub->m_scalex * fadeawaywidth);
+        e->param[2] = std::lround(sub->m_scalex * fadeawaywidth);
 
         sub->m_wrapStyle = 2;
     } else if (!effect.CompareNoCase(_T("Scroll up;")) || !effect.CompareNoCase(_T("Scroll down;"))) {
@@ -1735,17 +1739,20 @@ void CRenderedTextSubtitle::ParseEffect(CSubtitle* sub, CString str)
             bottom = tmp;
         }
 
-        Effect* e = DEBUG_NEW Effect;
-        if (!e) {
+        Effect* e;
+        try {
+            e = DEBUG_NEW Effect;
+        } catch (CMemoryException* e) {
+            e->Delete();
             return;
         }
 
         sub->m_effects[e->type = EF_SCROLL] = e;
-        e->param[0] = lround(sub->m_scaley * top * 8.0);
-        e->param[1] = lround(sub->m_scaley * bottom * 8.0);
-        e->param[2] = lround(std::max(double(delay) / sub->m_scaley, 1.0));
+        e->param[0] = std::lround(sub->m_scaley * top * 8.0);
+        e->param[1] = std::lround(sub->m_scaley * bottom * 8.0);
+        e->param[2] = std::lround(std::max(double(delay) / sub->m_scaley, 1.0));
         e->param[3] = (effect.GetLength() == 12);
-        e->param[4] = lround(sub->m_scaley * fadeawayheight);
+        e->param[4] = std::lround(sub->m_scaley * fadeawayheight);
     }
 }
 
@@ -1767,22 +1774,19 @@ void CRenderedTextSubtitle::ParseString(CSubtitle* sub, CStringW str, STSStyle& 
         }
 
         if (i < j) {
-            if (CWord* w = DEBUG_NEW CText(style, str.Mid(i, j - i), m_ktype, m_kstart, m_kend, sub->m_scalex, sub->m_scaley,
-                                           m_textDimsCache, m_outlineCache, m_overlayCache)) {
+            if (CWord* w = DEBUG_NEW CText(style, str.Mid(i, j - i), m_ktype, m_kstart, m_kend, sub->m_scalex, sub->m_scaley, m_renderingCaches)) {
                 sub->m_words.AddTail(w);
                 m_kstart = m_kend;
             }
         }
 
         if (c == L'\n') {
-            if (CWord* w = DEBUG_NEW CText(style, CStringW(), m_ktype, m_kstart, m_kend, sub->m_scalex, sub->m_scaley,
-                                           m_textDimsCache, m_outlineCache, m_overlayCache)) {
+            if (CWord* w = DEBUG_NEW CText(style, CStringW(), m_ktype, m_kstart, m_kend, sub->m_scalex, sub->m_scaley, m_renderingCaches)) {
                 sub->m_words.AddTail(w);
                 m_kstart = m_kend;
             }
         } else if (c == L' ' || c == L'\x00A0') {
-            if (CWord* w = DEBUG_NEW CText(style, CStringW(c), m_ktype, m_kstart, m_kend, sub->m_scalex, sub->m_scaley,
-                                           m_textDimsCache, m_outlineCache, m_overlayCache)) {
+            if (CWord* w = DEBUG_NEW CText(style, CStringW(c), m_ktype, m_kstart, m_kend, sub->m_scalex, sub->m_scaley, m_renderingCaches)) {
                 sub->m_words.AddTail(w);
                 m_kstart = m_kend;
             }
@@ -1802,7 +1806,8 @@ void CRenderedTextSubtitle::ParsePolygon(CSubtitle* sub, CStringW str, STSStyle&
 
     if (CWord* w = DEBUG_NEW CPolygon(style, str, m_ktype, m_kstart, m_kend,
                                       sub->m_scalex / (1 << (m_nPolygon - 1)), sub->m_scaley / (1 << (m_nPolygon - 1)),
-                                      m_polygonBaselineOffset, m_outlineCache, m_overlayCache)) {
+                                      m_polygonBaselineOffset,
+                                      m_renderingCaches)) {
         sub->m_words.AddTail(w);
         m_kstart = m_kend;
     }
@@ -1810,7 +1815,7 @@ void CRenderedTextSubtitle::ParsePolygon(CSubtitle* sub, CStringW str, STSStyle&
 
 bool CRenderedTextSubtitle::ParseSSATag(SSATagsList& tagsList, const CStringW& str)
 {
-    if (m_SSATagsCache.Lookup(str, tagsList)) {
+    if (m_renderingCaches.SSATagsCache.Lookup(str, tagsList)) {
         return true;
     }
 
@@ -1920,7 +1925,6 @@ bool CRenderedTextSubtitle::ParseSSATag(SSATagsList& tagsList, const CStringW& s
                     int s = 2;
                     if (cmd[s] == L'+' || cmd[s] == L'-') {
                         tag.params.Add(cmd.Mid(s, 1));
-                        s++;
                     }
                     tag.paramsInt.Add(wcstol(cmd.Mid(s), nullptr, 10));
                 }
@@ -2051,7 +2055,7 @@ bool CRenderedTextSubtitle::ParseSSATag(SSATagsList& tagsList, const CStringW& s
         tagsList->AddTail(tag);
     }
 
-    m_SSATagsCache.SetAt(str, tagsList);
+    m_renderingCaches.SSATagsCache.SetAt(str, tagsList);
 
     //return (nUnrecognizedTags < nTags);
     return true; // there are people keeping comments inside {}, lets make them happy now
@@ -2156,8 +2160,8 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
 
                 if (nParams == 1 && nParamsInt == 0 && !sub->m_pClipper) {
                     sub->m_pClipper = DEBUG_NEW CClipper(tag.params[0], CSize(m_size.cx >> 3, m_size.cy >> 3), sub->m_scalex, sub->m_scaley,
-                                                         invert, (sub->m_relativeTo == 1) ? CPoint(m_vidrect.left, m_vidrect.top) : CPoint(0, 0),
-                                                         m_outlineCache, m_overlayCache);
+                                                         invert, (sub->m_relativeTo == STSStyle::VIDEO) ? CPoint(m_vidrect.left, m_vidrect.top) : CPoint(0, 0),
+                                                         m_renderingCaches);
                 } else if (nParams == 1 && nParamsInt == 1 && !sub->m_pClipper) {
                     long scale = tag.paramsInt[0];
                     if (scale < 1) {
@@ -2165,19 +2169,19 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
                     }
                     sub->m_pClipper = DEBUG_NEW CClipper(tag.params[0], CSize(m_size.cx >> 3, m_size.cy >> 3),
                                                          sub->m_scalex / (1 << (scale - 1)), sub->m_scaley / (1 << (scale - 1)), invert,
-                                                         (sub->m_relativeTo == 1) ? CPoint(m_vidrect.left, m_vidrect.top) : CPoint(0, 0),
-                                                         m_outlineCache, m_overlayCache);
+                                                         (sub->m_relativeTo == STSStyle::VIDEO) ? CPoint(m_vidrect.left, m_vidrect.top) : CPoint(0, 0),
+                                                         m_renderingCaches);
                 } else if (nParamsInt == 4) {
-                    CRect r;
-
                     sub->m_clipInverse = invert;
 
-                    r.SetRect(tag.paramsInt[0], tag.paramsInt[1], tag.paramsInt[2], tag.paramsInt[3]);
+                    double dLeft   = sub->m_scalex * tag.paramsInt[0];
+                    double dTop    = sub->m_scaley * tag.paramsInt[1];
+                    double dRight  = sub->m_scalex * tag.paramsInt[2];
+                    double dBottom = sub->m_scaley * tag.paramsInt[3];
 
-                    double dLeft = sub->m_scalex * static_cast<double>(r.left), dTop = sub->m_scaley * static_cast<double>(r.top), dRight = sub->m_scalex * static_cast<double>(r.right), dBottom = sub->m_scaley * static_cast<double>(r.bottom);
-                    if (sub->m_relativeTo == 1) {
-                        double dOffsetX = static_cast<double>(m_vidrect.left) * 0.125;
-                        double dOffsetY = static_cast<double>(m_vidrect.top) * 0.125;
+                    if (sub->m_relativeTo == STSStyle::VIDEO) {
+                        double dOffsetX = m_vidrect.left / 8.0;
+                        double dOffsetY = m_vidrect.top / 8.0;
                         dLeft += dOffsetX;
                         dTop += dOffsetY;
                         dRight += dOffsetX;
@@ -2350,10 +2354,10 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
 
                 if (tag.paramsReal.GetCount() == 4 && !sub->m_effects[EF_MOVE]) {
                     if (Effect* e = DEBUG_NEW Effect) {
-                        e->param[0] = lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
-                        e->param[1] = lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
-                        e->param[2] = lround(sub->m_scalex * tag.paramsReal[2] * 8.0);
-                        e->param[3] = lround(sub->m_scaley * tag.paramsReal[3] * 8.0);
+                        e->param[0] = std::lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
+                        e->param[1] = std::lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
+                        e->param[2] = std::lround(sub->m_scalex * tag.paramsReal[2] * 8.0);
+                        e->param[3] = std::lround(sub->m_scaley * tag.paramsReal[3] * 8.0);
                         e->t[0] = e->t[1] = -1;
 
                         if (tag.paramsInt.GetCount() == 2) {
@@ -2369,10 +2373,10 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
             case SSA_org: // {\org(x=param[0], y=param[1])}
                 if (tag.paramsReal.GetCount() == 2 && !sub->m_effects[EF_ORG]) {
                     if (Effect* e = DEBUG_NEW Effect) {
-                        e->param[0] = lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
-                        e->param[1] = lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
+                        e->param[0] = std::lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
+                        e->param[1] = std::lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
 
-                        if (sub->m_relativeTo == 1) {
+                        if (sub->m_relativeTo == STSStyle::VIDEO) {
                             e->param[0] += m_vidrect.left;
                             e->param[1] += m_vidrect.top;
                         }
@@ -2387,8 +2391,8 @@ bool CRenderedTextSubtitle::CreateSubFromSSATag(CSubtitle* sub, const SSATagsLis
             case SSA_pos:
                 if (tag.paramsReal.GetCount() == 2 && !sub->m_effects[EF_MOVE]) {
                     if (Effect* e = DEBUG_NEW Effect) {
-                        e->param[0] = e->param[2] = lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
-                        e->param[1] = e->param[3] = lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
+                        e->param[0] = e->param[2] = std::lround(sub->m_scalex * tag.paramsReal[0] * 8.0);
+                        e->param[1] = e->param[3] = std::lround(sub->m_scaley * tag.paramsReal[1] * 8.0);
                         e->t[0] = e->t[1] = 0;
 
                         sub->m_effects[EF_MOVE] = e;
@@ -2626,8 +2630,9 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
     }
 
     try {
-        sub = DEBUG_NEW CSubtitle(m_outlineCache, m_overlayCache);
-    } catch (std::bad_alloc) {
+        sub = DEBUG_NEW CSubtitle(m_renderingCaches);
+    } catch (CMemoryException* e) {
+        e->Delete();
         return nullptr;
     }
 
@@ -2647,10 +2652,10 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
 
         stss.fontSize         *= scaleY;
         stss.fontSpacing      *= scaleX;
-        stss.marginRect.left   = lround(scaleX * stss.marginRect.left);
-        stss.marginRect.top    = lround(scaleY * stss.marginRect.top);
-        stss.marginRect.right  = lround(scaleX * stss.marginRect.right);
-        stss.marginRect.bottom = lround(scaleY * stss.marginRect.bottom);
+        stss.marginRect.left   = std::lround(scaleX * stss.marginRect.left);
+        stss.marginRect.top    = std::lround(scaleY * stss.marginRect.top);
+        stss.marginRect.right  = std::lround(scaleX * stss.marginRect.right);
+        stss.marginRect.bottom = std::lround(scaleY * stss.marginRect.bottom);
         fScaledBAS = false;
     } else {
         // find the appropriate embedded style
@@ -2660,6 +2665,8 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
             stss.scrAlignment = 2;
             LONG mw = m_dstScreenSize.cx - stss.marginRect.left - stss.marginRect.right;
             stss.marginRect.bottom = std::lround(m_dstScreenSize.cy - m_dstScreenSize.cy * m_overridePlacement.cy / 100.0);
+            // We need to set top margin, otherwise subtitles outside video frame will be clipped. Support up to 3 lines of subtitles. Should be enough.
+            stss.marginRect.top    = m_dstScreenSize.cy - (stss.marginRect.bottom + std::lround(stss.fontSize * 3.0));
             stss.marginRect.left   = std::lround(m_dstScreenSize.cx * m_overridePlacement.cx / 100.0 - mw / 2.0);
             stss.marginRect.right  = m_dstScreenSize.cx - (stss.marginRect.left + mw);
         }
@@ -2690,10 +2697,10 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
     sub->m_wrapStyle = m_defaultWrapStyle;
     sub->m_fAnimated = false;
     sub->m_relativeTo = stss.relativeTo;
-    sub->m_scalex = m_dstScreenSize.cx > 0 ? double(stss.relativeTo == 1 ? m_vidrect.Width() : m_size.cx) / (m_dstScreenSize.cx * 8.0) : 1.0;
-    sub->m_scaley = m_dstScreenSize.cy > 0 ? double(stss.relativeTo == 1 ? m_vidrect.Height() : m_size.cy) / (m_dstScreenSize.cy * 8.0) : 1.0;
+    sub->m_scalex = m_dstScreenSize.cx > 0 ? double((sub->m_relativeTo == STSStyle::VIDEO) ? m_vidrect.Width() : m_size.cx) / (m_dstScreenSize.cx * 8.0) : 1.0;
+    sub->m_scaley = m_dstScreenSize.cy > 0 ? double((sub->m_relativeTo == STSStyle::VIDEO) ? m_vidrect.Height() : m_size.cy) / (m_dstScreenSize.cy * 8.0) : 1.0;
 
-    STSEntry stse = GetAt(entry);
+    const STSEntry& stse = GetAt(entry);
     CRect marginRect = stse.marginRect;
     if (marginRect.left == 0) {
         marginRect.left = orgstss.marginRect.left;
@@ -2708,12 +2715,12 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
         marginRect.bottom = orgstss.marginRect.bottom;
     }
 
-    marginRect.left   = lround(sub->m_scalex * marginRect.left * 8.0);
-    marginRect.top    = lround(sub->m_scaley * marginRect.top * 8.0);
-    marginRect.right  = lround(sub->m_scalex * marginRect.right * 8.0);
-    marginRect.bottom = lround(sub->m_scaley * marginRect.bottom * 8.0);
+    marginRect.left   = std::lround(sub->m_scalex * marginRect.left * 8.0);
+    marginRect.top    = std::lround(sub->m_scaley * marginRect.top * 8.0);
+    marginRect.right  = std::lround(sub->m_scalex * marginRect.right * 8.0);
+    marginRect.bottom = std::lround(sub->m_scaley * marginRect.bottom * 8.0);
 
-    if (stss.relativeTo == 1) { // Don't be strict when using undefined mode (relativeTo == 2)
+    if (sub->m_relativeTo == STSStyle::VIDEO) {
         // Account for the user trying to fool the renderer by setting negative margins
         CRect clipRect = m_vidrect;
         if (marginRect.left < 0) {
@@ -2734,7 +2741,7 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
         sub->m_clip.SetRect(0, 0, m_size.cx >> 3, m_size.cy >> 3);
     }
 
-    if (stss.relativeTo == 1) {
+    if (sub->m_relativeTo == STSStyle::VIDEO) {
         marginRect.left   += m_vidrect.left;
         marginRect.top    += m_vidrect.top;
         marginRect.right  += m_size.cx - m_vidrect.right;
@@ -2746,41 +2753,38 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
     m_ktype = m_kstart = m_kend = 0;
     m_nPolygon = 0;
     m_polygonBaselineOffset = 0;
-    ParseEffect(sub, GetAt(entry).effect);
+    ParseEffect(sub, stse.effect);
 
-    while (!str.IsEmpty()) {
-        bool fParsed = false;
+    for (int iStart = 0, iEnd; iStart < str.GetLength(); iStart = iEnd) {
+        bool bParsed = false;
 
-        int i;
-
-        if (str[0] == '{' && (i = str.Find(L'}')) > 0) {
+        if (str[iStart] == L'{' && (iEnd = str.Find(L'}', iStart)) > 0) {
             SSATagsList tagsList;
-            fParsed = ParseSSATag(tagsList, str.Mid(1, i - 1));
-            if (fParsed) {
+            bParsed = ParseSSATag(tagsList, str.Mid(iStart + 1, iEnd - iStart - 1));
+            if (bParsed) {
                 CreateSubFromSSATag(sub, tagsList, stss, orgstss);
-                str = str.Mid(i + 1);
+                iStart = iEnd + 1;
             }
-        } else if (str[0] == '<' && (i = str.Find(L'>')) > 0) {
-            fParsed = ParseHtmlTag(sub, str.Mid(1, i - 1), stss, orgstss);
-            if (fParsed) {
-                str = str.Mid(i + 1);
+        } else if (str[iStart] == L'<' && (iEnd = str.Find(L'>', iStart)) > 0) {
+            bParsed = ParseHtmlTag(sub, str.Mid(iStart + 1, iEnd - iStart - 1), stss, orgstss);
+            if (bParsed) {
+                iStart = iEnd + 1;
             }
         }
 
-        if (fParsed) {
-            i = str.FindOneOf(L"{<");
-            if (i < 0) {
-                i = str.GetLength();
+        if (bParsed) {
+            iEnd = FindOneOf(str, L"{<", iStart);
+            if (iEnd < 0) {
+                iEnd = str.GetLength();
             }
-            if (i == 0) {
+            if (iEnd == iStart) {
                 continue;
             }
         } else {
-            i = str.Mid(1).FindOneOf(L"{<");
-            if (i < 0) {
-                i = str.GetLength() - 1;
+            iEnd = FindOneOf(str, L"{<", iStart + 1);
+            if (iEnd < 0) {
+                iEnd = str.GetLength();
             }
-            i++;
         }
 
         STSStyle tmp = stss;
@@ -2799,12 +2803,10 @@ CSubtitle* CRenderedTextSubtitle::GetSubtitle(int entry)
         }
 
         if (m_nPolygon) {
-            ParsePolygon(sub, str.Left(i), tmp);
+            ParsePolygon(sub, str.Mid(iStart, iEnd - iStart), tmp);
         } else {
-            ParseString(sub, str.Left(i), tmp);
+            ParseString(sub, str.Mid(iStart, iEnd - iStart), tmp);
         }
-
-        str = str.Mid(i);
     }
 
     // just a "work-around" solution... in most cases nobody will want to use \org together with moving but without rotating the subs
@@ -3020,7 +3022,7 @@ STDMETHODIMP CRenderedTextSubtitle::Render(SubPicDesc& spd, REFERENCE_TIME rt, d
                                    s->m_scrAlignment <= 3 ? p.y - spaceNeeded.cy : s->m_scrAlignment <= 6 ? p.y - (spaceNeeded.cy + 1) / 2 : p.y),
                             spaceNeeded);
 
-                    if (s->m_relativeTo == 1) {
+                    if (s->m_relativeTo == STSStyle::VIDEO) {
                         r.OffsetRect(m_vidrect.TopLeft());
                     }
                     fPosOverride = true;
@@ -3059,8 +3061,8 @@ STDMETHODIMP CRenderedTextSubtitle::Render(SubPicDesc& spd, REFERENCE_TIME rt, d
                 }
                 break;
                 case EF_BANNER: { // Banner;delay=param[0][;leftoright=param[1];fadeawaywidth=param[2]]
-                    int left = s->m_relativeTo == 1 ? m_vidrect.left : 0,
-                        right = s->m_relativeTo == 1 ? m_vidrect.right : m_size.cx;
+                    int left = (s->m_relativeTo == STSStyle::VIDEO) ? m_vidrect.left : 0,
+                        right = (s->m_relativeTo == STSStyle::VIDEO) ? m_vidrect.right : m_size.cx;
 
                     r.left = !!s->m_effects[k]->param[1]
                              ? (left/*marginRect.left*/ - spaceNeeded.cx) + (int)(m_time * 8.0 / s->m_effects[k]->param[0])
@@ -3082,11 +3084,12 @@ STDMETHODIMP CRenderedTextSubtitle::Render(SubPicDesc& spd, REFERENCE_TIME rt, d
 
                     CRect cr(0, (s->m_effects[k]->param[0] + 4) >> 3, spd.w, (s->m_effects[k]->param[1] + 4) >> 3);
 
-                    if (s->m_relativeTo == 1)
-                        r.top += m_vidrect.top,
-                                 r.bottom += m_vidrect.top,
-                                             cr.top += m_vidrect.top >> 3,
-                                                       cr.bottom += m_vidrect.top >> 3;
+                    if (s->m_relativeTo == STSStyle::VIDEO) {
+                        r.top += m_vidrect.top;
+                        r.bottom += m_vidrect.top;
+                        cr.top += m_vidrect.top >> 3;
+                        cr.bottom += m_vidrect.top >> 3;
+                    }
 
                     clipRect &= cr;
 

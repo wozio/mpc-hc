@@ -26,9 +26,9 @@
 #include <algorithm>
 
 CVobSubImage::CVobSubImage()
-    : iLang(-1)
-    , iIdx(-1)
-    , fForced(false)
+    : nLang(SIZE_T_ERROR)
+    , nIdx(SIZE_T_ERROR)
+    , bForced(false)
     , bAnimated(false)
     , tCurrent(-1)
     , start(0)
@@ -39,8 +39,8 @@ CVobSubImage::CVobSubImage()
     , lpTemp2(nullptr)
     , org(CSize(0, 0))
     , nPlane(0)
-    , fCustomPal(false)
-    , fAligned(1)
+    , bCustomPal(false)
+    , bAligned(true)
     , tridx(0)
     , orgpal(nullptr)
     , cuspal(nullptr)
@@ -62,13 +62,19 @@ bool CVobSubImage::Alloc(int w, int h)
     if (lpTemp1 == nullptr || w * h > org.cx * org.cy || (w + 2) * (h + 2) > (org.cx + 2) * (org.cy + 2)) {
         Free();
 
-        lpTemp1 = DEBUG_NEW RGBQUAD[w * h];
-        if (!lpTemp1) {
+        try {
+            lpTemp1 = DEBUG_NEW RGBQUAD[w * h];
+        } catch (CMemoryException* e) {
+            ASSERT(FALSE);
+            e->Delete();
             return false;
         }
 
-        lpTemp2 = DEBUG_NEW RGBQUAD[(w + 2) * (h + 2)];
-        if (!lpTemp2) {
+        try {
+            lpTemp2 = DEBUG_NEW RGBQUAD[(w + 2) * (h + 2)];
+        } catch (CMemoryException* e) {
+            ASSERT(FALSE);
+            e->Delete();
             delete [] lpTemp1;
             lpTemp1 = nullptr;
             return false;
@@ -91,13 +97,13 @@ void CVobSubImage::Free()
     lpPixels = nullptr;
 }
 
-bool CVobSubImage::Decode(BYTE* lpData, int packetsize, int datasize, int t,
-                          bool fCustomPal,
+bool CVobSubImage::Decode(BYTE* lpData, size_t packetSize, size_t dataSize, int t,
+                          bool bCustomPal,
                           int tridx,
                           RGBQUAD* orgpal /*[16]*/, RGBQUAD* cuspal /*[4]*/,
-                          bool fTrim)
+                          bool bTrim)
 {
-    GetPacketInfo(lpData, packetsize, datasize, t);
+    GetPacketInfo(lpData, packetSize, dataSize, t);
 
     if (!Alloc(rect.Width(), rect.Height())) {
         return false;
@@ -106,19 +112,18 @@ bool CVobSubImage::Decode(BYTE* lpData, int packetsize, int datasize, int t,
     lpPixels = lpTemp1;
 
     nPlane = 0;
-    fAligned = 1;
+    bAligned = true;
 
-    this->fCustomPal = fCustomPal;
+    this->bCustomPal = bCustomPal;
     this->orgpal = orgpal;
     this->tridx = tridx;
     this->cuspal = cuspal;
 
-    CPoint p(rect.left, rect.top);
+    CPoint p = rect.TopLeft();
 
-    int end0 = nOffset[1];
-    int end1 = datasize;
+    size_t end[] = { nOffset[1], dataSize };
 
-    while ((nPlane == 0 && nOffset[0] < end0) || (nPlane == 1 && nOffset[1] < end1)) {
+    while (nOffset[nPlane] < end[nPlane]) {
         DWORD code;
 
         if ((code = GetNibble(lpData)) >= 0x4
@@ -133,7 +138,7 @@ bool CVobSubImage::Decode(BYTE* lpData, int packetsize, int datasize, int t,
 
         DrawPixels(p, rect.right - p.x, code & 3);
 
-        if (!fAligned) {
+        if (!bAligned) {
             GetNibble(lpData);    // align to byte
         }
 
@@ -144,18 +149,18 @@ bool CVobSubImage::Decode(BYTE* lpData, int packetsize, int datasize, int t,
 
     rect.bottom = std::min(p.y, rect.bottom);
 
-    if (fTrim) {
+    if (bTrim) {
         TrimSubImage();
     }
 
     return true;
 }
 
-void CVobSubImage::GetPacketInfo(const BYTE* lpData, int packetsize, int datasize, int t /*= INT_MAX*/)
+void CVobSubImage::GetPacketInfo(const BYTE* lpData, size_t packetSize, size_t dataSize, int t /*= INT_MAX*/)
 {
     //  delay = 0;
 
-    int i, nextctrlblk = datasize;
+    size_t i, nextctrlblk = dataSize;
     WORD pal = 0, tr = 0;
     WORD nPal = 0, nTr = 0;
 
@@ -167,7 +172,7 @@ void CVobSubImage::GetPacketInfo(const BYTE* lpData, int packetsize, int datasiz
         nextctrlblk = (lpData[i] << 8) | lpData[i + 1];
         i += 2;
 
-        if (nextctrlblk > packetsize || nextctrlblk < datasize) {
+        if (nextctrlblk > packetSize || nextctrlblk < dataSize) {
             ASSERT(0);
             return;
         }
@@ -176,10 +181,10 @@ void CVobSubImage::GetPacketInfo(const BYTE* lpData, int packetsize, int datasiz
             break;
         }
 
-        bool fBreak = false;
+        bool bBreak = false;
 
-        while (!fBreak) {
-            int len = 0;
+        while (!bBreak) {
+            size_t len = 0;
 
             switch (lpData[i]) {
                 case 0x00:
@@ -208,17 +213,17 @@ void CVobSubImage::GetPacketInfo(const BYTE* lpData, int packetsize, int datasiz
                     break;
             }
 
-            if (i + len >= packetsize) {
+            if (i + len >= packetSize) {
                 TRACE(_T("Warning: Wrong subpicture parameter block ending\n"));
                 break;
             }
 
             switch (lpData[i++]) {
                 case 0x00: // forced start displaying
-                    fForced = true;
+                    bForced = true;
                     break;
                 case 0x01: // start displaying
-                    fForced = false;
+                    bForced = false;
                     break;
                 case 0x02: // stop displaying
                     delay = tCurrent;
@@ -248,14 +253,14 @@ void CVobSubImage::GetPacketInfo(const BYTE* lpData, int packetsize, int datasiz
                     i += 2;
                     break;
                 case 0xff: // end of ctrlblk
-                    fBreak = true;
+                    bBreak = true;
                     continue;
                 default: // skip this ctrlblk
-                    fBreak = true;
+                    bBreak = true;
                     break;
             }
         }
-    } while (i <= nextctrlblk && i < packetsize);
+    } while (i <= nextctrlblk && i < packetSize);
 
     for (i = 0; i < 4; i++) {
         this->pal[i].pal = (pal >> (i << 2)) & 0xf;
@@ -267,14 +272,20 @@ void CVobSubImage::GetPacketInfo(const BYTE* lpData, int packetsize, int datasiz
 
 BYTE CVobSubImage::GetNibble(const BYTE* lpData)
 {
-    WORD& off = nOffset[nPlane];
-    BYTE ret = (lpData[off] >> (fAligned << 2)) & 0x0f;
-    fAligned = !fAligned;
-    off += fAligned;
+    size_t& off = nOffset[nPlane];
+    BYTE ret = lpData[off];
+    if (bAligned) {
+        ret >>= 4;
+    }
+    ret &= 0x0f;
+    bAligned = !bAligned;
+    if (bAligned) {
+        off++;
+    }
     return ret;
 }
 
-void CVobSubImage::DrawPixels(CPoint p, int length, int colorid)
+void CVobSubImage::DrawPixels(CPoint p, int length, size_t colorId)
 {
     if (length <= 0
             || p.x + length < rect.left
@@ -295,11 +306,11 @@ void CVobSubImage::DrawPixels(CPoint p, int length, int colorid)
 
     RGBQUAD c;
 
-    if (!fCustomPal) {
-        c = orgpal[pal[colorid].pal];
-        c.rgbReserved = (pal[colorid].tr << 4) | pal[colorid].tr;
+    if (!bCustomPal) {
+        c = orgpal[pal[colorId].pal];
+        c.rgbReserved = (pal[colorId].tr << 4) | pal[colorId].tr;
     } else {
-        c = cuspal[colorid];
+        c = cuspal[colorId];
     }
 
     while (length-- > 0) {
@@ -385,8 +396,12 @@ CAutoPtrList<COutline>* CVobSubImage::GetOutlineList(CPoint& topleft)
         return nullptr;
     }
 
-    CAutoPtrList<COutline>* ol = DEBUG_NEW CAutoPtrList<COutline>();
-    if (!ol) {
+    CAutoPtrList<COutline>* ol;
+    try {
+        ol = DEBUG_NEW CAutoPtrList<COutline>();
+    } catch (CMemoryException* e) {
+        ASSERT(FALSE);
+        e->Delete();
         return nullptr;
     }
 
@@ -429,8 +444,12 @@ CAutoPtrList<COutline>* CVobSubImage::GetOutlineList(CPoint& topleft)
 
         int ox = x, oy = y, odir = dir;
 
-        CAutoPtr<COutline> o(DEBUG_NEW COutline);
-        if (!o) {
+        CAutoPtr<COutline> o;
+        try {
+            o.Attach(DEBUG_NEW COutline);
+        } catch (CMemoryException* e) {
+            ASSERT(FALSE);
+            e->Delete();
             break;
         }
 
@@ -1145,7 +1164,7 @@ void CVobSubImage::AddSegment(COutline& o, CAtlArray<BYTE>& pathTypes, CAtlArray
     AddSegment(o2, pathTypes, pathPoints);
 }
 
-bool CVobSubImage::Polygonize(CAtlArray<BYTE>& pathTypes, CAtlArray<CPoint>& pathPoints, bool fSmooth, int scale)
+bool CVobSubImage::Polygonize(CAtlArray<BYTE>& pathTypes, CAtlArray<CPoint>& pathPoints, bool bSmooth, int scale)
 {
     CPoint topleft;
     CAutoPtr<CAutoPtrList<COutline>> ol(GetOutlineList(topleft));
@@ -1168,7 +1187,7 @@ bool CVobSubImage::Polygonize(CAtlArray<BYTE>& pathTypes, CAtlArray<CPoint>& pat
     while (pos) {
         COutline& o = *ol->GetNext(pos), o2;
 
-        if (fSmooth) {
+        if (bSmooth) {
             int i = 0, iFirst = -1;
 
             for (;;) {
@@ -1219,12 +1238,12 @@ bool CVobSubImage::Polygonize(CAtlArray<BYTE>& pathTypes, CAtlArray<CPoint>& pat
     return !pathTypes.IsEmpty();
 }
 
-bool CVobSubImage::Polygonize(CStringW& assstr, bool fSmooth, int scale)
+bool CVobSubImage::Polygonize(CStringW& assstr, bool bSmooth, int scale)
 {
     CAtlArray<BYTE> pathTypes;
     CAtlArray<CPoint> pathPoints;
 
-    if (!Polygonize(pathTypes, pathPoints, fSmooth, scale)) {
+    if (!Polygonize(pathTypes, pathPoints, bSmooth, scale)) {
         return false;
     }
 
@@ -1243,26 +1262,26 @@ bool CVobSubImage::Polygonize(CStringW& assstr, bool fSmooth, int scale)
                 if (lastType != PT_MOVETO) {
                     assstr += L"m ";
                 }
-                s.Format(L"%d %d ", pathPoints[i].x, pathPoints[i].y);
+                s.Format(L"%ld %ld ", pathPoints[i].x, pathPoints[i].y);
                 break;
             case PT_MOVETONC:
                 if (lastType != PT_MOVETONC) {
                     assstr += L"n ";
                 }
-                s.Format(L"%d %d ", pathPoints[i].x, pathPoints[i].y);
+                s.Format(L"%ld %ld ", pathPoints[i].x, pathPoints[i].y);
                 break;
             case PT_LINETO:
                 if (lastType != PT_LINETO) {
                     assstr += L"l ";
                 }
-                s.Format(L"%d %d ", pathPoints[i].x, pathPoints[i].y);
+                s.Format(L"%ld %ld ", pathPoints[i].x, pathPoints[i].y);
                 break;
             case PT_BEZIERTO:
                 if (i + 2 < nPoints) {
                     if (lastType != PT_BEZIERTO) {
                         assstr += L"b ";
                     }
-                    s.Format(L"%d %d %d %d %d %d ", pathPoints[i].x, pathPoints[i].y, pathPoints[i + 1].x, pathPoints[i + 1].y, pathPoints[i + 2].x, pathPoints[i + 2].y);
+                    s.Format(L"%ld %ld %ld %ld %ld %ld ", pathPoints[i].x, pathPoints[i].y, pathPoints[i + 1].x, pathPoints[i + 1].y, pathPoints[i + 2].x, pathPoints[i + 2].y);
                     i += 2;
                 }
                 break;
@@ -1271,7 +1290,7 @@ bool CVobSubImage::Polygonize(CStringW& assstr, bool fSmooth, int scale)
                     if (lastType != PT_BSPLINETO) {
                         assstr += L"s ";
                     }
-                    s.Format(L"%d %d %d %d %d %d ", pathPoints[i].x, pathPoints[i].y, pathPoints[i + 1].x, pathPoints[i + 1].y, pathPoints[i + 2].x, pathPoints[i + 2].y);
+                    s.Format(L"%ld %ld %ld %ld %ld %ld ", pathPoints[i].x, pathPoints[i].y, pathPoints[i + 1].x, pathPoints[i + 1].y, pathPoints[i + 2].x, pathPoints[i + 2].y);
                     i += 2;
                 }
                 break;
@@ -1279,7 +1298,7 @@ bool CVobSubImage::Polygonize(CStringW& assstr, bool fSmooth, int scale)
                 if (lastType != PT_BSPLINEPATCHTO) {
                     assstr += L"p ";
                 }
-                s.Format(L"%d %d ", pathPoints[i].x, pathPoints[i].y);
+                s.Format(L"%ld %ld ", pathPoints[i].x, pathPoints[i].y);
                 break;
         }
 

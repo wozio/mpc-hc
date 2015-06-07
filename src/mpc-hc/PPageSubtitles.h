@@ -30,24 +30,27 @@ class CPPageSubtitles : public CPPageBase
 {
     DECLARE_DYNAMIC(CPPageSubtitles)
 
+private:
+    BOOL m_bOverridePlacement;
+    int m_nHorPos;
+    CSpinButtonCtrl m_horPosCtrl;
+    int m_nVerPos;
+    CSpinButtonCtrl m_verPosCtrl;
+    int m_nSPQSize;
+    CSpinButtonCtrl m_SPQSizeCtrl;
+    CComboBox m_cbSPQMaxRes;
+    BOOL m_bDisableSubtitleAnimation;
+    int m_nRenderAtWhenAnimationIsDisabled;
+    CSpinButtonCtrl m_renderAtCtrl;
+    int m_nAnimationRate;
+    CSpinButtonCtrl m_animationRateCtrl;
+    BOOL m_bAllowDroppingSubpic;
+    int m_nSubDelayStep;
+    BOOL m_bSubtitleARCompensation;
+
 public:
     CPPageSubtitles();
     virtual ~CPPageSubtitles();
-
-    BOOL m_fOverridePlacement;
-    int m_nHorPos;
-    CEdit m_nHorPosEdit;
-    CSpinButtonCtrl m_nHorPosCtrl;
-    int m_nVerPos;
-    CEdit m_nVerPosEdit;
-    CSpinButtonCtrl m_nVerPosCtrl;
-    int m_nSPCSize;
-    CSpinButtonCtrl m_nSPCSizeCtrl;
-    CComboBox m_spmaxres;
-    BOOL m_fSPCPow2Tex;
-    BOOL m_fSPCAllowAnimationWhenBuffering;
-    int m_nSubDelayInterval;
-    BOOL m_bSubtitleARCompensation;
 
     // Dialog Data
     enum { IDD = IDD_PPAGESUBTITLES };
@@ -56,11 +59,13 @@ protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
     virtual BOOL OnInitDialog();
     virtual BOOL OnApply();
-    void    OnSubDelayInterval();
 
     DECLARE_MESSAGE_MAP()
 
-public:
-    afx_msg void OnBnClickedButton1();
     afx_msg void OnUpdatePosOverride(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateRenderAtWhenAnimationIsDisabled(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateAnimationRate(CCmdUI* pCmdUI);
+    afx_msg void OnUpdateAllowDroppingSubpic(CCmdUI* pCmdUI);
+    afx_msg void OnSubDelayStep();
+    afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult);
 };

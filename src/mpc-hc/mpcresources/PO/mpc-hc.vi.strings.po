@@ -2,14 +2,14 @@
 # Copyright (C) 2002 - 2013 see Authors.txt
 # This file is distributed under the same license as the MPC-HC package.
 # Translators:
-# Luong Anh Dat <datanhlg@gmail.com>, 2014
-# anhminhvks <anhminhvks@yahoo.com>, 2014
+# Dat Luong Anh <datanhlg@gmail.com>, 2014
+# TRẦN ANH MINH <anhminhvks@yahoo.com>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-05-11 20:22:10+0000\n"
-"PO-Revision-Date: 2014-05-13 01:03+0000\n"
-"Last-Translator: anhminhvks <anhminhvks@yahoo.com>\n"
+"POT-Creation-Date: 2014-09-29 21:09:08+0000\n"
+"PO-Revision-Date: 2014-10-03 17:40+0000\n"
+"Last-Translator: Dat Luong Anh <datanhlg@gmail.com>\n"
 "Language-Team: Vietnamese (http://www.transifex.com/projects/p/mpc-hc/language/vi/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -106,12 +106,16 @@ msgid "Signal"
 msgstr "Tín hiệu"
 
 msgctxt "IDS_STATSBAR_SIGNAL_FORMAT"
-msgid "Strength: %d dB, Quality: %d%%"
-msgstr "Cường độ âm: %d dB, Chất lượng: %d%%"
+msgid "Strength: %d dB, Quality: %ld%%"
+msgstr "Cường độ: %d dB, Chất lượng: %ld%%"
 
 msgctxt "IDS_SUBTITLES_STYLES_CAPTION"
 msgid "Styles"
 msgstr "Dạng"
+
+msgctxt "IDS_TEXT_SUB_RENDERING_TARGET"
+msgid "If the rendering target is left undefined, SSA/ASS subtitles will be rendered relative to the video frame while all other text subtitles will be rendered relative to the window."
+msgstr "Nếu loại dựng phụ đề không được xác định, thì phụ đề SSA/ASS sẽ được dựng lại tương đối so với khung hình trong khi tất cả các phụ đề văn bản sẽ được dựng lại tương đối so với cửa sổ."
 
 msgctxt "IDS_PPAGE_CAPTURE_FG0"
 msgid "Never (fastest approach)"
@@ -838,20 +842,24 @@ msgid "Accurate VSync"
 msgstr "VSync chính xác"
 
 msgctxt "IDC_CHECK_RELATIVETO"
-msgid "Default state gets inherited to other styles where it is still undefined"
-msgstr "Trạng thái mặc định được thừa hưởng phong cách khác, nơi mà nó vẫn là không xác định"
+msgid "If the rendering target is left undefined, it will be inherited from the default style."
+msgstr "Nếu loại dựng phụ đề không được xác định, thì sẽ trả về kiểu mặc định."
 
-msgctxt "IDC_CHECK_SPCPOW2TEX"
-msgid "Unchecking this frees up a little video memory and saves bandwidth on local to video memory transfers, but it may not work with older video cards."
-msgstr "Bỏ chọn này giải phóng bộ nhớ video nhỏ và tiết kiệm băng thông trên địa phương để chuyển bộ nhớ video, nhưng nó có thể không làm việc với card video cũ."
+msgctxt "IDC_CHECK_NO_SUB_ANIM"
+msgid "Disallow subtitle animation. Enabling this option will lower CPU usage. You can use it if you experience flashing subtitles."
+msgstr "Vô hiệu hóa hình động phụ đề. Cho phép tùy chọn này sẽ làm giảm hiệu suất sử dụng CPU. Bạn có thể sử dụng nó nếu bạn trải nghiệm phụ đề. "
 
-msgctxt "IDC_CHECK_SPCANIMWITHBUFFER"
-msgid "Allows subtitle animation when using a subpicture buffer larger than 0. Disabling this option will lower CPU usage. Also disable if you experience flashing subtitles."
-msgstr "Cho phép hoạt hình phụ đề khi sử dụng một bộ đệm hình đại diện riêng lớn hơn 0. Vô hiệu hóa tùy chọn này sẽ làm giảm việc sử dụng CPU. Cũng vô hiệu hóa nếu bạn gặp nhấp nháy phụ đề."
+msgctxt "IDC_SUBPIC_TO_BUFFER"
+msgid "Increasing the number of buffered subpictures should in general improve the rendering performance at the cost of a higher video RAM usage on the GPU."
+msgstr "Tăng số của vùng đệm đa ảnh nên nói chung cải thiện hiệu năng biểu hiện với giá sử dụng video dùng Ram cao trên GPU. "
 
 msgctxt "IDC_BUTTON_EXT_SET"
 msgid "After clicking this button, the checked state of the format group will reflect the actual file association for MPC-HC. A newly added extension will usually make it grayed, so don't forget to check it again before closing this dialog!"
 msgstr "Sau khi nhấn vào nút này, nhà nước kiểm tra của các nhóm định dạng sẽ phản ánh sự liên kết tập tin thực tế cho MPC-HC. Một phần mở rộng mới được bổ sung thường sẽ làm cho nó chuyển sang màu xám, do đó, không quên kiểm tra lại một lần nữa trước khi chốt thoại này!"
+
+msgctxt "IDC_CHECK_ALLOW_DROPPING_SUBPIC"
+msgid "Disabling this option will prevent the subtitles from blinking but it may cause the video renderer to skip some video frames."
+msgstr "Vô hiệu hóa tùy chọn này sẽ ngăn cản phụ đề nhấp nháy, nhưng nó có thể làm cho trình render video bỏ qua một số video khung. "
 
 msgctxt "ID_PLAY_PLAY"
 msgid "Play\nPlay"
@@ -1243,15 +1251,91 @@ msgstr "&Chép danh sách các bộ lọc vào bộ nhớ tạm"
 
 msgctxt "IDS_CREDENTIALS_SERVER"
 msgid "Enter server credentials"
-msgstr ""
+msgstr "Nhập thông tin đăng nhập máy chủ"
 
 msgctxt "IDS_CREDENTIALS_CONNECT"
 msgid "Enter your credentials to connect"
-msgstr ""
+msgstr "Nhập thông tin đăng nhập của bạn để kết nối"
 
 msgctxt "IDS_SUB_SAVE_EXTERNAL_STYLE_FILE"
 msgid "Save custom style"
-msgstr ""
+msgstr "Lưu các tùy chỉnh"
+
+msgctxt "IDS_CONTENT_EDUCATION_SCIENCE"
+msgid "Education/Science/Factual topics"
+msgstr "Chủ đề Giáo dục/Khoa học/Thực tế"
+
+msgctxt "IDS_PPAGEADVANCED_HIDE_WINDOWED"
+msgid "Hides controls and panels also in windowed mode."
+msgstr "Ẩn các điều chỉnh và cửa sổ trong chế độ cửa sổ."
+
+msgctxt "IDS_PPAGEADVANCED_BLOCK_VSFILTER"
+msgid "Prevent external subtitle renderer to be loaded when internal is in use."
+msgstr "Không nạp bộ dựng phụ đề bên ngoài khi bộ dựng phụ đề bên trong đang được sử dụng."
+
+msgctxt "IDS_PPAGEADVANCED_COL_NAME"
+msgid "Name"
+msgstr "Tên"
+
+msgctxt "IDS_PPAGEADVANCED_COL_VALUE"
+msgid "Value"
+msgstr "Giá trị"
+
+msgctxt "IDS_PPAGEADVANCED_RECENT_FILES_NUMBER"
+msgid "Maximum number of files shown in the \"Recent files\" menu and for which the position is potentially saved."
+msgstr "Số lượng tối đa các tập tin được hiển thị trong trình đơn \"Các tập tin gần đây\" và khả năng lưu vị trí của chúng."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_LONGER"
+msgid "Remember file position only for files longer than N minutes."
+msgstr "Chỉ ghi nhớ vị trí những tập tin có thời lượng hơn N phút."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_AUDIO"
+msgid "Remember file position also for audio files."
+msgstr "Cũng ghi nhớ vị trí những tập tin âm thanh."
+
+msgctxt "IDS_AFTER_PLAYBACK_DO_NOTHING"
+msgid "Do Nothing"
+msgstr "Không làm gì"
+
+msgctxt "IDS_AFTER_PLAYBACK_PLAY_NEXT"
+msgid "Play next file in the folder"
+msgstr "Chạy tệp kế tiếp trong thư mục"
+
+msgctxt "IDS_AFTER_PLAYBACK_REWIND"
+msgid "Rewind current file"
+msgstr "Phát lại tệp trước"
+
+msgctxt "IDS_AFTER_PLAYBACK_CLOSE"
+msgid "Close"
+msgstr "Hủy"
+
+msgctxt "IDS_AFTER_PLAYBACK_EXIT"
+msgid "Exit"
+msgstr "Đóng"
+
+msgctxt "IDS_AFTER_PLAYBACK_MONITOROFF"
+msgid "Turn off the monitor"
+msgstr "Tắt màn hình"
+
+msgctxt "IDS_IMAGE_JPEG_QUALITY"
+msgid "JPEG Image"
+msgstr "Hình JPEG"
+
+msgctxt "IDS_IMAGE_QUALITY"
+msgid "Quality (%):"
+msgstr "Chất lượng (%):"
+
+msgctxt "IDS_PPAGEADVANCED_COVER_SIZE_LIMIT"
+msgid "Maximum size (NxNpx) of a cover-art loaded in the audio only mode."
+msgstr "Kích thước tối đa (NxNpx) của một bìa album được tải trong chế độ âm thanh."
+
+msgctxt "IDS_SUBTITLE_DELAY_STEP_TOOLTIP"
+msgid "The subtitle delay will be decreased/increased by this value each time the corresponding hotkeys are used (%s/%s)."
+msgstr "Sự chậm trễ phụ đề sẽ được giảm / tăng giá trị này mỗi lần các phím nóng tương ứng được sử dụng (%s/%s)."
+
+msgctxt "IDS_HOTKEY_NOT_DEFINED"
+msgid "<not defined>"
+msgstr "<không xác định>"
 
 msgctxt "IDS_AG_OPEN_DEVICE"
 msgid "Open Device"
@@ -1938,16 +2022,16 @@ msgid "Buffers"
 msgstr "Đệm"
 
 msgctxt "IDS_MAINFRM_9"
-msgid "Volume: %02d/%02d, Title: %02d/%02d, Chapter: %02d/%02d"
-msgstr "Âm lượng: %02d/%02d, Tiêu đề: %02d/%02d, Chương: %02d/%02d"
+msgid "Volume: %02lu/%02lu, Title: %02lu/%02lu, Chapter: %02lu/%02lu"
+msgstr "Âm lượng: %02lu/%02lu, Tiêu đề: %02lu/%02lu, Chương: %02lu/%02lu"
 
 msgctxt "IDS_MAINFRM_10"
-msgid "Angle: %02d/%02d, %dx%d %dHz %d:%d"
-msgstr "Góc: %02d/%02d, %dx%d %dHz %d:%d"
+msgid "Angle: %02lu/%02lu, %lux%lu %luHz %lu:%lu"
+msgstr "Góc: %02lu/%02lu, %lux%lu %luHz %lu:%lu"
 
 msgctxt "IDS_MAINFRM_11"
-msgid "%s, %s %dHz %dbits %d %s"
-msgstr "%s, %s %dHz %dbit %d %s"
+msgid "%s, %s %uHz %dbits %d %s"
+msgstr "%s, %s %uHz %dbit %d %s"
 
 msgctxt "IDS_ADD_TO_PLAYLIST"
 msgid "Add to MPC-HC Playlist"
@@ -1958,8 +2042,8 @@ msgid "Play with MPC-HC"
 msgstr "Phát với MPC-HC"
 
 msgctxt "IDS_CANNOT_CHANGE_FORMAT"
-msgid "MPC-HC has not enough privileges to change files formats associations. Please click on \"Modify\" button to get administrator rights."
-msgstr "MPC-HC không có đủ quyền để thay đổi các tập tin định dạng được hỗ trợ. Hãy nhấp vào nút \"Sửa đổi\" để có được quyền quản trị."
+msgid "MPC-HC has not enough privileges to change files formats associations. Please click on the \"Run as administrator\" button."
+msgstr "MPC-HC không có đủ quyền để thay đổi hỗ trợ định dạng tập tin. Vui lòng nhấn vào nút \"Chạy dưới quyền quản trị."
 
 msgctxt "IDS_APP_DESCRIPTION"
 msgid "MPC-HC is an extremely light-weight, open source media player for Windows. It supports all common video and audio file formats available for playback. We are 100% spyware free, there are no advertisements or toolbars."
@@ -1974,8 +2058,8 @@ msgid "channels"
 msgstr "kênh"
 
 msgctxt "IDS_AG_TITLE"
-msgid "Title %d"
-msgstr "Tiêu đề %d"
+msgid "Title %u"
+msgstr "Tiêu đề %u"
 
 msgctxt "IDS_MAINFRM_16"
 msgid "DVD: Unexpected error"
@@ -2050,8 +2134,8 @@ msgid "Aspect Ratio"
 msgstr "Tỉ lệ khung hình"
 
 msgctxt "IDS_MAINFRM_37"
-msgid ", Total: %d, Dropped: %d"
-msgstr ", Tổng số: %d, Bỏ: %d"
+msgid ", Total: %ld, Dropped: %ld"
+msgstr ", Tổng cộng: %ld, Bỏ sót: %ld"
 
 msgctxt "IDS_MAINFRM_38"
 msgid ", Size: %I64dKB"
@@ -2095,27 +2179,27 @@ msgstr "đã nạp thành công"
 
 msgctxt "IDS_ALL_FILES_FILTER"
 msgid "All files (*.*)|*.*||"
-msgstr "Tất cả các tệp (*.*)|*.*||"
+msgstr "Tất cả các tập tin (*.*)|*.*||"
 
 msgctxt "IDS_GETDIB_FAILED"
 msgid "GetDIB failed, hr = %08x"
-msgstr "GetDIB thất bại, giờ = %08x"
+msgstr "Nhận DIB thất bại, giờ = %08x"
 
 msgctxt "IDS_GETCURRENTIMAGE_FAILED"
 msgid "GetCurrentImage failed, hr = %08x"
-msgstr "GetCureentImage thất bại, giờ = %08x"
+msgstr "Nhận hình ảnh hiện tại thất bại, giờ = %08x"
 
 msgctxt "IDS_SCREENSHOT_ERROR"
 msgid "Cannot create file"
-msgstr "Không thể tạo tệp"
+msgstr "Không thể tạo tập tin"
 
 msgctxt "IDS_THUMBNAILS_NO_DURATION"
 msgid "Cannot create thumbnails for files with no duration"
-msgstr "Không thể tạo hình thu nhỏ cho các tập tin không có thời gian"
+msgstr "Không thể tạo hình ảnh thu nhỏ cho các tập tin không có thời lượng"
 
 msgctxt "IDS_THUMBNAILS_NO_FRAME_SIZE"
 msgid "Failed to get video frame size"
-msgstr "Không thể có được kích thước khung hình video"
+msgstr "Không nhận được kích thước khung hình"
 
 msgctxt "IDS_OUT_OF_MEMORY"
 msgid "Out of memory, go buy some more!"
@@ -2123,27 +2207,31 @@ msgstr "Đầy bộ nhớ, hãy chuẩn bị thêm!"
 
 msgctxt "IDS_THUMBNAILS_INVALID_FORMAT"
 msgid "Invalid image format, cannot create thumbnails out of %d bpp dibs."
-msgstr "Định dạng hình ảnh không hợp lệ, không thể tạo ra hình thu nhỏ trong số %d xí bpp."
+msgstr "Định dạng hình ảnh không hợp lệ, không thể tạo hình ảnh thu nhỏ quá %d bpp."
 
 msgctxt "IDS_THUMBNAILS_INFO_FILESIZE"
 msgid "File Size: %s (%s bytes)\\N"
-msgstr "Kích thước tệp: %s (%s byte)\\N"
+msgstr "Kích thước tập tin: %s (%s bytes)\\N"
 
 msgctxt "IDS_THUMBNAILS_INFO_HEADER"
 msgid "{\\an7\\1c&H000000&\\fs16\\b0\\bord0\\shad0}File Name: %s\\N%sResolution: %dx%d %s\\NDuration: %02d:%02d:%02d"
-msgstr "{\\an7\\1c&H000000&\\fs16\\b0\\bord0\\shad0}Tên tệp: %s\\N%sĐộ phân giải: %dx%d %s\\NThời gian: %02d:%02d:%02d"
+msgstr "{\\an7\\1c&H000000&\\fs16\\b0\\bord0\\shad0}Tên tập tin: %s\\N%sĐộ phân giải: %dx%d %s\\NThời lượng: %02d:%02d:%02d"
 
 msgctxt "IDS_THUMBNAIL_TOO_SMALL"
 msgid "The thumbnails would be too small, impossible to create the file.\n\nTry lowering the number of thumbnails or increasing the total size."
-msgstr ""
+msgstr "Các hình ảnh thu nhỏ sẽ quá nhỏ, không thể tạo tập tin.\n\nHãy giảm số lượng các hình ảnh thu nhỏ hoặc tăng tổng kích thước."
 
 msgctxt "IDS_CANNOT_LOAD_SUB"
 msgid "To load subtitles you have to change the video renderer type and reopen the file.\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR or Haali\n- RealMedia: Special renderer for RealMedia, or open it through DirectShow\n- QuickTime: DX7 or DX9 renderer for QuickTime\n- ShockWave: n/a"
-msgstr "Để tải phụ đề bạn cần phải thay đổi các loại video dựng hình và mở lại tập tin.\n- DirectShow: VMR-7/VMR-9 (ít render hơn), EVR (CP), Sync, madVR hoặc Haali\n- RealMedia: dựng hình đặc biệt cho RealMedia, hoặc mở nó thông qua DirectShow\n- QuickTime: DX7 hoặc DX9 dựng hình cho QuickTime\n- ShockWave: n/a"
+msgstr "Để nạp phụ đề bạn phải thay đổi loại bộ dựng hình và mở lại tập tin.\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR hoặc Haali\n- RealMedia: Bộ dựng hình dành riêng cho RealMedia, hoặc mở nó bằng DirectShow\n- QuickTime: Bộ dựng hình DX7 hoặc DX9 cho QuickTime\n- ShockWave: Không có sẵn"
+
+msgctxt "IDS_SUBTITLE_FILES_FILTER"
+msgid "Subtitle files"
+msgstr "Tập tin phụ đề"
 
 msgctxt "IDS_MAINFRM_68"
-msgid "Aspect Ratio: %d:%d"
-msgstr "Tỉ lệ khung hình: %d:%d"
+msgid "Aspect Ratio: %ld:%ld"
+msgstr "Tỷ lệ khung hình: %ld:%ld"
 
 msgctxt "IDS_MAINFRM_69"
 msgid "Aspect Ratio: Default"
@@ -2214,8 +2302,8 @@ msgid "MPC-HC terminated unexpectedly. To help us fix this problem, please send 
 msgstr "MPC-HC chấm dứt đột ngột. Để giúp chúng tôi khắc phục vấn đề này, xin vui lòng gửi tập tin này \"%s\" về theo dõi lỗi của chúng tôi.\nBạn có muốn mở thư mục chứa các tập tin minidump và truy cập vào theo dõi lỗi bây giờ?"
 
 msgctxt "IDS_MPC_MINIDUMP_FAIL"
-msgid "Failed to create dump file to \"%s\" (error %d)"
-msgstr "Không thể tạo tập tin dump về \"%s\" (lỗi %d)"
+msgid "Failed to create dump file to \"%s\" (error %u)"
+msgstr "Lỗi khi tạo tập tin kết xuất vào \"%s\" (lỗi %u)"
 
 msgctxt "IDS_MAINFRM_DIR_TITLE"
 msgid "Select Directory"
@@ -2315,7 +2403,7 @@ msgstr "Đã bỏ"
 
 msgctxt "IDS_MAINFRM_116"
 msgid "&Properties..."
-msgstr "&Thuộc tín"
+msgstr "&Thuộc tính"
 
 msgctxt "IDS_MAINFRM_117"
 msgid " (pin) properties..."
@@ -2326,8 +2414,8 @@ msgid "Unknown Stream"
 msgstr "Không biết luồng"
 
 msgctxt "IDS_AG_UNKNOWN"
-msgid "Unknown %d"
-msgstr "Không biết %d"
+msgid "Unknown %u"
+msgstr "Không biết %u"
 
 msgctxt "IDS_AG_VSYNC"
 msgid "VSync"
@@ -2346,8 +2434,8 @@ msgid "Enable DVD subtitles"
 msgstr "&Kích hoạt phụ đề DVD"
 
 msgctxt "IDS_AG_ANGLE"
-msgid "Angle %d"
-msgstr "Góc %d"
+msgid "Angle %u"
+msgstr "Góc %u"
 
 msgctxt "IDS_AG_VSYNCOFFSET_INCREASE"
 msgid "Increase VSync Offset"
@@ -2596,6 +2684,10 @@ msgstr "H&iện Nhãn&&Menu"
 msgctxt "IDS_VIEW_HIDEMENU"
 msgid "Hide &Menu"
 msgstr "Ẩn &menu"
+
+msgctxt "IDD_PPAGEADVANCED"
+msgid "Advanced"
+msgstr "Nâng cao"
 
 msgctxt "IDS_TIME_TOOLTIP_ABOVE"
 msgid "Above seekbar"
@@ -3357,17 +3449,9 @@ msgctxt "IDS_AFTERPLAYBACK_LOCK"
 msgid "After Playback: Lock"
 msgstr "Sau khi xem lại: Khóa"
 
-msgctxt "IDS_AFTERPLAYBACK_EXIT"
-msgid "After Playback: Always exit"
-msgstr "Sau khi xem lại: Luôn thoát"
-
-msgctxt "IDS_AFTERPLAYBACK_DONOTHING"
-msgid "After Playback: Do Nothing"
-msgstr "Sau khi xem lại: Không làm gì"
-
-msgctxt "IDS_AFTERPLAYBACK_NEXT"
-msgid "After Playback: Play next in the folder"
-msgstr "Sau khi xem lại: Chạy tệp kế"
+msgctxt "IDS_AFTERPLAYBACK_MONITOROFF"
+msgid "After Playback: Turn off the monitor"
+msgstr "Sau khi phát lại: Tắt màn hình"
 
 msgctxt "IDS_OSD_BRIGHTNESS"
 msgid "Brightness: %s"
@@ -3424,6 +3508,26 @@ msgstr "&Tựa đề"
 msgctxt "IDS_NAVIGATE_CHANNELS"
 msgid "&Channels"
 msgstr "&Kênh"
+
+msgctxt "IDC_FASTSEEK_CHECK"
+msgid "If \"latest keyframe\" is selected, seek to the first keyframe before the actual seek point.\nIf \"nearest keyframe\" is selected, seek to the first keyframe before or after the seek point depending on which is the closest."
+msgstr "Nếu \"khung hình mới nhất\" được chọn, tìm đến khung hình đầu tiên trước khi quan điểm thực tế tìm kiếm.\nNếu \"khung hình gần nhất\" được chọn, tìm đến khung hình đầu tiên trước hoặc sau thời điểm tìm kiếm sự phụ thuộc vào là gần nhất."
+
+msgctxt "IDC_ASSOCIATE_ALL_FORMATS"
+msgid "Associate with all formats"
+msgstr "Hỗ trợ tất cả định dạng"
+
+msgctxt "IDC_ASSOCIATE_VIDEO_FORMATS"
+msgid "Associate with video formats only"
+msgstr "Chỉ định dạng video"
+
+msgctxt "IDC_ASSOCIATE_AUDIO_FORMATS"
+msgid "Associate with audio formats only"
+msgstr "Chỉ định dạng âm thanh"
+
+msgctxt "IDC_CLEAR_ALL_ASSOCIATIONS"
+msgid "Clear all associations"
+msgstr "Xoá hết hỗ trợ"
 
 msgctxt "IDS_FILTER_SETTINGS_CAPTION"
 msgid "Settings"

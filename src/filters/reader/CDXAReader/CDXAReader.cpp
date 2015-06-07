@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -215,9 +215,7 @@ STDMETHODIMP CCDXAReader::Load(LPCOLESTR pszFileName, const AM_MEDIA_TYPE* pmt)
 
 STDMETHODIMP CCDXAReader::GetCurFile(LPOLESTR* ppszFileName, AM_MEDIA_TYPE* pmt)
 {
-    if (!ppszFileName) {
-        return E_POINTER;
-    }
+    CheckPointer(ppszFileName, E_POINTER);
 
     *ppszFileName = (LPOLESTR)CoTaskMemAlloc((m_fn.GetLength() + 1) * sizeof(WCHAR));
     if (!(*ppszFileName)) {
@@ -277,7 +275,7 @@ bool CCDXAStream::Load(const WCHAR* fnw)
     LARGE_INTEGER size = {0, 0};
     GetFileSizeEx(m_hFile, &size);
 
-    m_llLength = int((size.QuadPart - RIFFCDXA_HEADER_SIZE) / RAW_SECTOR_SIZE) * RAW_DATA_SIZE;
+    m_llLength = ((size.QuadPart - RIFFCDXA_HEADER_SIZE) / RAW_SECTOR_SIZE) * RAW_DATA_SIZE;
 
     if (!LookForMediaSubType()) {
         m_llPosition = m_llLength = 0;
@@ -341,7 +339,7 @@ HRESULT CCDXAStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDW
                     break;
                 }
 
-                TRACE(_T("CCDXAStream: CRC error at sector %d (fp=0x%I64x, retriesleft=%d)\n"), sector, FilePointer.QuadPart, nRetries);
+                TRACE(_T("CCDXAStream: CRC error at sector %u (fp=0x%I64x, retriesleft=%d)\n"), sector, FilePointer.QuadPart, nRetries);
             }
 
             m_nBufferedSector = sector;

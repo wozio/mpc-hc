@@ -4,12 +4,13 @@
 # Translators:
 # mehzad, 2014
 # mehzad, 2014
+# Underground78, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2013-12-21 11:15:54+0000\n"
-"PO-Revision-Date: 2014-02-24 11:29+0000\n"
-"Last-Translator: mehzad\n"
+"POT-Creation-Date: 2014-06-17 15:23:34+0000\n"
+"PO-Revision-Date: 2014-09-07 09:10+0000\n"
+"Last-Translator: Underground78\n"
 "Language-Team: Bengali (http://www.transifex.com/projects/p/mpc-hc/language/bn/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,7 +24,7 @@ msgstr "এর মাধ্যমে আপনার কম্পিউটার
 
 msgctxt "Messages_WinVersionTooLowError"
 msgid "[name] requires Windows XP Service Pack 3 or newer to run."
-msgstr "[NAME] চালানোর জন্য Windows XP Service Pack 3 অথবা ঊর্ধ্বতন সংস্করণ প্রয়োজন।"
+msgstr "[name] চালানোর জন্য Windows XP Service Pack 3 অথবা ঊর্ধ্বতন সংস্করণ প্রয়োজন।"
 
 msgctxt "CustomMessages_comp_mpciconlib"
 msgid "Icon Library"
@@ -48,6 +49,10 @@ msgstr "MPC-HCএর এই নির্মাণটির জন্য SSE এ�
 msgctxt "CustomMessages_msg_simd_sse2"
 msgid "This build of MPC-HC requires a CPU with SSE2 extension support.\n\nYour CPU does not have those capabilities."
 msgstr "MPC-HCএর এই নির্মাণটির জন্য SSE2 এক্সটেনশন সমর্থন করে এমন একটি CPUর প্রয়োজন।\n\nআপনার CPUর সেই কর্মক্ষমতা নেই।"
+
+msgctxt "CustomMessages_run_DownloadToolbarImages"
+msgid "Visit our Wiki page to download toolbar images"
+msgstr "টুলবার এর ছবি ডাউনলোড করতে আমাদের Wiki পেইজে যেতে পারেন"
 
 msgctxt "CustomMessages_tsk_AllUsers"
 msgid "For all users"

@@ -32,6 +32,7 @@ CTextFile::CTextFile(enc e)
     : m_encoding(e)
     , m_defaultencoding(e)
     , m_offset(0)
+    , m_posInFile(0)
     , m_posInBuffer(0)
     , m_nInBuffer(0)
 {
@@ -80,6 +81,8 @@ bool CTextFile::Open(LPCTSTR lpszFileName)
         }
     } else if (m_offset == 0) { // No BOM detected, ensure the file is read from the beginning
         Seek(0, begin);
+    } else {
+        m_posInFile = __super::GetPosition();
     }
 
     return true;
@@ -179,7 +182,7 @@ ULONGLONG CTextFile::Seek(LONGLONG lOff, UINT nFrom)
             // If we would have to end up out of the buffer, we just reset it and seek normally
             m_nInBuffer = m_posInBuffer = 0;
             newPos = __super::Seek(lOff + m_offset, begin) - m_offset;
-        } else { // If we can reuse the buffer, we have nother special to do
+        } else { // If we can reuse the buffer, we have nothing special to do
             newPos = ULONGLONG(lOff);
         }
     } else { // No buffer, we can use the base implementation
@@ -188,6 +191,8 @@ ULONGLONG CTextFile::Seek(LONGLONG lOff, UINT nFrom)
         }
         newPos = __super::Seek(lOff, nFrom) - m_offset;
     }
+
+    m_posInFile = newPos + m_offset + (m_nInBuffer - m_posInBuffer);
 
     return newPos;
 }
@@ -225,7 +230,7 @@ void CTextFile::WriteString(LPCWSTR lpsz/*CStringW str*/)
         for (unsigned int i = 0, l = str.GetLength(); i < l; i++) {
             DWORD c = (WORD)str[i];
 
-            if (0 <= c && c < 0x80) { // 0xxxxxxx
+            if (c < 0x80) { // 0xxxxxxx
                 Write(&c, 1);
             } else if (0x80 <= c && c < 0x800) { // 110xxxxx 10xxxxxx
                 c = 0xc080 | ((c << 2) & 0x1f00) | (c & 0x003f);
@@ -267,15 +272,21 @@ bool CTextFile::FillBuffer()
     if (nBytesRead) {
         m_nInBuffer += nBytesRead;
     }
+    m_posInFile = __super::GetPosition();
 
     return !nBytesRead;
+}
+
+ULONGLONG CTextFile::GetPositionFastBuffered() const
+{
+    return (m_posInFile - m_offset - (m_nInBuffer - m_posInBuffer));
 }
 
 BOOL CTextFile::ReadString(CStringA& str)
 {
     bool fEOF = true;
 
-    str.Empty();
+    str.Truncate(0);
 
     if (m_encoding == DEFAULT_ENCODING) {
         CString s;
@@ -323,7 +334,7 @@ BOOL CTextFile::ReadString(CStringA& str)
             }
         } while (!bLineEndFound);
     } else if (m_encoding == UTF8) {
-        ULONGLONG lineStartPos = GetPosition();
+        ULONGLONG lineStartPos = GetPositionFastBuffered();
         bool bValid = true;
         bool bLineEndFound = false;
         fEOF = false;
@@ -491,7 +502,7 @@ BOOL CTextFile::ReadString(CStringW& str)
 {
     bool fEOF = true;
 
-    str.Empty();
+    str.Truncate(0);
 
     if (m_encoding == DEFAULT_ENCODING) {
         CString s;
@@ -540,7 +551,7 @@ BOOL CTextFile::ReadString(CStringW& str)
             }
         } while (!bLineEndFound);
     } else if (m_encoding == UTF8) {
-        ULONGLONG lineStartPos = GetPosition();
+        ULONGLONG lineStartPos = GetPositionFastBuffered();
         bool bValid = true;
         bool bLineEndFound = false;
         fEOF = false;
@@ -792,44 +803,52 @@ CStringA WToA(CStringW str)
 
 CString AToT(CStringA str)
 {
+#ifdef UNICODE
     CString ret;
     for (int i = 0, j = str.GetLength(); i < j; i++) {
         ret += (TCHAR)(BYTE)str[i];
     }
     return ret;
+#else
+    return str;
+#endif
 }
 
 CString WToT(CStringW str)
 {
+#ifdef UNICODE
+    return str;
+#else
     CString ret;
     for (int i = 0, j = str.GetLength(); i < j; i++) {
         ret += (TCHAR)(WORD)str[i];
     }
     return ret;
+#endif
 }
 
 CStringA TToA(CString str)
 {
-    CStringA ret;
 #ifdef UNICODE
+    CStringA ret;
     for (int i = 0, j = str.GetLength(); i < j; i++) {
         ret += (CHAR)(BYTE)str[i];
     }
-#else
-    ret = str;
-#endif
     return ret;
+#else
+    return str;
+#endif
 }
 
 CStringW TToW(CString str)
 {
-    CStringW ret;
 #ifdef UNICODE
-    ret = str;
+    return str;
 #else
+    CStringW ret;
     for (size_t i = 0, j = str.GetLength(); i < j; i++) {
         ret += (WCHAR)(BYTE)str[i];
     }
-#endif
     return ret;
+#endif
 }

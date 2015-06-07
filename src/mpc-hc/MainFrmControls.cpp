@@ -41,9 +41,6 @@ UINT CMainFrameControls::GetEffectiveToolbarsSelection()
             || m_pMainFrame->GetPlaybackMode() == PM_ANALOG_CAPTURE) {
         ret &= ~CS_SEEKBAR;
     }
-    if (m_pMainFrame->GetLoadState() == MLS::LOADED && m_pMainFrame->m_fAudioOnly && !ret) {
-        ret = CS_SEEKBAR | CS_TOOLBAR;
-    }
     return ret;
 }
 
@@ -317,7 +314,7 @@ void CMainFrameControls::UpdateToolbarsVisibility()
 
     const MLS mls = m_pMainFrame->GetLoadState();
     const bool bCanAutoHide = s.bHideFullscreenControls && (mls == MLS::LOADED || m_bDelayShowNotLoaded) &&
-                              (m_pMainFrame->m_fFullScreen || (s.bHideWindowedControls && (mls != MLS::LOADED || !m_pMainFrame->m_fAudioOnly))) &&
+                              (m_pMainFrame->m_fFullScreen || s.bHideWindowedControls) &&
                               ePolicy != CAppSettings::HideFullscreenControlsPolicy::SHOW_NEVER;
     const bool bCanHideDockedPanels = s.bHideFullscreenDockedPanels;
 
@@ -328,7 +325,7 @@ void CMainFrameControls::UpdateToolbarsVisibility()
         void show(int mask) { maskShow |= mask; maskHide &= ~mask; }
         void hide(int mask) { maskHide |= mask; maskShow &= ~mask; }
     } mask = { 0, 0 };
-    const int maskAll = DOCK_LEFT | DOCK_RIGHT | DOCK_TOP | DOCK_BOTTOM;;
+    const int maskAll = DOCK_LEFT | DOCK_RIGHT | DOCK_TOP | DOCK_BOTTOM;
 
     bool bRecalcLayout = false;
 

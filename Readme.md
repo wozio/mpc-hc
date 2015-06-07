@@ -31,7 +31,7 @@ See [CONTRIBUTING.md](/CONTRIBUTING.md) for more info.
 * Multi-Monitor support
 * Various [pixel shaders](http://en.wikipedia.org/wiki/Shader#Pixel_shaders)
 * [Color management](http://en.wikipedia.org/wiki/Color_management)
-* 33 translations available
+* 35 translations available
 
 
 ## System Requirements:
@@ -61,114 +61,24 @@ Translations are done by various translators (see
 
 MPC-HC makes use of the following third-party code:
 
-<table>
-  <thead>
-    <tr>
-      <th>Project</th>
-      <th>License</th>
-      <th>Website</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>ATL Server</td>
-      <td>Ms-LPL</td>
-      <td>http://atlserver.codeplex.com/</td>
-    </tr>
-    <tr>
-      <td>CLineNumberEdit</td>
-      <td>-</td>
-      <td>http://www.codeproject.com/Articles/6385/Controls-in-controls-A-line-numbering-edit-box</td>
-    </tr>
-    <tr>
-      <td>CSizingControlBar</td>
-      <td>GPLv2</td>
-      <td>http://www.datamekanix.com/sizecbar/</td>
-    </tr>
-    <tr>
-      <td>LAV Filters</td>
-      <td>GPLv2</td>
-      <td>http://code.google.com/p/lavfilters/</td>
-    </tr>
-    <tr>
-      <td>Little CMS</td>
-      <td>MIT License</td>
-      <td>http://www.littlecms.com/</td>
-    </tr>
-    <tr>
-      <td>Logitech SDK</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>MediaInfoLib</td>
-      <td>Simplified BSD License</td>
-      <td>http://mediaarea.net/MediaInfo</td>
-    </tr>
-    <tr>
-      <td>Mhook</td>
-      <td>MIT License</td>
-      <td>https://github.com/martona/mhook</td>
-    </tr>
-    <tr>
-      <td>MultiMon</td>
-      <td>CPOL</td>
-      <td>http://www.codeproject.com/KB/GDI/multimon.aspx</td>
-    </tr>
-    <tr>
-      <td>QuickTime SDK</td>
-      <td>-</td>
-      <td>http://developer.apple.com/quicktime/</td>
-    </tr>
-    <tr>
-      <td>RARFileSource</td>
-      <td>GPLv2+</td>
-      <td>http://www.v12pwr.com/RARFileSource/</td>
-    </tr>
-    <tr>
-      <td>RealMedia SDK</td>
-      <td>-</td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td>ResizableLib</td>
-      <td>Artistic License</td>
-      <td>http://sourceforge.net/projects/resizablelib/</td>
-    </tr>
-    <tr>
-      <td>Silk Icons</td>
-      <td>CC Attribution 2.5</td>
-      <td>http://www.famfamfam.com/lab/icons/silk/</td>
-    </tr>
-    <tr>
-      <td>SoundTouch</td>
-      <td>LGPLv2.1</td>
-      <td>http://www.surina.net/soundtouch/</td>
-    </tr>
-    <tr>
-      <td>TreePropSheet</td>
-      <td>-</td>
-      <td>http://www.codeproject.com/Articles/3709/CTreePropSheet-A-Netscape-Visual-Studio-NET-like-P</td>
-    </tr>
-    <tr>
-      <td>UnRAR</td>
-      <td>freeware</td>
-      <td>http://www.rarlab.com/rar_add.htm</td>
-    </tr>
-    <tr>
-      <td>VirtualDub</td>
-      <td>GPLv2</td>
-      <td>http://www.virtualdub.org/</td>
-    </tr>
-    <tr>
-      <td>ZenLib</td>
-      <td>zlib License</td>
-      <td>http://sourceforge.net/projects/zenlib/</td>
-    </tr>
-    <tr>
-      <td>zlib</td>
-      <td>zlib License</td>
-      <td>http://zlib.net/</td>
-    </tr>
-  </tbody>
-</table>
+| Project           | License                   | Website           |
+| ----------------- | ------------------------- | ----------------- |
+| CSizingControlBar | -                         | http://www.datamekanix.com/sizecbar/ |
+| LAV Filters       | GPLv2+                    | http://code.google.com/p/lavfilters/ |
+| libdivide         | zlib License              | http://libdivide.com/ |
+| Little CMS        | MIT License               | http://www.littlecms.com/ |
+| Logitech SDK      | -                         | - |
+| MediaInfoLib      | Simplified BSD License    | http://mediaarea.net/MediaInfo |
+| Mhook             | MIT License               | https://github.com/martona/mhook |
+| MultiMon          | CPOL                      | http://www.codeproject.com/Articles/3690/ |
+| QuickTime SDK     | -                         | http://developer.apple.com/quicktime/ |
+| RARFileSource     | GPLv2+                    | http://www.v12pwr.com/RARFileSource/ |
+| RealMedia SDK     | -                         | - |
+| ResizableLib      | Artistic License          | http://sourceforge.net/projects/resizablelib/ |
+| Silk Icons        | CC Attribution 2.5        | http://www.famfamfam.com/lab/icons/silk/ |
+| SoundTouch        | LGPLv2.1                  | http://www.surina.net/soundtouch/ |
+| TreePropSheet     | -                         | http://www.codeproject.com/Articles/3709/ |
+| UnRAR             | freeware                  | http://www.rarlab.com/rar_add.htm |
+| VirtualDub        | GPLv2+                    | http://www.virtualdub.org/ |
+| ZenLib            | zlib License              | http://sourceforge.net/projects/zenlib/ |
+| zlib              | zlib License              | http://zlib.net/ |

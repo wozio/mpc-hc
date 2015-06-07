@@ -24,7 +24,7 @@ Main Features:
 * Multi-Monitor support
 * Various pixel shaders
 * Color management
-* 33 translations available
+* 35 translations available
 
 
 System Requirements:
@@ -52,23 +52,22 @@ MPC-HC makes use of the following third-party code:
 
 Project             License                     Website
 --------------------------------------------------------------------
-ATL Server          Ms-LPL                      http://atlserver.codeplex.com/
-CLineNumberEdit     -                           http://www.codeproject.com/Articles/6385/Controls-in-controls-A-line-numbering-edit-box
-CSizingControlBar   GPLv2                       http://www.datamekanix.com/sizecbar/
-LAV Filters         GPLv2                       http://code.google.com/p/lavfilters/
+CSizingControlBar   -                           http://www.datamekanix.com/sizecbar/
+LAV Filters         GPLv2+                      http://code.google.com/p/lavfilters/
+libdivide           zlib License                http://libdivide.com/
 Little CMS          MIT License                 http://www.littlecms.com/
 Logitech SDK        -                           -
 MediaInfoLib        Simplified BSD License      http://mediaarea.net/MediaInfo
 Mhook               MIT License                 https://github.com/martona/mhook
-MultiMon            CPOL                        http://www.codeproject.com/KB/GDI/multimon.aspx
+MultiMon            CPOL                        http://www.codeproject.com/Articles/3690/
 QuickTime SDK       -                           http://developer.apple.com/quicktime/
 RARFileSource       GPLv2+                      http://www.v12pwr.com/RARFileSource/
 RealMedia SDK       -                           -
 ResizableLib        Artistic License            http://sourceforge.net/projects/resizablelib/
 Silk Icons          CC Attribution 2.5          http://www.famfamfam.com/lab/icons/silk/
 SoundTouch          LGPLv2.1                    http://www.surina.net/soundtouch/
-TreePropSheet       -                           http://www.codeproject.com/Articles/3709/CTreePropSheet-A-Netscape-Visual-Studio-NET-like-P
+TreePropSheet       -                           http://www.codeproject.com/Articles/3709/
 UnRAR               freeware                    http://www.rarlab.com/rar_add.htm
-VirtualDub          GPLv2                       http://www.virtualdub.org/
+VirtualDub          GPLv2+                      http://www.virtualdub.org/
 ZenLib              zlib License                http://sourceforge.net/projects/zenlib/
 zlib                zlib License                http://zlib.net/

@@ -2,13 +2,17 @@
 # Copyright (C) 2002 - 2013 see Authors.txt
 # This file is distributed under the same license as the MPC-HC package.
 # Translators:
-# LuanMax <luanmail@gmx.net>, 2014
+# JellyFrog, 2014
+# JellyFrog, 2014
+# Luan <luanmail@gmx.net>, 2014
+# Luan <luanmail@gmx.net>, 2014
+# M T <michtrz@gmail.com>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-04-22 11:15:01+0000\n"
-"PO-Revision-Date: 2014-05-07 08:42+0000\n"
-"Last-Translator: JellyFrog\n"
+"POT-Creation-Date: 2014-08-19 21:10:25+0000\n"
+"PO-Revision-Date: 2014-09-04 17:40+0000\n"
+"Last-Translator: Luan <luanmail@gmx.net>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/mpc-hc/language/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -34,11 +38,11 @@ msgstr "&DVD/BD öffnen..."
 
 msgctxt "ID_FILE_OPENDEVICE"
 msgid "Open De&vice..."
-msgstr "&Videogerät öffnen..."
+msgstr "&Gerät öffnen..."
 
 msgctxt "ID_FILE_OPENDIRECTORY"
 msgid "Open Dir&ectory..."
-msgstr "Verzeich&nis öffnen..."
+msgstr "&Verzeichnis öffnen..."
 
 msgctxt "ID_FILE_OPENDISC"
 msgid "O&pen Disc"
@@ -394,15 +398,15 @@ msgstr "Fenster von &innen berühren"
 
 msgctxt "ID_VIEW_VF_ZOOM1"
 msgid "Zoom &1"
-msgstr "Fenster von &außen berühren"
+msgstr "Zoom &1"
 
 msgctxt "ID_VIEW_VF_ZOOM2"
 msgid "Zoom &2"
-msgstr "Zoom &1"
+msgstr "Zoom &2"
 
 msgctxt "ID_VIEW_VF_FROMOUTSIDE"
 msgid "Touch Window From &Outside"
-msgstr "Zoom &2"
+msgstr "Fenster von &außen berühren"
 
 msgctxt "ID_VIEW_VF_KEEPASPECTRATIO"
 msgid "&Keep Aspect Ratio"
@@ -584,10 +588,6 @@ msgctxt "POPUP"
 msgid "Af&ter Playback"
 msgstr "Nach Wieder&gabe"
 
-msgctxt "ID_AFTERPLAYBACK_ONCE"
-msgid "--------- Once ---------"
-msgstr "-------- Einmalige Aktion -------"
-
 msgctxt "ID_AFTERPLAYBACK_CLOSE"
 msgid "&Exit"
 msgstr "&Programm beenden"
@@ -612,21 +612,9 @@ msgctxt "ID_AFTERPLAYBACK_LOCK"
 msgid "&Lock"
 msgstr "Benutzer &sperren"
 
-msgctxt "ID_AFTERPLAYBACK_EVERYTIME"
-msgid "------ Every time ------"
-msgstr "-------- Standard-Aktion --------"
-
-msgctxt "ID_AFTERPLAYBACK_EXIT"
-msgid "E&xit"
-msgstr "Programm &beenden"
-
-msgctxt "ID_AFTERPLAYBACK_DONOTHING"
-msgid "Do &Nothing"
-msgstr "&Keine Aktion"
-
-msgctxt "ID_AFTERPLAYBACK_NEXT"
-msgid "Play next in the &folder"
-msgstr "&Nächste Datei im Ordner abspielen"
+msgctxt "ID_AFTERPLAYBACK_MONITOROFF"
+msgid "Turn off the &monitor"
+msgstr "&Bildschirm ausschalten"
 
 msgctxt "POPUP"
 msgid "&Navigate"
@@ -678,15 +666,15 @@ msgstr "&Hilfe"
 
 msgctxt "ID_HELP_HOMEPAGE"
 msgid "&Home Page"
-msgstr "&MPC-HC-Homepage"
+msgstr "&Homepage"
 
 msgctxt "ID_HELP_CHECKFORUPDATE"
 msgid "Check for &updates"
-msgstr "&Auf Aktualisierung prüfen"
+msgstr "&Auf Update prüfen"
 
 msgctxt "ID_HELP_SHOWCOMMANDLINESWITCHES"
 msgid "&Command Line Switches"
-msgstr "&Hilfe für Startparameter..."
+msgstr "Hilfe für &Befehlszeile"
 
 msgctxt "ID_HELP_TOOLBARIMAGES"
 msgid "Download &Toolbar Images"
@@ -698,5 +686,5 @@ msgstr "&Spenden"
 
 msgctxt "ID_HELP_ABOUT"
 msgid "&About..."
-msgstr "&Über..."
+msgstr "&Über"
 

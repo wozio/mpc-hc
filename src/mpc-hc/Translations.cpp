@@ -25,6 +25,7 @@
 #include "WinAPIUtils.h"
 
 static const std::vector<const Translations::LanguageResource> languageResources = {
+    { 1025,   _T("Arabic"),                   _T("Lang\\mpcresources.ar.dll") },
     { 1067,   _T("Armenian"),                 _T("Lang\\mpcresources.hy.dll") },
     { 1069,   _T("Basque"),                   _T("Lang\\mpcresources.eu.dll") },
     { 1059,   _T("Belarusian"),               _T("Lang\\mpcresources.be.dll") },
@@ -56,6 +57,7 @@ static const std::vector<const Translations::LanguageResource> languageResources
     { 1053,   _T("Swedish"),                  _T("Lang\\mpcresources.sv.dll") },
     { 3082,   _T("Spanish"),                  _T("Lang\\mpcresources.es.dll") },
     { 1092,   _T("Tatar"),                    _T("Lang\\mpcresources.tt.dll") },
+    { 1054,   _T("Thai"),                     _T("Lang\\mpcresources.th_TH.dll") },
     { 1055,   _T("Turkish"),                  _T("Lang\\mpcresources.tr.dll") },
     { 1058,   _T("Ukrainian"),                _T("Lang\\mpcresources.uk.dll") },
     { 1066,   _T("Vietnamese"),               _T("Lang\\mpcresources.vi.dll") }
@@ -155,7 +157,7 @@ bool Translations::SetLanguage(LanguageResource languageResource, bool showError
         success = (languageResource.dllPath == nullptr);
     }
     // In case a dll was loaded, check if some special action is needed
-    else if (PRIMARYLANGID(languageResource.localeID) == LANG_HEBREW) {
+    else if (PRIMARYLANGID(languageResource.localeID) == LANG_ARABIC || PRIMARYLANGID(languageResource.localeID) == LANG_HEBREW) {
         // Hebrew needs the RTL flag.
         SetProcessDefaultLayout(LAYOUT_RTL);
         SetWindowsHookEx(WH_CBT, RTLWindowsLayoutCbtFilterHook, nullptr, GetCurrentThreadId());

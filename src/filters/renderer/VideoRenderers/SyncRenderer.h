@@ -67,8 +67,6 @@ class CFocusThread;
 #define PIXELCLOCK  8
 #define UNKNOWN     9
 
-#define MAX_FIFO_SIZE 1024
-
 // Guid to tag IMFSample with DirectX surface index
 static const GUID GUID_SURFACE_INDEX = { 0x30c8e9f6, 0x415, 0x4b81, { 0xa3, 0x15, 0x1, 0xa, 0xc6, 0xa9, 0xda, 0x19 } };
 
@@ -297,7 +295,8 @@ namespace GothSync
         LONG m_lShiftToNearest, m_lShiftToNearestPrev;
         bool m_bVideoSlowerThanDisplay;
 
-        int m_bInterlaced;
+        REFERENCE_TIME m_rtTimePerFrame;
+        bool m_bInterlaced;
         double m_TextScale;
         CString  m_strStatsMsg[10];
 
@@ -325,7 +324,7 @@ namespace GothSync
 
         // ISubPicAllocatorPresenter
         STDMETHODIMP CreateRenderer(IUnknown** ppRenderer);
-        STDMETHODIMP_(bool) Paint(bool fAll);
+        STDMETHODIMP_(bool) Paint(bool bAll);
         STDMETHODIMP GetDIB(BYTE* lpDib, DWORD* size);
         STDMETHODIMP SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget);
         STDMETHODIMP SetPixelShader2(LPCSTR pSrcData, LPCSTR pTarget, bool bScreenSpace);
@@ -356,10 +355,15 @@ namespace GothSync
         STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
 
         STDMETHODIMP CreateRenderer(IUnknown** ppRenderer);
-        STDMETHODIMP_(bool) Paint(bool fAll);
+        STDMETHODIMP_(bool) Paint(bool bAll);
         STDMETHODIMP GetNativeVideoSize(LONG* lpWidth, LONG* lpHeight, LONG* lpARWidth, LONG* lpARHeight);
         STDMETHODIMP InitializeDevice(AM_MEDIA_TYPE* pMediaType);
         STDMETHODIMP_(bool) ResetDevice();
+
+        // ISubPicAllocatorPresenter2
+        STDMETHODIMP_(bool) IsRendering() {
+            return (m_nRenderState == Started);
+        }
 
         // IMFClockStateSink
         STDMETHODIMP OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset);
@@ -590,19 +594,11 @@ namespace GothSync
         class MovingAverage
         {
         public:
-            MovingAverage(int size)
+            MovingAverage(size_t size)
                 : fifoSize(size)
+                , fifo(fifoSize)
                 , oldestSample(0)
-                , sum(0) {
-                if (fifoSize > MAX_FIFO_SIZE) {
-                    fifoSize = MAX_FIFO_SIZE;
-                }
-                for (int i = 0; i < MAX_FIFO_SIZE; i++) {
-                    fifo[i] = 0;
-                }
-            }
-
-            ~MovingAverage() {
+                , sum(0.0) {
             }
 
             double Average(double sample) {
@@ -616,14 +612,17 @@ namespace GothSync
             }
 
         private:
-            int fifoSize;
-            double fifo[MAX_FIFO_SIZE];
-            int oldestSample;
+            size_t fifoSize;
+            std::vector<double> fifo;
+            size_t oldestSample;
             double sum;
         };
 
         CGenlock(double target, double limit, int rowD, int colD, double clockD, UINT mon);
+        CGenlock(const CGenlock&) = delete;
         ~CGenlock();
+
+        CGenlock& operator=(const CGenlock&) = delete;
 
         BOOL PowerstripRunning();   // TRUE if PowerStrip is running
         HRESULT GetTiming();        // Get the string representing the display's current timing parameters
@@ -642,8 +641,8 @@ namespace GothSync
         HRESULT ControlClock(double syncOffset, double frameCycle);   // Adjust the frequency of the clock if needed
         HRESULT UpdateStats(double syncOffset, double frameCycle);    // Don't adjust anything, just update the syncOffset stats
 
-        BOOL powerstripTimingExists;        // TRUE if display timing has been got through Powerstrip
-        BOOL liveSource;                    // TRUE if live source -> display sync is the only option
+        bool powerstripTimingExists;        // true if display timing has been got through Powerstrip
+        bool liveSource;                    // true if live source -> display sync is the only option
         int adjDelta;                       // -1 for display slower in relation to video, 0 for keep, 1 for faster
         int lineDelta;                      // The number of rows added or subtracted when adjusting display fps
         int columnDelta;                    // The number of colums added or subtracted when adjusting display fps
@@ -653,8 +652,8 @@ namespace GothSync
 
         UINT totalLines, totalColumns;      // Including the porches and sync widths
         UINT visibleLines, visibleColumns;  // The nominal resolution
-        MovingAverage* syncOffsetFifo;
-        MovingAverage* frameCycleFifo;
+        MovingAverage syncOffsetFifo;
+        MovingAverage frameCycleFifo;
         double minSyncOffset, maxSyncOffset;
         double syncOffsetAvg; // Average of the above
         double minFrameCycle, maxFrameCycle;
@@ -673,15 +672,15 @@ namespace GothSync
         HWND psWnd; // PowerStrip window
         const static int TIMING_PARAM_CNT = 10;
         const static int MAX_LOADSTRING = 100;
-        UINT displayTiming[TIMING_PARAM_CNT];       // Display timing parameters
-        UINT displayTimingSave[TIMING_PARAM_CNT];   // So that we can reset the display at exit
-        TCHAR faster[MAX_LOADSTRING];       // String corresponding to faster display frequency
-        TCHAR cruise[MAX_LOADSTRING];       // String corresponding to nominal display frequency
-        TCHAR slower[MAX_LOADSTRING];       // String corresponding to slower display frequency
-        TCHAR savedTiming[MAX_LOADSTRING];  // String version of saved timing (to be restored upon exit)
-        double lowSyncOffset;               // The closest we want to let the scheduled render time to get to the next vsync. In % of the frame time
-        double targetSyncOffset;            // Where we want the scheduled render time to be in relation to the next vsync
-        double highSyncOffset;              // The furthers we want to let the scheduled render time to get to the next vsync
+        std::array<UINT, TIMING_PARAM_CNT> displayTiming;       // Display timing parameters
+        std::array<UINT, TIMING_PARAM_CNT> displayTimingSave;   // So that we can reset the display at exit
+        TCHAR faster[MAX_LOADSTRING];                           // String corresponding to faster display frequency
+        TCHAR cruise[MAX_LOADSTRING];                           // String corresponding to nominal display frequency
+        TCHAR slower[MAX_LOADSTRING];                           // String corresponding to slower display frequency
+        TCHAR savedTiming[MAX_LOADSTRING];                      // String version of saved timing (to be restored upon exit)
+        double lowSyncOffset;       // The closest we want to let the scheduled render time to get to the next vsync. In % of the frame time
+        double targetSyncOffset;    // Where we want the scheduled render time to be in relation to the next vsync
+        double highSyncOffset;      // The furthers we want to let the scheduled render time to get to the next vsync
         CCritSec csGenlockLock;
     };
 }

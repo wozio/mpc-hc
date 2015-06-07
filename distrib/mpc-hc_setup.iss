@@ -20,12 +20,8 @@
 ; Inno Setup Unicode: http://www.jrsoftware.org/isdl.php
 
 
-#if VER < EncodeVer(5,5,4)
-  #error Update your Inno Setup version (5.5.4 or newer)
-#endif
-
-#if VER > EncodeVer(5,5,4)
-  #error Update script to use Turkish from the compiler dir and remove this check
+#if VER < EncodeVer(5,5,5)
+  #error Update your Inno Setup version (5.5.5 or newer)
 #endif
 
 #ifndef UNICODE
@@ -115,53 +111,46 @@
 
 [Setup]
 #ifdef x64Build
-AppId={{2ACBF1FA-F5C3-4B19-A774-B22A31F231B9}
-DefaultGroupName={#app_name} x64
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+AppId                     = {{2ACBF1FA-F5C3-4B19-A774-B22A31F231B9}
+DefaultGroupName          = {#app_name} x64
+ArchitecturesAllowed      = x64
+ArchitecturesInstallIn64BitMode = x64
 #else
-AppId={{2624B969-7135-4EB1-B0F6-2D8C397B45F7}
-DefaultGroupName={#app_name}
+AppId                     = {{2624B969-7135-4EB1-B0F6-2D8C397B45F7}
+DefaultGroupName          = {#app_name}
 #endif
 
-AppName={#app_name}
-AppVersion={#app_ver}
-AppVerName={#app_vername}
-AppPublisher=MPC-HC Team
-AppPublisherURL={#WEBSITE_URL}
-AppSupportURL={#TRAC_URL}
-AppUpdatesURL={#WEBSITE_URL}
-AppContact={#WEBSITE_URL}contact-us/
-AppCopyright={#copyright_str}
-VersionInfoCompany=MPC-HC Team
-VersionInfoCopyright={#copyright_str}
-VersionInfoDescription={#app_name} Setup
-VersionInfoProductName={#app_name}
-VersionInfoProductVersion={#app_ver}
-VersionInfoProductTextVersion={#app_ver}
-VersionInfoTextVersion={#app_ver}
-VersionInfoVersion={#app_ver}
-UninstallDisplayIcon={app}\{#mpchc_exe}
-UninstallDisplayName={#FullAppNameVer}
-OutputBaseFilename={#OutFilename}
-DefaultDirName={code:GetInstallFolder}
-LicenseFile=..\COPYING.txt
-OutputDir=.
-SetupIconFile=..\src\mpc-hc\res\icon.ico
-AppReadmeFile={app}\Readme.txt
-WizardImageFile=WizardImageFile.bmp
-WizardSmallImageFile=WizardSmallImageFile.bmp
-Compression=lzma2/ultra
-InternalCompressLevel=ultra
-SolidCompression=yes
-AllowNoIcons=yes
-ShowTasksTreeLines=yes
-DisableDirPage=auto
-DisableProgramGroupPage=auto
-MinVersion=5.01.2600sp3
-AppMutex=MediaPlayerClassicW
+AppName                   = {#app_name}
+AppVersion                = {#app_ver}
+AppVerName                = {#app_vername}
+AppPublisher              = MPC-HC Team
+AppPublisherURL           = {#WEBSITE_URL}
+AppSupportURL             = {#TRAC_URL}
+AppUpdatesURL             = {#WEBSITE_URL}
+AppContact                = {#WEBSITE_URL}contact-us/
+AppCopyright              = {#copyright_str}
+VersionInfoVersion        = {#app_ver}
+UninstallDisplayIcon      = {app}\{#mpchc_exe}
+UninstallDisplayName      = {#FullAppNameVer}
+OutputBaseFilename        = {#OutFilename}
+DefaultDirName            = {code:GetInstallFolder}
+LicenseFile               = ..\COPYING.txt
+OutputDir                 = .
+SetupIconFile             = ..\src\mpc-hc\res\icon.ico
+AppReadmeFile             = {app}\Readme.txt
+WizardImageFile           = WizardImageFile.bmp
+WizardSmallImageFile      = WizardSmallImageFile.bmp
+Compression               = lzma2/ultra
+InternalCompressLevel     = ultra
+SolidCompression          = yes
+AllowNoIcons              = yes
+ShowTasksTreeLines        = yes
+DisableDirPage            = auto
+DisableProgramGroupPage   = auto
+MinVersion                = 5.1sp3
+CloseApplications         = true
 #ifexist "..\signinfo.txt"
-SignTool=MySignTool
+SignTool                  = MySignTool
 #endif
 
 
@@ -169,7 +158,9 @@ SignTool=MySignTool
 Name: en;    MessagesFile: compiler:Default.isl
 
 #if localize == "true"
+Name: ar;    MessagesFile: Languages\Arabic.isl
 Name: be;    MessagesFile: Languages\Belarusian.isl
+Name: bn;    MessagesFile: Languages\Bengali.islu
 Name: ca;    MessagesFile: compiler:Languages\Catalan.isl
 Name: cs;    MessagesFile: compiler:Languages\Czech.isl
 Name: de;    MessagesFile: compiler:Languages\German.isl
@@ -195,8 +186,9 @@ Name: ru;    MessagesFile: compiler:Languages\Russian.isl
 Name: sk;    MessagesFile: Languages\Slovak.isl
 Name: sl;    MessagesFile: compiler:Languages\Slovenian.isl
 Name: sv;    MessagesFile: Languages\Swedish.isl
+Name: th_TH; MessagesFile: Languages\Thai.isl
 Name: tt;    MessagesFile: Languages\Tatar.isl
-Name: tr;    MessagesFile: Languages\Turkish.isl
+Name: tr;    MessagesFile: compiler:Languages\Turkish.isl
 Name: uk;    MessagesFile: compiler:Languages\Ukrainian.isl
 Name: vi;    MessagesFile: Languages\Vietnamese.isl
 Name: zh_CN; MessagesFile: Languages\ChineseSimplified.isl
@@ -273,6 +265,7 @@ Name: {group}\{cm:UninstallProgram,{#app_name}}; Filename: {uninstallexe};      
 [Run]
 Filename: {app}\{#mpchc_exe};                    Description: {cm:LaunchProgram,{#app_name}}; WorkingDir: {app}; Flags: nowait postinstall skipifsilent unchecked
 Filename: {app}\Changelog.txt;                   Description: {cm:ViewChangelog};             WorkingDir: {app}; Flags: nowait postinstall skipifsilent unchecked shellexec
+Filename: {#TOOLBARS_URL};                       Description: {cm:run_DownloadToolbarImages};                    Flags: nowait postinstall skipifsilent unchecked shellexec
 
 
 [InstallDelete]

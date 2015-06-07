@@ -59,10 +59,14 @@ configure() {
     --enable-protocol=mmst          \
     --enable-protocol=rtp           \
     --enable-protocol=http          \
+    --enable-protocol=crypto        \
+    --enable-protocol=rtmp          \
+    --enable-protocol=rtmpt         \
     --disable-muxers                \
     --enable-muxer=spdif            \
     --disable-hwaccels              \
     --enable-hwaccel=h264_dxva2     \
+    --enable-hwaccel=hevc_dxva2     \
     --enable-hwaccel=vc1_dxva2      \
     --enable-hwaccel=wmv3_dxva2     \
     --enable-hwaccel=mpeg2_dxva2    \

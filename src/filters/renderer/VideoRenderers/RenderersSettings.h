@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,8 @@
  */
 
 #pragma once
+
+#include "../../../SubPic/SubPicQueueSettings.h"
 
 enum {
     WM_REARRANGERENDERLESS = WM_APP + 1,
@@ -121,10 +123,7 @@ public:
     bool        fVMR9MixerYUV;
     int         iEvrBuffers;
 
-    int         nSPCSize;
-    int         nSPCMaxRes;
-    bool        fSPCPow2Tex;
-    bool        fSPCAllowAnimationWhenBuffering;
+    SubPicQueueSettings subPicQueueSettings;
 
     CString     D3D9RenderDevice;
     void        UpdateData(bool fSave);

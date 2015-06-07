@@ -99,9 +99,6 @@
     <ClCompile Include="LcdSupport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LineNumberEdit.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MainFrm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -390,6 +387,15 @@
     <ClCompile Include="ColorButton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PPageAdvanced.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SaveImageDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdLineHelpDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppSettings.h">
@@ -471,9 +477,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LcdSupport.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LineNumberEdit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MainFrm.h">
@@ -791,6 +794,15 @@
     <ClInclude Include="ColorButton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PPageAdvanced.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SaveImageDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdLineHelpDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\ani.avi">
@@ -1083,5 +1095,19 @@
     <Object Include="..\thirdparty\LAVFilters\src\bin_$(PlatformName)\ffmpeg\GCCInfo.o">
       <Filter>Source Files</Filter>
     </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\check_all.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\check_audio.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\check_video.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\uncheck_all.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

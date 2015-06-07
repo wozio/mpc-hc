@@ -88,6 +88,8 @@ STDMETHODIMP CmadVRAllocatorPresenter::NonDelegatingQueryInterface(REFIID riid, 
 
 HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
 {
+    const CRenderersSettings& r = GetRenderersSettings();
+
     if (!pD3DDev) {
         // release all resources
         m_pSubPicQueue = nullptr;
@@ -95,24 +97,26 @@ HRESULT CmadVRAllocatorPresenter::SetDevice(IDirect3DDevice9* pD3DDev)
         return S_OK;
     }
 
-    InitMaxSubtitleTextureSize(GetRenderersSettings().nSPCMaxRes, m_ScreenSize);
+    InitMaxSubtitleTextureSize(r.subPicQueueSettings.nMaxRes, m_ScreenSize);
 
     if (m_pAllocator) {
         m_pAllocator->ChangeDevice(pD3DDev);
     } else {
-        m_pAllocator = DEBUG_NEW CDX9SubPicAllocator(pD3DDev, m_maxSubtitleTextureSize, GetRenderersSettings().fSPCPow2Tex, true);
+        m_pAllocator = DEBUG_NEW CDX9SubPicAllocator(pD3DDev, m_maxSubtitleTextureSize, true);
     }
 
     HRESULT hr = S_OK;
     if (!m_pSubPicQueue) {
         CAutoLock(this);
-        m_pSubPicQueue = (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(m_pAllocator, &hr);
+        m_pSubPicQueue = r.subPicQueueSettings.nSize > 0
+                         ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(r.subPicQueueSettings, m_pAllocator, &hr)
+                         : (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(r.subPicQueueSettings, m_pAllocator, &hr);
     } else {
         m_pSubPicQueue->Invalidate();
     }
 
-    if (SUCCEEDED(hr) && m_SubPicProvider) {
-        m_pSubPicQueue->SetSubPicProvider(m_SubPicProvider);
+    if (SUCCEEDED(hr) && m_pSubPicProvider) {
+        m_pSubPicQueue->SetSubPicProvider(m_pSubPicProvider);
     }
 
     return hr;
@@ -185,11 +189,11 @@ STDMETHODIMP_(void) CmadVRAllocatorPresenter::SetPosition(RECT w, RECT v)
     }
 }
 
-STDMETHODIMP_(SIZE) CmadVRAllocatorPresenter::GetVideoSize(bool fCorrectAR)
+STDMETHODIMP_(SIZE) CmadVRAllocatorPresenter::GetVideoSize(bool bCorrectAR) const
 {
     SIZE size = {0, 0};
 
-    if (!fCorrectAR) {
+    if (!bCorrectAR) {
         if (CComQIPtr<IBasicVideo> pBV = m_pDXR) {
             pBV->GetVideoSize(&size.cx, &size.cy);
         }
@@ -202,7 +206,7 @@ STDMETHODIMP_(SIZE) CmadVRAllocatorPresenter::GetVideoSize(bool fCorrectAR)
     return size;
 }
 
-STDMETHODIMP_(bool) CmadVRAllocatorPresenter::Paint(bool fAll)
+STDMETHODIMP_(bool) CmadVRAllocatorPresenter::Paint(bool bAll)
 {
     return false; // TODO
 }

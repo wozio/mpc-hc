@@ -65,9 +65,7 @@ static void AdjustQuad(MYD3DVERTEX<texcoords>* v, double dx, double dy)
 template<int texcoords>
 static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4], D3DTEXTUREFILTERTYPE filter)
 {
-    if (!pD3DDev) {
-        return E_POINTER;
-    }
+    CheckPointer(pD3DDev, E_POINTER);
 
     DWORD FVF = 0;
 
@@ -100,35 +98,33 @@ static HRESULT TextureBlt(IDirect3DDevice9* pD3DDev, MYD3DVERTEX<texcoords> v[4]
             return E_FAIL;
     }
 
-    HRESULT hr;
-
-    hr = pD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-    hr = pD3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_ZENABLE, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_STENCILENABLE, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_ALPHA | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED);
+    pD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    pD3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
+    pD3DDev->SetRenderState(D3DRS_ZENABLE, FALSE);
+    pD3DDev->SetRenderState(D3DRS_STENCILENABLE, FALSE);
+    pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+    pD3DDev->SetRenderState(D3DRS_ALPHATESTENABLE, FALSE);
+    pD3DDev->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+    pD3DDev->SetRenderState(D3DRS_COLORWRITEENABLE, D3DCOLORWRITEENABLE_ALPHA | D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_GREEN | D3DCOLORWRITEENABLE_RED);
 
     for (int i = 0; i < texcoords; i++) {
-        hr = pD3DDev->SetSamplerState(i, D3DSAMP_MAGFILTER, filter);
-        hr = pD3DDev->SetSamplerState(i, D3DSAMP_MINFILTER, filter);
-        hr = pD3DDev->SetSamplerState(i, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+        pD3DDev->SetSamplerState(i, D3DSAMP_MAGFILTER, filter);
+        pD3DDev->SetSamplerState(i, D3DSAMP_MINFILTER, filter);
+        pD3DDev->SetSamplerState(i, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 
-        hr = pD3DDev->SetSamplerState(i, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
-        hr = pD3DDev->SetSamplerState(i, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+        pD3DDev->SetSamplerState(i, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+        pD3DDev->SetSamplerState(i, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
     }
 
     //
 
-    hr = pD3DDev->SetFVF(D3DFVF_XYZRHW | FVF);
-    // hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
+    pD3DDev->SetFVF(D3DFVF_XYZRHW | FVF);
+    //pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, v, sizeof(v[0]));
 
     MYD3DVERTEX<texcoords> tmp = v[2];
     v[2] = v[3];
     v[3] = tmp;
-    hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
+    pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLEFAN, 2, v, sizeof(v[0]));
 
     //
 
@@ -236,8 +232,8 @@ HRESULT CDX9RenderingEngine::CreateVideoSurfaces()
 
         for (int i = 0; i < nTexturesNeeded; i++) {
             if (FAILED(hr = m_pD3DDev->CreateTexture(
-                                m_NativeVideoSize.cx,
-                                m_NativeVideoSize.cy, 1,
+                                m_nativeVideoSize.cx,
+                                m_nativeVideoSize.cy, 1,
                                 D3DUSAGE_RENDERTARGET,
                                 m_SurfaceType,
                                 D3DPOOL_DEFAULT,
@@ -264,7 +260,7 @@ HRESULT CDX9RenderingEngine::CreateVideoSurfaces()
         m_RenderingPath = RENDERING_PATH_STRETCHRECT;
 
         if (FAILED(hr = m_pD3DDev->CreateOffscreenPlainSurface(
-                            m_NativeVideoSize.cx, m_NativeVideoSize.cy,
+                            m_nativeVideoSize.cx, m_nativeVideoSize.cy,
                             m_SurfaceType,
                             D3DPOOL_DEFAULT, &m_pVideoSurface[m_nCurSurface], nullptr))) {
             return hr;
@@ -533,8 +529,8 @@ HRESULT CDX9RenderingEngine::InitTemporaryVideoTextures(int count)
     for (int i = 0; i < count; i++) {
         if (m_pTemporaryVideoTextures[i] == nullptr) {
             hr = m_pD3DDev->CreateTexture(
-                     m_NativeVideoSize.cx,
-                     m_NativeVideoSize.cy,
+                     m_nativeVideoSize.cx,
+                     m_nativeVideoSize.cy,
                      1,
                      D3DUSAGE_RENDERTARGET,
                      m_SurfaceType,
@@ -585,7 +581,7 @@ HRESULT CDX9RenderingEngine::InitTemporaryScreenSpaceTextures(int count)
     for (int i = 0; i < count; i++) {
         if (m_pTemporaryScreenSpaceTextures[i] == nullptr) {
             m_TemporaryScreenSpaceTextureSize = CSize(std::min(m_ScreenSize.cx, (long)m_Caps.MaxTextureWidth),
-                                                std::min(std::max(m_ScreenSize.cy, m_NativeVideoSize.cy), (long)m_Caps.MaxTextureHeight));
+                                                std::min(std::max(m_ScreenSize.cy, m_nativeVideoSize.cy), (long)m_Caps.MaxTextureHeight));
             hr = m_pD3DDev->CreateTexture(
                      m_TemporaryScreenSpaceTextureSize.cx,
                      m_TemporaryScreenSpaceTextureSize.cy,
@@ -1204,13 +1200,13 @@ HRESULT CDX9RenderingEngine::CreateIccProfileLut(TCHAR* profilePath, float* lut3
         videoSystem = VIDEO_SYSTEM_HDTV; // default
 
         for (int i = 0; i < _countof(ntscSizes); i++) {
-            if (m_NativeVideoSize.cx == ntscSizes[i][0] && m_NativeVideoSize.cy == ntscSizes[i][1]) {
+            if (m_nativeVideoSize.cx == ntscSizes[i][0] && m_nativeVideoSize.cy == ntscSizes[i][1]) {
                 videoSystem = VIDEO_SYSTEM_SDTV_NTSC;
             }
         }
 
         for (int i = 0; i < _countof(palSizes); i++) {
-            if (m_NativeVideoSize.cx == palSizes[i][0] && m_NativeVideoSize.cy == palSizes[i][1]) {
+            if (m_nativeVideoSize.cx == palSizes[i][0] && m_nativeVideoSize.cy == palSizes[i][1]) {
                 videoSystem = VIDEO_SYSTEM_SDTV_PAL;
             }
         }
@@ -1557,9 +1553,7 @@ bool CDX9RenderingEngine::ClipToSurface(IDirect3DSurface9* pSurface, CRect& s, C
 
 HRESULT CDX9RenderingEngine::DrawRect(DWORD _Color, DWORD _Alpha, const CRect& _Rect)
 {
-    if (!m_pD3DDev) {
-        return E_POINTER;
-    }
+    CheckPointer(m_pD3DDev, E_POINTER);
 
     DWORD Color = D3DCOLOR_ARGB(_Alpha, GetRValue(_Color), GetGValue(_Color), GetBValue(_Color));
     MYD3DVERTEX<0> v[] = {

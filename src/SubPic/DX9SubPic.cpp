@@ -43,20 +43,18 @@ CDX9SubPic::CDX9SubPic(IDirect3DSurface9* pSurface, CDX9SubPicAllocator* pAlloca
 
 CDX9SubPic::~CDX9SubPic()
 {
-    {
-        CAutoLock Lock(&CDX9SubPicAllocator::ms_SurfaceQueueLock);
-        // Add surface to cache
-        if (m_pAllocator) {
-            for (POSITION pos = m_pAllocator->m_AllocatedSurfaces.GetHeadPosition(); pos;) {
-                POSITION ThisPos = pos;
-                CDX9SubPic* pSubPic = m_pAllocator->m_AllocatedSurfaces.GetNext(pos);
-                if (pSubPic == this) {
-                    m_pAllocator->m_AllocatedSurfaces.RemoveAt(ThisPos);
-                    break;
-                }
+    CAutoLock lock(&CDX9SubPicAllocator::ms_surfaceQueueLock);
+    // Add surface to cache
+    if (m_pAllocator) {
+        for (POSITION pos = m_pAllocator->m_allocatedSurfaces.GetHeadPosition(); pos;) {
+            POSITION thisPos = pos;
+            CDX9SubPic* pSubPic = m_pAllocator->m_allocatedSurfaces.GetNext(pos);
+            if (pSubPic == this) {
+                m_pAllocator->m_allocatedSurfaces.RemoveAt(thisPos);
+                break;
             }
-            m_pAllocator->m_FreeSurfaces.AddTail(m_pSurface);
         }
+        m_pAllocator->m_freeSurfaces.AddTail(m_pSurface);
     }
 }
 
@@ -67,7 +65,7 @@ STDMETHODIMP_(void*) CDX9SubPic::GetObject()
 {
     CComPtr<IDirect3DTexture9> pTexture;
     if (SUCCEEDED(m_pSurface->GetContainer(IID_PPV_ARGS(&pTexture)))) {
-        return (void*)(IDirect3DTexture9*)pTexture;
+        return (IDirect3DTexture9*)pTexture;
     }
 
     return nullptr;
@@ -126,7 +124,6 @@ STDMETHODIMP CDX9SubPic::CopyTo(ISubPic* pSubPic)
     SetRect(&r, 0, 0, std::min(srcDesc.Width, dstDesc.Width), std::min(srcDesc.Height, dstDesc.Height));
     POINT p = { 0, 0 };
     hr = pD3DDev->UpdateSurface(pSrcSurf, &r, pDstSurf, &p);
-    //  ASSERT (SUCCEEDED (hr));
 
     return SUCCEEDED(hr) ? S_OK : E_FAIL;
 }
@@ -160,14 +157,14 @@ STDMETHODIMP CDX9SubPic::ClearDirtyRect(DWORD color)
             }
         }
         /*
-                DWORD* ptr = (DWORD*)bm.bits;
-                DWORD* end = ptr + bm.h*bm.wBytes/4;
-                while (ptr < end) *ptr++ = color;
+            DWORD* ptr = (DWORD*)bm.bits;
+            DWORD* end = ptr + bm.h*bm.wBytes/4;
+            while (ptr < end) *ptr++ = color;
         */
         Unlock(nullptr);
     }
 
-    //      HRESULT hr = pD3DDev->ColorFill(m_pSurface, m_rcDirty, color);
+    // HRESULT hr = pD3DDev->ColorFill(m_pSurface, m_rcDirty, color);
 
     m_rcDirty.SetRectEmpty();
 
@@ -203,7 +200,7 @@ STDMETHODIMP CDX9SubPic::Lock(SubPicDesc& spd)
 
 STDMETHODIMP CDX9SubPic::Unlock(RECT* pDirtyRect)
 {
-    HRESULT hr = m_pSurface->UnlockRect();
+    m_pSurface->UnlockRect();
 
     if (pDirtyRect) {
         m_rcDirty = *pDirtyRect;
@@ -221,7 +218,7 @@ STDMETHODIMP CDX9SubPic::Unlock(RECT* pDirtyRect)
 
     CComPtr<IDirect3DTexture9> pTexture = (IDirect3DTexture9*)GetObject();
     if (pTexture && pDirtyRect && !((CRect*)pDirtyRect)->IsRectEmpty()) {
-        hr = pTexture->AddDirtyRect(&m_rcDirty);
+        pTexture->AddDirtyRect(&m_rcDirty);
     }
 
     return S_OK;
@@ -242,8 +239,6 @@ STDMETHODIMP CDX9SubPic::AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget)
     if (!pTexture || FAILED(pTexture->GetDevice(&pD3DDev)) || !pD3DDev) {
         return E_NOINTERFACE;
     }
-
-    HRESULT hr;
 
     D3DSURFACE_DESC desc;
     ZeroMemory(&desc, sizeof(desc));
@@ -272,7 +267,7 @@ STDMETHODIMP CDX9SubPic::AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget)
         pVertices[i].y -= 0.5f;
     }
 
-    hr = pD3DDev->SetTexture(0, pTexture);
+    pD3DDev->SetTexture(0, pTexture);
 
     // GetRenderState fails for devices created with D3DCREATE_PUREDEVICE
     // so we need to provide default values in case GetRenderState fails
@@ -287,54 +282,51 @@ STDMETHODIMP CDX9SubPic::AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget)
         db = D3DBLEND_ZERO;
     }
 
-    hr = pD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-    hr = pD3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_ZENABLE, FALSE);
-    hr = pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-    hr = pD3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE); // pre-multiplied src and ...
-    hr = pD3DDev->SetRenderState(D3DRS_DESTBLEND, m_invAlpha ? D3DBLEND_INVSRCALPHA : D3DBLEND_SRCALPHA); // ... inverse alpha channel for dst
+    pD3DDev->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+    pD3DDev->SetRenderState(D3DRS_LIGHTING, FALSE);
+    pD3DDev->SetRenderState(D3DRS_ZENABLE, FALSE);
+    pD3DDev->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    pD3DDev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ONE); // pre-multiplied src and ...
+    pD3DDev->SetRenderState(D3DRS_DESTBLEND, m_bInvAlpha ? D3DBLEND_INVSRCALPHA : D3DBLEND_SRCALPHA); // ... inverse alpha channel for dst
 
-    hr = pD3DDev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
-    hr = pD3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-    hr = pD3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+    pD3DDev->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1);
+    pD3DDev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+    pD3DDev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 
     if (src == dst) {
-        hr = pD3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-        hr = pD3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+        pD3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+        pD3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
     } else {
-        hr = pD3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-        hr = pD3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+        pD3DDev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+        pD3DDev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
     }
-    hr = pD3DDev->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+    pD3DDev->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 
-    hr = pD3DDev->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER);
-    hr = pD3DDev->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER);
-    hr = pD3DDev->SetSamplerState(0, D3DSAMP_BORDERCOLOR, m_invAlpha ? 0x00000000 : 0xFF000000);
+    pD3DDev->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER);
+    pD3DDev->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER);
+    pD3DDev->SetSamplerState(0, D3DSAMP_BORDERCOLOR, m_bInvAlpha ? 0x00000000 : 0xFF000000);
 
     /*//
-
     D3DCAPS9 d3dcaps9;
-    hr = pD3DDev->GetDeviceCaps(&d3dcaps9);
-    if (d3dcaps9.AlphaCmpCaps & D3DPCMPCAPS_LESS)
-    {
-        hr = pD3DDev->SetRenderState(D3DRS_ALPHAREF, (DWORD)0x000000FE);
-        hr = pD3DDev->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
-        hr = pD3DDev->SetRenderState(D3DRS_ALPHAFUNC, D3DPCMPCAPS_LESS);
+    pD3DDev->GetDeviceCaps(&d3dcaps9);
+    if (d3dcaps9.AlphaCmpCaps & D3DPCMPCAPS_LESS) {
+        pD3DDev->SetRenderState(D3DRS_ALPHAREF, (DWORD)0x000000FE);
+        pD3DDev->SetRenderState(D3DRS_ALPHATESTENABLE, TRUE);
+        pD3DDev->SetRenderState(D3DRS_ALPHAFUNC, D3DPCMPCAPS_LESS);
     }
-
     *///
 
-    hr = pD3DDev->SetPixelShader(nullptr);
+    pD3DDev->SetPixelShader(nullptr);
 
-    if (m_bExternalRenderer && FAILED(hr = pD3DDev->BeginScene())) {
+    if (m_bExternalRenderer && FAILED(pD3DDev->BeginScene())) {
         return E_FAIL;
     }
 
-    hr = pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
-    hr = pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, pVertices, sizeof(pVertices[0]));
+    pD3DDev->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+    pD3DDev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, pVertices, sizeof(pVertices[0]));
 
     if (m_bExternalRenderer) {
-        hr = pD3DDev->EndScene();
+        pD3DDev->EndScene();
     }
 
     pD3DDev->SetTexture(0, nullptr);
@@ -350,64 +342,69 @@ STDMETHODIMP CDX9SubPic::AlphaBlt(RECT* pSrc, RECT* pDst, SubPicDesc* pTarget)
 // CDX9SubPicAllocator
 //
 
-CDX9SubPicAllocator::CDX9SubPicAllocator(IDirect3DDevice9* pD3DDev, SIZE maxsize, bool fPow2Textures, bool bExternalRenderer)
-    : CSubPicAllocatorImpl(maxsize, true, fPow2Textures)
+CDX9SubPicAllocator::CDX9SubPicAllocator(IDirect3DDevice9* pD3DDev, SIZE maxsize, bool bExternalRenderer)
+    : CSubPicAllocatorImpl(maxsize, true)
     , m_pD3DDev(pD3DDev)
     , m_maxsize(maxsize)
     , m_bExternalRenderer(bExternalRenderer)
 {
 }
 
-CCritSec CDX9SubPicAllocator::ms_SurfaceQueueLock;
+CCritSec CDX9SubPicAllocator::ms_surfaceQueueLock;
 
 CDX9SubPicAllocator::~CDX9SubPicAllocator()
 {
     ClearCache();
 }
 
-void CDX9SubPicAllocator::GetStats(int& _nFree, int& _nAlloc)
+void CDX9SubPicAllocator::GetStats(int& nFree, int& nAlloc) const
 {
-    CAutoLock Lock(&ms_SurfaceQueueLock);
-    _nFree = (int)m_FreeSurfaces.GetCount();
-    _nAlloc = (int)m_AllocatedSurfaces.GetCount();
+    CAutoLock autoLock(&ms_surfaceQueueLock);
+    nFree = (int)m_freeSurfaces.GetCount();
+    nAlloc = (int)m_allocatedSurfaces.GetCount();
 }
 
 void CDX9SubPicAllocator::ClearCache()
 {
-    {
-        // Clear the allocator of any remaining subpics
-        CAutoLock Lock(&ms_SurfaceQueueLock);
-        for (POSITION pos = m_AllocatedSurfaces.GetHeadPosition(); pos;) {
-            CDX9SubPic* pSubPic = m_AllocatedSurfaces.GetNext(pos);
-            pSubPic->m_pAllocator = nullptr;
-        }
-        m_AllocatedSurfaces.RemoveAll();
-        m_FreeSurfaces.RemoveAll();
+    // Clear the allocator of any remaining subpics
+    CAutoLock autoLock(&ms_surfaceQueueLock);
+    for (POSITION pos = m_allocatedSurfaces.GetHeadPosition(); pos;) {
+        CDX9SubPic* pSubPic = m_allocatedSurfaces.GetNext(pos);
+        pSubPic->m_pAllocator = nullptr;
     }
+    m_allocatedSurfaces.RemoveAll();
+    m_freeSurfaces.RemoveAll();
 }
 
 // ISubPicAllocator
 
 STDMETHODIMP CDX9SubPicAllocator::ChangeDevice(IUnknown* pDev)
 {
-    ClearCache();
     CComQIPtr<IDirect3DDevice9> pD3DDev = pDev;
-    if (!pD3DDev) {
-        return E_NOINTERFACE;
-    }
+    CheckPointer(pD3DDev, E_NOINTERFACE);
 
     CAutoLock cAutoLock(this);
-    m_pD3DDev = pD3DDev;
+    HRESULT hr = S_FALSE;
+    if (m_pD3DDev != pD3DDev) {
+        ClearCache();
+        m_pD3DDev = pD3DDev;
+        hr = __super::ChangeDevice(pDev);
+    }
 
-    return __super::ChangeDevice(pDev);
+    return hr;
 }
 
-STDMETHODIMP CDX9SubPicAllocator::SetMaxTextureSize(SIZE MaxTextureSize)
+STDMETHODIMP CDX9SubPicAllocator::SetMaxTextureSize(SIZE maxTextureSize)
 {
-    ClearCache();
-    m_maxsize = MaxTextureSize;
-    SetCurSize(MaxTextureSize);
-    return S_OK;
+    CAutoLock cAutoLock(this);
+    if (m_maxsize != maxTextureSize) {
+        if (m_maxsize.cx < maxTextureSize.cx || m_maxsize.cy < maxTextureSize.cy) {
+            ClearCache();
+        }
+        m_maxsize = maxTextureSize;
+    }
+
+    return SetCurSize(m_maxsize);
 }
 
 // ISubPicAllocatorImpl
@@ -428,30 +425,16 @@ bool CDX9SubPicAllocator::Alloc(bool fStatic, ISubPic** ppSubPic)
 
     CComPtr<IDirect3DSurface9> pSurface;
 
-    int Width = m_maxsize.cx;
-    int Height = m_maxsize.cy;
-
-    if (m_fPow2Textures && Width < 1024 && Height < 1024) {
-        Width = Height = 1;
-        while (Width < m_maxsize.cx) {
-            Width <<= 1;
-        }
-        while (Height < m_maxsize.cy) {
-            Height <<= 1;
-        }
-    }
     if (!fStatic) {
-        CAutoLock cAutoLock2(&ms_SurfaceQueueLock);
-        POSITION FreeSurf = m_FreeSurfaces.GetHeadPosition();
-        if (FreeSurf) {
-            pSurface = m_FreeSurfaces.GetHead();
-            m_FreeSurfaces.RemoveHead();
+        CAutoLock cAutoLock2(&ms_surfaceQueueLock);
+        if (!m_freeSurfaces.IsEmpty()) {
+            pSurface = m_freeSurfaces.RemoveHead();
         }
     }
 
     if (!pSurface) {
         CComPtr<IDirect3DTexture9> pTexture;
-        if (FAILED(m_pD3DDev->CreateTexture(Width, Height, 1, 0, D3DFMT_A8R8G8B8, fStatic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, &pTexture, nullptr))) {
+        if (FAILED(m_pD3DDev->CreateTexture(m_maxsize.cx, m_maxsize.cy, 1, 0, D3DFMT_A8R8G8B8, fStatic ? D3DPOOL_SYSTEMMEM : D3DPOOL_DEFAULT, &pTexture, nullptr))) {
             return false;
         }
 
@@ -462,15 +445,16 @@ bool CDX9SubPicAllocator::Alloc(bool fStatic, ISubPic** ppSubPic)
 
     try {
         *ppSubPic = DEBUG_NEW CDX9SubPic(pSurface, fStatic ? nullptr : this, m_bExternalRenderer);
-    } catch (std::bad_alloc) {
+    } catch (CMemoryException* e) {
+        e->Delete();
         return false;
     }
 
     (*ppSubPic)->AddRef();
 
     if (!fStatic) {
-        CAutoLock cAutoLock3(&ms_SurfaceQueueLock);
-        m_AllocatedSurfaces.AddHead((CDX9SubPic*)*ppSubPic);
+        CAutoLock cAutoLock2(&ms_surfaceQueueLock);
+        m_allocatedSurfaces.AddHead((CDX9SubPic*)*ppSubPic);
     }
 
     return true;

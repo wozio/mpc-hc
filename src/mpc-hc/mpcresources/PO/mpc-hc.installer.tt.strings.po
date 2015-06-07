@@ -6,9 +6,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2013-12-21 11:15:54+0000\n"
-"PO-Revision-Date: 2014-03-25 15:20+0000\n"
-"Last-Translator: кери <khazirek@mail.ru>\n"
+"POT-Creation-Date: 2014-06-17 15:23:34+0000\n"
+"PO-Revision-Date: 2014-07-07 08:49+0000\n"
+"Last-Translator: JellyFrog\n"
 "Language-Team: Tatar (http://www.transifex.com/projects/p/mpc-hc/language/tt/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -47,6 +47,10 @@ msgstr "Бу MPC-HC бөрмәсе өчен SSE-кагыйдәләрен кул�
 msgctxt "CustomMessages_msg_simd_sse2"
 msgid "This build of MPC-HC requires a CPU with SSE2 extension support.\n\nYour CPU does not have those capabilities."
 msgstr "Бу MPC-HC бөрмәсе өчен SSE2-кагыйдәләрен кулланган процессор кирәк.\n\nӘлеге процессорда алар кулланылмый."
+
+msgctxt "CustomMessages_run_DownloadToolbarImages"
+msgid "Visit our Wiki page to download toolbar images"
+msgstr ""
 
 msgctxt "CustomMessages_tsk_AllUsers"
 msgid "For all users"

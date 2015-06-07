@@ -34,7 +34,7 @@ CPPagePlayback::CPPagePlayback()
     : CPPageBase(CPPagePlayback::IDD, CPPagePlayback::IDD)
     , m_iLoopForever(0)
     , m_nLoops(0)
-    , m_fRewind(FALSE)
+    , m_iAfterPlayback(0)
     , m_iZoomLevel(0)
     , m_iRememberZoomLevel(FALSE)
     , m_nAutoFitFactor(75)
@@ -63,12 +63,13 @@ void CPPagePlayback::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_SLIDER1, m_volumectrl);
     DDX_Control(pDX, IDC_SLIDER2, m_balancectrl);
     DDX_Control(pDX, IDC_COMBO1, m_zoomlevelctrl);
+    DDX_Control(pDX, IDC_COMBO2, m_afterPlayback);
     DDX_Slider(pDX, IDC_SLIDER1, m_nVolume);
     DDX_Slider(pDX, IDC_SLIDER2, m_nBalance);
     DDX_Radio(pDX, IDC_RADIO1, m_iLoopForever);
     DDX_Control(pDX, IDC_EDIT1, m_loopnumctrl);
     DDX_Text(pDX, IDC_EDIT1, m_nLoops);
-    DDX_Check(pDX, IDC_CHECK1, m_fRewind);
+    DDX_CBIndex(pDX, IDC_COMBO2, m_iAfterPlayback);
     DDX_CBIndex(pDX, IDC_COMBO1, m_iZoomLevel);
     DDX_Check(pDX, IDC_CHECK5, m_iRememberZoomLevel);
     DDX_Check(pDX, IDC_CHECK2, m_fAutoloadAudio);
@@ -98,7 +99,7 @@ BEGIN_MESSAGE_MAP(CPPagePlayback, CPPageBase)
     ON_UPDATE_COMMAND_UI(IDC_CHECK3, OnUpdateISREnabled)
 
     ON_STN_DBLCLK(IDC_STATIC_BALANCE, OnBalanceTextDblClk)
-    ON_NOTIFY_EX_RANGE(TTN_NEEDTEXT, 0, 0xFFFF, OnToolTipNotify)
+    ON_NOTIFY_EX(TTN_NEEDTEXT, 0, OnToolTipNotify)
 END_MESSAGE_MAP()
 
 
@@ -125,7 +126,7 @@ BOOL CPPagePlayback::OnInitDialog()
     m_SpeedStepCtrl.SetRange32(0, 100);
     m_iLoopForever = s.fLoopForever ? 1 : 0;
     m_nLoops = s.nLoops;
-    m_fRewind = s.fRewind;
+    m_iAfterPlayback = static_cast<int>(s.eAfterPlayback);
     m_iZoomLevel = s.iZoomLevel;
     m_iRememberZoomLevel = s.fRememberZoomLevel;
     m_nAutoFitFactor = s.nAutoFitFactor;
@@ -145,6 +146,14 @@ BOOL CPPagePlayback::OnInitDialog()
     m_zoomlevelctrl.AddString(ResStr(IDS_ZOOM_AUTOFIT));
     m_zoomlevelctrl.AddString(ResStr(IDS_ZOOM_AUTOFIT_LARGER));
     CorrectComboListWidth(m_zoomlevelctrl);
+
+    m_afterPlayback.AddString(ResStr(IDS_AFTER_PLAYBACK_DO_NOTHING));
+    m_afterPlayback.AddString(ResStr(IDS_AFTER_PLAYBACK_PLAY_NEXT));
+    m_afterPlayback.AddString(ResStr(IDS_AFTER_PLAYBACK_REWIND));
+    m_afterPlayback.AddString(ResStr(IDS_AFTER_PLAYBACK_MONITOROFF));
+    m_afterPlayback.AddString(ResStr(IDS_AFTER_PLAYBACK_CLOSE));
+    m_afterPlayback.AddString(ResStr(IDS_AFTER_PLAYBACK_EXIT));
+    CorrectComboListWidth(m_afterPlayback);
 
     // set the spinner acceleration value
     UDACCEL accel = { 0, 10 };
@@ -175,7 +184,7 @@ BOOL CPPagePlayback::OnApply()
     s.nSpeedStep = m_nSpeedStep;
     s.fLoopForever = !!m_iLoopForever;
     s.nLoops = m_nLoops;
-    s.fRewind = !!m_fRewind;
+    s.eAfterPlayback = static_cast<CAppSettings::AfterPlayback>(m_iAfterPlayback);
     s.iZoomLevel = m_iZoomLevel;
     s.fRememberZoomLevel = !!m_iRememberZoomLevel;
     s.nAutoFitFactor = m_nAutoFitFactor = min(max(m_nAutoFitFactor, 25), 100);
@@ -267,34 +276,32 @@ BOOL CPPagePlayback::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult)
         nID = ::GetDlgCtrlID((HWND)nID);
     }
 
-    if (nID == 0) {
-        return FALSE;
-    }
+    BOOL bRet = FALSE;
 
-    CString strTipText;
+    if (nID == IDC_SLIDER1 || nID == IDC_SLIDER2) {
+        bRet = TRUE;
 
-    if (nID == IDC_SLIDER1) {
-        strTipText.Format(ResStr(IDS_VOLUME), m_nVolume);
-    } else if (nID == IDC_SLIDER2) {
-        if (m_nBalance > 0) {
-            strTipText.Format(ResStr(IDS_BALANCE_R), m_nBalance);
-        } else if (m_nBalance < 0) {
-            strTipText.Format(ResStr(IDS_BALANCE_L), -m_nBalance);
-        } else { //if (m_nBalance == 0)
-            strTipText = ResStr(IDS_BALANCE);
+        CString strTipText;
+        if (nID == IDC_SLIDER1) {
+            strTipText.Format(ResStr(IDS_VOLUME), m_nVolume);
+        } else if (nID == IDC_SLIDER2) {
+            if (m_nBalance > 0) {
+                strTipText.Format(ResStr(IDS_BALANCE_R), m_nBalance);
+            } else if (m_nBalance < 0) {
+                strTipText.Format(ResStr(IDS_BALANCE_L), -m_nBalance);
+            } else { //if (m_nBalance == 0)
+                strTipText = ResStr(IDS_BALANCE);
+            }
         }
+
+        _tcscpy_s(pTTT->szText, strTipText.Left(_countof(pTTT->szText) - 1));
     } else if (nID == IDC_COMBO1) {
-        int i = m_zoomlevelctrl.GetCurSel();
-        m_zoomlevelctrl.GetLBText(i, strTipText);
-    } else {
-        return FALSE;
+        bRet = FillComboToolTip(m_zoomlevelctrl, pTTT);
+    } else if (nID == IDC_COMBO2) {
+        bRet = FillComboToolTip(m_afterPlayback, pTTT);
     }
 
-    _tcscpy_s(pTTT->szText, strTipText.Left(_countof(pTTT->szText)));
-
-    *pResult = 0;
-
-    return TRUE;    // message was handled
+    return bRet;
 }
 
 void CPPagePlayback::OnCancel()

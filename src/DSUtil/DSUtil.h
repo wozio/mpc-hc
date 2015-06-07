@@ -22,6 +22,7 @@
 #pragma once
 
 #include <afxstr.h>
+#include <atlpath.h>
 #include "NullRenderers.h"
 #include "HdmvClipInfo.h"
 #include "H264Nalu.h"
@@ -75,6 +76,7 @@ enum OpticalDiskType_t {
 };
 extern OpticalDiskType_t GetOpticalDiskType(TCHAR drive, CAtlList<CString>& files);
 extern CString GetDriveLabel(TCHAR drive);
+extern CString GetDriveLabel(CPath path);
 extern bool GetKeyFrames(CString fn, CUIntArray& kfs);
 extern DVD_HMSF_TIMECODE RT2HMSF(REFERENCE_TIME rt, double fps = 0.0); // used to remember the current position
 extern DVD_HMSF_TIMECODE RT2HMS_r(REFERENCE_TIME rt);                  // used only to display information with rounding to nearest second
@@ -128,6 +130,8 @@ extern DWORD YCrCbToRGB_Rec601(BYTE A, BYTE Y, BYTE Cr, BYTE Cb, double sourceBl
 extern DWORD YCrCbToRGB_Rec709(BYTE A, BYTE Y, BYTE Cr, BYTE Cb, double sourceBlackLevel, double sourceWhiteLevel, double targetBlackLevel, double targetWhiteLevel);
 extern void SetThreadName(DWORD dwThreadID, LPCSTR szThreadName);
 extern void CorrectComboListWidth(CComboBox& m_pComboBox);
+extern void CorrectComboBoxHeaderWidth(CWnd* pComboBox);
+extern CString FindCoverArt(const CString& path, const CString& author);
 
 enum FF_FIELD_TYPE {
     PICT_NONE,

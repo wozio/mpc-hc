@@ -54,16 +54,16 @@ HRESULT CRM9AllocatorPresenter::AllocSurfaces()
     HRESULT hr;
 
     if (FAILED(hr = m_pD3DDev->CreateOffscreenPlainSurface(
-                        m_NativeVideoSize.cx, m_NativeVideoSize.cy, D3DFMT_X8R8G8B8,
+                        m_nativeVideoSize.cx, m_nativeVideoSize.cy, D3DFMT_X8R8G8B8,
                         D3DPOOL_DEFAULT, &m_pVideoSurfaceOff, nullptr))) {
         return hr;
     }
 
     m_pD3DDev->ColorFill(m_pVideoSurfaceOff, nullptr, 0);
 
-    if (FAILED(hr = m_pD3DDev->CreateOffscreenPlainSurface(
-                        m_NativeVideoSize.cx, m_NativeVideoSize.cy, D3DFMT_YUY2,
-                        D3DPOOL_DEFAULT, &m_pVideoSurfaceYUY2, nullptr))) {
+    if (FAILED(m_pD3DDev->CreateOffscreenPlainSurface(
+                   m_nativeVideoSize.cx, m_nativeVideoSize.cy, D3DFMT_YUY2,
+                   D3DPOOL_DEFAULT, &m_pVideoSurfaceYUY2, nullptr))) {
         m_pVideoSurfaceYUY2 = nullptr;
     }
 
@@ -197,13 +197,11 @@ STDMETHODIMP CRM9AllocatorPresenter::Blt(UCHAR* pImageData, RMABitmapInfoHeader*
         }
     }
 
-    HRESULT hr;
-
     if (fRGB) {
-        hr = m_pD3DDev->StretchRect(m_pVideoSurfaceOff, src2, m_pVideoSurface[m_nCurSurface], dst, D3DTEXF_NONE);
+        m_pD3DDev->StretchRect(m_pVideoSurfaceOff, src2, m_pVideoSurface[m_nCurSurface], dst, D3DTEXF_NONE);
     }
     if (fYUY2) {
-        hr = m_pD3DDev->StretchRect(m_pVideoSurfaceYUY2, src2, m_pVideoSurface[m_nCurSurface], dst, D3DTEXF_NONE);
+        m_pD3DDev->StretchRect(m_pVideoSurfaceYUY2, src2, m_pVideoSurface[m_nCurSurface], dst, D3DTEXF_NONE);
     }
 
     Paint(true);

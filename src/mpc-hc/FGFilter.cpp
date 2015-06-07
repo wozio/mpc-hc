@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,6 +27,7 @@
 #include "AllocatorCommon7.h"
 #include "AllocatorCommon.h"
 #include "SyncAllocatorPresenter.h"
+#include "IPinHook.h" // For the NVIDIA driver bug work-around
 #include "moreuuids.h"
 
 
@@ -432,7 +433,7 @@ CFGFilterVideoRenderer::CFGFilterVideoRenderer(HWND hWnd, const CLSID& clsid, CS
 
 HRESULT CFGFilterVideoRenderer::Create(IBaseFilter** ppBF, CInterfaceList<IUnknown, &IID_IUnknown>& pUnks)
 {
-    TRACE(_T("--> CFGFilterVideoRenderer::Create on thread: %d\n"), GetCurrentThreadId());
+    TRACE(_T("--> CFGFilterVideoRenderer::Create on thread: %lu\n"), GetCurrentThreadId());
     CheckPointer(ppBF, E_POINTER);
 
     HRESULT hr = S_OK;
@@ -471,6 +472,8 @@ HRESULT CFGFilterVideoRenderer::Create(IBaseFilter** ppBF, CInterfaceList<IUnkno
             if (m_clsid == CLSID_EnhancedVideoRenderer) {
                 CComQIPtr<IEVRFilterConfig> pConfig = pBF;
                 pConfig->SetNumberOfStreams(3);
+
+                HookWorkAroundNVIDIADriverBug(pBF);
             }
 
             BeginEnumPins(pBF, pEP, pPin) {

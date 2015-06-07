@@ -28,6 +28,31 @@ CompositionObject::CompositionObject()
     Init();
 }
 
+CompositionObject::CompositionObject(const CompositionObject& obj)
+    : m_object_id_ref(obj.m_object_id_ref)
+    , m_window_id_ref(obj.m_window_id_ref)
+    , m_object_cropped_flag(obj.m_object_cropped_flag)
+    , m_forced_on_flag(obj.m_forced_on_flag)
+    , m_version_number(obj.m_version_number)
+    , m_horizontal_position(obj.m_horizontal_position)
+    , m_vertical_position(obj.m_vertical_position)
+    , m_width(obj.m_width)
+    , m_height(obj.m_height)
+    , m_cropping_horizontal_position(obj.m_cropping_horizontal_position)
+    , m_cropping_vertical_position(obj.m_cropping_vertical_position)
+    , m_cropping_width(obj.m_cropping_width)
+    , m_cropping_height(obj.m_cropping_height)
+    , m_pRLEData(nullptr)
+    , m_nRLEDataSize(0)
+    , m_nRLEPos(0)
+    , m_nColorNumber(obj.m_nColorNumber)
+    , m_colors(obj.m_colors)
+{
+    if (obj.m_pRLEData) {
+        SetRLEData(obj.m_pRLEData, obj.m_nRLEPos, obj.m_nRLEDataSize);
+    }
+}
+
 CompositionObject::~CompositionObject()
 {
     delete [] m_pRLEData;
@@ -48,7 +73,7 @@ void CompositionObject::Init()
     m_cropping_horizontal_position = m_cropping_vertical_position = 0;
     m_cropping_width = m_cropping_height = 0;
 
-    memsetd(m_Colors, 0xff000000, sizeof(m_Colors));
+    m_colors.fill(0xff000000);
 }
 
 void CompositionObject::Reset()
@@ -62,14 +87,14 @@ void CompositionObject::SetPalette(int nNbEntry, const HDMV_PALETTE* pPalette, b
     m_nColorNumber = nNbEntry;
     for (int i = 0; i < nNbEntry; i++) {
         if (BT709) {
-            m_Colors[pPalette[i].entry_id] = YCrCbToRGB_Rec709(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb, sourceBlackLevel, sourceWhiteLevel, targetBlackLevel, targetWhiteLevel);
+            m_colors[pPalette[i].entry_id] = YCrCbToRGB_Rec709(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb, sourceBlackLevel, sourceWhiteLevel, targetBlackLevel, targetWhiteLevel);
         } else {
-            m_Colors[pPalette[i].entry_id] = YCrCbToRGB_Rec601(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb, sourceBlackLevel, sourceWhiteLevel, targetBlackLevel, targetWhiteLevel);
+            m_colors[pPalette[i].entry_id] = YCrCbToRGB_Rec601(pPalette[i].T, pPalette[i].Y, pPalette[i].Cr, pPalette[i].Cb, sourceBlackLevel, sourceWhiteLevel, targetBlackLevel, targetWhiteLevel);
         }
     }
 }
 
-void CompositionObject::SetRLEData(const BYTE* pBuffer, int nSize, int nTotalSize)
+void CompositionObject::SetRLEData(const BYTE* pBuffer, size_t nSize, size_t nTotalSize)
 {
     delete [] m_pRLEData;
 
@@ -86,7 +111,7 @@ void CompositionObject::SetRLEData(const BYTE* pBuffer, int nSize, int nTotalSiz
     }
 }
 
-void CompositionObject::AppendRLEData(const BYTE* pBuffer, int nSize)
+void CompositionObject::AppendRLEData(const BYTE* pBuffer, size_t nSize)
 {
     if (m_nRLEPos + nSize <= m_nRLEDataSize) {
         memcpy(m_pRLEData + m_nRLEPos, pBuffer, nSize);
@@ -139,7 +164,7 @@ void CompositionObject::RenderHdmv(SubPicDesc& spd)
 
         if (nCount > 0) {
             if (nPaletteIndex != 0xFF) {    // Fully transparent (section 9.14.4.2.2.1.1)
-                FillSolidRect(spd, nX, nY, nCount, 1, m_Colors[nPaletteIndex]);
+                FillSolidRect(spd, nX, nY, nCount, 1, m_colors[nPaletteIndex]);
             }
             nX += nCount;
         } else {
@@ -174,7 +199,7 @@ void CompositionObject::DvbRenderField(SubPicDesc& spd, CGolombBuffer& gb, short
     //return;
     short nX = nXStart;
     short nY = nYStart;
-    int nEnd = gb.GetPos() + nLength;
+    size_t nEnd = gb.GetPos() + nLength;
 
     while (gb.GetPos() < nEnd) {
         BYTE bType = gb.ReadByte();
@@ -253,7 +278,7 @@ void CompositionObject::Dvb2PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb,
         }
 
         if (nCount > 0) {
-            FillSolidRect(spd, nX, nY, nCount, 1, m_Colors[nPaletteIndex]);
+            FillSolidRect(spd, nX, nY, nCount, 1, m_colors[nPaletteIndex]);
             nX += nCount;
         }
     }
@@ -313,7 +338,7 @@ void CompositionObject::Dvb4PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb,
 #endif
 
         if (nCount > 0) {
-            FillSolidRect(spd, nX, nY, nCount, 1, m_Colors[nPaletteIndex]);
+            FillSolidRect(spd, nX, nY, nCount, 1, m_colors[nPaletteIndex]);
             nX += nCount;
         }
     }
@@ -350,7 +375,7 @@ void CompositionObject::Dvb8PixelsCodeString(SubPicDesc& spd, CGolombBuffer& gb,
         }
 
         if (nCount > 0) {
-            FillSolidRect(spd, nX, nY, nCount, 1, m_Colors[nPaletteIndex]);
+            FillSolidRect(spd, nX, nY, nCount, 1, m_colors[nPaletteIndex]);
             nX += nCount;
         }
     }

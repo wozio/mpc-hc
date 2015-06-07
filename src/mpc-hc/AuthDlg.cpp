@@ -60,17 +60,17 @@ HRESULT PromptForCredentials(HWND hWnd, const CString& strCaptionText, const CSt
 
             // Call CredPackAuthenticationBufferW once to determine the size, in bytes, of the authentication buffer.
             if (strUsername.GetLength()) {
-                BOOL bResult = fnCredPackAuthenticationBufferW(0, (LPTSTR)(LPCTSTR)strUsername, (LPTSTR)(LPCTSTR)strPassword, NULL, &cbInAuthBlob);
+                BOOL bResult = fnCredPackAuthenticationBufferW(0, (LPTSTR)(LPCTSTR)strUsername, (LPTSTR)(LPCTSTR)strPassword, nullptr, &cbInAuthBlob);
                 if (!bResult && GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
                     if ((pvInAuthBlob = CoTaskMemAlloc(cbInAuthBlob)) != nullptr) {
-                        bResult = fnCredPackAuthenticationBufferW(0, (LPTSTR)(LPCTSTR)strUsername, (LPTSTR)(LPCTSTR)strPassword, (PBYTE)pvInAuthBlob, &cbInAuthBlob);
+                        VERIFY(fnCredPackAuthenticationBufferW(0, (LPTSTR)(LPCTSTR)strUsername, (LPTSTR)(LPCTSTR)strPassword, (PBYTE)pvInAuthBlob, &cbInAuthBlob));
                     }
                 }
             }
             const DWORD dwFlags = CREDUIWIN_GENERIC | CREDUIWIN_ENUMERATE_CURRENT_USER | (bSave ? CREDUIWIN_CHECKBOX : 0);
             DWORD dwResult = fnCredUIPromptForWindowsCredentialsW(&info, 0, &ulAuthPackage, pvInAuthBlob, cbInAuthBlob, &pvAuthBlob, &cbAuthBlob, bSave, dwFlags);
             if (dwResult == ERROR_SUCCESS) {
-                BOOL bResult = fnCredUnPackAuthenticationBufferW(0, pvAuthBlob, cbAuthBlob, strUsername.GetBufferSetLength(dwUsername), &dwUsername, strDomain.GetBufferSetLength(dwDomain), &dwDomain, strPassword.GetBufferSetLength(dwPassword), &dwPassword);
+                VERIFY(fnCredUnPackAuthenticationBufferW(0, pvAuthBlob, cbAuthBlob, strUsername.GetBufferSetLength(dwUsername), &dwUsername, strDomain.GetBufferSetLength(dwDomain), &dwDomain, strPassword.GetBufferSetLength(dwPassword), &dwPassword));
                 strUsername.ReleaseBuffer();
                 strPassword.ReleaseBuffer();
                 strDomain.ReleaseBuffer();
@@ -106,7 +106,7 @@ HRESULT PromptForCredentials(HWND hWnd, const CString& strCaptionText, const CSt
                 strDomain = _T("mpc-hc/") MPC_VERSION_STR;
             }
 
-            DWORD dwResult = fnCredUIPromptForCredentialsW(&info, strDomain.Left(dwDomain), NULL, dwAuthError,
+            DWORD dwResult = fnCredUIPromptForCredentialsW(&info, strDomain.Left(dwDomain), nullptr, dwAuthError,
                              strUserDomain.GetBufferSetLength(dwUsername), dwUsername, strPassword.GetBufferSetLength(dwPassword), dwPassword, bSave, dwFlags);
             strUserDomain.ReleaseBuffer();
             strPassword.ReleaseBuffer();

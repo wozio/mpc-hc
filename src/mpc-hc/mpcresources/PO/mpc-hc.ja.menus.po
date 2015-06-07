@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-04-22 11:15:01+0000\n"
-"PO-Revision-Date: 2014-06-02 10:52+0000\n"
+"POT-Creation-Date: 2014-08-19 21:10:25+0000\n"
+"PO-Revision-Date: 2014-08-27 11:57+0000\n"
 "Last-Translator: ever_green\n"
 "Language-Team: Japanese (http://www.transifex.com/projects/p/mpc-hc/language/ja/)\n"
 "MIME-Version: 1.0\n"
@@ -126,7 +126,7 @@ msgstr "ステータス(&A)"
 
 msgctxt "ID_VIEW_SUBRESYNC"
 msgid "Su&bresync"
-msgstr "字幕編集(&B)"
+msgstr "字幕の再同期(&B)"
 
 msgctxt "ID_VIEW_PLAYLIST"
 msgid "Pla&ylist"
@@ -190,7 +190,7 @@ msgstr "自動調整 (超過サイズのみ) (&L)"
 
 msgctxt "POPUP"
 msgid "R&enderer Settings"
-msgstr "レンダラ設定(&E)"
+msgstr "レンダラの設定(&E)"
 
 msgctxt "ID_VIEW_TEARING_TEST"
 msgid "&Tearing Test"
@@ -198,7 +198,7 @@ msgstr "テアリング テスト(&T)"
 
 msgctxt "ID_VIEW_DISPLAYSTATS"
 msgid "&Display Stats"
-msgstr "統計情報の表示(&D)"
+msgstr "レンダラ統計情報(&D)"
 
 msgctxt "ID_VIEW_REMAINING_TIME"
 msgid "&Remaining Time"
@@ -362,11 +362,11 @@ msgstr "リセット(&E)"
 
 msgctxt "ID_VIEW_RESET_DEFAULT"
 msgid "Reset to &default renderer settings"
-msgstr "既定のレンダラ設定にリセット(&D)"
+msgstr "既定のレンダラの設定にリセット(&D)"
 
 msgctxt "ID_VIEW_RESET_OPTIMAL"
 msgid "Reset to &optimal renderer settings"
-msgstr "最適なレンダラ設定にリセット(&O)"
+msgstr "最適なレンダラの設定にリセット(&O)"
 
 msgctxt "POPUP"
 msgid "Video &Frame"
@@ -414,7 +414,7 @@ msgstr "縦横比を調整(&A)"
 
 msgctxt "ID_ASPECTRATIO_SOURCE"
 msgid "&Default"
-msgstr "しない(&D)"
+msgstr "標準(&D)"
 
 msgctxt "ID_ASPECTRATIO_4_3"
 msgid "&4:3"
@@ -494,7 +494,7 @@ msgstr "リセット(&S)"
 
 msgctxt "POPUP"
 msgid "On &Top"
-msgstr "常に手前に表示(&T)"
+msgstr "手前に表示(&T)"
 
 msgctxt "ID_ONTOP_DEFAULT"
 msgid "&Default"
@@ -584,10 +584,6 @@ msgctxt "POPUP"
 msgid "Af&ter Playback"
 msgstr "再生終了後の動作(&T)"
 
-msgctxt "ID_AFTERPLAYBACK_ONCE"
-msgid "--------- Once ---------"
-msgstr "──── 今回のみ ────"
-
 msgctxt "ID_AFTERPLAYBACK_CLOSE"
 msgid "&Exit"
 msgstr "終了(&E)"
@@ -612,25 +608,13 @@ msgctxt "ID_AFTERPLAYBACK_LOCK"
 msgid "&Lock"
 msgstr "ロック(&L)"
 
-msgctxt "ID_AFTERPLAYBACK_EVERYTIME"
-msgid "------ Every time ------"
-msgstr "───── 毎回 ─────"
-
-msgctxt "ID_AFTERPLAYBACK_EXIT"
-msgid "E&xit"
-msgstr "終了(&X)"
-
-msgctxt "ID_AFTERPLAYBACK_DONOTHING"
-msgid "Do &Nothing"
-msgstr "何もしない(&N)"
-
-msgctxt "ID_AFTERPLAYBACK_NEXT"
-msgid "Play next in the &folder"
-msgstr "フォルダ内を順次再生(&F)"
+msgctxt "ID_AFTERPLAYBACK_MONITOROFF"
+msgid "Turn off the &monitor"
+msgstr "モニタの電源を切る(&M)"
 
 msgctxt "POPUP"
 msgid "&Navigate"
-msgstr "移動(&N)"
+msgstr "操作(&N)"
 
 msgctxt "ID_NAVIGATE_SKIPBACK"
 msgid "&Previous"
@@ -686,11 +670,11 @@ msgstr "更新を確認する(&U)"
 
 msgctxt "ID_HELP_SHOWCOMMANDLINESWITCHES"
 msgid "&Command Line Switches"
-msgstr "コマンドライン スイッチ(&C)"
+msgstr "コマンド ライン スイッチ(&C)"
 
 msgctxt "ID_HELP_TOOLBARIMAGES"
 msgid "Download &Toolbar Images"
-msgstr "ツールバー画像をダウンロード(&T)"
+msgstr "ツールバーの画像をダウンロード(&T)"
 
 msgctxt "ID_HELP_DONATE"
 msgid "&Donate"

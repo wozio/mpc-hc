@@ -47,7 +47,7 @@ enum {
     CS_LAST = CS_STATUSBAR
 };
 
-enum {
+enum : UINT64 {
     CLSW_NONE = 0,
     CLSW_OPEN = 1,
     CLSW_PLAY = CLSW_OPEN << 1,
@@ -57,8 +57,9 @@ enum {
     CLSW_SHUTDOWN = CLSW_HIBERNATE << 1,
     CLSW_LOGOFF = CLSW_SHUTDOWN << 1,
     CLSW_LOCK = CLSW_LOGOFF << 1,
-    CLSW_AFTERPLAYBACK_MASK = CLSW_CLOSE | CLSW_STANDBY | CLSW_SHUTDOWN | CLSW_HIBERNATE | CLSW_LOGOFF | CLSW_LOCK,
-    CLSW_FULLSCREEN = CLSW_LOCK << 1,
+    CLSW_MONITOROFF = CLSW_LOCK << 1,
+    CLSW_AFTERPLAYBACK_MASK = CLSW_CLOSE | CLSW_STANDBY | CLSW_SHUTDOWN | CLSW_HIBERNATE | CLSW_LOGOFF | CLSW_LOCK | CLSW_MONITOROFF,
+    CLSW_FULLSCREEN = CLSW_MONITOROFF << 1,
     CLSW_NEW = CLSW_FULLSCREEN << 1,
     CLSW_HELP = CLSW_NEW << 1,
     CLSW_DVD = CLSW_HELP << 1,
@@ -66,7 +67,7 @@ enum {
     CLSW_DEVICE = CLSW_CD << 1,
     CLSW_ADD = CLSW_DEVICE << 1,
     CLSW_MINIMIZED = CLSW_ADD << 1,
-    CLSW_REGEXTVID = CLSW_MINIMIZED << 1,   // 16
+    CLSW_REGEXTVID = CLSW_MINIMIZED << 1,
     CLSW_REGEXTAUD = CLSW_REGEXTVID << 1,
     CLSW_REGEXTPL = CLSW_REGEXTAUD << 1,
     CLSW_UNREGEXT = CLSW_REGEXTPL << 1,
@@ -80,7 +81,7 @@ enum {
     CLSW_SLAVE = CLSW_ADMINOPTION << 1,
     CLSW_AUDIORENDERER = CLSW_SLAVE << 1,
     CLSW_RESET = CLSW_AUDIORENDERER << 1,
-    CLSW_UNRECOGNIZEDSWITCH = CLSW_RESET << 1 // 30
+    CLSW_UNRECOGNIZEDSWITCH = CLSW_RESET << 1, // 32
 };
 
 enum MpcCaptionState {
@@ -159,9 +160,6 @@ enum favtype {
     FAV_DVD,
     FAV_DEVICE
 };
-
-#define MAX_FILE_POSITION 20
-#define MAX_DVD_POSITION 20
 
 enum {
     TIME_TOOLTIP_ABOVE_SEEKBAR,
@@ -372,7 +370,7 @@ public:
     CUIceClient();
 };
 
-#define APPSETTINGS_VERSION 4
+#define APPSETTINGS_VERSION 5
 
 class CAppSettings
 {
@@ -386,11 +384,13 @@ class CAppSettings
                               int nMaxDispLen = AFX_ABBREV_FILENAME_LEN);
 
         virtual void Add(LPCTSTR lpszPathName); // we have to override CRecentFileList::Add because the original version can't handle URLs
+
+        void SetSize(int nSize);
     };
 
 public:
     // cmdline params
-    UINT nCLSwitches;
+    UINT64 nCLSwitches;
     CAtlList<CString>   slFiles, slDubs, slSubs, slFilters;
 
     // Initial position (used by command line flags)
@@ -424,12 +424,15 @@ public:
     int             iTitleBarTextStyle;
     bool            fTitleBarTextTitle;
     bool            fKeepHistory;
+    int             iRecentFilesNumber;
     CRecentFileAndURLList MRU;
     CRecentFileAndURLList MRUDub;
     CFilePositionList filePositions;
     CDVDPositionList  dvdPositions;
     bool            fRememberDVDPos;
     bool            fRememberFilePos;
+    int             iRememberPosForLongerThan;
+    bool            bRememberPosForAudioFiles;
     bool            bRememberPlaylistItems;
     bool            fRememberWindowPos;
     CRect           rcLastWindowPos;
@@ -474,7 +477,6 @@ public:
     int             nBalance;
     int             nLoops;
     bool            fLoopForever;
-    bool            fRewind;
     bool            fRememberZoomLevel;
     int             nAutoFitFactor;
     int             iZoomLevel;
@@ -487,6 +489,16 @@ public:
     bool            fBlockVSFilter;
     UINT            nVolumeStep;
     UINT            nSpeedStep;
+
+    enum class AfterPlayback
+    {
+        DO_NOTHING,
+        PLAY_NEXT,
+        REWIND,
+        MONITOROFF,
+        CLOSE,
+        EXIT
+    } eAfterPlayback;
 
     // DVD/OGM
     bool            fUseDVDPath;
@@ -564,7 +576,7 @@ public:
     bool            fOverridePlacement;
     int             nHorPos, nVerPos;
     bool            bSubtitleARCompensation;
-    int             nSubDelayInterval;
+    int             nSubDelayStep;
 
     // Default Style
     STSStyle        subtitlesDefStyle;
@@ -623,9 +635,6 @@ public:
     CStringArray    m_pnspresets;
     // On top menu
     int             iOnTop;
-    // After Playback
-    bool            fExitAfterPlayback;
-    bool            fNextInDirAfterPlayback;
 
     // WINDOWS
     // Add Favorite
@@ -652,21 +661,22 @@ public:
     bool            fLastFullScreen;
 
     bool            fIntRealMedia;
-    //bool          fRealMediaRenderless;
-    //float         dRealMediaQuickTimeFPS;
-    //int           iVideoRendererType;
-    //int           iQuickTimeRenderer;
-    //bool          fMonitorAutoRefreshRate;
     bool            fEnableEDLEditor;
 
     HWND            hMasterWnd;
 
     bool            bHideWindowedControls;
 
+    int             nJpegQuality;
+
+    bool            bEnableCoverArt;
+    int             nCoverArtSizeLimit;
+
     bool            IsD3DFullscreen() const;
     CString         SelectedAudioRenderer() const;
     bool            IsISRAutoLoadEnabled() const;
     bool            IsISRAvailable() const;
+    static bool     IsVideoRendererAvailable(int iVideoRendererType);
 
     CFileAssoc      fileAssoc;
 
@@ -724,5 +734,4 @@ public:
     bool            GetAllowMultiInst() const;
 
     static bool     IsVSFilterInstalled();
-    static bool     HasEVR();
 };

@@ -7,8 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-06-04 20:22:52+0000\n"
-"PO-Revision-Date: 2014-06-06 23:10+0000\n"
+"POT-Creation-Date: 2014-09-29 21:09:08+0000\n"
+"PO-Revision-Date: 2014-10-03 12:56+0000\n"
 "Last-Translator: kasper93\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/mpc-hc/language/pl/)\n"
 "MIME-Version: 1.0\n"
@@ -106,12 +106,16 @@ msgid "Signal"
 msgstr "Sygnał"
 
 msgctxt "IDS_STATSBAR_SIGNAL_FORMAT"
-msgid "Strength: %d dB, Quality: %d%%"
-msgstr "Siła: %d dB, Jakość: %d%%"
+msgid "Strength: %d dB, Quality: %ld%%"
+msgstr "Siła: %d dB, Jakość: %ld%%"
 
 msgctxt "IDS_SUBTITLES_STYLES_CAPTION"
 msgid "Styles"
 msgstr "Style"
+
+msgctxt "IDS_TEXT_SUB_RENDERING_TARGET"
+msgid "If the rendering target is left undefined, SSA/ASS subtitles will be rendered relative to the video frame while all other text subtitles will be rendered relative to the window."
+msgstr "Jeśli cel renderowania nie został określony, napisy SSA/ASS będą renderowane w stosunku do klatki obrazu, natomiast wszystkie inne napisy tekstowe będą renderowane w stosunku do okna."
 
 msgctxt "IDS_PPAGE_CAPTURE_FG0"
 msgid "Never (fastest approach)"
@@ -838,20 +842,24 @@ msgid "Accurate VSync"
 msgstr "Dokładna synchronizacja pionowa"
 
 msgctxt "IDC_CHECK_RELATIVETO"
-msgid "Default state gets inherited to other styles where it is still undefined"
-msgstr "Umieszcza napisy na ekranie zależnie od rozmiaru i położenia obrazu. Domyślny stan zostanie przypisany innym stylom, w których nie został zdefiniowany."
+msgid "If the rendering target is left undefined, it will be inherited from the default style."
+msgstr "Jeśli cel renderowania nie został określony, zostanie on odziedziczony z domyślnego stylu."
 
-msgctxt "IDC_CHECK_SPCPOW2TEX"
-msgid "Unchecking this frees up a little video memory and saves bandwidth on local to video memory transfers, but it may not work with older video cards."
-msgstr "Odznaczenie opcji zmniejsza w niewielkim stopniu ilość używanej pamięci karty graficznej oraz wielkość transferu do niej. Może nie działać ze starszymi kartami graficznymi."
+msgctxt "IDC_CHECK_NO_SUB_ANIM"
+msgid "Disallow subtitle animation. Enabling this option will lower CPU usage. You can use it if you experience flashing subtitles."
+msgstr "Nie zezwalaj na wyświetlanie animacji napisów. Zmniejsza w niewielkim stopniu obciążenie procesora. Opcja pomocna w przypadku migotania napisów."
 
-msgctxt "IDC_CHECK_SPCANIMWITHBUFFER"
-msgid "Allows subtitle animation when using a subpicture buffer larger than 0. Disabling this option will lower CPU usage. Also disable if you experience flashing subtitles."
-msgstr "Wyświetla animacje napisów w przypadku, gdy liczba buforowanych wierszy jest większa od zera. Zmniejsza w niewielkim stopniu obciążenie procesora. Opcja pomocna w przypadku problemu migotania napisów."
+msgctxt "IDC_SUBPIC_TO_BUFFER"
+msgid "Increasing the number of buffered subpictures should in general improve the rendering performance at the cost of a higher video RAM usage on the GPU."
+msgstr "Zwiększenie liczby buforowanych klatek napisów powinno poprawić wydajność renderowania kosztem użycia większej ilości pamięci karty graficznej."
 
 msgctxt "IDC_BUTTON_EXT_SET"
 msgid "After clicking this button, the checked state of the format group will reflect the actual file association for MPC-HC. A newly added extension will usually make it grayed, so don't forget to check it again before closing this dialog!"
 msgstr "Zmienia ustawienia formatów obsługiwanych przez program. Po użyciu stan zaznaczenia bieżącej grupy formatów będzie odzwierciedlał aktualnie przypisane skojarzenia dla programu. Nowo dodane rozszerzenie sprawi, że zmieni on kolor na szary, więc proszę pamiętać o ponownym zaznaczeniu tego formatu przed zamknięciem tego okna."
+
+msgctxt "IDC_CHECK_ALLOW_DROPPING_SUBPIC"
+msgid "Disabling this option will prevent the subtitles from blinking but it may cause the video renderer to skip some video frames."
+msgstr "Wyłączenie tej opcji zapobiega migotaniu napisów, ale może spowodować ominięcie niektórych klatek przez renderer obrazu."
 
 msgctxt "ID_PLAY_PLAY"
 msgid "Play\nPlay"
@@ -1253,6 +1261,82 @@ msgctxt "IDS_SUB_SAVE_EXTERNAL_STYLE_FILE"
 msgid "Save custom style"
 msgstr "Zapisz niestandardowy styl"
 
+msgctxt "IDS_CONTENT_EDUCATION_SCIENCE"
+msgid "Education/Science/Factual topics"
+msgstr "Edukacja/Nauka/Fakty"
+
+msgctxt "IDS_PPAGEADVANCED_HIDE_WINDOWED"
+msgid "Hides controls and panels also in windowed mode."
+msgstr "Ukrywa zadokowane panele oraz przyciski sterowania także w trybie okienkowym."
+
+msgctxt "IDS_PPAGEADVANCED_BLOCK_VSFILTER"
+msgid "Prevent external subtitle renderer to be loaded when internal is in use."
+msgstr "Zablokuj ładowanie zewnętrznych rendererów napisów, gdy wbudowany jest w użyciu. "
+
+msgctxt "IDS_PPAGEADVANCED_COL_NAME"
+msgid "Name"
+msgstr "Nazwa"
+
+msgctxt "IDS_PPAGEADVANCED_COL_VALUE"
+msgid "Value"
+msgstr "Wartość"
+
+msgctxt "IDS_PPAGEADVANCED_RECENT_FILES_NUMBER"
+msgid "Maximum number of files shown in the \"Recent files\" menu and for which the position is potentially saved."
+msgstr "Maksymalna liczba plików pokazanych w menu \"Ostatnio otwarte\" i dla których może być zapisane położenia."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_LONGER"
+msgid "Remember file position only for files longer than N minutes."
+msgstr "Zapamiętuj położenie pliku tylko dla plików dłuższych niż N minut."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_AUDIO"
+msgid "Remember file position also for audio files."
+msgstr "Zapamiętuj położenie pliku również dla plików audio."
+
+msgctxt "IDS_AFTER_PLAYBACK_DO_NOTHING"
+msgid "Do Nothing"
+msgstr "Nic nie rób"
+
+msgctxt "IDS_AFTER_PLAYBACK_PLAY_NEXT"
+msgid "Play next file in the folder"
+msgstr "Otwórz następny plik w folderze"
+
+msgctxt "IDS_AFTER_PLAYBACK_REWIND"
+msgid "Rewind current file"
+msgstr "Przewiń do początku aktualny plik"
+
+msgctxt "IDS_AFTER_PLAYBACK_CLOSE"
+msgid "Close"
+msgstr "Zamknij "
+
+msgctxt "IDS_AFTER_PLAYBACK_EXIT"
+msgid "Exit"
+msgstr "Zamknij program"
+
+msgctxt "IDS_AFTER_PLAYBACK_MONITOROFF"
+msgid "Turn off the monitor"
+msgstr "Wyłącz monitor"
+
+msgctxt "IDS_IMAGE_JPEG_QUALITY"
+msgid "JPEG Image"
+msgstr "Obraz JPEG"
+
+msgctxt "IDS_IMAGE_QUALITY"
+msgid "Quality (%):"
+msgstr "Jakość (%):"
+
+msgctxt "IDS_PPAGEADVANCED_COVER_SIZE_LIMIT"
+msgid "Maximum size (NxNpx) of a cover-art loaded in the audio only mode."
+msgstr "Maksymalny rozmiar (NxNpx) załadowanej okładki w trybie dźwiękowym."
+
+msgctxt "IDS_SUBTITLE_DELAY_STEP_TOOLTIP"
+msgid "The subtitle delay will be decreased/increased by this value each time the corresponding hotkeys are used (%s/%s)."
+msgstr "Opóźnienie napisów zostanie zwiększone lub zmniejszone o wartość skoku przy każdym użyciu powiązanych skrótów klawiszowych (%s/%s)."
+
+msgctxt "IDS_HOTKEY_NOT_DEFINED"
+msgid "<not defined>"
+msgstr "<nie określono>"
+
 msgctxt "IDS_AG_OPEN_DEVICE"
 msgid "Open Device"
 msgstr "Otwórz urządzenie"
@@ -1287,7 +1371,7 @@ msgstr "Właściwości"
 
 msgctxt "IDS_AG_EXIT"
 msgid "Exit"
-msgstr "Zakończ"
+msgstr "Zamknij program"
 
 msgctxt "IDS_AG_PLAYPAUSE"
 msgid "Play/Pause"
@@ -1938,16 +2022,16 @@ msgid "Buffers"
 msgstr "Bufory"
 
 msgctxt "IDS_MAINFRM_9"
-msgid "Volume: %02d/%02d, Title: %02d/%02d, Chapter: %02d/%02d"
-msgstr "Nośnik: %02d/%02d, tytuł: %02d/%02d, rozdział: %02d/%02d"
+msgid "Volume: %02lu/%02lu, Title: %02lu/%02lu, Chapter: %02lu/%02lu"
+msgstr "Nośnik: %02lu/%02lu, tytuł: %02lu/%02lu, rozdział: %02lu/%02lu"
 
 msgctxt "IDS_MAINFRM_10"
-msgid "Angle: %02d/%02d, %dx%d %dHz %d:%d"
-msgstr "Kamera: %02d/%02d, %dx%d %d Hz %d:%d"
+msgid "Angle: %02lu/%02lu, %lux%lu %luHz %lu:%lu"
+msgstr "Kamera: %02lu/%02lu, %lux%lu %lu Hz %lu:%lu"
 
 msgctxt "IDS_MAINFRM_11"
-msgid "%s, %s %dHz %dbits %d %s"
-msgstr "%s, %s %d Hz %d bitów %d %s"
+msgid "%s, %s %uHz %dbits %d %s"
+msgstr "%s, %s %u Hz %d bitów %d %s"
 
 msgctxt "IDS_ADD_TO_PLAYLIST"
 msgid "Add to MPC-HC Playlist"
@@ -1958,8 +2042,8 @@ msgid "Play with MPC-HC"
 msgstr "Odtwórz w MPC-HC"
 
 msgctxt "IDS_CANNOT_CHANGE_FORMAT"
-msgid "MPC-HC has not enough privileges to change files formats associations. Please click on \"Modify\" button to get administrator rights."
-msgstr "Program nie ma wystarczających uprawnień, aby zmienić skojarzenia plików. Proszę kliknąć przycisk „Zmodyfikuj”, aby uzyskać uprawnienia administratora."
+msgid "MPC-HC has not enough privileges to change files formats associations. Please click on the \"Run as administrator\" button."
+msgstr "Program nie ma wystarczających uprawnień, aby zmienić skojarzenia plików. Proszę kliknąć przycisk „Uruchom jako administrator”, aby uzyskać uprawnienia administratora."
 
 msgctxt "IDS_APP_DESCRIPTION"
 msgid "MPC-HC is an extremely light-weight, open source media player for Windows. It supports all common video and audio file formats available for playback. We are 100% spyware free, there are no advertisements or toolbars."
@@ -1974,8 +2058,8 @@ msgid "channels"
 msgstr "kanały/ów"
 
 msgctxt "IDS_AG_TITLE"
-msgid "Title %d"
-msgstr "Tytuł %d"
+msgid "Title %u"
+msgstr "Tytuł %u"
 
 msgctxt "IDS_MAINFRM_16"
 msgid "DVD: Unexpected error"
@@ -2050,8 +2134,8 @@ msgid "Aspect Ratio"
 msgstr "Proporcje obrazu"
 
 msgctxt "IDS_MAINFRM_37"
-msgid ", Total: %d, Dropped: %d"
-msgstr ", wszystkich: %d, porzuconych: %d"
+msgid ", Total: %ld, Dropped: %ld"
+msgstr ", wszystkich: %ld, porzuconych: %ld"
 
 msgctxt "IDS_MAINFRM_38"
 msgid ", Size: %I64dKB"
@@ -2141,9 +2225,13 @@ msgctxt "IDS_CANNOT_LOAD_SUB"
 msgid "To load subtitles you have to change the video renderer type and reopen the file.\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR or Haali\n- RealMedia: Special renderer for RealMedia, or open it through DirectShow\n- QuickTime: DX7 or DX9 renderer for QuickTime\n- ShockWave: n/a"
 msgstr "Aby wczytać napisy, należy ponownie otworzyć plik, zmieniając wcześniej filtr renderujący na jeden z poniższych:\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR lub Haali\n- RealMedia: specjalny filtr renderujący dla RealMedia albo otwarcie za pośrednictwem DirectShow\n- QuickTime: renderer DX7 lub DX9 dla QuickTime\n- ShockWave: brak"
 
+msgctxt "IDS_SUBTITLE_FILES_FILTER"
+msgid "Subtitle files"
+msgstr "Pliki z napisami"
+
 msgctxt "IDS_MAINFRM_68"
-msgid "Aspect Ratio: %d:%d"
-msgstr "Proporcje obrazu: %d:%d"
+msgid "Aspect Ratio: %ld:%ld"
+msgstr "Proporcje obrazu: %ld:%ld"
 
 msgctxt "IDS_MAINFRM_69"
 msgid "Aspect Ratio: Default"
@@ -2214,8 +2302,8 @@ msgid "MPC-HC terminated unexpectedly. To help us fix this problem, please send 
 msgstr "Program nieoczekiwanie zakończył pracę. Aby pomóc naprawić ten problem, proszę wysłać plik „%s” na platformę zgłaszania błędów.\n\nChcesz otworzyć folder zawierający zrzut pamięci oraz odwiedzić teraz stronę, aby zgłosić błąd?"
 
 msgctxt "IDS_MPC_MINIDUMP_FAIL"
-msgid "Failed to create dump file to \"%s\" (error %d)"
-msgstr "Nie udało się zapisać informacji o debugowaniu do pliku „%s” (błąd %d)"
+msgid "Failed to create dump file to \"%s\" (error %u)"
+msgstr "Nie udało się zapisać informacji o debugowaniu do pliku „%s” (błąd %u)"
 
 msgctxt "IDS_MAINFRM_DIR_TITLE"
 msgid "Select Directory"
@@ -2326,8 +2414,8 @@ msgid "Unknown Stream"
 msgstr "Nieznany strumień"
 
 msgctxt "IDS_AG_UNKNOWN"
-msgid "Unknown %d"
-msgstr "Nieznany %d"
+msgid "Unknown %u"
+msgstr "Nieznany %u"
 
 msgctxt "IDS_AG_VSYNC"
 msgid "VSync"
@@ -2346,8 +2434,8 @@ msgid "Enable DVD subtitles"
 msgstr "Wyświetlaj napisy DVD"
 
 msgctxt "IDS_AG_ANGLE"
-msgid "Angle %d"
-msgstr "Kamera %d"
+msgid "Angle %u"
+msgstr "Kamera %u"
 
 msgctxt "IDS_AG_VSYNCOFFSET_INCREASE"
 msgid "Increase VSync Offset"
@@ -2596,6 +2684,10 @@ msgstr "Pokaż pasek tytułu i menu"
 msgctxt "IDS_VIEW_HIDEMENU"
 msgid "Hide &Menu"
 msgstr "Ukryj &menu"
+
+msgctxt "IDD_PPAGEADVANCED"
+msgid "Advanced"
+msgstr "Zaawansowane"
 
 msgctxt "IDS_TIME_TOOLTIP_ABOVE"
 msgid "Above seekbar"
@@ -3357,17 +3449,9 @@ msgctxt "IDS_AFTERPLAYBACK_LOCK"
 msgid "After Playback: Lock"
 msgstr "Po zakończeniu odtwarzania: Zablokowanie komputera"
 
-msgctxt "IDS_AFTERPLAYBACK_EXIT"
-msgid "After Playback: Always exit"
-msgstr "Po zakończeniu odtwarzania: Zamykaj program"
-
-msgctxt "IDS_AFTERPLAYBACK_DONOTHING"
-msgid "After Playback: Do Nothing"
-msgstr "Po zakończeniu odtwarzania: Brak akcji"
-
-msgctxt "IDS_AFTERPLAYBACK_NEXT"
-msgid "After Playback: Play next in the folder"
-msgstr "Po zakończeniu odtwarzania: Odtworzenie następnego pliku z folderu"
+msgctxt "IDS_AFTERPLAYBACK_MONITOROFF"
+msgid "After Playback: Turn off the monitor"
+msgstr "Po zakończeniu odtwarzania: Wyłącz monitor"
 
 msgctxt "IDS_OSD_BRIGHTNESS"
 msgid "Brightness: %s"
@@ -3424,6 +3508,26 @@ msgstr "T&ytuły"
 msgctxt "IDS_NAVIGATE_CHANNELS"
 msgid "&Channels"
 msgstr "&Kanały"
+
+msgctxt "IDC_FASTSEEK_CHECK"
+msgid "If \"latest keyframe\" is selected, seek to the first keyframe before the actual seek point.\nIf \"nearest keyframe\" is selected, seek to the first keyframe before or after the seek point depending on which is the closest."
+msgstr "Gdy \"Poprzednia klatka klucz.\" jest wybrane, skok zostanie wykonany do pierwszej klatki kluczowej poprzedzającej żądany punkt skoku.\nGdy \"Najbliższa klatka klucz.\" jest wybrane, skok zostanie wykonany do pierwszej klatki kluczowej poprzedzającej lub wyprzedzającej żądany punkt skoku w zależności, który jest bliżej."
+
+msgctxt "IDC_ASSOCIATE_ALL_FORMATS"
+msgid "Associate with all formats"
+msgstr "Skojarz ze wszystkimi formatami"
+
+msgctxt "IDC_ASSOCIATE_VIDEO_FORMATS"
+msgid "Associate with video formats only"
+msgstr "Skojarz tylko z formatami wideo."
+
+msgctxt "IDC_ASSOCIATE_AUDIO_FORMATS"
+msgid "Associate with audio formats only"
+msgstr "Skojarz tylko z formatami audio."
+
+msgctxt "IDC_CLEAR_ALL_ASSOCIATIONS"
+msgid "Clear all associations"
+msgstr "Wyczyść powiązania"
 
 msgctxt "IDS_FILTER_SETTINGS_CAPTION"
 msgid "Settings"

@@ -184,6 +184,7 @@ public:
         DVBINFO_UPDATE,
         STATUS_ERASE,
         PLACE_FULLSCREEN_UNDER_ACTIVE_WINDOW,
+        AUTOFIT_TIMEOUT
     };
     OneTimeTimerPool<TimerOneTimeSubscriber> m_timerOneTime;
 
@@ -267,6 +268,7 @@ private:
     // subtitles
 
     CCritSec m_csSubLock;
+    CCritSec m_csSubtitleManagementLock;
 
     CList<SubtitleInput> m_pSubStreams;
     POSITION m_posFirstExtSub;
@@ -382,6 +384,9 @@ private:
     ULONG m_lCurrentChapter;
     ULONG m_lChapterStartTime;
 
+    CString m_currentCoverAuthor;
+    CString m_currentCoverPath;
+
     CAutoPtr<SkypeMoodMsgHandler> m_pSkypeMoodMsgHandler;
     void SendNowPlayingToSkype();
 
@@ -478,7 +483,7 @@ protected:
     void SetDispMode(CString displayName, const DisplayMode& dm);
     void AutoChangeMonitorMode();
 
-    bool GraphEventComplete();
+    void GraphEventComplete();
 
     friend class CGraphThread;
     CGraphThread* m_pGraphThread;
@@ -559,7 +564,7 @@ public:
     bool BuildGraphVideoAudio(int fVPreview, bool fVCapture, int fAPreview, bool fACapture);
     bool DoCapture(), StartCapture(), StopCapture();
 
-    bool DoAfterPlaybackEvent();
+    void DoAfterPlaybackEvent();
     void ParseDirs(CAtlList<CString>& sl);
     bool SearchInDir(bool bDirForward, bool bLoop = false);
 
@@ -663,6 +668,9 @@ public:
     afx_msg void OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMenu);
     afx_msg void OnUnInitMenuPopup(CMenu* pPopupMenu, UINT nFlags);
     afx_msg void OnEnterMenuLoop(BOOL bIsTrackPopupMenu);
+
+    afx_msg BOOL OnQueryEndSession();
+    afx_msg void OnEndSession(BOOL bEnding);
 
     BOOL OnMenu(CMenu* pMenu);
     afx_msg void OnMenuPlayerShort();
@@ -1029,6 +1037,7 @@ protected:
     CPoint m_snapStartPoint;
     CRect m_snapStartRect;
 
+    bool m_bAllowWindowZoom;
     double m_dLastVideoScaleFactor;
     int m_nLastVideoWidth;
 

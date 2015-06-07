@@ -426,7 +426,7 @@ HRESULT CFGManagerBDA::ConnectFilters(IBaseFilter* pOutFilter, IBaseFilter* pInF
 
 STDMETHODIMP CFGManagerBDA::RenderFile(LPCWSTR lpcwstrFile, LPCWSTR lpcwstrPlayList)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr;
     const CAppSettings& s = AfxGetAppSettings();
     CComPtr<IBaseFilter> pNetwork;
     CComPtr<IBaseFilter> pTuner;
@@ -575,7 +575,7 @@ STDMETHODIMP CFGManagerBDA::SetFrequency(ULONG freq)
 {
     HRESULT hr;
     const CAppSettings& s = AfxGetAppSettings();
-    LOG(_T("SetFrequency to %d."), freq);
+    LOG(_T("SetFrequency to %u."), freq);
     CheckPointer(m_pBDAControl, E_FAIL);
     CheckPointer(m_pBDAFreq, E_FAIL);
 
@@ -598,7 +598,7 @@ STDMETHODIMP CFGManagerBDA::SetFrequency(ULONG freq)
             LOG(_T("SetFrequency changes pending (timeout error----)"));
             hr = VFW_E_TIMEOUT;
         } else {
-            LOG(_T("Frequency set to %d."), freq);
+            LOG(_T("Frequency set to %u."), freq);
 #ifdef _DEBUG
             BOOLEAN bPresent;
             BOOLEAN bLocked;
@@ -606,7 +606,7 @@ STDMETHODIMP CFGManagerBDA::SetFrequency(ULONG freq)
             LONG lPercentQuality;
 
             if (SUCCEEDED(GetStats(bPresent, bLocked, lDbStrength, lPercentQuality)) && bPresent) {
-                LOG(_T("Signal stats: Strength %d dB, Quality %d%%"), lDbStrength, lPercentQuality);
+                LOG(_T("Signal stats: Strength %ld dB, Quality %ld%%"), lDbStrength, lPercentQuality);
             }
 #endif
         }
@@ -655,7 +655,7 @@ STDMETHODIMP CFGManagerBDA::Scan(ULONG ulFrequency, HWND hWnd)
     } else {
         CMpeg2DataParser Parser(m_DVBStreams[DVB_PSI].GetFilter());
 
-        LOG(_T("Scanning frequency %d.........."), ulFrequency);
+        LOG(_T("Scanning frequency %u.........."), ulFrequency);
 
         if (FAILED(hr = Parser.ParseSDT(ulFrequency))) {
             LOG(_T("ParseSDT failed. Result: 0x%08x."), hr);
@@ -672,7 +672,7 @@ STDMETHODIMP CFGManagerBDA::Scan(ULONG ulFrequency, HWND hWnd)
                 ::SendMessage(hWnd, WM_TUNER_NEW_CHANNEL, 0, (LPARAM)(LPCTSTR)Channel.ToString());
             }
         }
-        LOG(_T("Scanning frequency %d done."), ulFrequency);
+        LOG(_T("Scanning frequency %u done."), ulFrequency);
     }
 
     return hr;
@@ -722,19 +722,17 @@ STDMETHODIMP CFGManagerBDA::Enable(long lIndex, DWORD dwFlags)
     HRESULT hr = E_INVALIDARG;
     CAppSettings& s = AfxGetAppSettings();
     CDVBChannel* pChannel = s.FindChannelByPref(s.nDVBLastChannel);
-    DVBStreamInfo* pStreamInfo = nullptr;
-    FILTER_STATE nState;
 
     if (pChannel) {
         if (lIndex >= 0 && lIndex < pChannel->GetAudioCount()) {
-            pStreamInfo = pChannel->GetAudio(lIndex);
+            DVBStreamInfo* pStreamInfo = pChannel->GetAudio(lIndex);
             if (pStreamInfo) {
                 CDVBStream* pStream = &m_DVBStreams[pStreamInfo->Type];
                 if (pStream) {
                     if (pStream->GetMappedPID()) {
                         pStream->Unmap(pStream->GetMappedPID());
                     }
-                    nState = GetState();
+                    FILTER_STATE nState = GetState();
                     if (m_nCurAudioType != pStreamInfo->Type) {
                         if ((s.nDVBStopFilterGraph == DVB_STOP_FG_ALWAYS) && (GetState() != State_Stopped)) {
                             ChangeState(State_Stopped);
@@ -754,7 +752,7 @@ STDMETHODIMP CFGManagerBDA::Enable(long lIndex, DWORD dwFlags)
                 ASSERT(FALSE);
             }
         } else if (lIndex > 0 && lIndex < pChannel->GetAudioCount() + pChannel->GetSubtitleCount()) {
-            pStreamInfo = pChannel->GetSubtitle(lIndex - pChannel->GetAudioCount());
+            DVBStreamInfo* pStreamInfo = pChannel->GetSubtitle(lIndex - pChannel->GetAudioCount());
 
             if (pStreamInfo) {
                 m_DVBStreams[DVB_SUB].Map(pStreamInfo->PID);
@@ -880,7 +878,7 @@ STDMETHODIMP CFGManagerBDA::NonDelegatingQueryInterface(REFIID riid, void** ppv)
 HRESULT CFGManagerBDA::CreateMicrosoftDemux(CComPtr<IBaseFilter>& pMpeg2Demux)
 {
     CComPtr<IMpeg2Demultiplexer> pDemux;
-    HRESULT hr = S_OK;
+    HRESULT hr;
     bool bAudioMPA = false;
     bool bAudioAC3 = false;
     bool bAudioEAC3 = false;
@@ -1062,10 +1060,10 @@ HRESULT CFGManagerBDA::SetChannelInternal(CDVBChannel* pChannel)
         CheckNoLog(m_DVBStreams[DVB_SUB].Map(pChannel->GetDefaultSubtitlePID()));
     }
     LOG(_T("Stream maps:"));
-    LOG(_T("Mapped PID MPEG-2: %d, Mapped PID H.264: %d."), m_DVBStreams[DVB_MPV].GetMappedPID(), m_DVBStreams[DVB_H264].GetMappedPID());
-    LOG(_T("Mapped PID MPA: %d, Mapped PID AC3: %d, Mapped PID EAC3: %d, Mapped PID AAC-LATM: %d."), m_DVBStreams[DVB_MPA].GetMappedPID(),
+    LOG(_T("Mapped PID MPEG-2: %u, Mapped PID H.264: %u."), m_DVBStreams[DVB_MPV].GetMappedPID(), m_DVBStreams[DVB_H264].GetMappedPID());
+    LOG(_T("Mapped PID MPA: %u, Mapped PID AC3: %u, Mapped PID EAC3: %u, Mapped PID AAC-LATM: %u."), m_DVBStreams[DVB_MPA].GetMappedPID(),
         m_DVBStreams[DVB_AC3].GetMappedPID(), m_DVBStreams[DVB_EAC3].GetMappedPID(), m_DVBStreams[DVB_LATM].GetMappedPID());
-    LOG(_T("Mapped PID Subtitles: %d."), m_DVBStreams[DVB_SUB].GetMappedPID());
+    LOG(_T("Mapped PID Subtitles: %u."), m_DVBStreams[DVB_SUB].GetMappedPID());
 
     if (bRadioToTV) {
         m_fHideWindow = false;

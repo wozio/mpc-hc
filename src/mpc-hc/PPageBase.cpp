@@ -42,6 +42,42 @@ void CPPageBase::DoDataExchange(CDataExchange* pDX)
     __super::DoDataExchange(pDX);
 }
 
+bool CPPageBase::FillComboToolTip(CComboBox& comboBox, TOOLTIPTEXT* pTTT)
+{
+    bool bNeedTooltip = false;
+
+    CDC* pDC = comboBox.GetDC();
+    CFont* pFont = comboBox.GetFont();
+    CFont* pOldFont = pDC->SelectObject(pFont);
+
+    TEXTMETRIC tm;
+    pDC->GetTextMetrics(&tm);
+
+    CRect comboBoxRect;
+    comboBox.GetWindowRect(comboBoxRect);
+    comboBoxRect.right -= GetSystemMetrics(SM_CXVSCROLL) + 2 * GetSystemMetrics(SM_CXEDGE);
+
+    int i = comboBox.GetCurSel();
+    CString str;
+    comboBox.GetLBText(i, str);
+    CSize textSize;
+    textSize = pDC->GetTextExtent(str);
+    pDC->SelectObject(pOldFont);
+    comboBox.ReleaseDC(pDC);
+    textSize.cx += tm.tmAveCharWidth;
+
+    if (textSize.cx > comboBoxRect.Width()) {
+        bNeedTooltip = true;
+        if (str.GetLength() > _countof(pTTT->szText) - 1) {
+            str.Truncate(_countof(pTTT->szText) - 1);
+        }
+        _tcscpy_s(pTTT->szText, str);
+        pTTT->hinst = nullptr;
+    }
+
+    return bNeedTooltip;
+}
+
 void CPPageBase::CreateToolTip()
 {
     m_wndToolTip.Create(this, TTS_NOPREFIX);
@@ -54,6 +90,23 @@ void CPPageBase::CreateToolTip()
             m_wndToolTip.AddTool(pChild, strToolTip);
         }
     }
+}
+
+void CPPageBase::SetButtonIcon(UINT nIDButton, UINT nIDIcon)
+{
+    if (!m_buttonIcons.count(nIDIcon)) {
+        CImage img;
+        img.LoadFromResource(AfxGetInstanceHandle(), nIDIcon);
+        CImageList& imageList = m_buttonIcons[nIDIcon];
+        imageList.Create(img.GetWidth(), img.GetHeight(), ILC_COLOR32, 1, 0);
+        imageList.Add(CBitmap::FromHandle(img), nullptr);
+    }
+
+    BUTTON_IMAGELIST buttonImageList;
+    buttonImageList.himl = m_buttonIcons[nIDIcon];
+    buttonImageList.margin = { 0, 0, 0, 0 };
+    buttonImageList.uAlign = BUTTON_IMAGELIST_ALIGN_CENTER;
+    static_cast<CButton*>(GetDlgItem(nIDButton))->SetImageList(&buttonImageList);
 }
 
 BOOL CPPageBase::PreTranslateMessage(MSG* pMsg)

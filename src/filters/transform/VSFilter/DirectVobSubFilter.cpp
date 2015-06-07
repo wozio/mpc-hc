@@ -134,6 +134,7 @@ STDMETHODIMP CDirectVobSubFilter::NonDelegatingQueryInterface(REFIID riid, void*
     return
         QI(IDirectVobSub)
         QI(IDirectVobSub2)
+        QI(IDirectVobSub3)
         QI(IFilterVersion)
         QI(ISpecifyPropertyPages)
         QI(IAMStreamSelect)
@@ -337,7 +338,7 @@ CBasePin* CDirectVobSubFilter::GetPin(int n)
         return m_pTextInput[n];
     }
 
-    n -= (int)m_pTextInput.GetCount();
+    //n -= (int)m_pTextInput.GetCount();
 
     return nullptr;
 }
@@ -571,9 +572,9 @@ void CDirectVobSubFilter::InitSubPicQueue()
 
     HRESULT hr = S_OK;
 
-    m_pSubPicQueue = m_uSubPictToBuffer > 0
-                     ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(m_uSubPictToBuffer, !m_fAnimWhenBuffering, pSubPicAllocator, &hr)
-                     : (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(pSubPicAllocator, &hr);
+    m_pSubPicQueue = m_subPicQueueSettings.nSize > 0
+                     ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(m_subPicQueueSettings , pSubPicAllocator, &hr)
+                     : (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(m_subPicQueueSettings, pSubPicAllocator, &hr);
 
     if (FAILED(hr)) {
         m_pSubPicQueue = nullptr;
@@ -652,9 +653,7 @@ bool CDirectVobSubFilter::AdjustFrameSize(CSize& s)
 
 STDMETHODIMP CDirectVobSubFilter::Count(DWORD* pcStreams)
 {
-    if (!pcStreams) {
-        return E_POINTER;
-    }
+    CheckPointer(pcStreams, E_POINTER);
 
     *pcStreams = 0;
 
@@ -885,9 +884,7 @@ STDMETHODIMP CDirectVobSubFilter::Info(long lIndex, AM_MEDIA_TYPE** ppmt, DWORD*
 
 STDMETHODIMP CDirectVobSubFilter::GetClassID(CLSID* pClsid)
 {
-    if (pClsid == nullptr) {
-        return E_POINTER;
-    }
+    CheckPointer(pClsid, E_POINTER);
     *pClsid = m_clsid;
     return NOERROR;
 }
@@ -896,7 +893,7 @@ STDMETHODIMP CDirectVobSubFilter::GetPages(CAUUID* pPages)
 {
     CheckPointer(pPages, E_POINTER);
 
-    pPages->cElems = 7;
+    pPages->cElems = 8;
     pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID) * pPages->cElems);
 
     if (pPages->pElems == nullptr) {
@@ -906,6 +903,7 @@ STDMETHODIMP CDirectVobSubFilter::GetPages(CAUUID* pPages)
     int i = 0;
     pPages->pElems[i++] = __uuidof(CDVSMainPPage);
     pPages->pElems[i++] = __uuidof(CDVSGeneralPPage);
+    pPages->pElems[i++] = __uuidof(CDVSSubpicQueuePPage);
     pPages->pElems[i++] = __uuidof(CDVSMiscPPage);
     pPages->pElems[i++] = __uuidof(CDVSTimingPPage);
     pPages->pElems[i++] = __uuidof(CDVSColorPPage);
@@ -950,9 +948,7 @@ STDMETHODIMP CDirectVobSubFilter::get_LanguageName(int iLanguage, WCHAR** ppName
 {
     HRESULT hr = CDirectVobSub::get_LanguageName(iLanguage, ppName);
 
-    if (!ppName) {
-        return E_POINTER;
-    }
+    CheckPointer(ppName, E_POINTER);
 
     if (hr == NOERROR) {
         CAutoLock cAutolock(&m_csQueueLock);
@@ -1449,12 +1445,14 @@ bool CDirectVobSubFilter2::ShouldWeAutoload(IFilterGraph* pGraph)
     }
     EndEnumFilters;
 
-    if ((m_fExternalLoad || m_fWebLoad) && (m_fWebLoad || !(wcsstr(m_videoFileName, L"http://") || wcsstr(m_videoFileName, L"mms://")))) {
-        bool fTemp = m_fHideSubtitles;
-        fRet = !m_videoFileName.IsEmpty() && SUCCEEDED(put_FileName((LPWSTR)(LPCWSTR)m_videoFileName))
-               || SUCCEEDED(put_FileName(L"c:\\tmp.srt"))
-               || fRet;
-        if (fTemp) {
+    if (!m_videoFileName.IsEmpty() && (m_fExternalLoad || m_fWebLoad) && (m_fWebLoad || !(wcsstr(m_videoFileName, L"http://") || wcsstr(m_videoFileName, L"mms://")))) {
+        bool bSubtitlesWereHidden = m_fHideSubtitles;
+
+        if (SUCCEEDED(put_FileName((LPWSTR)(LPCWSTR)m_videoFileName))) {
+            fRet = true;
+        }
+
+        if (bSubtitlesWereHidden) {
             m_fHideSubtitles = true;
         }
     }
@@ -1605,7 +1603,7 @@ void CDirectVobSubFilter::SetSubtitle(ISubStream* pSubStream)
         if (clsid == __uuidof(CVobSubFile) || clsid == __uuidof(CVobSubStream)) {
             if (auto pVSS = dynamic_cast<CVobSubSettings*>(pSubStream)) {
                 pVSS->SetAlignment(m_fOverridePlacement, m_PlacementXperc, m_PlacementYperc);
-                pVSS->m_fOnlyShowForcedSubs = m_fOnlyShowForcedVobSubs;
+                pVSS->m_bOnlyShowForcedSubs = m_fOnlyShowForcedVobSubs;
             }
         } else if (clsid == __uuidof(CRenderedTextSubtitle)) {
             CRenderedTextSubtitle* pRTS = (CRenderedTextSubtitle*)pSubStream;

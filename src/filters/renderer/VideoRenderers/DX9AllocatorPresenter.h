@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -51,6 +51,8 @@ namespace DSObjects
         bool    m_bIsFullscreen;
         bool    m_bNeedCheckSample;
         DWORD   m_MainThreadId;
+
+        bool    m_bIsRendering;
 
         CRenderersSettings::CAdvRendererSettings m_LastRendererSettings;
 
@@ -113,7 +115,7 @@ namespace DSObjects
         bool WaitForVBlank(bool& _Waited, bool& _bTakenLock);
         int GetVBlackPos();
         void CalculateJitter(LONGLONG PerformanceCounter);
-        virtual void OnVBlankFinished(bool fAll, LONGLONG PerformanceCounter) {}
+        virtual void OnVBlankFinished(bool bAll, LONGLONG PerformanceCounter) {}
 
         // Casimir666
         typedef HRESULT(WINAPI* D3DXLoadSurfaceFromMemoryPtr)(
@@ -190,7 +192,7 @@ namespace DSObjects
         double                  m_fSyncOffsetAvr;
         double                  m_DetectedRefreshRate;
 
-        CCritSec                m_RefreshRateLock;
+        CCritSec                m_refreshRateLock;
         double                  m_DetectedRefreshTime;
         double                  m_DetectedRefreshTimePrim;
         double                  m_DetectedScanlineTime;
@@ -201,7 +203,7 @@ namespace DSObjects
             if (m_DetectedRefreshRate) {
                 return m_DetectedRefreshRate;
             }
-            return m_RefreshRate;
+            return m_refreshRate;
         }
 
         LONG GetScanLines() const {
@@ -293,12 +295,17 @@ namespace DSObjects
 
         // ISubPicAllocatorPresenter
         STDMETHODIMP CreateRenderer(IUnknown** ppRenderer);
-        STDMETHODIMP_(bool) Paint(bool fAll);
+        STDMETHODIMP_(bool) Paint(bool bAll);
         STDMETHODIMP GetDIB(BYTE* lpDib, DWORD* size);
         STDMETHODIMP SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget);
         STDMETHODIMP SetPixelShader2(LPCSTR pSrcData, LPCSTR pTarget, bool bScreenSpace);
         STDMETHODIMP_(bool) ResetDevice();
         STDMETHODIMP_(bool) DisplayChange();
+
+        // ISubPicAllocatorPresenter2
+        STDMETHODIMP_(bool) IsRendering() {
+            return m_bIsRendering;
+        }
 
         // ID3DFullscreenControl
         STDMETHODIMP SetD3DFullscreen(bool fEnabled);

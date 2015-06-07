@@ -1,5 +1,5 @@
 /*
- * (C) 2010-2013 see Authors.txt
+ * (C) 2010-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -62,7 +62,7 @@ bool CALLBACK DSEnumProc(LPGUID lpGUID,
     ASSERT(pCombo);
     LPGUID lpTemp = nullptr;
 
-    if (lpGUID != nullptr) { // NULL only for "Primary Sound Driver".
+    if (lpGUID != nullptr) { // nullptr only for "Primary Sound Driver".
         if ((lpTemp = (LPGUID)malloc(sizeof(GUID))) == nullptr) {
             return TRUE;
         }
@@ -90,7 +90,7 @@ bool CMpcAudioRendererSettingsWnd::OnActivate()
 
     SetClassLongPtr(GetDlgItem(IDC_PP_SOUND_DEVICE)->m_hWnd, GCLP_HCURSOR, (LONG_PTR)AfxGetApp()->LoadStandardCursor(IDC_HAND));
 
-    DirectSoundEnumerate((LPDSENUMCALLBACK)DSEnumProc, (VOID*)&m_cbSoundDevice);
+    DirectSoundEnumerate((LPDSENUMCALLBACK)DSEnumProc, (void*)&m_cbSoundDevice);
 
     if (m_cbSoundDevice.GetCount() > 0) {
         int idx = m_cbSoundDevice.FindString(0, m_pMAR->GetSoundDevice());

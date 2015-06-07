@@ -33,21 +33,24 @@ class CSubPicAllocatorPresenterImpl
     , public ISubPicAllocatorPresenter2
     , public ISubRenderConsumer2
 {
+private:
+    CCritSec m_csSubPicProvider;
+
 protected:
     HWND m_hWnd;
     REFERENCE_TIME m_rtSubtitleDelay;
 
     CSize m_maxSubtitleTextureSize;
-    CSize m_NativeVideoSize, m_AspectRatio;
-    CRect m_VideoRect, m_WindowRect;
+    CSize m_nativeVideoSize, m_aspectRatio;
+    CRect m_videoRect, m_windowRect;
 
     REFERENCE_TIME m_rtNow;
     double m_fps;
-    UINT m_RefreshRate;
+    UINT m_refreshRate;
 
-    CMediaType m_InputMediaType;
+    CMediaType m_inputMediaType;
 
-    CComPtr<ISubPicProvider> m_SubPicProvider;
+    CComPtr<ISubPicProvider> m_pSubPicProvider;
     CComPtr<ISubPicAllocator> m_pAllocator;
     CComPtr<ISubPicQueue> m_pSubPicQueue;
 
@@ -72,22 +75,20 @@ public:
     DECLARE_IUNKNOWN;
     STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void** ppv);
 
-    // ISubPicAllocatorPresenter
-
     STDMETHODIMP CreateRenderer(IUnknown** ppRenderer) PURE;
 
     STDMETHODIMP_(void) SetVideoSize(CSize szVideo, CSize szAspectRatio = CSize(0, 0));
-    STDMETHODIMP_(SIZE) GetVideoSize(bool fCorrectAR = true);
-    STDMETHODIMP_(SIZE) GetVisibleVideoSize() {
-        return m_NativeVideoSize;
+    STDMETHODIMP_(SIZE) GetVideoSize(bool bCorrectAR = true) const;
+    STDMETHODIMP_(SIZE) GetVisibleVideoSize() const {
+        return m_nativeVideoSize;
     };
     STDMETHODIMP_(void) SetPosition(RECT w, RECT v);
-    STDMETHODIMP_(bool) Paint(bool fAll) PURE;
+    STDMETHODIMP_(bool) Paint(bool bAll) PURE;
 
     STDMETHODIMP_(void) SetTime(REFERENCE_TIME rtNow);
-    STDMETHODIMP_(void) SetSubtitleDelay(int delay_ms);
-    STDMETHODIMP_(int) GetSubtitleDelay();
-    STDMETHODIMP_(double) GetFPS();
+    STDMETHODIMP_(void) SetSubtitleDelay(int delayMs);
+    STDMETHODIMP_(int) GetSubtitleDelay() const;
+    STDMETHODIMP_(double) GetFPS() const;
 
     STDMETHODIMP_(void) SetSubPicProvider(ISubPicProvider* pSubPicProvider);
     STDMETHODIMP_(void) Invalidate(REFERENCE_TIME rtInvalidate = -1);
@@ -100,12 +101,17 @@ public:
 
     STDMETHODIMP SetVideoAngle(Vector v);
     STDMETHODIMP SetPixelShader(LPCSTR pSrcData, LPCSTR pTarget) { return E_NOTIMPL; }
+
+    // ISubPicAllocatorPresenter2
+
     STDMETHODIMP SetPixelShader2(LPCSTR pSrcData, LPCSTR pTarget, bool bScreenSpace) {
         if (!bScreenSpace) {
             return SetPixelShader(pSrcData, pTarget);
         }
         return E_NOTIMPL;
     }
+
+    STDMETHODIMP SetIsRendering(bool bIsRendering) { return E_NOTIMPL; }
 
     // ISubRenderOptions
 

@@ -32,16 +32,13 @@ using namespace DSObjects;
 
 static HRESULT TextureBlt(IDirect3DDevice7* pD3DDev, IDirectDrawSurface7* pTexture, const Vector dst[4], const CRect& src)
 {
-    if (!pTexture) {
-        return E_POINTER;
-    }
+    CheckPointer(pTexture, E_POINTER);
 
     ASSERT(pD3DDev);
 
-    HRESULT hr;
     DDSURFACEDESC2 ddsd;
     INITDDSTRUCT(ddsd);
-    if (FAILED(hr = pTexture->GetSurfaceDesc(&ddsd))) {
+    if (FAILED(pTexture->GetSurfaceDesc(&ddsd))) {
         return E_FAIL;
     }
 
@@ -66,7 +63,7 @@ static HRESULT TextureBlt(IDirect3DDevice7* pD3DDev, IDirectDrawSurface7* pTextu
         pVertices[i].y -= 0.5f;
     }
 
-    hr = pD3DDev->SetTexture(0, pTexture);
+    pD3DDev->SetTexture(0, pTexture);
 
     pD3DDev->SetRenderState(D3DRENDERSTATE_CULLMODE, D3DCULL_NONE);
     pD3DDev->SetRenderState(D3DRENDERSTATE_LIGHTING, FALSE);
@@ -81,13 +78,13 @@ static HRESULT TextureBlt(IDirect3DDevice7* pD3DDev, IDirectDrawSurface7* pTextu
 
     //
 
-    if (FAILED(hr = pD3DDev->BeginScene())) {
+    if (FAILED(pD3DDev->BeginScene())) {
         return E_FAIL;
     }
 
-    hr = pD3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,
-                                D3DFVF_XYZRHW | D3DFVF_TEX1,
-                                pVertices, 4, D3DDP_WAIT);
+    pD3DDev->DrawPrimitive(D3DPT_TRIANGLESTRIP,
+                           D3DFVF_XYZRHW | D3DFVF_TEX1,
+                           pVertices, 4, D3DDP_WAIT);
     pD3DDev->EndScene();
 
     //
@@ -108,6 +105,7 @@ CDX7AllocatorPresenter::CDX7AllocatorPresenter(HWND hWnd, HRESULT& hr)
     : CSubPicAllocatorPresenterImpl(hWnd, hr, nullptr)
     , m_ScreenSize(0, 0)
     , m_hDDrawLib(nullptr)
+    , m_bIsRendering(false)
 {
     if (FAILED(hr)) {
         return;
@@ -124,7 +122,7 @@ CDX7AllocatorPresenter::CDX7AllocatorPresenter(HWND hWnd, HRESULT& hr)
         return;
     }
 
-    if (FAILED(hr = pDirectDrawCreateEx(nullptr, (VOID**)&m_pDD, IID_IDirectDraw7, nullptr))
+    if (FAILED(hr = pDirectDrawCreateEx(nullptr, (void**)&m_pDD, IID_IDirectDraw7, nullptr))
             || FAILED(hr = m_pDD->SetCooperativeLevel(AfxGetMainWnd()->GetSafeHwnd(), DDSCL_NORMAL))) {
         return;
     }
@@ -157,6 +155,8 @@ CDX7AllocatorPresenter::~CDX7AllocatorPresenter()
 
 HRESULT CDX7AllocatorPresenter::CreateDevice()
 {
+    const CRenderersSettings& r = GetRenderersSettings();
+
     m_pD3DDev = nullptr;
     m_pPrimary = nullptr;
     m_pBackBuffer = nullptr;
@@ -167,7 +167,7 @@ HRESULT CDX7AllocatorPresenter::CreateDevice()
             ddsd.ddpfPixelFormat.dwRGBBitCount <= 8) {
         return DDERR_INVALIDMODE;
     }
-    m_RefreshRate = ddsd.dwRefreshRate;
+    m_refreshRate = ddsd.dwRefreshRate;
     m_ScreenSize.SetSize(ddsd.dwWidth, ddsd.dwHeight);
     CSize szDesktopSize(GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
 
@@ -224,20 +224,20 @@ HRESULT CDX7AllocatorPresenter::CreateDevice()
         m_pSubPicQueue->GetSubPicProvider(&pSubPicProvider);
     }
 
-    InitMaxSubtitleTextureSize(GetRenderersSettings().nSPCMaxRes, szDesktopSize);
+    InitMaxSubtitleTextureSize(r.subPicQueueSettings.nMaxRes, szDesktopSize);
 
     if (m_pAllocator) {
         m_pAllocator->ChangeDevice(m_pD3DDev);
     } else {
-        m_pAllocator = DEBUG_NEW CDX7SubPicAllocator(m_pD3DDev, m_maxSubtitleTextureSize, GetRenderersSettings().fSPCPow2Tex);
+        m_pAllocator = DEBUG_NEW CDX7SubPicAllocator(m_pD3DDev, m_maxSubtitleTextureSize);
     }
 
     hr = S_OK;
     if (!m_pSubPicQueue) {
         CAutoLock(this);
-        m_pSubPicQueue = GetRenderersSettings().nSPCSize > 0
-                         ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(GetRenderersSettings().nSPCSize, !GetRenderersSettings().fSPCAllowAnimationWhenBuffering, m_pAllocator, &hr)
-                         : (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(m_pAllocator, &hr);
+        m_pSubPicQueue = r.subPicQueueSettings.nSize > 0
+                         ? (ISubPicQueue*)DEBUG_NEW CSubPicQueue(r.subPicQueueSettings, m_pAllocator, &hr)
+                         : (ISubPicQueue*)DEBUG_NEW CSubPicQueueNoThread(r.subPicQueueSettings, m_pAllocator, &hr);
     } else {
         m_pSubPicQueue->Invalidate();
     }
@@ -262,8 +262,8 @@ HRESULT CDX7AllocatorPresenter::AllocSurfaces()
     INITDDSTRUCT(ddsd);
     ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
     ddsd.ddsCaps.dwCaps = DDSCAPS_VIDEOMEMORY;
-    ddsd.dwWidth = m_NativeVideoSize.cx;
-    ddsd.dwHeight = m_NativeVideoSize.cy;
+    ddsd.dwWidth = m_nativeVideoSize.cx;
+    ddsd.dwHeight = m_nativeVideoSize.cy;
     ddsd.ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
     ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
     ddsd.ddpfPixelFormat.dwRGBBitCount = 32;
@@ -304,7 +304,7 @@ HRESULT CDX7AllocatorPresenter::AllocSurfaces()
     DDBLTFX fx;
     INITDDSTRUCT(fx);
     fx.dwFillColor = 0;
-    hr = m_pVideoSurface->Blt(nullptr, nullptr, nullptr, DDBLT_WAIT | DDBLT_COLORFILL, &fx);
+    m_pVideoSurface->Blt(nullptr, nullptr, nullptr, DDBLT_WAIT | DDBLT_COLORFILL, &fx);
 
     return S_OK;
 }
@@ -324,7 +324,7 @@ STDMETHODIMP CDX7AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
     return E_NOTIMPL;
 }
 
-STDMETHODIMP_(bool) CDX7AllocatorPresenter::Paint(bool fAll)
+STDMETHODIMP_(bool) CDX7AllocatorPresenter::Paint(bool bAll)
 {
     if (m_bPendingResetDevice) {
         SendResetRequest();
@@ -333,21 +333,21 @@ STDMETHODIMP_(bool) CDX7AllocatorPresenter::Paint(bool fAll)
 
     CAutoLock cAutoLock(this);
 
-    if (m_WindowRect.right <= m_WindowRect.left || m_WindowRect.bottom <= m_WindowRect.top
-            || m_NativeVideoSize.cx <= 0 || m_NativeVideoSize.cy <= 0
+    if (m_windowRect.right <= m_windowRect.left || m_windowRect.bottom <= m_windowRect.top
+            || m_nativeVideoSize.cx <= 0 || m_nativeVideoSize.cy <= 0
             || !m_pPrimary || !m_pBackBuffer || !m_pVideoSurface) {
         return false;
     }
 
     HRESULT hr;
 
-    CRect rSrcVid(CPoint(0, 0), m_NativeVideoSize);
-    CRect rDstVid(m_VideoRect);
+    CRect rSrcVid(CPoint(0, 0), m_nativeVideoSize);
+    CRect rDstVid(m_videoRect);
 
-    CRect rSrcPri(CPoint(0, 0), m_WindowRect.Size());
-    CRect rDstPri(m_WindowRect);
+    CRect rSrcPri(CPoint(0, 0), m_windowRect.Size());
+    CRect rDstPri(m_windowRect);
 
-    if (fAll) {
+    if (bAll) {
         // clear the backbuffer
 
         CRect rl(0, 0, rDstVid.left, rSrcPri.bottom);

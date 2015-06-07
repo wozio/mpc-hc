@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2013-12-21 11:15:54+0000\n"
-"PO-Revision-Date: 2014-05-12 09:11+0000\n"
+"POT-Creation-Date: 2014-06-17 15:23:34+0000\n"
+"PO-Revision-Date: 2014-08-27 11:57+0000\n"
 "Last-Translator: Gaugg_Markus\n"
 "Language-Team: German (http://www.transifex.com/projects/p/mpc-hc/language/de/)\n"
 "MIME-Version: 1.0\n"
@@ -47,6 +47,10 @@ msgstr "Dieses MPC-HC-Build benötigt einen Prozessor mit SSE-Unterstützung.\n\
 msgctxt "CustomMessages_msg_simd_sse2"
 msgid "This build of MPC-HC requires a CPU with SSE2 extension support.\n\nYour CPU does not have those capabilities."
 msgstr "Dieses MPC-HC-Build benötigt einen Prozessor mit SSE2-Unterstützung.\n\nIhr Prozessor besitzt nicht diese Eigenschaft."
+
+msgctxt "CustomMessages_run_DownloadToolbarImages"
+msgid "Visit our Wiki page to download toolbar images"
+msgstr "Toolbar-Bilder von der Wiki-Seite herunterladen"
 
 msgctxt "CustomMessages_tsk_AllUsers"
 msgid "For all users"

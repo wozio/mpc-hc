@@ -52,6 +52,7 @@ class CLibraryStreamPush
   boost::circular_buffer<boost::shared_array<BYTE> > buffer_;
   size_t buffer_len_;
   size_t buffer_pos_;
+  int session_;
 
 public:
   CLibraryStreamPush(CLibraryReaderPush* pParent, HRESULT* phr);
@@ -60,7 +61,8 @@ public:
   HRESULT DecideBufferSize(IMemAllocator* pIMemAlloc, ALLOCATOR_PROPERTIES* pProperties);
   HRESULT FillBuffer(IMediaSample* pSample);
   HRESULT GetMediaType(CMediaType* pmt);
-  HRESULT OnThreadStartPlay();
+  HRESULT OnThreadCreate();
+  HRESULT OnThreadDestroy();
 
   void operator()(yami::incoming_message & im);
 };

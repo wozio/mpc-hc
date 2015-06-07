@@ -675,7 +675,7 @@ HRESULT CFGManager::Connect(IPin* pPinOut, IPin* pPinIn, bool bContinueRender)
                 }
             }
 
-            EXECUTE_ASSERT(Disconnect(pPinOut));
+            EXECUTE_ASSERT(SUCCEEDED(Disconnect(pPinOut)));
         }
     }
 
@@ -894,7 +894,7 @@ STDMETHODIMP CFGManager::Render(IPin* pPinOut)
 
 STDMETHODIMP CFGManager::RenderFile(LPCWSTR lpcwstrFileName, LPCWSTR lpcwstrPlayList)
 {
-    TRACE(_T("--> CFGManager::RenderFile on thread: %d\n"), GetCurrentThreadId());
+    TRACE(_T("--> CFGManager::RenderFile on thread: %lu\n"), GetCurrentThreadId());
     CAutoLock cAutoLock(this);
 
     m_streampath.RemoveAll();
@@ -1464,6 +1464,13 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     }
 #endif
 
+#if INTERNAL_SOURCEFILTER_GIF
+    if (src[SRC_GIF]) {
+        pFGLAVSplitterSource->m_extensions.AddTail(_T(".gif"));
+        pFGLAVSplitterSource->AddEnabledFormat("gif");
+    }
+#endif
+
 #if INTERNAL_SOURCEFILTER_ASF
     if (src[SRC_ASF]) {
         pFGLAVSplitterSource->m_extensions.AddTail(_T(".wmv"));
@@ -1565,6 +1572,11 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
 #if INTERNAL_SOURCEFILTER_RTSP
     if (src[SRC_RTSP]) {
         pFGLAVSplitterSource->m_protocols.AddTail(_T("rtsp"));
+        // Add transport protocol specific RTSP URL handlers
+        pFGLAVSplitterSource->m_protocols.AddTail(_T("rtspu")); // UDP
+        pFGLAVSplitterSource->m_protocols.AddTail(_T("rtspm")); // UDP multicast
+        pFGLAVSplitterSource->m_protocols.AddTail(_T("rtspt")); // TCP
+        pFGLAVSplitterSource->m_protocols.AddTail(_T("rtsph")); // HTTP
         pFGLAVSplitterSource->AddEnabledFormat("rtsp");
     }
 #endif
@@ -1589,6 +1601,13 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
         pFGLAVSplitterSource->m_protocols.AddTail(_T("mmsh"));
         pFGLAVSplitterSource->m_protocols.AddTail(_T("mmst"));
         pFGLAVSplitterSource->AddEnabledFormat("mms");
+    }
+#endif
+
+#if INTERNAL_SOURCEFILTER_RTMP
+    if (src[SRC_RTMP]) {
+        pFGLAVSplitterSource->m_protocols.AddTail(_T("rtmp"));
+        pFGLAVSplitterSource->m_protocols.AddTail(_T("rtmpt"));
     }
 #endif
 
@@ -2062,11 +2081,17 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
 #if INTERNAL_DECODER_SCREEN
     pFGF = tra[TRA_SCREEN] ? pFGLAVVideo : pFGLAVVideoLM;
     pFGF->AddType(MEDIATYPE_Video, MEDIASUBTYPE_TSCC);
+    pFGF->AddType(MEDIATYPE_Video, MEDIASUBTYPE_TSC2);
     pFGF->AddType(MEDIATYPE_Video, MEDIASUBTYPE_VMnc);
 #endif
 #if INTERNAL_DECODER_FLIC
     pFGF = tra[TRA_FLIC] ? pFGLAVVideo : pFGLAVVideoLM;
     pFGF->AddType(MEDIATYPE_Video, MEDIASUBTYPE_FLIC);
+#endif
+#if INTERNAL_DECODER_V210_V410
+    pFGF = tra[TRA_V210_V410] ? pFGLAVVideo : pFGLAVVideoLM;
+    pFGF->AddType(MEDIATYPE_Video, MEDIASUBTYPE_v210);
+    pFGF->AddType(MEDIATYPE_Video, MEDIASUBTYPE_v410);
 #endif
 #endif /* #if HAS_VIDEO_DECODERS */
 
@@ -2263,7 +2288,7 @@ CFGManagerPlayer::CFGManagerPlayer(LPCTSTR pName, LPUNKNOWN pUnk, HWND hWnd)
     , m_vrmerit(MERIT64(MERIT_PREFERRED))
     , m_armerit(MERIT64(MERIT_PREFERRED))
 {
-    TRACE(_T("--> CFGManagerPlayer::CFGManagerPlayer on thread: %d\n"), GetCurrentThreadId());
+    TRACE(_T("--> CFGManagerPlayer::CFGManagerPlayer on thread: %lu\n"), GetCurrentThreadId());
     CFGFilter* pFGF;
 
     const CAppSettings& s = AfxGetAppSettings();
@@ -2459,15 +2484,13 @@ STDMETHODIMP CFGManagerDVD::AddSourceFilter(LPCWSTR lpcwstrFileName, LPCWSTR lpc
     CheckPointer(lpcwstrFileName, E_POINTER);
     CheckPointer(ppFilter, E_POINTER);
 
-    HRESULT hr;
-
     CStringW fn = CStringW(lpcwstrFileName).TrimLeft();
 
     GUID clsid = CLSID_DVDNavigator;
 
     CComPtr<IBaseFilter> pBF;
-    if (FAILED(hr = pBF.CoCreateInstance(clsid))
-            || FAILED(hr = AddFilter(pBF, L"DVD Navigator"))) {
+    if (FAILED(pBF.CoCreateInstance(clsid))
+            || FAILED(AddFilter(pBF, L"DVD Navigator"))) {
         return VFW_E_CANNOT_LOAD_SOURCE_FILTER;
     }
 
@@ -2481,10 +2504,10 @@ STDMETHODIMP CFGManagerDVD::AddSourceFilter(LPCWSTR lpcwstrFileName, LPCWSTR lpc
     WCHAR buff[MAX_PATH];
     ULONG len;
     if ((!fn.IsEmpty()
-            && FAILED(hr = pDVDC->SetDVDDirectory(fn))
-            && FAILED(hr = pDVDC->SetDVDDirectory(fn + L"VIDEO_TS"))
-            && FAILED(hr = pDVDC->SetDVDDirectory(fn + L"\\VIDEO_TS")))
-            || FAILED(hr = pDVDI->GetDVDDirectory(buff, _countof(buff), &len)) || len == 0) {
+            && FAILED(pDVDC->SetDVDDirectory(fn))
+            && FAILED(pDVDC->SetDVDDirectory(fn + L"VIDEO_TS"))
+            && FAILED(pDVDC->SetDVDDirectory(fn + L"\\VIDEO_TS")))
+            || FAILED(pDVDI->GetDVDDirectory(buff, _countof(buff), &len)) || len == 0) {
         return E_INVALIDARG;
     }
 

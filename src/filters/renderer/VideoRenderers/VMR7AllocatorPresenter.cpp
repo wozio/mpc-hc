@@ -94,11 +94,9 @@ STDMETHODIMP CVMR7AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
     CheckPointer(ppRenderer, E_POINTER);
 
     *ppRenderer = nullptr;
-    HRESULT hr;
-
     CComPtr<IBaseFilter> pBF;
 
-    if (FAILED(hr = pBF.CoCreateInstance(CLSID_VideoMixingRenderer))) {
+    if (FAILED(pBF.CoCreateInstance(CLSID_VideoMixingRenderer))) {
         return E_FAIL;
     }
 
@@ -107,7 +105,7 @@ STDMETHODIMP CVMR7AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
         return E_FAIL;
     }
 
-    if (FAILED(hr = pConfig->SetRenderingMode(VMRMode_Renderless))) {
+    if (FAILED(pConfig->SetRenderingMode(VMRMode_Renderless))) {
         return E_FAIL;
     }
 
@@ -116,8 +114,8 @@ STDMETHODIMP CVMR7AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
         return E_FAIL;
     }
 
-    if (FAILED(hr = pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator*>(this)))
-            || FAILED(hr = AdviseNotify(pSAN))) {
+    if (FAILED(pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator*>(this)))
+            || FAILED(AdviseNotify(pSAN))) {
         return E_FAIL;
     }
 
@@ -198,9 +196,7 @@ STDMETHODIMP CVMR7AllocatorPresenter::PrepareSurface(DWORD_PTR dwUserID, IDirect
 {
     SetThreadName(DWORD(-1), "CVMR7AllocatorPresenter");
 
-    if (!lpSurface) {
-        return E_POINTER;
-    }
+    CheckPointer(lpSurface, E_POINTER);
 
     // FIXME: sometimes the msmpeg4/divx3/wmv decoder wants to reuse our
     // surface (expects it to point to the same mem every time), and to avoid
@@ -236,11 +232,15 @@ STDMETHODIMP CVMR7AllocatorPresenter::StartPresenting(DWORD_PTR dwUserID)
 
     CAutoLock cAutoLock(this);
 
+    m_bIsRendering = true;
+
     return m_pD3DDev ? S_OK : E_FAIL;
 }
 
 STDMETHODIMP CVMR7AllocatorPresenter::StopPresenting(DWORD_PTR dwUserID)
 {
+    m_bIsRendering = false;
+
     return S_OK;
 }
 
@@ -272,13 +272,13 @@ STDMETHODIMP CVMR7AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMRPRESEN
         }
     }
 
-    CSize VideoSize = m_NativeVideoSize;
+    CSize VideoSize = m_nativeVideoSize;
     int arx = lpPresInfo->szAspectRatio.cx, ary = lpPresInfo->szAspectRatio.cy;
     if (arx > 0 && ary > 0) {
         VideoSize.cx = VideoSize.cy * arx / ary;
     }
     if (VideoSize != GetVideoSize()) {
-        SetVideoSize(m_NativeVideoSize, CSize(lpPresInfo->szAspectRatio));
+        SetVideoSize(m_nativeVideoSize, CSize(lpPresInfo->szAspectRatio));
         AfxGetApp()->m_pMainWnd->PostMessage(WM_REARRANGERENDERLESS);
     }
 
@@ -304,10 +304,10 @@ STDMETHODIMP CVMR7AllocatorPresenter::GetNativeVideoSize(LONG* lpWidth, LONG* lp
         *lpHeight = VideoSize.cy;
     }
     if (lpARWidth) {
-        *lpARWidth = m_AspectRatio.cx;
+        *lpARWidth = m_aspectRatio.cx;
     }
     if (lpARHeight) {
-        *lpARHeight = m_AspectRatio.cy;
+        *lpARHeight = m_aspectRatio.cy;
     }
     return S_OK;
 }
@@ -329,8 +329,8 @@ STDMETHODIMP CVMR7AllocatorPresenter::SetVideoPosition(const LPRECT lpSRCRect, c
 
 STDMETHODIMP CVMR7AllocatorPresenter::GetVideoPosition(LPRECT lpSRCRect, LPRECT lpDSTRect)
 {
-    CopyRect(lpSRCRect, CRect(CPoint(0, 0), m_NativeVideoSize));
-    CopyRect(lpDSTRect, &m_VideoRect);
+    CopyRect(lpSRCRect, CRect(CPoint(0, 0), m_nativeVideoSize));
+    CopyRect(lpDSTRect, &m_videoRect);
     // DVD Nav. bug workaround fix
     GetNativeVideoSize(&lpSRCRect->right, &lpSRCRect->bottom, nullptr, nullptr);
     return S_OK;

@@ -31,7 +31,7 @@ typedef struct tagRESIZEPROPERTIES
     BOOL bCachedNeedsRefresh;
 
     // initialize with valid data
-    tagRESIZEPROPERTIES() : bAskClipping(TRUE), bAskRefresh(TRUE) {}
+    tagRESIZEPROPERTIES() : bAskClipping(TRUE), bAskRefresh(TRUE), bCachedLikesClipping(FALSE), bCachedNeedsRefresh(TRUE) {}
 
 } RESIZEPROPERTIES, *PRESIZEPROPERTIES, *LPRESIZEPROPERTIES;
 
@@ -53,7 +53,10 @@ typedef struct tagREFRESHPROPERTY
     RECT rcNew;
 
     // initialize with valid data
-    tagREFRESHPROPERTY() : bNeedsRefresh(TRUE) {}
+    tagREFRESHPROPERTY() : bNeedsRefresh(TRUE) {
+        ZeroMemory(&rcOld, sizeof(rcOld));
+        ZeroMemory(&rcNew, sizeof(rcNew));
+    }
 
 } REFRESHPROPERTY, *PREFRESHPROPERTY, *LPREFRESHPROPERTY;
 

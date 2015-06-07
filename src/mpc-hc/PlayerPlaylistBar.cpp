@@ -22,7 +22,6 @@
 #include "stdafx.h"
 #include <math.h>
 #include <afxinet.h>
-#include "atl/atlrx.h"
 #include <atlutil.h>
 #include "mplayerc.h"
 #include "MainFrm.h"
@@ -840,7 +839,7 @@ bool CPlayerPlaylistBar::DeleteFileInPlaylist(POSITION pos, bool recycle)
         if (m_pl.GetCount() > 1) {
             pMainFrm->OnNavigateSkipFile(ID_NAVIGATE_SKIPFORWARDFILE);
         } else {
-            pMainFrm->CloseMedia();
+            pMainFrm->SendMessage(WM_COMMAND, ID_FILE_CLOSEMEDIA);
         }
     }
 
@@ -905,7 +904,7 @@ BEGIN_MESSAGE_MAP(CPlayerPlaylistBar, CPlayerBar)
     ON_NOTIFY(LVN_BEGINDRAG, IDC_PLAYLIST, OnBeginDrag)
     ON_WM_MOUSEMOVE()
     ON_WM_LBUTTONUP()
-    ON_NOTIFY_EX_RANGE(TTN_NEEDTEXT, 0, 0xFFFF, OnToolTipNotify)
+    ON_NOTIFY_EX(TTN_NEEDTEXT, 0, OnToolTipNotify)
     ON_WM_TIMER()
     ON_WM_CONTEXTMENU()
     ON_NOTIFY(LVN_ENDLABELEDIT, IDC_PLAYLIST, OnLvnEndlabeleditList)
@@ -964,7 +963,7 @@ void CPlayerPlaylistBar::OnLvnKeyDown(NMHDR* pNMHDR, LRESULT* pResult)
         while (pos) {
             int i = items.GetNext(pos);
             if (m_pl.RemoveAt(FindPos(i))) {
-                ((CMainFrame*)AfxGetMainWnd())->CloseMedia();
+                AfxGetMainWnd()->SendMessage(WM_COMMAND, ID_FILE_CLOSEMEDIA);
             }
             m_list.DeleteItem(i);
         }
@@ -1436,7 +1435,7 @@ void CPlayerPlaylistBar::OnContextMenu(CWnd* /*pWnd*/, CPoint p)
             break;
         case M_REMOVE:
             if (m_pl.RemoveAt(pos)) {
-                pMainFrm->CloseMedia();
+                pMainFrm->SendMessage(WM_COMMAND, ID_FILE_CLOSEMEDIA);
             }
             m_list.DeleteItem(lvhti.iItem);
             SavePlaylist();
@@ -1446,7 +1445,7 @@ void CPlayerPlaylistBar::OnContextMenu(CWnd* /*pWnd*/, CPoint p)
             break;
         case M_CLEAR:
             if (Empty()) {
-                pMainFrm->CloseMedia();
+                pMainFrm->SendMessage(WM_COMMAND, ID_FILE_CLOSEMEDIA);
             }
             break;
         case M_SORTBYID:

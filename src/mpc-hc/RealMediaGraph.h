@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -164,7 +164,7 @@ namespace DSObjects
     class CRealMediaPlayerWindowless
         : public CRealMediaPlayer
     {
-        CComPtr<ISubPicAllocatorPresenter> m_pRMAP;
+        CComPtr<ISubPicAllocatorPresenter2> m_pRMAP;
 
     public:
         CRealMediaPlayerWindowless(HWND hWndParent, CRealMediaGraph* pRMG);
@@ -175,12 +175,16 @@ namespace DSObjects
         bool CreateSite(IRMASite** pSite);
         void DestroySite(IRMASite* pSite);
 
+        STDMETHODIMP OnStop();
+        STDMETHODIMP OnPause(UINT32 ulTime);
+        STDMETHODIMP OnBegin(UINT32 ulTime);
+
         STDMETHODIMP SizeChanged(PNxSize* size);
     };
 
     class CRealMediaGraph : public CBaseGraph
     {
-        CRealMediaPlayer* m_pRMP; // TODO: access m_pRMP through a private interface
+        CComPtr<CRealMediaPlayer> m_pRMP; // TODO: access m_pRMP through a private interface
 
         CStringW m_fn;
 

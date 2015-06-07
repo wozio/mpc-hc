@@ -28,7 +28,6 @@ class __declspec(uuid("FCA68599-C83E-4ea5-94A3-C2E1B0E326B9"))
 {
 public:
     static const REFERENCE_TIME INVALID_TIME = _I64_MIN;
-    static const REFERENCE_TIME INFINITE_TIME = _I64_MAX;
 
     CRLECodedSubtitle(CCritSec* pLock, const CString& name, LCID lcid);
     virtual ~CRLECodedSubtitle() = default;
@@ -49,7 +48,7 @@ public:
     STDMETHODIMP SetStream(int iStream);
     STDMETHODIMP Reload();
 
-    virtual HRESULT ParseSample(IMediaSample* pSample) PURE;
+    virtual HRESULT ParseSample(REFERENCE_TIME rtStart, REFERENCE_TIME rtStop, BYTE* pData, size_t nLen) PURE;
     HRESULT NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate);
     virtual void EndOfStream() PURE;
     virtual void Reset() PURE;
@@ -60,7 +59,6 @@ protected:
 
     CString         m_name;
     LCID            m_lcid;
-    REFERENCE_TIME  m_rtCurrentSegmentStart;
 
     enum SOURCE_MATRIX {
         NONE,

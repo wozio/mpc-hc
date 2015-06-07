@@ -35,6 +35,9 @@ class CPlayerSubresyncBar : public CPlayerBar
     DECLARE_DYNAMIC(CPlayerSubresyncBar)
 
 private:
+    CString m_strYes, m_strNo;
+    CString m_strYesMenu, m_strNoMenu;
+
     CPlayerListCtrl m_list;
 
     CFont m_font;
@@ -68,27 +71,34 @@ private:
         COL_COUNT_VOBSUB
     };
 
-    enum {
+    enum MODE {
         NONE = 0,
         VOBSUB,
         TEXTSUB
     };
-    int m_mode;
+    MODE m_mode;
 
-    bool m_fUnlink;
+    //bool m_bUnlink;
 
     struct SubTime {
-        int orgstart, newstart, orgend, newend;
+        int orgStart, newStart, orgEnd, newEnd;
     };
     CAtlArray<SubTime> m_subtimes;
 
-    //  CRenderedTextSubtitle m_sts;
     CSimpleTextSubtitle m_sts;
+    CAtlArray<CVobSubFile::SubPos> m_vobSub;
 
-    int GetStartTime(int iItem), GetEndTime(int iItem);
-    void FormatTime(int iItem, TCHAR* buff, size_t buffLen, int time /* 0:start, 1:newstart, 2:preview */, bool fEnd);
+    struct DisplayData {
+        int tStart, tPrevStart, tEnd, tPrevEnd;
+        int flags;
+    };
+    CAtlArray<DisplayData> m_displayData;
+    CString m_displayBuffer;
 
-    void UpdatePreview(), UpdateStrings();
+    int GetStartTime(int iItem);
+    int GetEndTime(int iItem);
+
+    void UpdatePreview();
 
     enum {
         TSMOD = 1,
@@ -101,11 +111,14 @@ private:
     void SetSTS0(int& start, int end, int ti0);
     void SetSTS1(int& start, int end, int ti0, double m, int i0);
 
-    void GetCheck(int iItem, bool& fStartMod, bool& fEndMod, bool& fStartAdj, bool& fEndAdj);
+    void GetCheck(int iItem, bool& fStartMod, bool& fEndMod, bool& fStartAdj, bool& fEndAdj) const;
     void SetCheck(int iItem, bool fStart, bool fEnd);
 
     bool ModStart(int iItem, int t, bool fReset = false);
     bool ModEnd(int iItem, int t, bool fReset = false);
+
+    void OnGetDisplayInfoTextSub(LV_ITEM* pItem);
+    void OnGetDisplayInfoVobSub(LV_ITEM* pItem);
 
 public:
     CPlayerSubresyncBar();
@@ -127,17 +140,16 @@ public:
     bool ShiftSubtitle(int nItem, long lValue, REFERENCE_TIME& rtPos);
     bool SaveToDisk();
 
-
 protected:
     virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
     virtual BOOL PreTranslateMessage(MSG* pMsg);
 
-    bool IsShortCut(const MSG* pMsg);
+    bool HandleShortCuts(const MSG* pMsg);
 
     DECLARE_MESSAGE_MAP()
 
-public:
     afx_msg void OnSize(UINT nType, int cx, int cy);
+    afx_msg void OnGetDisplayInfo(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnBeginlabeleditList(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnDolabeleditList(NMHDR* pNMHDR, LRESULT* pResult);
     afx_msg void OnEndlabeleditList(NMHDR* pNMHDR, LRESULT* pResult);

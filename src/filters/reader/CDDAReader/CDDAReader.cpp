@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -337,7 +337,7 @@ bool CCDDAStream::Load(const WCHAR* fnw)
     m_nStartSector = MSF2UINT(m_TOC.TrackData[iTrackIndex - 1].Address) - 150; //MSF2UINT(m_TOC.TrackData[0].Address);
     m_nStopSector = MSF2UINT(m_TOC.TrackData[iTrackIndex].Address) - 150;//MSF2UINT(m_TOC.TrackData[0].Address);
 
-    m_llLength = (m_nStopSector - m_nStartSector) * RAW_SECTOR_SIZE;
+    m_llLength = LONGLONG(m_nStopSector - m_nStartSector) * RAW_SECTOR_SIZE;
 
     m_header.riff.hdr.chunkSize = (long)(m_llLength + sizeof(m_header) - 8);
     m_header.data.hdr.chunkSize = (long)(m_llLength);
@@ -393,13 +393,14 @@ bool CCDDAStream::Load(const WCHAR* fnw)
                              : CString(CStringW((WCHAR*)pDesc->WText + tlen + 1, lenW - (tlen + 1))))
                           : _T("");
 
-            if ((pDesc->PackType -= 0x80) >= 0x10) {
+            if (pDesc->PackType < 0x80 || pDesc->PackType >= 0x80 + 0x10) {
                 continue;
             }
+            pDesc->PackType -= 0x80;
 
             if (pDesc->CharacterPosition == 0) {
                 str[pDesc->PackType][pDesc->TrackNumber] = text;
-            } else if (pDesc->CharacterPosition <= 0xf) {
+            } else { // pDesc->CharacterPosition <= 0xf since CharacterPosition is a 4-bit field
                 if (pDesc->CharacterPosition < 0xf && !last.IsEmpty()) {
                     str[pDesc->PackType][pDesc->TrackNumber] = last + text;
                 } else {

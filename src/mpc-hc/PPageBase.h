@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -31,7 +31,13 @@ class CPPageBase : public CCmdUIPropertyPage
 
 protected:
     CToolTipCtrl m_wndToolTip;
+    std::map<UINT, CImageList> m_buttonIcons;
+
+    static bool FillComboToolTip(CComboBox& comboBox, TOOLTIPTEXT* pTTT);
+
     void CreateToolTip();
+
+    void SetButtonIcon(UINT nIDButton, UINT nIDIcon);
 
 public:
     CPPageBase(UINT nIDTemplate, UINT nIDCaption = 0);

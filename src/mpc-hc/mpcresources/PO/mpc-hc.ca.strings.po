@@ -2,13 +2,14 @@
 # Copyright (C) 2002 - 2013 see Authors.txt
 # This file is distributed under the same license as the MPC-HC package.
 # Translators:
+# Adolfo Jayme Barrientos <fito@libreoffice.org>, 2014
 # papu <papu@openmailbox.org>, 2014
 # papu <papu@openmailbox.org>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-06-04 20:22:52+0000\n"
-"PO-Revision-Date: 2014-06-06 20:20+0000\n"
+"POT-Creation-Date: 2014-09-19 20:08:04+0000\n"
+"PO-Revision-Date: 2014-09-20 13:10+0000\n"
 "Last-Translator: papu <papu@openmailbox.org>\n"
 "Language-Team: Catalan (http://www.transifex.com/projects/p/mpc-hc/language/ca/)\n"
 "MIME-Version: 1.0\n"
@@ -106,12 +107,16 @@ msgid "Signal"
 msgstr "Senyal"
 
 msgctxt "IDS_STATSBAR_SIGNAL_FORMAT"
-msgid "Strength: %d dB, Quality: %d%%"
-msgstr "Força: %d dB, Qualitat: %d%%"
+msgid "Strength: %d dB, Quality: %ld%%"
+msgstr "Força: %d dB, Qualitat: %ld%%"
 
 msgctxt "IDS_SUBTITLES_STYLES_CAPTION"
 msgid "Styles"
 msgstr "Estils"
+
+msgctxt "IDS_TEXT_SUB_RENDERING_TARGET"
+msgid "If the rendering target is left undefined, SSA/ASS subtitles will be rendered relative to the video frame while all other text subtitles will be rendered relative to the window."
+msgstr "Si l' objectiu del renderitzador es deixa sense definir, els subtítols SSA/ASS seran renderitzats en relació al fotograma de vídeo mentres que la resta ho seran en relació a la finestra."
 
 msgctxt "IDS_PPAGE_CAPTURE_FG0"
 msgid "Never (fastest approach)"
@@ -167,11 +172,11 @@ msgstr "Contingut"
 
 msgctxt "IDS_CONTENT_MOVIE_DRAMA"
 msgid "Movie/Drama"
-msgstr "Film/Drama"
+msgstr "Film/drama"
 
 msgctxt "IDS_CONTENT_NEWS_CURRENTAFFAIRS"
 msgid "News/Current affairs"
-msgstr "Notícies/Actualitat"
+msgstr "Notícies/actualitat"
 
 msgctxt "IDS_SPEED_UNIT_G"
 msgid "GB/s"
@@ -179,7 +184,7 @@ msgstr "GB/s"
 
 msgctxt "IDS_FILE_FAV_ADDED"
 msgid "File added to favorites"
-msgstr "Arxiu afegit als faborits"
+msgstr "Fitxer afegit als favorits"
 
 msgctxt "IDS_DVD_FAV_ADDED"
 msgid "DVD added to favorites"
@@ -191,7 +196,7 @@ msgstr "Configuració de la Captació"
 
 msgctxt "IDS_NAVIGATION_BAR"
 msgid "Navigation Bar"
-msgstr "Barra de Navegació"
+msgstr "Barra de navegació"
 
 msgctxt "IDS_SUBRESYNC_CAPTION"
 msgid "Subresync"
@@ -275,11 +280,11 @@ msgstr "Manca la llibreria d'icones \"mpciconlib.dll\".\nS'usaran les icones del
 
 msgctxt "IDS_SUBDL_DLG_FILENAME_COL"
 msgid "File"
-msgstr "Arxiu"
+msgstr "Fitxer"
 
 msgctxt "IDS_SUBDL_DLG_LANGUAGE_COL"
 msgid "Language"
-msgstr "Llenguatge"
+msgstr "Idioma"
 
 msgctxt "IDS_SUBDL_DLG_FORMAT_COL"
 msgid "Format"
@@ -315,7 +320,7 @@ msgstr "Efecte"
 
 msgctxt "IDS_PLAYLIST_CAPTION"
 msgid "Playlist"
-msgstr "Llista de Reproducció"
+msgstr "Llista de reproducció"
 
 msgctxt "IDS_PPAGE_FS_CLN_ON_OFF"
 msgid "On/Off"
@@ -343,7 +348,7 @@ msgstr "Altre"
 
 msgctxt "IDS_PPAGE_OUTPUT_SYS_DEF"
 msgid "System Default"
-msgstr "Per defecta del Sistema"
+msgstr "Valor por defecte del sistema"
 
 msgctxt "IDS_GRAPH_INTERFACES_ERROR"
 msgid "Failed to query the needed interfaces for playback"
@@ -359,27 +364,27 @@ msgstr "Fallada al renderitzar tots els pins del filtre de Navegació de DVD"
 
 msgctxt "IDS_PLAYLIST_OPEN"
 msgid "&Open"
-msgstr "&Obrir"
+msgstr "&Obre"
 
 msgctxt "IDS_PLAYLIST_ADD"
 msgid "A&dd"
-msgstr "A&gregar"
+msgstr "A&fegeix"
 
 msgctxt "IDS_PLAYLIST_REMOVE"
 msgid "&Remove"
-msgstr "E&liminar"
+msgstr "&Elimina"
 
 msgctxt "IDS_PLAYLIST_CLEAR"
 msgid "C&lear"
-msgstr "N&etejar"
+msgstr "&Neteja"
 
 msgctxt "IDS_PLAYLIST_COPYTOCLIPBOARD"
 msgid "&Copy to clipboard"
-msgstr "&Copiar al pertapapers"
+msgstr "&Copia al porta-retalls"
 
 msgctxt "IDS_PLAYLIST_SAVEAS"
 msgid "&Save As..."
-msgstr "&Desar Com a..."
+msgstr "A&nomena i desa…"
 
 msgctxt "IDS_PLAYLIST_SORTBYLABEL"
 msgid "Sort by &label"
@@ -403,7 +408,7 @@ msgstr "&Separador"
 
 msgctxt "IDS_SUBRESYNC_DELETE"
 msgid "&Delete"
-msgstr "&Borrar"
+msgstr "&Suprimeix"
 
 msgctxt "IDS_SUBRESYNC_DUPLICATE"
 msgid "D&uplicate"
@@ -559,7 +564,7 @@ msgstr "Recursos"
 
 msgctxt "IDD_PPAGEMISC"
 msgid "Miscellaneous"
-msgstr "Miscel.lània"
+msgstr "Miscel·lània"
 
 msgctxt "IDD_FILEMEDIAINFO"
 msgid "MediaInfo"
@@ -838,24 +843,28 @@ msgid "Accurate VSync"
 msgstr "VSync precisa"
 
 msgctxt "IDC_CHECK_RELATIVETO"
-msgid "Default state gets inherited to other styles where it is still undefined"
-msgstr "L'estat predeterminat s'hereda cap a altres estils encara indeterminats "
+msgid "If the rendering target is left undefined, it will be inherited from the default style."
+msgstr "Si l' objectiu  del renderitzador es deixa sense definir, s' hereta l 'estil predeterminat."
 
-msgctxt "IDC_CHECK_SPCPOW2TEX"
-msgid "Unchecking this frees up a little video memory and saves bandwidth on local to video memory transfers, but it may not work with older video cards."
-msgstr "Si desmarcas això es llibera una mica de memòria de vídeo i guardes amplada de banda en transferencias de memoria local a memòria de vídeo, però no funcionar amb tarjetas gràficas antigues."
+msgctxt "IDC_CHECK_NO_SUB_ANIM"
+msgid "Disallow subtitle animation. Enabling this option will lower CPU usage. You can use it if you experience flashing subtitles."
+msgstr "No permetre l'animació dels subtítols. L'activació d'aquesta opció reduirà l'ús de CPU. Es pot utilitzar si experimenta subtítols intermitents."
 
-msgctxt "IDC_CHECK_SPCANIMWITHBUFFER"
-msgid "Allows subtitle animation when using a subpicture buffer larger than 0. Disabling this option will lower CPU usage. Also disable if you experience flashing subtitles."
-msgstr "Permet subtítols amb animació al utilitzar una memoria intermèdia per sub-imágenes més grans que 0. Inhabilitant auquesta opció es minimitza l'ús de CPU. Inhabilitar també si els subtítols pipillejent."
+msgctxt "IDC_SUBPIC_TO_BUFFER"
+msgid "Increasing the number of buffered subpictures should in general improve the rendering performance at the cost of a higher video RAM usage on the GPU."
+msgstr "En augmentar el nombre de subimatges de la memòria intermèdia s'hauria de millorar, en general, el rendiment de la renderització a costa d'un major ús de la RAM de vídeo de la GPU."
 
 msgctxt "IDC_BUTTON_EXT_SET"
 msgid "After clicking this button, the checked state of the format group will reflect the actual file association for MPC-HC. A newly added extension will usually make it grayed, so don't forget to check it again before closing this dialog!"
 msgstr "Després de fer clic aquet botó, l'estat de comprobació del format del grup reflexarà las associacions d'arxiu actuale pel MPC. Una extensión recent agregada es motrarà en gris, no oblidis de maracar-la de nou abans de tencar aquet cuadre de diàleg"
 
+msgctxt "IDC_CHECK_ALLOW_DROPPING_SUBPIC"
+msgid "Disabling this option will prevent the subtitles from blinking but it may cause the video renderer to skip some video frames."
+msgstr "Desactivant aquesta opció evitarà als subtítols de parpellejar però pot provocar que el processador de vídeo es salti alguns fotogrames."
+
 msgctxt "ID_PLAY_PLAY"
 msgid "Play\nPlay"
-msgstr "Reproduir\nReproduir"
+msgstr "Reprodueix\nReprodueix"
 
 msgctxt "ID_PLAY_PAUSE"
 msgid "Pause\nPause"
@@ -863,7 +872,7 @@ msgstr "Pausa\nPausa"
 
 msgctxt "ID_PLAY_STOP"
 msgid "Stop\nStop"
-msgstr "Aturar\nAturar"
+msgstr "Atura\nAtura"
 
 msgctxt "ID_PLAY_FRAMESTEP"
 msgid "Step\nStep"
@@ -879,11 +888,11 @@ msgstr "Augmentar Velocitat\nDisminuir Velocitat"
 
 msgctxt "ID_VOLUME_MUTE"
 msgid "Mute"
-msgstr "Fer Mutis"
+msgstr "Silencia"
 
 msgctxt "ID_VOLUME_MUTE_ON"
 msgid "Unmute"
-msgstr "No fer Mutis"
+msgstr "Habilita el so"
 
 msgctxt "ID_VOLUME_MUTE_DISABLED"
 msgid "No audio"
@@ -911,7 +920,7 @@ msgstr "&Editar"
 
 msgctxt "IDS_SUBRESYNC_YES"
 msgid "&Yes"
-msgstr "&Si"
+msgstr "&Sí"
 
 msgctxt "IDS_SUBRESYNC_NO"
 msgid "&No"
@@ -947,15 +956,15 @@ msgstr "&Organizar Favorits..."
 
 msgctxt "IDS_PLAYLIST_SHUFFLE"
 msgid "Shuffle"
-msgstr "Al Atzar"
+msgstr "A l’atzar"
 
 msgctxt "IDS_PLAYLIST_SHOWFOLDER"
 msgid "Open file location"
-msgstr "Obrir l'ubicació del fitxer"
+msgstr "Obre l’ubicació del fitxer"
 
 msgctxt "IDS_CONTROLS_CLOSING"
 msgid "Closing..."
-msgstr "Tancant..."
+msgstr "S’està tancant…"
 
 msgctxt "IDS_CONTROLS_PLAYING"
 msgid "Playing"
@@ -971,11 +980,11 @@ msgstr "EDL: Nou Clip"
 
 msgctxt "IDS_RECENT_FILES_CLEAR"
 msgid "&Clear list"
-msgstr "Netejar la Llista"
+msgstr "&Neteja la llista"
 
 msgctxt "IDS_RECENT_FILES_QUESTION"
 msgid "Are you sure that you want to delete recent files list?"
-msgstr "Estàs segur que vols borrar la Llista d'arxius recents?"
+msgstr "Esteu segur que voleu suprimir la llista d' arxius recents?"
 
 msgctxt "IDS_AG_EDL_SAVE"
 msgid "EDL save"
@@ -1043,15 +1052,15 @@ msgstr "Parat"
 
 msgctxt "IDS_CONTROLS_BUFFERING"
 msgid "Buffering... (%d%%)"
-msgstr "Emmagatzemant a la Memòria intermitja... (%d%%)"
+msgstr "Emmagatzemant a la Memòria intermèdia... (%d%%)"
 
 msgctxt "IDS_CONTROLS_CAPTURING"
 msgid "Capturing..."
-msgstr "Capturant..."
+msgstr "S’està capturant…"
 
 msgctxt "IDS_CONTROLS_OPENING"
 msgid "Opening..."
-msgstr "Obrint..."
+msgstr "S’està obrint…"
 
 msgctxt "IDS_CONTROLS_CLOSED"
 msgid "Closed"
@@ -1103,7 +1112,7 @@ msgstr "Domini"
 
 msgctxt "IDS_AG_CLOSE"
 msgid "Close"
-msgstr "Tancar"
+msgstr "Tanca"
 
 msgctxt "IDS_AG_NONE"
 msgid "None"
@@ -1111,7 +1120,7 @@ msgstr "Cap"
 
 msgctxt "IDS_AG_COMMAND"
 msgid "Command"
-msgstr "Comandament"
+msgstr "Ordre"
 
 msgctxt "IDS_AG_KEY"
 msgid "Key"
@@ -1135,11 +1144,11 @@ msgstr "Arxius de mitjans (tots els tipus)"
 
 msgctxt "IDS_AG_ALLFILES"
 msgid "All files (*.*)|*.*|"
-msgstr "Tots els arxius (*.*)|*.*|"
+msgstr "Tots els fitxers (*.*)|*.*|"
 
 msgctxt "IDS_AG_AUDIOFILES"
 msgid "Audio files (all types)"
-msgstr "Arxius d'Àudio (tots els tipus)"
+msgstr "Fitxers d’àudio (tots els tipus)"
 
 msgctxt "IDS_AG_NOT_KNOWN"
 msgid "Not known"
@@ -1151,11 +1160,11 @@ msgstr "Obrir Arxiu Ràpid"
 
 msgctxt "IDS_AG_OPEN_FILE"
 msgid "Open File"
-msgstr "Obrir Arxiu"
+msgstr "Obre un fitxer"
 
 msgctxt "IDS_AG_OPEN_DVD"
 msgid "Open DVD/BD"
-msgstr "Obrir DVD/BD"
+msgstr "Obre un DVD o BD"
 
 msgctxt "IDS_MAINFRM_POST_SHADERS_FAILED"
 msgid "Failed to set post-resize shaders"
@@ -1239,7 +1248,7 @@ msgstr "Velocitat de reproducció"
 
 msgctxt "IDS_FILTERS_COPY_TO_CLIPBOARD"
 msgid "&Copy filters list to clipboard"
-msgstr "&Copiar la llista de filtres al portapapers"
+msgstr "&Copiar la llista de filtres al porta-retalls"
 
 msgctxt "IDS_CREDENTIALS_SERVER"
 msgid "Enter server credentials"
@@ -1253,33 +1262,109 @@ msgctxt "IDS_SUB_SAVE_EXTERNAL_STYLE_FILE"
 msgid "Save custom style"
 msgstr "Gravar estil personalitzat"
 
+msgctxt "IDS_CONTENT_EDUCATION_SCIENCE"
+msgid "Education/Science/Factual topics"
+msgstr "Educació / Ciència / Fets reals"
+
+msgctxt "IDS_PPAGEADVANCED_HIDE_WINDOWED"
+msgid "Hides controls and panels also in windowed mode."
+msgstr "Oculta els controls i panells també en mode de finestra."
+
+msgctxt "IDS_PPAGEADVANCED_BLOCK_VSFILTER"
+msgid "Prevent external subtitle renderer to be loaded when internal is in use."
+msgstr "Evitar la càrrega del renderitzador  de subtítols extern  quant l'intern està en ús."
+
+msgctxt "IDS_PPAGEADVANCED_COL_NAME"
+msgid "Name"
+msgstr "Nom"
+
+msgctxt "IDS_PPAGEADVANCED_COL_VALUE"
+msgid "Value"
+msgstr "Valor"
+
+msgctxt "IDS_PPAGEADVANCED_RECENT_FILES_NUMBER"
+msgid "Maximum number of files shown in the \"Recent files\" menu and for which the position is potentially saved."
+msgstr "Màxim nombre d' arxius a mostrar al menú \"Archius recents\" i per al cual es guarda potencialment la posició."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_LONGER"
+msgid "Remember file position only for files longer than N minutes."
+msgstr "Recordar la posició d'arxiu només per a arxius de més de N minuts."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_AUDIO"
+msgid "Remember file position also for audio files."
+msgstr "Recordar la posició d'arxiu també per a arxius d'àudio."
+
+msgctxt "IDS_AFTER_PLAYBACK_DO_NOTHING"
+msgid "Do Nothing"
+msgstr "No fer res"
+
+msgctxt "IDS_AFTER_PLAYBACK_PLAY_NEXT"
+msgid "Play next file in the folder"
+msgstr "Reprodueix l'arxiu següent dins la carpeta"
+
+msgctxt "IDS_AFTER_PLAYBACK_REWIND"
+msgid "Rewind current file"
+msgstr "Rebobina l'arxiu actual"
+
+msgctxt "IDS_AFTER_PLAYBACK_CLOSE"
+msgid "Close"
+msgstr "Tanca"
+
+msgctxt "IDS_AFTER_PLAYBACK_EXIT"
+msgid "Exit"
+msgstr "Surt"
+
+msgctxt "IDS_AFTER_PLAYBACK_MONITOROFF"
+msgid "Turn off the monitor"
+msgstr "Apagar el monitor"
+
+msgctxt "IDS_IMAGE_JPEG_QUALITY"
+msgid "JPEG Image"
+msgstr "Imatge JPEG"
+
+msgctxt "IDS_IMAGE_QUALITY"
+msgid "Quality (%):"
+msgstr "Qualitat (%):"
+
+msgctxt "IDS_PPAGEADVANCED_COVER_SIZE_LIMIT"
+msgid "Maximum size (NxNpx) of a cover-art loaded in the audio only mode."
+msgstr "Mida màxima (NxNpx) de l'art de les portades carregada només en el mode d'àudio."
+
+msgctxt "IDS_SUBTITLE_DELAY_STEP_TOOLTIP"
+msgid "The subtitle delay will be decreased/increased by this value each time the corresponding hotkeys are used (%s/%s)."
+msgstr "El retartd del subtítol es reduirà / s'incrementarà en funció d'aquest valor cada vegada que s'utilitzen les tecles d'accés directe corresponents (% s /% s)."
+
+msgctxt "IDS_HOTKEY_NOT_DEFINED"
+msgid "<not defined>"
+msgstr ""
+
 msgctxt "IDS_AG_OPEN_DEVICE"
 msgid "Open Device"
-msgstr "Obrir Dispositiu"
+msgstr "Obre un dispositiu"
 
 msgctxt "IDS_AG_SAVE_AS"
 msgid "Save As"
-msgstr "Desar Com a"
+msgstr "Anomena i desa"
 
 msgctxt "IDS_AG_SAVE_IMAGE"
 msgid "Save Image"
-msgstr "Desar Imatge"
+msgstr "Desa la imatge"
 
 msgctxt "IDS_MPLAYERC_6"
 msgid "Save Image (auto)"
-msgstr "Desar Imatge (automàtic)"
+msgstr "Desa la imatge (automàtic)"
 
 msgctxt "IDS_OSD_IMAGE_SAVED"
 msgid "Image saved successfully"
-msgstr "Imatge desada amb èxit"
+msgstr "S’ha desat la imatge amb èxit"
 
 msgctxt "IDS_AG_LOAD_SUBTITLE"
 msgid "Load Subtitle"
-msgstr "Cargar Subtítol"
+msgstr "Càrrega els subtítols"
 
 msgctxt "IDS_AG_SAVE_SUBTITLE"
 msgid "Save Subtitle"
-msgstr "Desar Subtítol"
+msgstr "Desa els subtítols"
 
 msgctxt "IDS_AG_PROPERTIES"
 msgid "Properties"
@@ -1287,19 +1372,19 @@ msgstr "Propietats"
 
 msgctxt "IDS_AG_EXIT"
 msgid "Exit"
-msgstr "Sortir"
+msgstr "Surt"
 
 msgctxt "IDS_AG_PLAYPAUSE"
 msgid "Play/Pause"
-msgstr "Reproduir/Pausa"
+msgstr "Reprodueix/pausa"
 
 msgctxt "IDS_AG_PLAY"
 msgid "Play"
-msgstr "Reproduir"
+msgstr "Reprodueix"
 
 msgctxt "IDS_AG_STOP"
 msgid "Stop"
-msgstr "Aturar"
+msgstr "Atura"
 
 msgctxt "IDS_AG_FRAMESTEP"
 msgid "Framestep"
@@ -1311,7 +1396,7 @@ msgstr "Retrocedir un Fotograma"
 
 msgctxt "IDS_AG_GO_TO"
 msgid "Go To"
-msgstr "Anar A"
+msgstr "Vés a"
 
 msgctxt "IDS_AG_INCREASE_RATE"
 msgid "Increase Rate"
@@ -1703,11 +1788,11 @@ msgstr "PnS Avall/Dreta"
 
 msgctxt "IDS_AG_VOLUME_UP"
 msgid "Volume Up"
-msgstr "Pujar Volum"
+msgstr "Augmenta el volum"
 
 msgctxt "IDS_AG_VOLUME_DOWN"
 msgid "Volume Down"
-msgstr "Baixar Volum"
+msgstr "Redueix el volum"
 
 msgctxt "IDS_AG_VOLUME_MUTE"
 msgid "Volume Mute"
@@ -1883,7 +1968,7 @@ msgstr "Encriptat"
 
 msgctxt "IDS_DVB_CHANNEL_ENCRYPTED"
 msgid "Yes"
-msgstr "Si"
+msgstr "Sí"
 
 msgctxt "IDS_DVB_CHANNEL_NOT_ENCRYPTED"
 msgid "No"
@@ -1891,11 +1976,11 @@ msgstr "No"
 
 msgctxt "IDS_DVB_CHANNEL_START_SCAN"
 msgid "Start"
-msgstr "Començar"
+msgstr "Comença"
 
 msgctxt "IDS_DVB_CHANNEL_STOP_SCAN"
 msgid "Stop"
-msgstr "Parar"
+msgstr "Atura"
 
 msgctxt "IDS_DVB_TVNAV_SEERADIO"
 msgid "Radio stations"
@@ -1935,19 +2020,19 @@ msgstr "Fotogrames"
 
 msgctxt "IDS_AG_BUFFERS"
 msgid "Buffers"
-msgstr "Memòria intermitja"
+msgstr "Memòria intermèdia"
 
 msgctxt "IDS_MAINFRM_9"
-msgid "Volume: %02d/%02d, Title: %02d/%02d, Chapter: %02d/%02d"
-msgstr "Volum: %02d/%02d, Títol: %02d/%02d, Capítol: %02d/%02d"
+msgid "Volume: %02lu/%02lu, Title: %02lu/%02lu, Chapter: %02lu/%02lu"
+msgstr "Volum: %02lu/%02lu, Títol: %02lu/%02lu, Capítol: %02lu/%02lu"
 
 msgctxt "IDS_MAINFRM_10"
-msgid "Angle: %02d/%02d, %dx%d %dHz %d:%d"
-msgstr "Angle: %02d/%02d, %dx%d %dHz %d:%d"
+msgid "Angle: %02lu/%02lu, %lux%lu %luHz %lu:%lu"
+msgstr "Angle: %02lu/%02lu, %lux%lu %luHz %lu:%lu"
 
 msgctxt "IDS_MAINFRM_11"
-msgid "%s, %s %dHz %dbits %d %s"
-msgstr "%s, %s %dHz %dbits %d %s"
+msgid "%s, %s %uHz %dbits %d %s"
+msgstr "%s, %s %uHz %dbits %d %s"
 
 msgctxt "IDS_ADD_TO_PLAYLIST"
 msgid "Add to MPC-HC Playlist"
@@ -1958,8 +2043,8 @@ msgid "Play with MPC-HC"
 msgstr "Reproduir amb MPC"
 
 msgctxt "IDS_CANNOT_CHANGE_FORMAT"
-msgid "MPC-HC has not enough privileges to change files formats associations. Please click on \"Modify\" button to get administrator rights."
-msgstr "MPC-HC no té suficients privilegis per cambiar les associacions del tipus d'arxiu. Sisplau faci clic al botó de \"Modificar\" per obtenir drets d'administrador."
+msgid "MPC-HC has not enough privileges to change files formats associations. Please click on the \"Run as administrator\" button."
+msgstr "MPC-HC no té suficientes privilegis per canviar les associacions del tipus d'arxiu. Sisplau faci click al botó \"Executar com a administrador\"."
 
 msgctxt "IDS_APP_DESCRIPTION"
 msgid "MPC-HC is an extremely light-weight, open source media player for Windows. It supports all common video and audio file formats available for playback. We are 100% spyware free, there are no advertisements or toolbars."
@@ -1967,15 +2052,15 @@ msgstr "MPC-HC és un el reproductor multimèdia de codi obert per a Windows, mo
 
 msgctxt "IDS_MAINFRM_12"
 msgid "channel"
-msgstr "Canal"
+msgstr "canal"
 
 msgctxt "IDS_MAINFRM_13"
 msgid "channels"
-msgstr "Canals"
+msgstr "canals"
 
 msgctxt "IDS_AG_TITLE"
-msgid "Title %d"
-msgstr "Títol %d"
+msgid "Title %u"
+msgstr "Títol %u"
 
 msgctxt "IDS_MAINFRM_16"
 msgid "DVD: Unexpected error"
@@ -2050,8 +2135,8 @@ msgid "Aspect Ratio"
 msgstr "Relació d'Aspecte"
 
 msgctxt "IDS_MAINFRM_37"
-msgid ", Total: %d, Dropped: %d"
-msgstr ", Total: %d, Perduts: %d"
+msgid ", Total: %ld, Dropped: %ld"
+msgstr ", Total: %ld, Perduts: %ld"
 
 msgctxt "IDS_MAINFRM_38"
 msgid ", Size: %I64dKB"
@@ -2071,7 +2156,7 @@ msgstr ", Lliure: %I64dMB"
 
 msgctxt "IDS_MAINFRM_42"
 msgid ", Free V/A Buffers: %03d/%03d"
-msgstr ", Memòries Intermitjes V/A Lliures: %03d/%03d"
+msgstr ", Memòries Intermèdies V/A Lliures: %03d/%03d"
 
 msgctxt "IDS_AG_ERROR"
 msgid "Error"
@@ -2141,9 +2226,13 @@ msgctxt "IDS_CANNOT_LOAD_SUB"
 msgid "To load subtitles you have to change the video renderer type and reopen the file.\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR or Haali\n- RealMedia: Special renderer for RealMedia, or open it through DirectShow\n- QuickTime: DX7 or DX9 renderer for QuickTime\n- ShockWave: n/a"
 msgstr "Per carregar subtítols has de canviar el tipus de processador de vídeo i tornar a obrir el fitxer.\n-DirectShow: VMR-7/VMR-9(sense render), EVR(CP),Sync,madVR o Halli\n-RealMedia: Renderitzador especial per RealMedia, o obrir-lo a través de DirectShow\n-QuickTime: DX7 or DX9 renderitzador pel QuickTime\n-ShockWave: n/a"
 
+msgctxt "IDS_SUBTITLE_FILES_FILTER"
+msgid "Subtitle files"
+msgstr "Arxius de subtítols"
+
 msgctxt "IDS_MAINFRM_68"
-msgid "Aspect Ratio: %d:%d"
-msgstr "Relació d'Aspecte: %d:%d"
+msgid "Aspect Ratio: %ld:%ld"
+msgstr "Relació d'Aspecte: %ld:%ld"
 
 msgctxt "IDS_MAINFRM_69"
 msgid "Aspect Ratio: Default"
@@ -2159,11 +2248,11 @@ msgstr "Capítol %d"
 
 msgctxt "IDS_AG_OUT_OF_MEMORY"
 msgid "Out of memory"
-msgstr "Falta memòria!"
+msgstr "Sense memòria"
 
 msgctxt "IDS_MAINFRM_77"
 msgid "Error: Flash player for IE is required"
-msgstr "Error: Es necessari el Flash pel IE"
+msgstr "Error: es necessita el Flash pel IE"
 
 msgctxt "IDS_MAINFRM_78"
 msgid "QuickTime not yet supported for X64 (apple library not available)"
@@ -2214,8 +2303,8 @@ msgid "MPC-HC terminated unexpectedly. To help us fix this problem, please send 
 msgstr "MPC-HC ha acabat inesperadament. Per ajudar-nos a solucionar aquest problema, si us plau, envieu aquest fitxer \"%s\" al nostre bug tracker.\n\nVoleu ara obrir la carpeta que conté l'arxiu \"minidump\" i visitar el \"bug tracker\" per informar de l'error?"
 
 msgctxt "IDS_MPC_MINIDUMP_FAIL"
-msgid "Failed to create dump file to \"%s\" (error %d)"
-msgstr "Ha fallat la creació de l' arxiu de volcat a '%s' (error %d)"
+msgid "Failed to create dump file to \"%s\" (error %u)"
+msgstr "Ha fallat la creació de l' arxiu de volcat a '%s' (error %u)"
 
 msgctxt "IDS_MAINFRM_DIR_TITLE"
 msgid "Select Directory"
@@ -2243,7 +2332,7 @@ msgstr "Commutar Controls"
 
 msgctxt "IDS_MAINFRM_84"
 msgid "Invalid file name"
-msgstr "Nom de l'arxiu invàlid"
+msgstr "El nom del fitxer no és vàlid"
 
 msgctxt "IDS_MAINFRM_86"
 msgid "Cannot connect the filters"
@@ -2263,15 +2352,15 @@ msgstr "Format de l'arxiu invàlid"
 
 msgctxt "IDS_MAINFRM_90"
 msgid "File not found"
-msgstr "Arxiu no trobat"
+msgstr "No s’ha trobat el fitxer"
 
 msgctxt "IDS_MAINFRM_91"
 msgid "Unknown file type"
-msgstr "Tipus e l'arxiu desconegut"
+msgstr "El tipus del fitxer és desconegut"
 
 msgctxt "IDS_MAINFRM_92"
 msgid "Unsupported stream"
-msgstr "Pista no suportada"
+msgstr "No s’admet el flux"
 
 msgctxt "IDS_MAINFRM_93"
 msgid "Cannot find DVD directory"
@@ -2311,7 +2400,7 @@ msgstr "No s'ha trobat %s, sisplau inserti el mitjà que conté aquest arxiu.."
 
 msgctxt "IDS_AG_ABORTED"
 msgid "Aborted"
-msgstr "Avortat"
+msgstr "Interromput"
 
 msgctxt "IDS_MAINFRM_116"
 msgid "&Properties..."
@@ -2326,8 +2415,8 @@ msgid "Unknown Stream"
 msgstr "Pista Desconeguda"
 
 msgctxt "IDS_AG_UNKNOWN"
-msgid "Unknown %d"
-msgstr "%d Desconeguda"
+msgid "Unknown %u"
+msgstr "%u Desconeguda"
 
 msgctxt "IDS_AG_VSYNC"
 msgid "VSync"
@@ -2346,8 +2435,8 @@ msgid "Enable DVD subtitles"
 msgstr "Habilitar subtítols del DVD"
 
 msgctxt "IDS_AG_ANGLE"
-msgid "Angle %d"
-msgstr "Angle N° %d"
+msgid "Angle %u"
+msgstr "Angle N° %u"
 
 msgctxt "IDS_AG_VSYNCOFFSET_INCREASE"
 msgid "Increase VSync Offset"
@@ -2597,6 +2686,10 @@ msgctxt "IDS_VIEW_HIDEMENU"
 msgid "Hide &Menu"
 msgstr "Amagar Menú"
 
+msgctxt "IDD_PPAGEADVANCED"
+msgid "Advanced"
+msgstr "Avançat"
+
 msgctxt "IDS_TIME_TOOLTIP_ABOVE"
 msgid "Above seekbar"
 msgstr "Per sobra la barra de cerca"
@@ -2611,15 +2704,15 @@ msgstr "Vídeo: %s"
 
 msgctxt "IDS_APPLY"
 msgid "Apply"
-msgstr "Aplicar"
+msgstr "Aplica"
 
 msgctxt "IDS_CLEAR"
 msgid "Clear"
-msgstr "Netejar"
+msgstr "Neteja"
 
 msgctxt "IDS_CANCEL"
 msgid "Cancel"
-msgstr "Cancel.lar"
+msgstr "Cancel·la"
 
 msgctxt "IDS_THUMB_THUMBNAILS"
 msgid "Layout"
@@ -2631,11 +2724,11 @@ msgstr "Píxels:"
 
 msgctxt "IDS_TEXTFILE_ENC"
 msgid "Encoding:"
-msgstr "Codificant:"
+msgstr "Codificació:"
 
 msgctxt "IDS_DISABLE_ALL_FILTERS"
 msgid "&Disable all filters"
-msgstr "&Desactivar tots els filtres"
+msgstr "&Inhabilita tots els filtres"
 
 msgctxt "IDS_ENABLE_AUDIO_FILTERS"
 msgid "Enable all audio decoders"
@@ -3283,11 +3376,11 @@ msgstr "àudio"
 
 msgctxt "IDS_CAPTURE_ERROR_ADD_BUFFER"
 msgid "Can't add the %s buffer filter to the graph."
-msgstr "No es pot afegir el filtre %s de memòria intermitja al graph."
+msgstr "No es pot afegir el filtre %s de memòria intermèdia al graph."
 
 msgctxt "IDS_CAPTURE_ERROR_CONNECT_BUFF"
 msgid "Can't connect the %s buffer filter to the graph."
-msgstr "No es pot conectar el filtre de memòria intermitja %s al graph."
+msgstr "No es pot conectar el filtre de memòria intermèdia %s al graph."
 
 msgctxt "IDS_CAPTURE_ERROR_ADD_ENCODER"
 msgid "Can't add the %s encoder filter to the graph."
@@ -3357,17 +3450,9 @@ msgctxt "IDS_AFTERPLAYBACK_LOCK"
 msgid "After Playback: Lock"
 msgstr "Després de la reproducció: Bloquejar"
 
-msgctxt "IDS_AFTERPLAYBACK_EXIT"
-msgid "After Playback: Always exit"
-msgstr "Després de la reproducció: Sortir sempre"
-
-msgctxt "IDS_AFTERPLAYBACK_DONOTHING"
-msgid "After Playback: Do Nothing"
-msgstr "Després de la reproducció: No fer res"
-
-msgctxt "IDS_AFTERPLAYBACK_NEXT"
-msgid "After Playback: Play next in the folder"
-msgstr "Després de la reproducció: Reproduir seguent al directori"
+msgctxt "IDS_AFTERPLAYBACK_MONITOROFF"
+msgid "After Playback: Turn off the monitor"
+msgstr "Després de reproducció: Apagar el monitor"
 
 msgctxt "IDS_OSD_BRIGHTNESS"
 msgid "Brightness: %s"
@@ -3424,6 +3509,26 @@ msgstr "&Títols"
 msgctxt "IDS_NAVIGATE_CHANNELS"
 msgid "&Channels"
 msgstr "&Canals"
+
+msgctxt "IDC_FASTSEEK_CHECK"
+msgid "If \"latest keyframe\" is selected, seek to the first keyframe before the actual seek point.\nIf \"nearest keyframe\" is selected, seek to the first keyframe before or after the seek point depending on which is the closest."
+msgstr "Si \"últim fotograma clau\" està seleccionat, anar al primer fotograma clau anterior al actual punt de cerca.\nSi \"fotograma clau més proper\" està seleccionat, anar al primer fotograma clau abans o després del punt de cerca depenent de quin sigui el més proper."
+
+msgctxt "IDC_ASSOCIATE_ALL_FORMATS"
+msgid "Associate with all formats"
+msgstr "Associar amb tots els formats"
+
+msgctxt "IDC_ASSOCIATE_VIDEO_FORMATS"
+msgid "Associate with video formats only"
+msgstr "Associat  només amb formats de vídeo"
+
+msgctxt "IDC_ASSOCIATE_AUDIO_FORMATS"
+msgid "Associate with audio formats only"
+msgstr "Associatnomés  amb formats d'àudio"
+
+msgctxt "IDC_CLEAR_ALL_ASSOCIATIONS"
+msgid "Clear all associations"
+msgstr "Netejar totes les associacions"
 
 msgctxt "IDS_FILTER_SETTINGS_CAPTION"
 msgid "Settings"

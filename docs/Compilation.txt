@@ -16,8 +16,8 @@ Part B: Preparing the GCC environment
   * If you installed the MSYS/MinGW package in an other directory you will have to use that path in the following steps.
   * If you don't have Git installed then the revision number will be a hard-coded one, like 1.6.3.0.
 
- 1. Download and extract MSYS_MinGW-w64_GCC_483_x86-x64.7z to "C:\MSYS" -> http://xhmikosr.1f0.de/tools/msys/MSYS_MinGW-w64_GCC_483_x86-x64.7z
-    For the components and their version see: http://xhmikosr.1f0.de/tools/msys/MSYS_MinGW-w64_GCC_483_x86-x64_components.txt
+ 1. Download and extract MSYS_MinGW-w64_GCC_491_x86-x64.7z to "C:\MSYS" -> http://xhmikosr.1f0.de/tools/msys/MSYS_MinGW-w64_GCC_491_x86-x64.7z
+    For the components and their version see: http://xhmikosr.1f0.de/tools/msys/MSYS_MinGW-w64_GCC_491_x86-x64_components.txt
  2. Edit the "fstab" file in "C:\MSYS\etc" to specify your MinGW path. This is optional.
     Add this to it: C:\MSYS\mingw	\mingw
     Note the tab-space between "mingw" and "\mingw"
@@ -36,7 +36,7 @@ SET "MPCHC_PYTHON=C:\Python27"
 Part C: Downloading and compiling the MPC-HC source
 
 1. Use Git to clone MPC-HC's repository to "C:\mpc-hc" (or anywhere else you like)
-    Download Git from https://github.com/msysgit/msysgit/releases/download/Git-1.9.2-preview20140411/Git-1.9.2-preview20140411.exe
+    Download Git from http://msysgit.github.io/
     Run:
       git clone --recursive https://github.com/mpc-hc/mpc-hc.git
 
@@ -66,7 +66,7 @@ Alternatively, you can use "build.bat" which can build everything for you
 
 Part D: Building the installer
 
-Download Inno Setup Unicode v5.5.4 or newer from: http://www.jrsoftware.org/isdl.php
+Download Inno Setup Unicode v5.5.5 or newer from: http://www.jrsoftware.org/isdl.php
 Install everything and then go to "C:\mpc-hc\distrib", open "mpc-hc_setup.iss" with Inno Setup,
 read the first comments in the script and compile it.
 Notes:

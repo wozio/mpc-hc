@@ -7,8 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-06-04 20:22:52+0000\n"
-"PO-Revision-Date: 2014-06-05 10:02+0000\n"
+"POT-Creation-Date: 2014-09-19 20:08:04+0000\n"
+"PO-Revision-Date: 2014-09-20 12:21+0000\n"
 "Last-Translator: Marián Hikaník <podnety@mojepreklady.net>\n"
 "Language-Team: Slovak (http://www.transifex.com/projects/p/mpc-hc/language/sk/)\n"
 "MIME-Version: 1.0\n"
@@ -99,19 +99,23 @@ msgstr "Dátový tok"
 
 msgctxt "IDS_STATSBAR_BITRATE_AVG_CUR"
 msgid "(avg/cur)"
-msgstr "(priemerný/aktuálny)"
+msgstr "(priemer./akt.)"
 
 msgctxt "IDS_STATSBAR_SIGNAL"
 msgid "Signal"
 msgstr "Signál"
 
 msgctxt "IDS_STATSBAR_SIGNAL_FORMAT"
-msgid "Strength: %d dB, Quality: %d%%"
-msgstr "Intenzita: %d dB, kvalita: %d%%"
+msgid "Strength: %d dB, Quality: %ld%%"
+msgstr "Intenzita: %d dB, kvalita: %ld%%"
 
 msgctxt "IDS_SUBTITLES_STYLES_CAPTION"
 msgid "Styles"
 msgstr "Štýly"
+
+msgctxt "IDS_TEXT_SUB_RENDERING_TARGET"
+msgid "If the rendering target is left undefined, SSA/ASS subtitles will be rendered relative to the video frame while all other text subtitles will be rendered relative to the window."
+msgstr "Ak zostane cieľ vykresľovania nedefinovaný, titulky SSA/ASS budú vykreslené relatívne k snímke videa, zatiaľ čo všetky ostatné textové titulky budú vykreslené relatívne k oknu."
 
 msgctxt "IDS_PPAGE_CAPTURE_FG0"
 msgid "Never (fastest approach)"
@@ -838,20 +842,24 @@ msgid "Accurate VSync"
 msgstr "Presná funkcia VSync"
 
 msgctxt "IDC_CHECK_RELATIVETO"
-msgid "Default state gets inherited to other styles where it is still undefined"
-msgstr "Predvolený stav sa zdedí aj v iných štýloch, kde nie je stále definovaný"
+msgid "If the rendering target is left undefined, it will be inherited from the default style."
+msgstr "Ak zostane cieľ vykresľovania nedefinovaný, bude zdedený z predvoleného štýlu."
 
-msgctxt "IDC_CHECK_SPCPOW2TEX"
-msgid "Unchecking this frees up a little video memory and saves bandwidth on local to video memory transfers, but it may not work with older video cards."
-msgstr "Vypnutím uvoľníte malé množstvo pamäte pre video a ušetríte prenosové pásmo pri prenosoch z lokálnej do video-pamäte. Staršie graf. karty však nemusia fungovať."
+msgctxt "IDC_CHECK_NO_SUB_ANIM"
+msgid "Disallow subtitle animation. Enabling this option will lower CPU usage. You can use it if you experience flashing subtitles."
+msgstr "Nepovoliť animáciu titulkov. Zapnutím tejto voľby klesne využitie procesora. Voľbu môžete použiť v prípade, že pozorujete blikanie titulkov."
 
-msgctxt "IDC_CHECK_SPCANIMWITHBUFFER"
-msgid "Allows subtitle animation when using a subpicture buffer larger than 0. Disabling this option will lower CPU usage. Also disable if you experience flashing subtitles."
-msgstr "Ak je použitá vyrovnávacia pamäť pre podobrázky väčšia ako 0, môžu sa titulky animovať. Zablokovaním tejto voľby znížite vyťaženie procesora. Voľbu zablokujte aj v prípade, že titulky blikajú."
+msgctxt "IDC_SUBPIC_TO_BUFFER"
+msgid "Increasing the number of buffered subpictures should in general improve the rendering performance at the cost of a higher video RAM usage on the GPU."
+msgstr "Zvýšenie počtu pod-obrázkov uložených vo vyrovnávacej pamäti by malo všeobecne zlepšiť výkon vykresľovania, za cenu vyššieho využitia video RAM pri grafickom procesore."
 
 msgctxt "IDC_BUTTON_EXT_SET"
 msgid "After clicking this button, the checked state of the format group will reflect the actual file association for MPC-HC. A newly added extension will usually make it grayed, so don't forget to check it again before closing this dialog!"
 msgstr "Po kliknutí na toto tlačidlo sa vybraný stav skupiny formátov premietne aj do aktuálnej asociácie programu MPC-HC so súbormi. Po pridaní nového rozšírenia programu sa však asociácie môžu označiť šedou farbou. Preto si ich pred zatvorením tohto dialógu nezabudnite opäť skontrolovať!"
+
+msgctxt "IDC_CHECK_ALLOW_DROPPING_SUBPIC"
+msgid "Disabling this option will prevent the subtitles from blinking but it may cause the video renderer to skip some video frames."
+msgstr "Zablokovaním tejto voľby zabránite blikaniu titulkov, ale môže spôsobiť preskočenie niektorých snímkov vykresľovačom videa."
 
 msgctxt "ID_PLAY_PLAY"
 msgid "Play\nPlay"
@@ -1252,6 +1260,82 @@ msgstr "Zadajte svoje prihlasovacie údaje pre pripojenie"
 msgctxt "IDS_SUB_SAVE_EXTERNAL_STYLE_FILE"
 msgid "Save custom style"
 msgstr "Uložiť používateľom nastavený štýl"
+
+msgctxt "IDS_CONTENT_EDUCATION_SCIENCE"
+msgid "Education/Science/Factual topics"
+msgstr "Vzdelávacie/Veda/Reálne témy"
+
+msgctxt "IDS_PPAGEADVANCED_HIDE_WINDOWED"
+msgid "Hides controls and panels also in windowed mode."
+msgstr "Skryje ovládacie prvky a panely aj v režime s oknami."
+
+msgctxt "IDS_PPAGEADVANCED_BLOCK_VSFILTER"
+msgid "Prevent external subtitle renderer to be loaded when internal is in use."
+msgstr "Zabrániť načítaniu externých vykresľovačov titulkov, ak sa používajú interné."
+
+msgctxt "IDS_PPAGEADVANCED_COL_NAME"
+msgid "Name"
+msgstr "Názov"
+
+msgctxt "IDS_PPAGEADVANCED_COL_VALUE"
+msgid "Value"
+msgstr "Hodnota"
+
+msgctxt "IDS_PPAGEADVANCED_RECENT_FILES_NUMBER"
+msgid "Maximum number of files shown in the \"Recent files\" menu and for which the position is potentially saved."
+msgstr "Maximálny počet súborov zobrazovaných medzi „Naposledy otvorenými súbormi“, pri ktorých je potenciálne možné uloženie pozície."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_LONGER"
+msgid "Remember file position only for files longer than N minutes."
+msgstr "Pamätať si pozíciu len pre súbory dlhšie ako N minút."
+
+msgctxt "IDS_PPAGEADVANCED_FILE_POS_AUDIO"
+msgid "Remember file position also for audio files."
+msgstr "Pamätať si pozíciu aj pre zvukové súbory."
+
+msgctxt "IDS_AFTER_PLAYBACK_DO_NOTHING"
+msgid "Do Nothing"
+msgstr "Neurobiť nič"
+
+msgctxt "IDS_AFTER_PLAYBACK_PLAY_NEXT"
+msgid "Play next file in the folder"
+msgstr "Prehrať ďalší súbor v priečinku"
+
+msgctxt "IDS_AFTER_PLAYBACK_REWIND"
+msgid "Rewind current file"
+msgstr "Previnúť aktuálny súbor na začiatok"
+
+msgctxt "IDS_AFTER_PLAYBACK_CLOSE"
+msgid "Close"
+msgstr "Zatvoriť"
+
+msgctxt "IDS_AFTER_PLAYBACK_EXIT"
+msgid "Exit"
+msgstr "Ukončiť"
+
+msgctxt "IDS_AFTER_PLAYBACK_MONITOROFF"
+msgid "Turn off the monitor"
+msgstr "Vypnúť monitor"
+
+msgctxt "IDS_IMAGE_JPEG_QUALITY"
+msgid "JPEG Image"
+msgstr "Obrázok JPEG"
+
+msgctxt "IDS_IMAGE_QUALITY"
+msgid "Quality (%):"
+msgstr "Kvalita (%):"
+
+msgctxt "IDS_PPAGEADVANCED_COVER_SIZE_LIMIT"
+msgid "Maximum size (NxNpx) of a cover-art loaded in the audio only mode."
+msgstr "Maximálna veľkosť (NxNpx) obalu načítaná v režime len pre zvuk."
+
+msgctxt "IDS_SUBTITLE_DELAY_STEP_TOOLTIP"
+msgid "The subtitle delay will be decreased/increased by this value each time the corresponding hotkeys are used (%s/%s)."
+msgstr "Oneskorenie titulkov sa zníži/zvýši o túto hodnotu vždy pri stlačení príslušných klávesových skratiek (%s/%s)."
+
+msgctxt "IDS_HOTKEY_NOT_DEFINED"
+msgid "<not defined>"
+msgstr ""
 
 msgctxt "IDS_AG_OPEN_DEVICE"
 msgid "Open Device"
@@ -1938,16 +2022,16 @@ msgid "Buffers"
 msgstr "Vyrovnávacie pamäte"
 
 msgctxt "IDS_MAINFRM_9"
-msgid "Volume: %02d/%02d, Title: %02d/%02d, Chapter: %02d/%02d"
-msgstr "Hlasitosť: %02d/%02d, titul: %02d/%02d, kapitola: %02d/%02d"
+msgid "Volume: %02lu/%02lu, Title: %02lu/%02lu, Chapter: %02lu/%02lu"
+msgstr "Hlasitosť: %02lu/%02lu, titul: %02lu/%02lu, kapitola: %02lu/%02lu"
 
 msgctxt "IDS_MAINFRM_10"
-msgid "Angle: %02d/%02d, %dx%d %dHz %d:%d"
-msgstr "Uhol: %02d/%02d, %dx%d %d Hz %d:%d"
+msgid "Angle: %02lu/%02lu, %lux%lu %luHz %lu:%lu"
+msgstr "Uhol: %02lu/%02lu, %lux%lu %lu Hz %lu:%lu"
 
 msgctxt "IDS_MAINFRM_11"
-msgid "%s, %s %dHz %dbits %d %s"
-msgstr "%s, %s %d Hz %d bitov %d %s"
+msgid "%s, %s %uHz %dbits %d %s"
+msgstr "%s, %s %u Hz %d bitov %d %s"
 
 msgctxt "IDS_ADD_TO_PLAYLIST"
 msgid "Add to MPC-HC Playlist"
@@ -1958,8 +2042,8 @@ msgid "Play with MPC-HC"
 msgstr "Prehrať programom MPC-HC"
 
 msgctxt "IDS_CANNOT_CHANGE_FORMAT"
-msgid "MPC-HC has not enough privileges to change files formats associations. Please click on \"Modify\" button to get administrator rights."
-msgstr "Program MPC-HC nemá oprávnenia, dostatočné na zmenu asociácií k formátom. Kliknite prosím na tlačidlo \"Upraviť\" a preberte práva administrátora PC."
+msgid "MPC-HC has not enough privileges to change files formats associations. Please click on the \"Run as administrator\" button."
+msgstr "Program MPC-HC nemá dostatok oprávnení na zmenu asociácií pre formáty súborov. Prosím kliknite na tlačidlo „Spustiť ako administrátor“."
 
 msgctxt "IDS_APP_DESCRIPTION"
 msgid "MPC-HC is an extremely light-weight, open source media player for Windows. It supports all common video and audio file formats available for playback. We are 100% spyware free, there are no advertisements or toolbars."
@@ -1974,8 +2058,8 @@ msgid "channels"
 msgstr "kanálov"
 
 msgctxt "IDS_AG_TITLE"
-msgid "Title %d"
-msgstr "Titul %d"
+msgid "Title %u"
+msgstr "Titul %u"
 
 msgctxt "IDS_MAINFRM_16"
 msgid "DVD: Unexpected error"
@@ -2050,8 +2134,8 @@ msgid "Aspect Ratio"
 msgstr "Stranový pomer"
 
 msgctxt "IDS_MAINFRM_37"
-msgid ", Total: %d, Dropped: %d"
-msgstr ", spolu: %d, preskočené: %d"
+msgid ", Total: %ld, Dropped: %ld"
+msgstr ", spolu: %ld, preskočené: %ld"
 
 msgctxt "IDS_MAINFRM_38"
 msgid ", Size: %I64dKB"
@@ -2115,7 +2199,7 @@ msgstr "Nemožno vytvoriť náhľady pre súbory s nulovou dĺžkou"
 
 msgctxt "IDS_THUMBNAILS_NO_FRAME_SIZE"
 msgid "Failed to get video frame size"
-msgstr "Nepodarilo sa zistiť veľkosť snímky"
+msgstr "Nepodarilo sa zistiť veľkosť snímky videa"
 
 msgctxt "IDS_OUT_OF_MEMORY"
 msgid "Out of memory, go buy some more!"
@@ -2139,11 +2223,15 @@ msgstr "Náhľady by boli príliš malé, nie je možné vytvoriť súbor.\n\nSk
 
 msgctxt "IDS_CANNOT_LOAD_SUB"
 msgid "To load subtitles you have to change the video renderer type and reopen the file.\n- DirectShow: VMR-7/VMR-9 (renderless), EVR (CP), Sync, madVR or Haali\n- RealMedia: Special renderer for RealMedia, or open it through DirectShow\n- QuickTime: DX7 or DX9 renderer for QuickTime\n- ShockWave: n/a"
-msgstr "Pre načítanie titulkov musíte zmeniť typ vykresľovača videa a znovu otvorte súbor.\n- DirectShow: VMR-7/VMR-9 (bez vykreslenia), EVR (CP), Sync, madVR alebo Haali\n- RealMedia: Špeciálne vykresľovanie pre RealMedia, alebo otvorte prostredníctvom DirectShow\n- QuickTime: vykresľovač DX7 alebo DX9 pre QuickTime\n- ShockWave: n/a"
+msgstr "Pre načítanie titulkov musíte zmeniť typ vykresľovača videa a znovu otvoriť súbor.\n- DirectShow: VMR-7/VMR-9 (bez vykreslenia), EVR (CP), Sync, madVR alebo Haali\n- RealMedia: Špeciálne vykresľovanie pre RealMedia, alebo otvorte prostredníctvom DirectShow\n- QuickTime: vykresľovač DX7 alebo DX9 pre QuickTime\n- ShockWave: n/a"
+
+msgctxt "IDS_SUBTITLE_FILES_FILTER"
+msgid "Subtitle files"
+msgstr "Súbory s titulkami"
 
 msgctxt "IDS_MAINFRM_68"
-msgid "Aspect Ratio: %d:%d"
-msgstr "Stranový pomer: %d:%d"
+msgid "Aspect Ratio: %ld:%ld"
+msgstr "Stranový pomer: %ld:%ld"
 
 msgctxt "IDS_MAINFRM_69"
 msgid "Aspect Ratio: Default"
@@ -2214,8 +2302,8 @@ msgid "MPC-HC terminated unexpectedly. To help us fix this problem, please send 
 msgstr "Program MPC-HC bol neočakávane ukončený. Ak nám chcete pomôcť vyriešiť tento problém, odošlite prosím súbor \"%s\" do nášho systému pre nahlasovanie chýb.\n\nChcete otvoriť priečinok obsahujúci súbor s výpisom pamäte a navštíviť systém pre nahlasovanie chýb?"
 
 msgctxt "IDS_MPC_MINIDUMP_FAIL"
-msgid "Failed to create dump file to \"%s\" (error %d)"
-msgstr "Nepodarilo sa vytvoriť výpis pamäte v súbore \"%s\" (chyba %d)"
+msgid "Failed to create dump file to \"%s\" (error %u)"
+msgstr "Nepodarilo sa vytvoriť výpis pamäte v súbore \"%s\" (chyba %u)"
 
 msgctxt "IDS_MAINFRM_DIR_TITLE"
 msgid "Select Directory"
@@ -2326,8 +2414,8 @@ msgid "Unknown Stream"
 msgstr "Neznámy stream"
 
 msgctxt "IDS_AG_UNKNOWN"
-msgid "Unknown %d"
-msgstr "Neznámy %d"
+msgid "Unknown %u"
+msgstr "Neznámy %u"
 
 msgctxt "IDS_AG_VSYNC"
 msgid "VSync"
@@ -2346,8 +2434,8 @@ msgid "Enable DVD subtitles"
 msgstr "Zapnúť titulky na DVD"
 
 msgctxt "IDS_AG_ANGLE"
-msgid "Angle %d"
-msgstr "Uhol %d"
+msgid "Angle %u"
+msgstr "Uhol %u"
 
 msgctxt "IDS_AG_VSYNCOFFSET_INCREASE"
 msgid "Increase VSync Offset"
@@ -2596,6 +2684,10 @@ msgstr "Z&obraziť titulok&&menu"
 msgctxt "IDS_VIEW_HIDEMENU"
 msgid "Hide &Menu"
 msgstr "Skryť &menu"
+
+msgctxt "IDD_PPAGEADVANCED"
+msgid "Advanced"
+msgstr "Pokročilé"
 
 msgctxt "IDS_TIME_TOOLTIP_ABOVE"
 msgid "Above seekbar"
@@ -3357,17 +3449,9 @@ msgctxt "IDS_AFTERPLAYBACK_LOCK"
 msgid "After Playback: Lock"
 msgstr "Po prehratí: Uzamknúť"
 
-msgctxt "IDS_AFTERPLAYBACK_EXIT"
-msgid "After Playback: Always exit"
-msgstr "Po prehratí: Vždy ukončiť"
-
-msgctxt "IDS_AFTERPLAYBACK_DONOTHING"
-msgid "After Playback: Do Nothing"
-msgstr "Po prehratí: Neurobiť nič"
-
-msgctxt "IDS_AFTERPLAYBACK_NEXT"
-msgid "After Playback: Play next in the folder"
-msgstr "Po prehratí: Prehrať ďalšie v priečinku"
+msgctxt "IDS_AFTERPLAYBACK_MONITOROFF"
+msgid "After Playback: Turn off the monitor"
+msgstr "Po prehratí: Vypnúť monitor"
 
 msgctxt "IDS_OSD_BRIGHTNESS"
 msgid "Brightness: %s"
@@ -3424,6 +3508,26 @@ msgstr "&Tituly"
 msgctxt "IDS_NAVIGATE_CHANNELS"
 msgid "&Channels"
 msgstr "Ka&nály"
+
+msgctxt "IDC_FASTSEEK_CHECK"
+msgid "If \"latest keyframe\" is selected, seek to the first keyframe before the actual seek point.\nIf \"nearest keyframe\" is selected, seek to the first keyframe before or after the seek point depending on which is the closest."
+msgstr "Ak je vybraná „posledná kľúč. snímka“, vyhľadávanie prebieha k prvej kľúčovej snímke pred aktuálnym bodom vyhľadávania.\nAk je vybraná „najbližšia kľúč. snímka“, vyhľadávanie prebieha k prvej kľúčovej snímke pred alebo po bode vyhľadávania - podľa toho, ktorý bod sa nachádza bližšie."
+
+msgctxt "IDC_ASSOCIATE_ALL_FORMATS"
+msgid "Associate with all formats"
+msgstr "Asociovať so všetkými formátmi"
+
+msgctxt "IDC_ASSOCIATE_VIDEO_FORMATS"
+msgid "Associate with video formats only"
+msgstr "Asociovať len s formátmi videa"
+
+msgctxt "IDC_ASSOCIATE_AUDIO_FORMATS"
+msgid "Associate with audio formats only"
+msgstr "Asociovať len so zvukovými formátmi"
+
+msgctxt "IDC_CLEAR_ALL_ASSOCIATIONS"
+msgid "Clear all associations"
+msgstr "Zrušiť všetky asociácie"
 
 msgctxt "IDS_FILTER_SETTINGS_CAPTION"
 msgid "Settings"

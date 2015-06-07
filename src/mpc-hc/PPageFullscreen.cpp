@@ -62,6 +62,7 @@ void CPPageFullscreen::ModesUpdate()
         return;
     }
 
+    m_list.SetRedraw(FALSE);
     m_list.DeleteAllItems();
     m_displayModes.clear();
     m_displayModesString.RemoveAll();
@@ -89,7 +90,7 @@ void CPPageFullscreen::ModesUpdate()
     // Generate the corresponding string representation
     auto formatStringFromDisplayMode = [](const DisplayMode & dm) {
         CString strDisplayMode;
-        strDisplayMode.Format(_T("[ %d ] @ %dx%d %c"),
+        strDisplayMode.Format(_T("[ %d ] @ %ldx%ld %c"),
                               dm.freq, dm.size.cx, dm.size.cy,
                               (dm.dwDisplayFlags & DM_INTERLACED) ? _T('i') : _T('p'));
         return strDisplayMode;
@@ -160,6 +161,16 @@ void CPPageFullscreen::ModesUpdate()
 
         nItem++;
     }
+
+    for (int i = 0; i <= COL_DISPLAY_MODE; i++) {
+        m_list.SetColumnWidth(i, LVSCW_AUTOSIZE);
+        int nColumnWidth = m_list.GetColumnWidth(i);
+        m_list.SetColumnWidth(i, LVSCW_AUTOSIZE_USEHEADER);
+        int nHeaderWidth = m_list.GetColumnWidth(i);
+        m_list.SetColumnWidth(i, std::max(nColumnWidth, nHeaderWidth));
+    }
+
+    m_list.SetRedraw(TRUE);
 }
 
 void CPPageFullscreen::DoDataExchange(CDataExchange* pDX)
@@ -207,6 +218,7 @@ BEGIN_MESSAGE_MAP(CPPageFullscreen, CPPageBase)
     ON_NOTIFY(LVN_DOLABELEDIT, IDC_LIST1, OnListDoEdit)
     ON_NOTIFY(LVN_ENDLABELEDIT, IDC_LIST1, OnListEndEdit)
     ON_NOTIFY(NM_CUSTOMDRAW, IDC_LIST1, OnListCustomDraw)
+    ON_NOTIFY_EX(TTN_NEEDTEXT, 0, OnToolTipNotify)
 END_MESSAGE_MAP()
 
 // CPPagePlayer message handlers
@@ -245,20 +257,21 @@ BOOL CPPageFullscreen::OnInitDialog()
             CString monitorName;
             monitor.GetName(monitorName);
 
+            CString str = monitorName;
+            if (monitorName == currentMonitorName) {
+                str.AppendFormat(_T(" - [%s]"), ResStr(IDS_FULLSCREENMONITOR_CURRENT));
+            }
+
             DISPLAY_DEVICE displayDevice = { sizeof(displayDevice) };
             if (EnumDisplayDevices(monitorName, 0, &displayDevice, 0)) {
-                if (monitorName == currentMonitorName) {
-                    m_fullScreenMonitorCtrl.AddString(monitorName + _T(" - [") + ResStr(IDS_FULLSCREENMONITOR_CURRENT) + _T("] - ") + displayDevice.DeviceString);
-                } else {
-                    m_fullScreenMonitorCtrl.AddString(monitorName + _T(" - ") + displayDevice.DeviceString);
-                }
-                m_monitorDisplayNames.emplace_back(monitorName);
+                str.AppendFormat(_T(" - %s"), displayDevice.DeviceString);
+            }
 
-                if (m_fullScreenMonitor == monitorName && m_iFullScreenMonitor == 0) {
-                    m_iFullScreenMonitor = m_fullScreenMonitorCtrl.GetCount() - 1;
-                }
-            } else {
-                ASSERT(FALSE);
+            m_fullScreenMonitorCtrl.AddString(str);
+            m_monitorDisplayNames.emplace_back(monitorName);
+
+            if (m_fullScreenMonitor == monitorName && m_iFullScreenMonitor == 0) {
+                m_iFullScreenMonitor = m_fullScreenMonitorCtrl.GetCount() - 1;
             }
         }
     }
@@ -304,7 +317,15 @@ BOOL CPPageFullscreen::OnInitDialog()
 
     m_delaySpinner.SetRange32(0, 9);
 
+    CorrectComboListWidth(m_fullScreenMonitorCtrl);
+    CorrectComboListWidth(m_hidePolicy);
+    CorrectComboBoxHeaderWidth(GetDlgItem(IDC_CHECK2));
+    CorrectComboBoxHeaderWidth(GetDlgItem(IDC_CHECK4));
+
     ModesUpdate();
+
+    EnableToolTips(TRUE);
+
     UpdateData(FALSE);
 
     return TRUE;  // return TRUE unless you set the focus to a control
@@ -656,4 +677,24 @@ void CPPageFullscreen::OnListCustomDraw(NMHDR* pNMHDR, LRESULT* pResult)
         pLVCD->clrText = crText;
         *pResult = CDRF_DODEFAULT;
     }
+}
+
+BOOL CPPageFullscreen::OnToolTipNotify(UINT id, NMHDR* pNMH, LRESULT* pResult)
+{
+    LPTOOLTIPTEXT pTTT = reinterpret_cast<LPTOOLTIPTEXT>(pNMH);
+
+    UINT_PTR nID = pNMH->idFrom;
+    if (pTTT->uFlags & TTF_IDISHWND) {
+        nID = ::GetDlgCtrlID((HWND)nID);
+    }
+
+    BOOL bRet = FALSE;
+
+    switch (nID) {
+        case IDC_COMBO2:
+            bRet = FillComboToolTip(m_hidePolicy, pTTT);
+            break;
+    }
+
+    return bRet;
 }

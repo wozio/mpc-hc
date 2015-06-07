@@ -49,6 +49,7 @@ CPPagePlayer::CPPagePlayer()
     , m_fRememberDVDPos(FALSE)
     , m_fRememberFilePos(FALSE)
     , m_bRememberPlaylistItems(TRUE)
+    , m_bEnableCoverArt(TRUE)
     , m_dwCheckIniLastTick(0)
     , m_nPosLangEnglish(0)
 {
@@ -83,6 +84,7 @@ void CPPagePlayer::DoDataExchange(CDataExchange* pDX)
     DDX_Check(pDX, IDC_DVD_POS, m_fRememberDVDPos);
     DDX_Check(pDX, IDC_FILE_POS, m_fRememberFilePos);
     DDX_Check(pDX, IDC_CHECK2, m_bRememberPlaylistItems);
+    DDX_Check(pDX, IDC_CHECK14, m_bEnableCoverArt);
     DDX_Control(pDX, IDC_COMBO1, m_langsComboBox);
 }
 
@@ -121,6 +123,7 @@ BOOL CPPagePlayer::OnInitDialog()
     m_fRememberFilePos = s.fRememberFilePos;
     m_fLimitWindowProportions = s.fLimitWindowProportions;
     m_bRememberPlaylistItems = s.bRememberPlaylistItems;
+    m_bEnableCoverArt = s.bEnableCoverArt;
 
     for (auto& lr : Translations::GetAvailableLanguageResources()) {
         int pos = m_langsComboBox.AddString(lr.name);
@@ -168,14 +171,15 @@ BOOL CPPagePlayer::OnApply()
     s.fRememberDVDPos = !!m_fRememberDVDPos;
     s.fRememberFilePos = !!m_fRememberFilePos;
     s.bRememberPlaylistItems = !!m_bRememberPlaylistItems;
+    s.bEnableCoverArt = !!m_bEnableCoverArt;
 
     int iLangSel = m_langsComboBox.GetCurSel();
     if (iLangSel != CB_ERR) {
         LANGID language = (LANGID)m_langsComboBox.GetItemData(iLangSel);
         if (s.language != language) {
-            // Show a warning when switching to Hebrew (must not be translated)
-            if (PRIMARYLANGID(language) == LANG_HEBREW) {
-                AfxMessageBox(_T("The Hebrew translation will be correctly displayed (with a right-to-left layout) after restarting the application.\n"),
+            // Show a warning when switching to Arabic or Hebrew (must not be translated)
+            if (PRIMARYLANGID(language) == LANG_ARABIC || PRIMARYLANGID(language) == LANG_HEBREW) {
+                AfxMessageBox(_T("The Arabic and Hebrew translations will be correctly displayed (with a right-to-left layout) after restarting the application.\n"),
                               MB_ICONINFORMATION | MB_OK);
             }
 

@@ -40,14 +40,15 @@
 #include <afxsock.h>
 #include <atlsync.h>
 #include <atlutil.h>
-#include "atl/atlrx.h"
+#include <regex>
 #include <share.h>
 #include "mpc-hc_config.h"
 #include "../MathLibFix/MathLibFix.h"
+#include "CmdLineHelpDlg.h"
 
 #define HOOKS_BUGS_URL _T("https://trac.mpc-hc.org/ticket/3739")
 
-HICON LoadIcon(CString fn, bool fSmall)
+HICON LoadIcon(CString fn, bool bSmallIcon)
 {
     if (fn.IsEmpty()) {
         return nullptr;
@@ -58,8 +59,8 @@ HICON LoadIcon(CString fn, bool fSmall)
         ext = _T(".") + fn.Mid(fn.ReverseFind('.') + 1);
     }
 
-    CSize size(fSmall ? GetSystemMetrics(SM_CXSMICON) : GetSystemMetrics(SM_CXICON),
-               fSmall ? GetSystemMetrics(SM_CYSMICON) : GetSystemMetrics(SM_CYICON));
+    CSize size(bSmallIcon ? GetSystemMetrics(SM_CXSMICON) : GetSystemMetrics(SM_CXICON),
+               bSmallIcon ? GetSystemMetrics(SM_CYSMICON) : GetSystemMetrics(SM_CYICON));
 
     typedef HRESULT(WINAPI * LIWSD)(HINSTANCE, PCWSTR, int, int, HICON*);
     auto loadIcon = [&size](PCWSTR pszName) {
@@ -90,24 +91,26 @@ HICON LoadIcon(CString fn, bool fSmall)
         TCHAR buff[256];
         ULONG len;
 
-        if (ERROR_SUCCESS != key.Open(HKEY_CLASSES_ROOT, ext + _T("\\DefaultIcon"), KEY_READ)) {
-            if (ERROR_SUCCESS != key.Open(HKEY_CLASSES_ROOT, ext, KEY_READ)) {
-                break;
-            }
+        auto openRegKey = [&](HKEY hKeyParent, LPCTSTR lpszKeyName, LPCTSTR lpszValueName) {
+            if (ERROR_SUCCESS == key.Open(hKeyParent, lpszKeyName, KEY_READ)) {
+                len = _countof(buff);
+                ZeroMemory(buff, sizeof(buff));
+                CString progId;
 
-            len = _countof(buff);
-            ZeroMemory(buff, sizeof(buff));
-            if (ERROR_SUCCESS != key.QueryStringValue(nullptr, buff, &len) || (ext = buff).Trim().IsEmpty()) {
-                break;
+                if (ERROR_SUCCESS == key.QueryStringValue(lpszValueName, buff, &len) && !(progId = buff).Trim().IsEmpty()) {
+                    return (ERROR_SUCCESS == key.Open(HKEY_CLASSES_ROOT, progId + _T("\\DefaultIcon"), KEY_READ));
+                }
             }
+            return false;
+        };
 
-            if (ERROR_SUCCESS != key.Open(HKEY_CLASSES_ROOT, ext + _T("\\DefaultIcon"), KEY_READ)) {
-                break;
-            }
+        if (!openRegKey(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\") + ext + _T("\\UserChoice"), _T("Progid"))
+                && !openRegKey(HKEY_CLASSES_ROOT, ext, nullptr)
+                && ERROR_SUCCESS != key.Open(HKEY_CLASSES_ROOT, ext + _T("\\DefaultIcon"), KEY_READ)) {
+            break;
         }
 
         CString icon;
-
         len = _countof(buff);
         ZeroMemory(buff, sizeof(buff));
         if (ERROR_SUCCESS != key.QueryStringValue(nullptr, buff, &len) || (icon = buff).Trim().IsEmpty()) {
@@ -125,13 +128,13 @@ HICON LoadIcon(CString fn, bool fSmall)
         }
 
         icon = icon.Left(i);
+        icon.Trim(_T(" \\\""));
 
         HICON hIcon = nullptr;
-        UINT cnt = fSmall
+        UINT cnt = bSmallIcon
                    ? ExtractIconEx(icon, id, nullptr, &hIcon, 1)
                    : ExtractIconEx(icon, id, &hIcon, nullptr, 1);
-        UNREFERENCED_PARAMETER(cnt);
-        if (hIcon) {
+        if (hIcon && cnt == 1) {
             return hIcon;
         }
     } while (0);
@@ -219,26 +222,14 @@ bool LoadResource(UINT resid, CStringA& str, LPCTSTR restype)
     return true;
 }
 
-typedef CAtlRegExp<CAtlRECharTraits> CAtlRegExpT;
-typedef CAtlREMatchContext<CAtlRECharTraits> CAtlREMatchContextT;
-
-static bool FindRedir(const CUrl& src, CString ct, const CString& body, CAtlList<CString>& urls, CAutoPtrList<CAtlRegExpT>& res)
+static bool FindRedir(const CUrl& src, CString ct, const CString& body, CAtlList<CString>& urls, const std::vector<std::wregex>& res)
 {
-    POSITION pos = res.GetHeadPosition();
     bool bDetectHLS = false;
-    while (pos) {
-        CAtlRegExpT* re = res.GetNext(pos);
+    for (const auto re : res) {
+        std::wcmatch mc;
 
-        CAtlREMatchContextT mc;
-        const CAtlREMatchContextT::RECHAR* s = (LPCTSTR)body;
-        const CAtlREMatchContextT::RECHAR* e = nullptr;
-        for (; s && re->Match(s, &mc, &e); s = e) {
-            const CAtlREMatchContextT::RECHAR* szStart = 0;
-            const CAtlREMatchContextT::RECHAR* szEnd = 0;
-            mc.GetMatch(0, &szStart, &szEnd);
-
-            CString url;
-            url.Format(_T("%.*s"), szEnd - szStart, szStart);
+        for (LPCTSTR s = body; std::regex_search(s, mc, re); s += mc.position() + mc.length()) {
+            CString url = mc[mc.size() - 1].str().c_str();
             url.Trim();
 
             if (url.CompareNoCase(_T("asf path")) == 0) {
@@ -274,7 +265,7 @@ static bool FindRedir(const CUrl& src, CString ct, const CString& body, CAtlList
     return !urls.IsEmpty();
 }
 
-static bool FindRedir(const CString& fn, CString ct, CAtlList<CString>& fns, CAutoPtrList<CAtlRegExpT>& res)
+static bool FindRedir(const CString& fn, CString ct, CAtlList<CString>& fns, const std::vector<std::wregex>& res)
 {
     CString body;
 
@@ -287,20 +278,11 @@ static bool FindRedir(const CString& fn, CString ct, CAtlList<CString>& fns, CAu
 
     CString dir = fn.Left(max(fn.ReverseFind('/'), fn.ReverseFind('\\')) + 1); // "ReverseFindOneOf"
 
-    POSITION pos = res.GetHeadPosition();
-    while (pos) {
-        CAtlRegExpT* re = res.GetNext(pos);
+    for (const auto re : res) {
+        std::wcmatch mc;
 
-        CAtlREMatchContextT mc;
-        const CAtlREMatchContextT::RECHAR* s = (LPCTSTR)body;
-        const CAtlREMatchContextT::RECHAR* e = nullptr;
-        for (; s && re->Match(s, &mc, &e); s = e) {
-            const CAtlREMatchContextT::RECHAR* szStart = 0;
-            const CAtlREMatchContextT::RECHAR* szEnd = 0;
-            mc.GetMatch(0, &szStart, &szEnd);
-
-            CString fn2;
-            fn2.Format(_T("%.*s"), szEnd - szStart, szStart);
+        for (LPCTSTR s = body; std::regex_search(s, mc, re); s += mc.position() + mc.length()) {
+            CString fn2 = mc[mc.size() - 1].str().c_str();
             fn2.Trim();
 
             if (!fn2.CompareNoCase(_T("asf path"))) {
@@ -526,39 +508,26 @@ CStringA GetContentType(CString fn, CAtlList<CString>* redir)
     }
 
     if (redir && !ct.IsEmpty()) {
-        CAutoPtrList<CAtlRegExpT> res;
-        CAutoPtr<CAtlRegExpT> re;
+        std::vector<std::wregex> res;
+        const std::wregex::flag_type reFlags = std::wregex::icase | std::wregex::optimize;
 
         if (ct == _T("video/x-ms-asf")) {
             // ...://..."/>
-            re.Attach(DEBUG_NEW CAtlRegExpT());
-            if (re && REPARSE_ERROR_OK == re->Parse(_T("{[a-zA-Z]+://[^\n\">]*}"), FALSE)) {
-                res.AddTail(re);
-            }
+            res.emplace_back(_T("[a-zA-Z]+://[^\n\">]*"), reFlags);
             // Ref#n= ...://...\n
-            re.Attach(DEBUG_NEW CAtlRegExpT());
-            if (re && REPARSE_ERROR_OK == re->Parse(_T("Ref\\z\\b*=\\b*[\"]*{[a-zA-Z]+://[^\n\"]+}"), FALSE)) {
-                res.AddTail(re);
-            }
+            res.emplace_back(_T("Ref\\d+\\s*=\\s*[\"]*([a-zA-Z]+://[^\n\"]+)"), reFlags);
         } else if (ct == _T("audio/x-scpls") || ct == _T("audio/scpls")) {
             // File1=...\n
-            re.Attach(DEBUG_NEW CAtlRegExp<>());
-            if (re && REPARSE_ERROR_OK == re->Parse(_T("file\\z\\b*=\\b*[\"]*{[^\n\"]+}"), FALSE)) {
-                res.AddTail(re);
-            }
+            res.emplace_back(_T("file\\d+\\s*=\\s*[\"]*([^\n\"]+)"), reFlags);
         } else if (ct == _T("audio/x-mpegurl") || ct == _T("audio/mpegurl")) {
             // #comment
             // ...
-            re.Attach(DEBUG_NEW CAtlRegExp<>());
-            if (re && REPARSE_ERROR_OK == re->Parse(_T("{[^#][^\n]+}"), FALSE)) {
-                res.AddTail(re);
-            }
+            res.emplace_back(_T("[^#][^\n]+"), reFlags);
         } else if (ct == _T("audio/x-pn-realaudio")) {
             // rtsp://...
-            re.Attach(DEBUG_NEW CAtlRegExp<>());
-            if (re && REPARSE_ERROR_OK == re->Parse(_T("{rtsp://[^\n]+}"), FALSE)) {
-                res.AddTail(re);
-            }
+            res.emplace_back(_T("rtsp://[^\n]+"), reFlags);
+            // http://...
+            res.emplace_back(_T("http://[^\n]+"), reFlags);
         }
 
         if (!body.IsEmpty()) {
@@ -716,19 +685,17 @@ BOOL CMPlayerCApp::PumpMessage()
 
 void CMPlayerCApp::ShowCmdlnSwitches() const
 {
-    CString s;
+    CString cmdLine;
 
-    if (m_s->nCLSwitches & CLSW_UNRECOGNIZEDSWITCH) {
-        CAtlList<CString> sl;
-        for (int i = 0; i < __argc; i++) {
-            sl.AddTail(__targv[i]);
+    if ((m_s->nCLSwitches & CLSW_UNRECOGNIZEDSWITCH) && __argc > 0) {
+        cmdLine = __targv[0];
+        for (int i = 1; i < __argc; i++) {
+            cmdLine.AppendFormat(_T(" %s"), __targv[i]);
         }
-        s += ResStr(IDS_UNKNOWN_SWITCH) + Implode(sl, ' ') + _T("\n\n");
     }
 
-    s += ResStr(IDS_USAGE);
-
-    AfxMessageBox(s, MB_ICONINFORMATION | MB_OK);
+    CmdLineHelpDlg dlg(cmdLine);
+    dlg.DoModal();
 }
 
 CMPlayerCApp theApp; // The one and only CMPlayerCApp object
@@ -774,20 +741,27 @@ bool CMPlayerCApp::IsIniValid() const
 
 bool CMPlayerCApp::GetAppSavePath(CString& path)
 {
-    path.Empty();
-
     if (IsIniValid()) { // If settings ini file found, store stuff in the same folder as the exe file
         path = GetProgramPath();
     } else {
-        HRESULT hr = SHGetFolderPath(nullptr, CSIDL_APPDATA, nullptr, 0, path.GetBuffer(MAX_PATH));
-        path.ReleaseBuffer();
-        if (FAILED(hr)) {
-            return false;
-        }
-        CPath p;
-        p.Combine(path, _T("MPC-HC"));
-        path = (LPCTSTR)p;
+        return GetAppDataPath(path);
     }
+
+    return true;
+}
+
+bool CMPlayerCApp::GetAppDataPath(CString& path)
+{
+    path.Empty();
+
+    HRESULT hr = SHGetFolderPath(nullptr, CSIDL_APPDATA, nullptr, 0, path.GetBuffer(MAX_PATH));
+    path.ReleaseBuffer();
+    if (FAILED(hr)) {
+        return false;
+    }
+    CPath p;
+    p.Combine(path, _T("MPC-HC"));
+    path = (LPCTSTR)p;
 
     return true;
 }
@@ -1802,9 +1776,7 @@ BOOL CMPlayerCApp::InitInstance()
             ULONG ProcessIoPriority = 0x21;
             NTSTATUS NtStatus = NtSetInformationProcess(GetCurrentProcess(), ProcessIoPriority, &IoPriority, sizeof(ULONG));
             TRACE(_T("Set I/O Priority - %d\n"), NtStatus);
-#ifndef _DEBUG
             UNREFERENCED_PARAMETER(NtStatus);
-#endif
         }
     }
 
@@ -2015,6 +1987,8 @@ int CMPlayerCApp::ExitInstance()
     m_s->SaveSettings();
 
     m_s = nullptr;
+
+    CMPCPngImage::CleanUp();
 
     OleUninitialize();
 

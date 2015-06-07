@@ -185,8 +185,6 @@ HRESULT CLibraryStreamPush::FillBuffer(IMediaSample* pSample)
   }
   pSample->SetActualDataLength(size);
 
-  LOG("buffer_pos="<<buffer_pos_);
-
   return S_OK;
 }
 
@@ -201,13 +199,14 @@ HRESULT CLibraryStreamPush::GetMediaType(CMediaType* pmt)
   return NOERROR;
 }
 
-HRESULT CLibraryStreamPush::OnThreadStartPlay()
+
+HRESULT CLibraryStreamPush::OnThreadCreate()
 {
   try
   {
     yami::parameters params;
 
-    params.set_integer("channel", 1);
+    params.set_integer("channel", 11);
     params.set_string("destination", "player");
     params.set_string("endpoint", YC.endpoint());
 
@@ -220,6 +219,27 @@ HRESULT CLibraryStreamPush::OnThreadStartPlay()
       return S_FALSE;
     }
 
+    session_ = message->get_reply().get_integer("session");
+  }
+  catch (const home_system::service_not_found& e)
+  {
+    return S_FALSE;
+  }
+
+  return S_OK;
+}
+
+HRESULT CLibraryStreamPush::OnThreadDestroy()
+{
+  try
+  {
+    yami::parameters params;
+
+    params.set_integer("session", session_);
+
+    auto_ptr<yami::outgoing_message> message(AGENT.send(DISCOVERY.get("tv"), "tv", "delete_client_session", params));
+
+    message->wait_for_completion(1000);
   }
   catch (const home_system::service_not_found& e)
   {

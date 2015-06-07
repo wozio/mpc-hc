@@ -1,5 +1,5 @@
 /*
- * (C) 2008-2013 see Authors.txt
+ * (C) 2008-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -60,7 +60,7 @@ BYTE CHdmvClipInfo::ReadByte()
 {
     BYTE  bVal;
     DWORD dwRead;
-    ReadFile(m_hFile, &bVal, sizeof(bVal), &dwRead, nullptr);
+    VERIFY(ReadFile(m_hFile, &bVal, sizeof(bVal), &dwRead, nullptr));
 
     return bVal;
 }
@@ -68,13 +68,12 @@ BYTE CHdmvClipInfo::ReadByte()
 void CHdmvClipInfo::ReadBuffer(BYTE* pBuff, DWORD nLen)
 {
     DWORD dwRead;
-    ReadFile(m_hFile, pBuff, nLen, &dwRead, nullptr);
+    VERIFY(ReadFile(m_hFile, pBuff, nLen, &dwRead, nullptr));
 }
 
 HRESULT CHdmvClipInfo::ReadProgramInfo()
 {
     BYTE number_of_program_sequences;
-    BYTE number_of_streams_in_ps;
     LARGE_INTEGER Pos;
 
     m_Streams.RemoveAll();
@@ -88,7 +87,7 @@ HRESULT CHdmvClipInfo::ReadProgramInfo()
     for (size_t i = 0; i < number_of_program_sequences; i++) {
         ReadDword();    //SPN_program_sequence_start
         ReadShort();    //program_map_PID
-        number_of_streams_in_ps = (BYTE)ReadByte(); //number_of_streams_in_ps
+        BYTE number_of_streams_in_ps = (BYTE)ReadByte(); //number_of_streams_in_ps
         ReadByte();     //reserved_for_future_use
 
         for (size_t stream_index = 0; stream_index < number_of_streams_in_ps; stream_index++) {
@@ -343,7 +342,6 @@ HRESULT CHdmvClipInfo::ReadChapters(CString strPlaylistFile, CAtlList<CHdmvClipI
         REFERENCE_TIME rtSum = 0;
         int nIndex = 0;
         BYTE Buff[100];
-        bool bDuplicate = false;
 
         POSITION pos = PlaylistItems.GetHeadPosition();
         while (pos) {
@@ -393,7 +391,7 @@ HRESULT CHdmvClipInfo::ReadChapters(CString strPlaylistFile, CAtlList<CHdmvClipI
 
         CloseFile(S_OK);
         SAFE_DELETE_ARRAY(rtOffset);
-        return bDuplicate ? S_FALSE : S_OK;
+        return S_OK;
     }
 
     return AmHresultFromWin32(GetLastError());

@@ -22,7 +22,9 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "../SubPic/ISubPic.h"
+#include "Ellipse.h"
 
 #define PT_MOVETONC         0xfe
 #define PT_BSPLINETO        0xfc
@@ -66,15 +68,23 @@ struct RasterizerNfo {
     }
 };
 
-typedef std::pair<unsigned __int64, unsigned __int64> tSpan;
-typedef std::vector<tSpan> tSpanBuffer;
+using tSpanBuffer = std::vector<std::pair<unsigned __int64, unsigned __int64>>;
 
 struct COutlineData {
     int mWidth, mHeight;
     int mPathOffsetX, mPathOffsetY;
     int mWideBorder;
     tSpanBuffer mOutline, mWideOutline;
+
+    COutlineData()
+        : mWidth(0)
+        , mHeight(0)
+        , mPathOffsetX(0)
+        , mPathOffsetY(0)
+        , mWideBorder(0) {}
 };
+
+typedef std::shared_ptr<COutlineData> COutlineDataSharedPtr;
 
 struct COverlayData {
     int mOffsetX, mOffsetY;
@@ -152,6 +162,8 @@ struct COverlayData {
     }
 };
 
+typedef std::shared_ptr<COverlayData> COverlayDataSharedPtr;
+
 class Rasterizer
 {
     bool fFirstSet;
@@ -161,9 +173,15 @@ protected:
     BYTE* mpPathTypes;
     POINT* mpPathPoints;
     int mPathPoints;
-    bool fSSE2;
+    bool m_bUseSSE2;
 
 private:
+    enum {
+        LINE_DOWN,
+        LINE_UP
+    };
+
+
     struct Edge {
         int next;
         int posandflag;
@@ -174,17 +192,20 @@ private:
     unsigned int* mpScanBuffer;
 
 protected:
-    COutlineData m_outlineData;
-    COverlayData m_overlayData;
+    CEllipseSharedPtr m_pEllipse;
+    COutlineDataSharedPtr m_pOutlineData;
+    COverlayDataSharedPtr m_pOverlayData;
 
 private:
     void _TrashPath();
-    void _TrashOverlay();
-    void _ReallocEdgeBuffer(int edges);
+    void _ReallocEdgeBuffer(unsigned int edges);
     void _EvaluateBezier(int ptbase, bool fBSpline);
     void _EvaluateLine(int pt1idx, int pt2idx);
     void _EvaluateLine(int x0, int y0, int x1, int y1);
+    // The following function is templated and forcingly inlined for performance sake
+    template<int flag> __forceinline void _EvaluateLine(int x0, int y0, int x1, int y1);
     static void _OverlapRegion(tSpanBuffer& dst, const tSpanBuffer& src, int dx, int dy);
+    void CreateWidenedRegionFast(int borderX, int borderY);
     // helpers
     void Draw_noAlpha_spFF_Body_0(RasterizerNfo& rnfo);
     void Draw_noAlpha_spFF_noBody_0(RasterizerNfo& rnfo);
@@ -213,7 +234,6 @@ public:
     bool PartialEndPath(HDC hdc, long dx, long dy);
     bool ScanConvert();
     bool CreateWidenedRegion(int borderX, int borderY);
-    void DeleteOutlines();
     bool Rasterize(int xsub, int ysub, int fBlur, double fGaussianBlur);
     int getOverlayWidth();
 

@@ -90,7 +90,6 @@ STDMETHODIMP CVMR9AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
 {
     CheckPointer(ppRenderer, E_POINTER);
     *ppRenderer = nullptr;
-    HRESULT hr;
 
     CMacrovisionKicker* pMK = DEBUG_NEW CMacrovisionKicker(NAME("CMacrovisionKicker"), nullptr);
     CComPtr<IUnknown> pUnk = (IUnknown*)(INonDelegatingUnknown*)pMK;
@@ -116,7 +115,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
     const CRenderersSettings& r = GetRenderersSettings();
 
     if (r.fVMR9MixerMode) {
-        if (FAILED(hr = pConfig->SetNumberOfStreams(1))) {
+        if (FAILED(pConfig->SetNumberOfStreams(1))) {
             return E_FAIL;
         }
 
@@ -135,7 +134,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
         }
     }
 
-    if (FAILED(hr = pConfig->SetRenderingMode(VMR9Mode_Renderless))) {
+    if (FAILED(pConfig->SetRenderingMode(VMR9Mode_Renderless))) {
         return E_FAIL;
     }
 
@@ -144,8 +143,8 @@ STDMETHODIMP CVMR9AllocatorPresenter::CreateRenderer(IUnknown** ppRenderer)
         return E_FAIL;
     }
 
-    if (FAILED(hr = pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator9*>(this)))
-            || FAILED(hr = AdviseNotify(pSAN))) {
+    if (FAILED(pSAN->AdviseSurfaceAllocator(MY_USER_ID, static_cast<IVMRSurfaceAllocator9*>(this)))
+            || FAILED(AdviseNotify(pSAN))) {
         return E_FAIL;
     }
 
@@ -248,9 +247,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::TerminateDevice(DWORD_PTR dwUserID)
 
 STDMETHODIMP CVMR9AllocatorPresenter::GetSurface(DWORD_PTR dwUserID, DWORD SurfaceIndex, DWORD SurfaceFlags, IDirect3DSurface9** lplpSurface)
 {
-    if (!lplpSurface) {
-        return E_POINTER;
-    }
+    CheckPointer(lplpSurface, E_POINTER);
 
     CAutoLock cAutoLock(this);
     CAutoLock cRenderLock(&m_RenderLock);
@@ -324,14 +321,18 @@ STDMETHODIMP CVMR9AllocatorPresenter::StartPresenting(DWORD_PTR dwUserID)
     CComPtr<IPin> pPin;
     if (SUCCEEDED(m_pIVMRSurfAllocNotify->QueryInterface(IID_PPV_ARGS(&pVMR9))) &&
             SUCCEEDED(pVMR9->FindPin(L"VMR Input0", &pPin))) {
-        pPin->ConnectionMediaType(&m_InputMediaType);
+        VERIFY(SUCCEEDED(pPin->ConnectionMediaType(&m_inputMediaType)));
     }
+
+    m_bIsRendering = true;
 
     return m_pD3DDev ? S_OK : E_FAIL;
 }
 
 STDMETHODIMP CVMR9AllocatorPresenter::StopPresenting(DWORD_PTR dwUserID)
 {
+    m_bIsRendering = false;
+
     return S_OK;
 }
 
@@ -351,8 +352,8 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
                 SUCCEEDED(pPin->ConnectionMediaType(&mt))) {
             ExtractAvgTimePerFrame(&mt, m_rtTimePerFrame);
 
-            CSize NativeVideoSize = m_NativeVideoSize;
-            CSize AspectRatio = m_AspectRatio;
+            CSize NativeVideoSize = m_nativeVideoSize;
+            CSize AspectRatio = m_aspectRatio;
             if (mt.formattype == FORMAT_VideoInfo || mt.formattype == FORMAT_MPEGVideo) {
                 VIDEOINFOHEADER* vh = (VIDEOINFOHEADER*)mt.pbFormat;
 
@@ -388,7 +389,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
                     NativeVideoSize.cy = vh->rcSource.bottom - vh->rcSource.top;
                 }
             }
-            if (m_NativeVideoSize != NativeVideoSize || m_AspectRatio != AspectRatio) {
+            if (m_nativeVideoSize != NativeVideoSize || m_aspectRatio != AspectRatio) {
                 SetVideoSize(NativeVideoSize, AspectRatio);
                 AfxGetApp()->m_pMainWnd->PostMessage(WM_REARRANGERENDERLESS);
             }
@@ -428,7 +429,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
         VideoSize.cx = VideoSize.cy * arx / ary;
     }
     if (VideoSize != GetVideoSize()) {
-        SetVideoSize(m_NativeVideoSize, CSize(arx, ary));
+        SetVideoSize(m_nativeVideoSize, CSize(arx, ary));
         AfxGetApp()->m_pMainWnd->PostMessage(WM_REARRANGERENDERLESS);
     }
 
@@ -452,14 +453,14 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
             rcTearing.left = m_nTearingPos;
             rcTearing.top = 0;
             rcTearing.right = rcTearing.left + 4;
-            rcTearing.bottom = m_NativeVideoSize.cy;
+            rcTearing.bottom = m_nativeVideoSize.cy;
             m_pD3DDev->ColorFill(m_pVideoSurface[m_nCurSurface], &rcTearing, D3DCOLOR_ARGB(255, 255, 0, 0));
 
-            rcTearing.left  = (rcTearing.right + 15) % m_NativeVideoSize.cx;
+            rcTearing.left  = (rcTearing.right + 15) % m_nativeVideoSize.cx;
             rcTearing.right = rcTearing.left + 4;
             m_pD3DDev->ColorFill(m_pVideoSurface[m_nCurSurface], &rcTearing, D3DCOLOR_ARGB(255, 255, 0, 0));
 
-            m_nTearingPos = (m_nTearingPos + 7) % m_NativeVideoSize.cx;
+            m_nTearingPos = (m_nTearingPos + 7) % m_nativeVideoSize.cx;
         }
     }
 
@@ -477,16 +478,16 @@ STDMETHODIMP CVMR9AllocatorPresenter::PresentImage(DWORD_PTR dwUserID, VMR9Prese
 STDMETHODIMP CVMR9AllocatorPresenter::GetNativeVideoSize(LONG* lpWidth, LONG* lpHeight, LONG* lpARWidth, LONG* lpARHeight)
 {
     if (lpWidth) {
-        *lpWidth = m_NativeVideoSize.cx;
+        *lpWidth = m_nativeVideoSize.cx;
     }
     if (lpHeight) {
-        *lpHeight = m_NativeVideoSize.cy;
+        *lpHeight = m_nativeVideoSize.cy;
     }
     if (lpARWidth) {
-        *lpARWidth = m_AspectRatio.cx;
+        *lpARWidth = m_aspectRatio.cx;
     }
     if (lpARHeight) {
-        *lpARHeight = m_AspectRatio.cy;
+        *lpARHeight = m_aspectRatio.cy;
     }
     return S_OK;
 }
@@ -509,7 +510,7 @@ STDMETHODIMP CVMR9AllocatorPresenter::SetVideoPosition(const LPRECT lpSRCRect, c
 STDMETHODIMP CVMR9AllocatorPresenter::GetVideoPosition(LPRECT lpSRCRect, LPRECT lpDSTRect)
 {
     CopyRect(lpSRCRect, CRect(CPoint(0, 0), GetVisibleVideoSize()));
-    CopyRect(lpDSTRect, &m_VideoRect);
+    CopyRect(lpDSTRect, &m_videoRect);
     return S_OK;
 }
 

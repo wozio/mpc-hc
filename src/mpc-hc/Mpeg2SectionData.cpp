@@ -1,5 +1,5 @@
 /*
- * (C) 2009-2013 see Authors.txt
+ * (C) 2009-2014 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -31,7 +31,7 @@
 #define BeginEnumDescriptors(gb, nType, nLength)                    \
 {                                                                   \
     BYTE DescBuffer[256];                                           \
-    int nLimit = (int)gb.BitRead(12) + gb.GetPos();                 \
+    size_t nLimit = (size_t)gb.BitRead(12) + gb.GetPos();           \
     while (gb.GetPos() < nLimit) {                                  \
         MPEG2_DESCRIPTOR nType = (MPEG2_DESCRIPTOR)gb.BitRead(8);   \
         WORD nLength = (WORD)gb.BitRead(8);
@@ -642,8 +642,8 @@ HRESULT CMpeg2DataParser::ParseEIT(ULONG ulSID, EventDescriptor& NowNext)
                                     IDS_CONTENT_MUSIC_BALLET_DANCE,
                                     IDS_CONTENT_MUSIC_ART_CULTURE,
                                     IDS_CONTENT_SOCIAL_POLITICAL_ECO,
+                                    IDS_CONTENT_EDUCATION_SCIENCE,
                                     IDS_CONTENT_LEISURE
-
                                 };
 
                                 NowNext.content.Append(ResStr(contents[content - 1]));
@@ -684,7 +684,6 @@ HRESULT CMpeg2DataParser::ParseNIT()
     PSECTION data;
     WORD wTSID;
     WORD wSectionLength;
-    WORD transport_stream_loop_length;
 
     CheckNoLog(m_pData->GetSection(PID_NIT, SI_NIT, &m_Filter, 15000, &pSectionList));
     CheckNoLog(pSectionList->GetSectionData(0, &dwLength, &data));
@@ -701,7 +700,7 @@ HRESULT CMpeg2DataParser::ParseNIT()
     EndEnumDescriptors;
 
     gb.BitRead(4);                                              // reserved_future_use
-    transport_stream_loop_length = (WORD)gb.BitRead(12);        // network_descriptors_length
+    gb.BitRead(12);                                             // network_descriptors_length
     while (gb.GetSize() - gb.GetPos() > 4) {
         WORD transport_stream_id = (WORD)gb.BitRead(16);        // transport_stream_id
         UNREFERENCED_PARAMETER(transport_stream_id);

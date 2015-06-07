@@ -73,6 +73,12 @@ CSizingControlBar::CSizingControlBar()
     m_bDragShowContent = FALSE;
     m_nDockBarID = 0;
     m_dwSCBStyle = 0;
+    m_htEdge = 0;
+    m_nTrackPosMin = 0;
+    m_nTrackPosMax = 0;
+    m_nTrackPosOld = 0;
+    m_nTrackEdgeOfs = 0;
+    m_bFixedFloat = FALSE;
 }
 
 CSizingControlBar::~CSizingControlBar()
@@ -1021,7 +1027,7 @@ BOOL CSizingControlBar::NegotiateSpace(int nLengthTotal, BOOL bHorz)
                 continue;
 
             // sign of nDelta
-            int nDelta2 = (nDelta == 0) ? 0 : ((nDelta < 0) ? -1 : 1);
+            int nDelta2 = (nDelta < 0) ? -1 : 1;
 
             (bHorz ? pBar->m_szHorz.cx : pBar->m_szVert.cy) += nDelta2;
             nDelta -= nDelta2;

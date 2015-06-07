@@ -382,7 +382,7 @@ CStreamSwitcherInputPin::CStreamSwitcherInputPin(CStreamSwitcherFilter* pFilter,
     , m_fCanBlock(false)
     , m_hNotifyEvent(nullptr)
 {
-    m_bCanReconnectWhenActive = TRUE;
+    m_bCanReconnectWhenActive = true;
 }
 
 class __declspec(uuid("138130AF-A79B-45D5-B4AA-87697457BA87"))
@@ -505,7 +505,7 @@ HRESULT CStreamSwitcherInputPin::InitializeOutputSample(IMediaSample* pInSample,
         OutProps.tStop  = m_SampleProps.tStop;
         OutProps.cbData = FIELD_OFFSET(AM_SAMPLE2_PROPERTIES, dwStreamId);
 
-        hr = pOutSample2->SetProperties(FIELD_OFFSET(AM_SAMPLE2_PROPERTIES, dwStreamId), (PBYTE)&OutProps);
+        pOutSample2->SetProperties(FIELD_OFFSET(AM_SAMPLE2_PROPERTIES, dwStreamId), (PBYTE)&OutProps);
         if (m_SampleProps.dwSampleFlags & AM_SAMPLE_DATADISCONTINUITY) {
             m_bSampleSkipped = FALSE;
         }
@@ -835,8 +835,8 @@ STDMETHODIMP CStreamSwitcherInputPin::Receive(IMediaSample* pSample)
     //
 
     ALLOCATOR_PROPERTIES props, actual;
-    hr = m_pAllocator->GetProperties(&props);
-    hr = pOut->CurrentAllocator()->GetProperties(&actual);
+    m_pAllocator->GetProperties(&props);
+    pOut->CurrentAllocator()->GetProperties(&actual);
 
     REFERENCE_TIME rtStart = 0, rtStop = 0;
     if (S_OK == pSample->GetTime(&rtStart, &rtStop)) {
@@ -855,19 +855,6 @@ STDMETHODIMP CStreamSwitcherInputPin::Receive(IMediaSample* pSample)
 
         m_SampleProps.dwSampleFlags |= AM_SAMPLE_TYPECHANGED/*|AM_SAMPLE_DATADISCONTINUITY|AM_SAMPLE_TIMEDISCONTINUITY*/;
 
-        /*
-                if (CComQIPtr<IPinConnection> pPC = pOut->CurrentPinConnection())
-                {
-                    HANDLE hEOS = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-                    hr = pPC->NotifyEndOfStream(hEOS);
-                    hr = pOut->DeliverEndOfStream();
-                    WaitForSingleObject(hEOS, 3000);
-                    CloseHandle(hEOS);
-                    hr = pOut->DeliverBeginFlush();
-                    hr = pOut->DeliverEndFlush();
-                }
-        */
-
         if (props.cBuffers < 8 && mtOut.majortype == MEDIATYPE_Audio) {
             props.cBuffers = 8;
         }
@@ -878,11 +865,11 @@ STDMETHODIMP CStreamSwitcherInputPin::Receive(IMediaSample* pSample)
                 || actual.cbPrefix != props.cbPrefix
                 || actual.cBuffers < props.cBuffers
                 || actual.cbBuffer < props.cbBuffer) {
-            hr = pOut->DeliverBeginFlush();
-            hr = pOut->DeliverEndFlush();
-            hr = pOut->CurrentAllocator()->Decommit();
-            hr = pOut->CurrentAllocator()->SetProperties(&props, &actual);
-            hr = pOut->CurrentAllocator()->Commit();
+            pOut->DeliverBeginFlush();
+            pOut->DeliverEndFlush();
+            pOut->CurrentAllocator()->Decommit();
+            pOut->CurrentAllocator()->SetProperties(&props, &actual);
+            pOut->CurrentAllocator()->Commit();
         }
     }
 
@@ -909,17 +896,9 @@ STDMETHODIMP CStreamSwitcherInputPin::Receive(IMediaSample* pSample)
 
     hr = (static_cast<CStreamSwitcherFilter*>(m_pFilter))->Transform(pSample, pOutSample);
 
-    //
-
     if (S_OK == hr) {
         hr = pOut->Deliver(pOutSample);
         m_bSampleSkipped = FALSE;
-        /*
-                if (FAILED(hr))
-                {
-                    ASSERT(0);
-                }
-        */
     } else if (S_FALSE == hr) {
         hr = S_OK;
         pOutSample = nullptr;
@@ -959,7 +938,7 @@ STDMETHODIMP CStreamSwitcherInputPin::NewSegment(REFERENCE_TIME tStart, REFERENC
 CStreamSwitcherOutputPin::CStreamSwitcherOutputPin(CStreamSwitcherFilter* pFilter, HRESULT* phr)
     : CBaseOutputPin(NAME("CStreamSwitcherOutputPin"), pFilter, &pFilter->m_csState, phr, L"Out")
 {
-    //  m_bCanReconnectWhenActive = TRUE;
+    //  m_bCanReconnectWhenActive = true;
 }
 
 STDMETHODIMP CStreamSwitcherOutputPin::NonDelegatingQueryInterface(REFIID riid, void** ppv)
@@ -1319,7 +1298,7 @@ HRESULT CStreamSwitcherFilter::CompleteConnect(PIN_DIRECTION dir, CBasePin* pPin
 
         if ((size_t)nConnected == m_pInputs.GetCount()) {
             CStringW name;
-            name.Format(L"Channel %d", ++m_PinVersion);
+            name.Format(L"Channel %ld", ++m_PinVersion);
 
             HRESULT hr = S_OK;
             CStreamSwitcherInputPin* pPin = DEBUG_NEW CStreamSwitcherInputPin(this, &hr, name);
@@ -1424,9 +1403,7 @@ HRESULT CStreamSwitcherFilter::DeliverNewSegment(REFERENCE_TIME tStart, REFERENC
 
 STDMETHODIMP CStreamSwitcherFilter::Count(DWORD* pcStreams)
 {
-    if (!pcStreams) {
-        return E_POINTER;
-    }
+    CheckPointer(pcStreams, E_POINTER);
 
     CAutoLock cAutoLock(&m_csPins);
 
@@ -1481,7 +1458,7 @@ STDMETHODIMP CStreamSwitcherFilter::Info(long lIndex, AM_MEDIA_TYPE** ppmt, DWOR
                         AM_MEDIA_TYPE* pmt = nullptr;
                         DWORD dwFlags;
                         LPWSTR pszName = nullptr;
-                        hr = pSSF->Info(i, &pmt, &dwFlags, plcid, NULL, &pszName, nullptr, nullptr);
+                        hr = pSSF->Info(i, &pmt, &dwFlags, plcid, nullptr, &pszName, nullptr, nullptr);
                         if (SUCCEEDED(hr) && pmt && pmt->majortype == MEDIATYPE_Audio) {
                             if (lIndex == 0) {
                                 bFound = true;
@@ -1587,7 +1564,7 @@ STDMETHODIMP CStreamSwitcherFilter::Enable(long lIndex, DWORD dwFlags)
                 if (SUCCEEDED(hr)) {
                     for (i = 0; i < (int)cStreams; i++) {
                         AM_MEDIA_TYPE* pmt = nullptr;
-                        hr = pSSF->Info(i, &pmt, nullptr, nullptr, NULL, nullptr, nullptr, nullptr);
+                        hr = pSSF->Info(i, &pmt, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
                         if (SUCCEEDED(hr) && pmt && pmt->majortype == MEDIATYPE_Audio) {
                             if (lIndex == 0) {
                                 bFound = true;
