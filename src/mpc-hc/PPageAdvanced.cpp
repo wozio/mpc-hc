@@ -1,5 +1,5 @@
 /*
-* (C) 2014 see Authors.txt
+* (C) 2014-2015 see Authors.txt
 *
 * This file is part of MPC-HC.
 *
@@ -22,6 +22,7 @@
 #include <strsafe.h>
 #include "PPageAdvanced.h"
 #include "mplayerc.h"
+#include "MainFrm.h"
 #include "SettingsDefines.h"
 
 CPPageAdvanced::CPPageAdvanced()
@@ -63,6 +64,9 @@ BOOL CPPageAdvanced::OnInitDialog()
     GetDlgItem(IDC_RADIO2)->ShowWindow(SW_HIDE);
     GetDlgItem(IDC_BUTTON1)->ShowWindow(SW_HIDE);
 
+    GetDlgItemText(IDC_RADIO1, m_strTrue);
+    GetDlgItemText(IDC_RADIO2, m_strFalse);
+
     InitSettings();
 
     for (int i = 0; i < m_list.GetHeaderCtrl()->GetItemCount(); ++i) {
@@ -79,7 +83,7 @@ void CPPageAdvanced::InitSettings()
     auto addBoolItem = [this](int nItem, CString name, bool defaultValue, bool & settingReference, CString toolTipText) {
         auto pItem = std::make_shared<SettingsBool>(name, defaultValue, settingReference, toolTipText);
         int iItem = m_list.InsertItem(nItem, pItem->GetName());
-        m_list.SetItemText(iItem, COL_VALUE, (pItem->GetValue() ? _T("true") : _T("false")));
+        m_list.SetItemText(iItem, COL_VALUE, (pItem->GetValue() ? m_strTrue : m_strFalse));
         m_list.SetItemData(iItem, nItem);
         m_hiddenOptions[static_cast<ADVANCED_SETTINGS>(nItem)] = pItem;
     };
@@ -124,6 +128,7 @@ void CPPageAdvanced::InitSettings()
     addIntItem(FILE_POS_LONGER, IDS_RS_FILEPOSLONGER, 0, s.iRememberPosForLongerThan, std::make_pair(0, INT_MAX), ResStr(IDS_PPAGEADVANCED_FILE_POS_LONGER));
     addBoolItem(FILE_POS_AUDIO, IDS_RS_FILEPOSAUDIO, true, s.bRememberPosForAudioFiles, ResStr(IDS_PPAGEADVANCED_FILE_POS_AUDIO));
     addIntItem(COVER_SIZE_LIMIT, IDS_RS_COVER_ART_SIZE_LIMIT, 600, s.nCoverArtSizeLimit, std::make_pair(0, INT_MAX), ResStr(IDS_PPAGEADVANCED_COVER_SIZE_LIMIT));
+    addBoolItem(LOGGING, IDS_RS_LOGGING, false, s.bEnableLogging, ResStr(IDS_PPAGEADVANCED_LOGGER));
 }
 
 BOOL CPPageAdvanced::OnApply()
@@ -139,6 +144,11 @@ BOOL CPPageAdvanced::OnApply()
     s.MRUDub.SetSize(s.iRecentFilesNumber);
     s.filePositions.SetMaxSize(s.iRecentFilesNumber);
     s.dvdPositions.SetMaxSize(s.iRecentFilesNumber);
+
+    // There is no main frame when the option dialog is displayed stand-alone
+    if (CMainFrame* pMainFrame = AfxGetMainFrame()) {
+        pMainFrame->UpdateControlState(CMainFrame::UPDATE_CONTROLS_VISIBILITY);
+    }
 
     return __super::OnApply();
 }
@@ -174,7 +184,7 @@ void CPPageAdvanced::OnBnClickedDefaultButton()
         pItem->ResetDefault();
 
         if (auto pItemBool = std::dynamic_pointer_cast<SettingsBool>(pItem)) {
-            str = pItemBool->GetValue() ? _T("true") : _T("false");
+            str = pItemBool->GetValue() ? m_strTrue : m_strFalse;
             SetDlgItemText(IDC_EDIT1, str);
             if (pItemBool->GetValue()) {
                 CheckRadioButton(IDC_RADIO1, IDC_RADIO2, IDC_RADIO1);
@@ -224,8 +234,8 @@ void CPPageAdvanced::OnNMDblclk(NMHDR* pNMHDR, LRESULT* pResult)
         if (auto pItemBool = std::dynamic_pointer_cast<SettingsBool>(pItem)) {
             SetRedraw(FALSE);
             pItemBool->Toggle();
-            CString str = pItemBool->GetValue() ? _T("true") : _T("false");
-            m_list.SetItemText(pNMItemActivate->iItem, COL_VALUE, str);
+            m_list.SetItemText(pNMItemActivate->iItem, COL_VALUE,
+                               pItemBool->GetValue() ? m_strTrue : m_strFalse);
             if (pItemBool->GetValue()) {
                 CheckRadioButton(IDC_RADIO1, IDC_RADIO2, IDC_RADIO1);
             } else {
@@ -333,7 +343,7 @@ void CPPageAdvanced::OnBnClickedRadio1()
         if (auto pItemBool = std::dynamic_pointer_cast<SettingsBool>(pItem)) {
             SetRedraw(FALSE);
             pItemBool->SetValue(true);
-            m_list.SetItemText(iItem, COL_VALUE, _T("true"));
+            m_list.SetItemText(iItem, COL_VALUE, m_strTrue);
             UpdateData(FALSE);
             SetRedraw(TRUE);
             Invalidate();
@@ -352,7 +362,7 @@ void CPPageAdvanced::OnBnClickedRadio2()
         if (auto pItemBool = std::dynamic_pointer_cast<SettingsBool>(pItem)) {
             SetRedraw(FALSE);
             pItemBool->SetValue(false);
-            m_list.SetItemText(iItem, COL_VALUE, _T("false"));
+            m_list.SetItemText(iItem, COL_VALUE, m_strFalse);
             UpdateData(FALSE);
             SetRedraw(TRUE);
             Invalidate();

@@ -1,5 +1,5 @@
 /*
- * (C) 2013-2014 see Authors.txt
+ * (C) 2013-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -50,8 +50,8 @@ void CModelessDialog::OnOK()
 
 CDebugShadersDlg::CDebugShadersDlg()
     : CModelessDialog(IDD)
-    , m_Compiler(nullptr)
     , m_timerOneTime(this, TIMER_ONETIME_START, TIMER_ONETIME_END - TIMER_ONETIME_START + 1)
+    , m_Compiler(nullptr)
 {
     EventRouter::EventSelection receives;
     receives.insert(MpcEvent::SHADER_LIST_CHANGED);
@@ -64,7 +64,7 @@ CDebugShadersDlg::CDebugShadersDlg()
     SetSizeGripVisibility(FALSE);
     SetMinTrackSize(CSize(360, 100));
     AddAnchor(IDC_COMBO1, TOP_LEFT, TOP_RIGHT);
-    AddAnchor(IDC_STATIC, TOP_LEFT, BOTTOM_RIGHT);
+    AddAnchor((UINT)IDC_STATIC, TOP_LEFT, BOTTOM_RIGHT);
     AddAnchor(IDC_EDIT1, TOP_LEFT, BOTTOM_RIGHT);
     AddAnchor(IDC_RADIO1, TOP_RIGHT);
     AddAnchor(IDC_RADIO2, TOP_RIGHT);
@@ -251,7 +251,7 @@ void CDebugShadersDlg::OnRecompileShader()
             }
             CString disasm, msg;
             if (SUCCEEDED(m_Compiler.CompileShaderFromFile(shader.filePath, "main", profile,
-                          D3DXSHADER_DEBUG, nullptr, &disasm, &msg))) {
+                                                           D3DXSHADER_DEBUG, nullptr, &disasm, &msg))) {
                 if (!msg.IsEmpty()) {
                     msg += _T("\n");
                 }

@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -156,7 +156,7 @@ CBasePin* CMatroskaMuxerFilter::GetPin(int n)
         }
     }
 
-    if (n == m_pInputs.GetCount() && m_pOutput) {
+    if (n == (int)m_pInputs.GetCount() && m_pOutput) {
         return m_pOutput;
     }
 
@@ -396,9 +396,9 @@ DWORD CMatroskaMuxerFilter::ThreadProc()
     // TODO
     QWORD voidlen = 100;
     if (rtDur > 0) {
-        voidlen += int(1.0 * rtDur / MAXCLUSTERTIME / 10000 + 0.5) * 20;
+        voidlen += QWORD(1.0 * rtDur / MAXCLUSTERTIME / 10000 + 0.5) * 20;
     } else {
-        voidlen += int(1.0 * 1000 * 60 * 60 * 24 / MAXCLUSTERTIME + 0.5) * 20; // when no duration is known, allocate for 24 hours (~340k)
+        voidlen += QWORD(1.0 * 1000 * 60 * 60 * 24 / MAXCLUSTERTIME + 0.5) * 20; // when no duration is known, allocate for 24 hours (~340k)
     }
     ULONGLONG voidpos = GetStreamPosition(pStream);
     {
@@ -675,15 +675,15 @@ DWORD CMatroskaMuxerFilter::ThreadProc()
                 }
 
                 SetStreamPosition(pStream, voidpos);
-                int len = (int)(voidlen - seek.Size());
+                QWORD len = voidlen - seek.Size();
                 ASSERT(len >= 0 && len != 1);
                 seek.Write(pStream);
 
                 if (len == 0) {
                     // nothing to do
                 } else if (len >= 2) {
-                    for (int i = 0; i < 8; i++) {
-                        if (len >= (1 << i * 7) - 2 && len <= (1 << (i + 1) * 7) - 2) {
+                    for (QWORD i = 0; i < 8; i++) {
+                        if (len >= (QWORD(1) << i * 7) - 2 && len <= (QWORD(1) << (i + 1) * 7) - 2) {
                             Void(len - 2 - i).Write(pStream);
                             break;
                         }
@@ -718,10 +718,10 @@ DWORD CMatroskaMuxerFilter::ThreadProc()
 CMatroskaMuxerInputPin::CMatroskaMuxerInputPin(LPCWSTR pName, CBaseFilter* pFilter, CCritSec* pLock, HRESULT* phr)
     : CBaseInputPin(NAME("CMatroskaMuxerInputPin"), pFilter, pLock, phr, pName)
     , m_fActive(false)
-    , m_fEndOfStreamReceived(false)
-    , m_rtDur(0)
     , m_rtLastStart(0)
     , m_rtLastStop(0)
+    , m_rtDur(0)
+    , m_fEndOfStreamReceived(false)
 {
 }
 
@@ -740,7 +740,7 @@ STDMETHODIMP CMatroskaMuxerInputPin::NonDelegatingQueryInterface(REFIID riid, vo
 HRESULT CMatroskaMuxerInputPin::CheckMediaType(const CMediaType* pmt)
 {
     return pmt->majortype == MEDIATYPE_Video && (pmt->formattype == FORMAT_VideoInfo
-            || pmt->formattype == FORMAT_VideoInfo2)
+                                                 || pmt->formattype == FORMAT_VideoInfo2)
            //       || pmt->majortype == MEDIATYPE_Video && pmt->subtype == MEDIASUBTYPE_MPEG1Payload && pmt->formattype == FORMAT_MPEGVideo
            //       || pmt->majortype == MEDIATYPE_Video && pmt->subtype == MEDIASUBTYPE_MPEG2_VIDEO && pmt->formattype == FORMAT_MPEG2_VIDEO
            || pmt->majortype == MEDIATYPE_Video && pmt->subtype == MEDIASUBTYPE_DiracVideo && pmt->formattype == FORMAT_DiracVideoInfo
@@ -748,11 +748,11 @@ HRESULT CMatroskaMuxerInputPin::CheckMediaType(const CMediaType* pmt)
            || pmt->majortype == MEDIATYPE_Audio && pmt->subtype == MEDIASUBTYPE_Vorbis && pmt->formattype == FORMAT_VorbisFormat
            || pmt->majortype == MEDIATYPE_Audio && pmt->subtype == MEDIASUBTYPE_Vorbis2 && pmt->formattype == FORMAT_VorbisFormat2
            || pmt->majortype == MEDIATYPE_Audio && (pmt->subtype == MEDIASUBTYPE_14_4
-                   || pmt->subtype == MEDIASUBTYPE_28_8
-                   || pmt->subtype == MEDIASUBTYPE_ATRC
-                   || pmt->subtype == MEDIASUBTYPE_COOK
-                   || pmt->subtype == MEDIASUBTYPE_DNET
-                   || pmt->subtype == MEDIASUBTYPE_SIPR) && pmt->formattype == FORMAT_WaveFormatEx
+                                                    || pmt->subtype == MEDIASUBTYPE_28_8
+                                                    || pmt->subtype == MEDIASUBTYPE_ATRC
+                                                    || pmt->subtype == MEDIASUBTYPE_COOK
+                                                    || pmt->subtype == MEDIASUBTYPE_DNET
+                                                    || pmt->subtype == MEDIASUBTYPE_SIPR) && pmt->formattype == FORMAT_WaveFormatEx
            || pmt->majortype == MEDIATYPE_Text && pmt->subtype == MEDIASUBTYPE_NULL && pmt->formattype == FORMAT_None
            || pmt->majortype == MEDIATYPE_Subtitle && pmt->formattype == FORMAT_SubtitleInfo
            ? S_OK
@@ -1105,7 +1105,7 @@ HRESULT CMatroskaMuxerInputPin::CompleteConnect(IPin* pPin)
             *dst++ = 2;
             for (int i = 0; i < 2; i++) {
                 for (int len2 = pvf2->HeaderSize[i]; len2 >= 0; len2 -= 255) {
-                    *dst++ = std::min(len2, 255);
+                    *dst++ = (BYTE)std::min(len2, BYTE_MAX);
                 }
             }
 

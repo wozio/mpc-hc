@@ -1,5 +1,5 @@
 /*
- * (C) 2013-2014 see Authors.txt
+ * (C) 2013-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -36,12 +36,11 @@ public:
 
     virtual ~CMouse();
 
-    static inline bool PointEqualsImprecise(long a, long b) {
-        const unsigned uDelta = 1;
-        return abs(a - b) <= uDelta;
+    static inline bool PointEqualsImprecise(long a, long b, long lDelta) {
+        return abs(a - b) <= abs(lDelta);
     }
-    static inline bool PointEqualsImprecise(const CPoint& a, const CPoint& b) {
-        return PointEqualsImprecise(a.x, b.x) && PointEqualsImprecise(a.y, b.y);
+    static inline bool PointEqualsImprecise(const CPoint& a, const CPoint& b, long xDelta = 1, long yDelta = 1) {
+        return PointEqualsImprecise(a.x, b.x, xDelta) && PointEqualsImprecise(a.y, b.y, yDelta);
     }
 
     static UINT GetMouseFlags();
@@ -53,8 +52,10 @@ public:
 
     CMouse& operator=(const CMouse&) = delete;
 
-private:
+protected:
     const bool m_bD3DFS;
+
+private:
     CMainFrame* m_pMainFrame;
     bool m_bMouseHiderStarted;
     CPoint m_mouseHiderStartScreenPoint;
@@ -157,5 +158,9 @@ private:
 
     virtual CWnd& GetWnd() override final {
         return *this;
+    }
+
+    virtual ULONG GetGestureStatus(CPoint) override {
+        return m_bD3DFS ? TABLET_DISABLE_PRESSANDHOLD : 0;
     }
 };

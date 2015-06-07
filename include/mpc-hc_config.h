@@ -1,6 +1,6 @@
 #ifndef ISPP_INVOKED
 /*
- * (C) 2013 see Authors.txt
+ * (C) 2013-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -31,9 +31,9 @@
 #endif
 #endif
 
-#define WEBSITE_URL  _T("http://mpc-hc.org/")
-#define DOWNLOAD_URL _T("http://mpc-hc.org/downloads/")
-#define UPDATE_URL   _T("http://mpc-hc.org/version.txt")
+#define WEBSITE_URL  _T("https://mpc-hc.org/")
+#define DOWNLOAD_URL _T("https://mpc-hc.org/downloads/")
+#define UPDATE_URL   _T("https://mpc-hc.org/version.txt")
 #define TRAC_URL     _T("https://trac.mpc-hc.org/")
 #define BUGS_URL     _T("https://trac.mpc-hc.org/wiki/How_to_Report_Issues")
 #define TOOLBARS_URL _T("https://trac.mpc-hc.org/wiki/Toolbar_images")
@@ -49,6 +49,9 @@
 
 // If you distribute your builds, please disable minidumps by defining ENABLE_MINIDUMP 0.
 #define ENABLE_MINIDUMP 1
+
+// Minidump is not always enough, by defining ENABLE_MINIDUMP 1 full memory dump will be generated upon crash.
+#define ENABLE_FULLDUMP 0
 
 // If this is enabled, the registered LAV Filters can be loaded as internal filters
 #define ENABLE_LOAD_EXTERNAL_LAVF_AS_INTERNAL 0

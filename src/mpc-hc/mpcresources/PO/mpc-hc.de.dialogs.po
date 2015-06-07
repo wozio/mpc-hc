@@ -4,15 +4,15 @@
 # Translators:
 # Gaugg_Markus, 2014
 # Gaugg_Markus, 2014
-# Luan <luanmail@gmx.net>, 2014
+# Luan <luanmail@gmx.net>, 2014-2015
 # Luan <luanmail@gmx.net>, 2014
 # Luan <luanmail@gmx.net>, 2014
 # M T <michtrz@gmail.com>, 2013-2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-09-19 20:08:04+0000\n"
-"PO-Revision-Date: 2014-10-04 20:00+0000\n"
+"POT-Creation-Date: 2015-05-17 20:47:27+0000\n"
+"PO-Revision-Date: 2015-05-27 18:10+0000\n"
 "Last-Translator: Luan <luanmail@gmx.net>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/mpc-hc/language/de/)\n"
 "MIME-Version: 1.0\n"
@@ -79,7 +79,7 @@ msgstr "&Aufnahme"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_CHECK2"
 msgid "Enable built-in audio switcher filter (requires restart)"
-msgstr "Internen Audio-Umschalter aktivieren (Neustart notwendig)"
+msgstr "Internen Audio-Switcher aktivieren (Neustart erforderlich)"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_CHECK5"
 msgid "Normalize"
@@ -103,7 +103,7 @@ msgstr "Tonverstärkung:"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_CHECK3"
 msgid "Down-sample to 44100 Hz"
-msgstr "Auf 44.100 Hz umrechnen"
+msgstr "Abtastrate auf 44.1 kHz verringern"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_CHECK4"
 msgid "Audio time shift (ms):"
@@ -111,10 +111,10 @@ msgstr "Audioverzögerung (ms):"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_CHECK1"
 msgid "Enable custom channel mapping"
-msgstr "Benutzerdefinierte Kanalzuweisung aktivieren"
+msgstr "Benutzerdefinierte Kanalzuordnung aktivieren"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_STATIC1"
-msgid "Speaker configuration for "
+msgid "Speaker configuration for"
 msgstr "Anzahl der Eingangskanäle:"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_STATIC2"
@@ -122,7 +122,7 @@ msgid "input channels:"
 msgstr " "
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_STATIC3"
-msgid "Hold shift for immediate changes when clicking something "
+msgid "Hold shift for immediate changes when clicking something"
 msgstr "Um Änderungen umgehend zu übernehmen, bei der Auswahl bitte \"Shift\" drücken."
 
 msgctxt "IDD_GOTO_DLG_CAPTION"
@@ -131,7 +131,7 @@ msgstr "Gehe zu"
 
 msgctxt "IDD_GOTO_DLG_IDC_STATIC"
 msgid "Enter a timecode using the format [hh:]mm:ss.ms to jump to a specified time. You do not need to enter the separators explicitly."
-msgstr "Um die Wiedergabe an einer bestimmten Stelle fortzusetzen, bitte einen Zeitcode im Format \"[hh:]mm:ss.ms\" angeben."
+msgstr "Um die Wiedergabe an einer bestimmten Position fortzusetzen, bitte einen Zeitcode im Format \"[hh:]mm:ss.ms\" angeben."
 
 msgctxt "IDD_GOTO_DLG_IDC_STATIC"
 msgid "Time"
@@ -194,8 +194,8 @@ msgid "About"
 msgstr "Über"
 
 msgctxt "IDD_ABOUTBOX_IDC_AUTHORS_LINK"
-msgid "Copyright © 2002-2014 see Authors.txt"
-msgstr "Copyright © 2002-2014 siehe Authors.txt"
+msgid "Copyright © 2002-2015 see Authors.txt"
+msgstr "Copyright © 2002-2015 siehe Authors.txt"
 
 msgctxt "IDD_ABOUTBOX_IDC_STATIC"
 msgid "This program is freeware and released under the GNU General Public License."
@@ -287,7 +287,7 @@ msgstr "Taskleistensymbol anzeigen"
 
 msgctxt "IDD_PPAGEPLAYER_IDC_SHOW_OSD"
 msgid "Show OSD (requires restart)"
-msgstr "OSD anzeigen (Neustart notwendig)"
+msgstr "OSD anzeigen (Neustart erforderlich)"
 
 msgctxt "IDD_PPAGEPLAYER_IDC_CHECK4"
 msgid "Limit window proportions on resize"
@@ -527,7 +527,7 @@ msgstr "ms"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
 msgid "Texture settings (open the video again to see the changes)"
-msgstr "Textur-Einstellungen (Neuladen des Videos notwendig)"
+msgstr "Untertitel-Textur (Neuladen des Videos erforderlich)"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
 msgid "Sub pictures to buffer:"
@@ -563,7 +563,7 @@ msgstr "Untertitelbilder bei verzögerter Warteschlange verwerfen"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
 msgid "Renderer Layout"
-msgstr "Renderer-Layout"
+msgstr "Untertitel-Layout"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_CHECK_SUB_AR_COMPENSATION"
 msgid "Apply aspect ratio compensation for anamorphic videos"
@@ -574,7 +574,7 @@ msgid "Warning"
 msgstr "Hinweis"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
-msgid "If you override and enable full-screen antialiasing somewhere at your videocard's settings, subtitles aren't going to look any better but it will surely eat your cpu."
+msgid "If you override and enable full-screen antialiasing somewhere at your videocard's settings, subtitles aren't going to look any better but it will surely eat your CPU."
 msgstr "Wird hier \"Untertitelposition anpassen\" zusammen mit Vollbild-Antialiasing in den Einstellungen der Grafikkarte aktiviert, bleibt die Bildqualität unverändert. Dabei steigt die CPU-Auslastung aber deutlich an."
 
 msgctxt "IDD_PPAGEFORMATS_IDC_STATIC2"
@@ -686,12 +686,12 @@ msgid "Use Windows 7 Taskbar features"
 msgstr "Windows-Taskbarfunktionen verwenden (ab Windows 7)"
 
 msgctxt "IDD_PPAGETWEAKS_IDC_CHECK7"
-msgid "Open next/previous file in folder on \"Skip back/forward\" when there is only one item in playlist"
-msgstr "Nächste Mediendatei im Ordner bei nur einem Eintrag in der Wiedergabeliste durch\n\"Vorwärts/Rückwärts springen\" öffnen"
+msgid "Open previous/next file in folder on \"Skip back/forward\" when there is only one item in playlist"
+msgstr "Nächste Ordnerdatei bei nur einem Eintrag in der Wiedergabeliste durch \"Vorwärts/Rückwärts springen\" öffnen"
 
 msgctxt "IDD_PPAGETWEAKS_IDC_CHECK8"
-msgid "Use time tooltip:"
-msgstr "Zeit-Tooltip verwenden:"
+msgid "Show time tooltip:"
+msgstr "Zeit-Tooltip anzeigen:"
 
 msgctxt "IDD_PPAGETWEAKS_IDC_STATIC"
 msgid "OSD font:"
@@ -899,7 +899,7 @@ msgstr "Warnung"
 
 msgctxt "IDD_MEDIATYPES_DLG_IDC_STATIC1"
 msgid "MPC-HC could not render some of the pins in the graph, you may not have the needed codecs or filters installed on the system."
-msgstr "Einige Filtergraphen-Pins konnten nicht verbunden werden. Möglicherweise sind notwendige Codecs oder Filter nicht installiert."
+msgstr "Einige Filtergraphen-Pins konnten nicht verbunden werden. Möglicherweise sind die nötigen Codecs oder Filter nicht installiert."
 
 msgctxt "IDD_MEDIATYPES_DLG_IDC_STATIC2"
 msgid "The following pin(s) failed to find a connectable filter:"
@@ -1282,7 +1282,7 @@ msgid "Enable automatic update check"
 msgstr "Automatische Update-Prüfung aktivieren"
 
 msgctxt "IDD_PPAGEMISC_IDC_STATIC5"
-msgid "Delay between each check:"
+msgid "Check every:"
 msgstr "Tagesintervall:"
 
 msgctxt "IDD_PPAGEMISC_IDC_STATIC6"
@@ -1527,15 +1527,15 @@ msgstr "Scan"
 
 msgctxt "IDD_PPAGESUBMISC_IDC_CHECK1"
 msgid "Prefer forced and/or default subtitles tracks"
-msgstr "Vorgegebene Untertitelspuren bevorzugen"
+msgstr "Erzwungene Anzeige und Standardspur bevorzugen"
 
 msgctxt "IDD_PPAGESUBMISC_IDC_CHECK2"
 msgid "Prefer external subtitles over embedded subtitles"
-msgstr "Externe Untertitel bevorzugen"
+msgstr "Untertiteldateien gegenüber eingebetteten Untertiteln bevorzugen"
 
 msgctxt "IDD_PPAGESUBMISC_IDC_CHECK3"
 msgid "Ignore embedded subtitles"
-msgstr "Interne Untertitel nicht verwenden"
+msgstr "Eingebettete Untertitel nicht verwenden"
 
 msgctxt "IDD_PPAGESUBMISC_IDC_STATIC"
 msgid "Autoload paths"
@@ -1647,11 +1647,11 @@ msgstr "Folgende Werte bitte nur bei genauer Kenntnis der jeweiligen Einstellung
 
 msgctxt "IDD_PPAGEADVANCED_IDC_RADIO1"
 msgid "True"
-msgstr "true"
+msgstr "wahr"
 
 msgctxt "IDD_PPAGEADVANCED_IDC_RADIO2"
 msgid "False"
-msgstr "false"
+msgstr "falsch"
 
 msgctxt "IDD_PPAGEADVANCED_IDC_BUTTON1"
 msgid "Default"
@@ -1666,6 +1666,30 @@ msgid "Command line help"
 msgstr "Hilfe für Befehlszeile"
 
 msgctxt "IDD_CMD_LINE_HELP_IDOK"
+msgid "OK"
+msgstr "OK"
+
+msgctxt "IDD_CRASH_REPORTER_CAPTION"
+msgid "Crash reporter"
+msgstr "Fehlerberichterstattung"
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC1"
+msgid "We are sorry, it seems MPC-HC just crashed. :(\n\nTo help us diagnose and fix the problem, a bug report will be sent. You can provide additional information if you want."
+msgstr "MPC-HC leider unerwartet beendet. Zur näheren Bestimmung und Lösung des Problems wurde ein Fehlerbericht zum Versand vorbereitet. Dazu sind weitere Angaben möglich."
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC2"
+msgid "Email:"
+msgstr "E-Mail:"
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC3"
+msgid "Your email address is optional and will only be used if the developers need to contact you for more information."
+msgstr "Die Angabe der E-Mail-Adresse ist optional und dient ausschließlich zur Kontaktaufnahme, falls weitere Informationen erforderlich sind."
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC4"
+msgid "Problem description (use English only):"
+msgstr "Problembeschreibung (englisch):"
+
+msgctxt "IDD_CRASH_REPORTER_IDOK"
 msgid "OK"
 msgstr "OK"
 

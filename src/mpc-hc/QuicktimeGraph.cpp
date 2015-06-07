@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,6 +20,9 @@
  */
 
 #include "stdafx.h"
+
+#ifndef _WIN64
+
 #include <math.h>
 #include "QuicktimeGraph.h"
 #include "IQTVideoSurface.h"
@@ -38,8 +41,8 @@ using namespace QT;
 
 CQuicktimeGraph::CQuicktimeGraph(HWND hWndParent, HRESULT& hr)
     : CBaseGraph()
-    , m_wndDestFrame(this)
     , m_fQtInitialized(false)
+    , m_wndDestFrame(this)
 {
     hr = S_OK;
 
@@ -396,13 +399,13 @@ STDMETHODIMP_(engine_t) CQuicktimeGraph::GetEngine()
 //
 
 CQuicktimeWindow::CQuicktimeWindow(CQuicktimeGraph* pGraph)
-    : m_pGraph(pGraph)
+    : m_offscreenGWorld(nullptr)
+    , m_pGraph(pGraph)
+    , m_fs(State_Stopped)
+    , m_idEndPoller(0)
     , theMovie(nullptr)
     , theMC(nullptr)
     , m_size(0, 0)
-    , m_idEndPoller(0)
-    , m_fs(State_Stopped)
-    , m_offscreenGWorld(nullptr)
 {
 }
 
@@ -506,7 +509,7 @@ bool CQuicktimeWindow::OpenMovie(CString fn)
 
         CHAR buff[MAX_PATH] = {0, 0};
         WideCharToMultiByte(GetACP(), 0, fn, -1, buff + 1, _countof(buff) - 1, 0, 0);
-        buff[0] = strlen(buff + 1);
+        buff[0] = (CHAR)strlen(buff + 1);
 
         // Make a FSSpec with a pascal string filename
         FSSpec sfFile;
@@ -710,3 +713,5 @@ void CQuicktimeWindow::OnTimer(UINT_PTR nIDEvent)
 
     __super::OnTimer(nIDEvent);
 }
+
+#endif

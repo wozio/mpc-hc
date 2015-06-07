@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,12 +25,11 @@
 #include "FGManager.h"
 #include "DSUtil.h"
 #include "FileVersionInfo.h"
-#include "WinAPIUtils.h"
+#include "PathUtils.h"
 #include "../filters/Filters.h"
 #include "AllocatorCommon7.h"
 #include "AllocatorCommon.h"
 #include "SyncAllocatorPresenter.h"
-#include "madVRAllocatorPresenter.h"
 #include "DeinterlacerFilter.h"
 #include "../DeCSS/VobFile.h"
 #include <InitGuid.h>
@@ -42,6 +41,7 @@
 #include <ksproxy.h>
 #include "IPinHook.h"
 #include "moreuuids.h"
+#include <mvrInterfaces.h>
 
 //
 // CFGManager
@@ -208,19 +208,12 @@ HRESULT CFGManager::EnumSourceFilters(LPCWSTR lpcwstrFileName, CFGFilterList& fl
     if (protocol.GetLength() <= 1 || protocol == L"file") {
         hFile = CreateFile(CString(fn), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, (HANDLE)nullptr);
 
-        if (hFile == INVALID_HANDLE_VALUE) {
+        // In case of audio CDs with extra content, the audio tracks
+        // cannot be accessed directly so we have to try opening it
+        if (hFile == INVALID_HANDLE_VALUE && ext != L".cda") {
             return VFW_E_NOT_FOUND;
         }
     }
-
-    // exceptions first
-
-    if (ext == _T(".dvr-ms") || ext == _T(".wtv")) { // doh, this is stupid
-        fl.Insert(LookupFilterRegistry(CLSID_StreamBufferSource, m_override, MERIT64_PREFERRED), 0);
-    }
-
-    TCHAR buff[256];
-    ULONG len;
 
     if (hFile == INVALID_HANDLE_VALUE) {
         // internal / protocol
@@ -272,6 +265,9 @@ HRESULT CFGManager::EnumSourceFilters(LPCWSTR lpcwstrFileName, CFGFilterList& fl
             }
         }
     }
+
+    TCHAR buff[256];
+    ULONG len;
 
     if (hFile == INVALID_HANDLE_VALUE) {
         // protocol
@@ -1480,6 +1476,13 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     }
 #endif
 
+#if INTERNAL_SOURCEFILTER_WTV
+    if (src[SRC_WTV]) {
+        pFGLAVSplitterSource->m_extensions.AddTail(_T(".wtv"));
+        pFGLAVSplitterSource->AddEnabledFormat("wtv");
+    }
+#endif
+
 #if INTERNAL_SOURCEFILTER_MATROSKA
     if (src[SRC_MATROSKA]) {
         pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,4,,1A45DFA3"));
@@ -1536,20 +1539,27 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     }
 #endif
 
-#if INTERNAL_SOURCEFILTER_DTSAC3
-    if (src[SRC_DTSAC3]) {
-        pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,4,,7FFE8001"));                      // DTS
-        pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,4,,fE7f0180"));                      // DTS LE
+#if INTERNAL_SOURCEFILTER_AC3
+    if (src[SRC_AC3]) {
         pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,2,,0B77"));                          // AC3, E-AC3
-        pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,4,,52494646,8,8,,57415645666D7420"));// RIFFxxxxWAVEfmt_ for DTSWAV
         pFGLAVSplitterSource->m_chkbytes.AddTail(_T("4,4,,F8726FBB"));                      // MLP
         pFGLAVSplitterSource->m_extensions.AddTail(_T(".ac3"));
-        pFGLAVSplitterSource->m_extensions.AddTail(_T(".dts"));
         pFGLAVSplitterSource->m_extensions.AddTail(_T(".eac3"));
         pFGLAVSplitterSource->AddEnabledFormat("ac3");
+        pFGLAVSplitterSource->AddEnabledFormat("eac3");
+    }
+#endif
+
+#if INTERNAL_SOURCEFILTER_DTS
+    if (src[SRC_DTS]) {
+        pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,4,,7FFE8001"));                      // DTS
+        pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,4,,fE7f0180"));                      // DTS LE
+        pFGLAVSplitterSource->m_chkbytes.AddTail(_T("0,4,,52494646,8,8,,57415645666D7420"));// RIFFxxxxWAVEfmt_ for DTSWAV
+        pFGLAVSplitterSource->m_extensions.AddTail(_T(".dts"));
+        pFGLAVSplitterSource->m_extensions.AddTail(_T(".dtshd"));
+        pFGLAVSplitterSource->m_extensions.AddTail(_T(".dtsma"));
         pFGLAVSplitterSource->AddEnabledFormat("dts");
         pFGLAVSplitterSource->AddEnabledFormat("dtshd");
-        pFGLAVSplitterSource->AddEnabledFormat("eac3");
     }
 #endif
 
@@ -1686,6 +1696,26 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     }
 #endif
 
+#if INTERNAL_SOURCEFILTER_AC3
+    if (src[SRC_AC3]) {
+        pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_DOLBY_AC3);
+        pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_DOLBY_TRUEHD);
+        pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_DOLBY_DDPLUS);
+        pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_MLP);
+        pFGLAVSplitter->AddEnabledFormat("ac3");
+        pFGLAVSplitter->AddEnabledFormat("eac3");
+    }
+#endif
+
+#if INTERNAL_SOURCEFILTER_DTS
+    if (src[SRC_DTS]) {
+        pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_DTS);
+        pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_DTS_HD);
+        pFGLAVSplitter->AddEnabledFormat("dts");
+        pFGLAVSplitter->AddEnabledFormat("dtshd");
+    }
+#endif
+
 #if INTERNAL_SOURCEFILTER_MPEGAUDIO
     if (src[SRC_MPA]) {
         pFGLAVSplitter->AddType(MEDIATYPE_Stream, MEDIASUBTYPE_MPEG1Audio);
@@ -1783,6 +1813,7 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
     pFGF->AddType(MEDIATYPE_MPEG2_PACK, MEDIASUBTYPE_DTS);
     pFGF->AddType(MEDIATYPE_MPEG2_PES, MEDIASUBTYPE_DTS);
     pFGF->AddType(MEDIATYPE_Audio, MEDIASUBTYPE_DTS);
+    pFGF->AddType(MEDIATYPE_Audio, MEDIASUBTYPE_DTS_HD);
     pFGF->AddType(MEDIATYPE_Audio, MEDIASUBTYPE_WAVE_DTS);
 #endif
 
@@ -1858,6 +1889,7 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
 
 #if INTERNAL_DECODER_PCM
     pFGF = tra[TRA_PCM] ? pFGLAVAudio : pFGLAVAudioLM;
+    pFGF->AddType(MEDIATYPE_Audio, MEDIASUBTYPE_PCM);
     pFGF->AddType(MEDIATYPE_Audio, MEDIASUBTYPE_PCM_NONE);
     pFGF->AddType(MEDIATYPE_Audio, MEDIASUBTYPE_PCM_RAW);
     pFGF->AddType(MEDIATYPE_Audio, MEDIASUBTYPE_PCM_TWOS);
@@ -2195,7 +2227,7 @@ CFGManagerCustom::CFGManagerCustom(LPCTSTR pName, LPUNKNOWN pUnk)
             bOverrideBroadcom = true;
         }
 
-        if (fo->fDisabled || fo->type == FilterOverride::EXTERNAL && !CPath(MakeFullPath(fo->path)).FileExists()) {
+        if (fo->fDisabled || fo->type == FilterOverride::EXTERNAL && !PathUtils::Exists(MakeFullPath(fo->path))) {
             continue;
         }
 
@@ -2264,7 +2296,7 @@ STDMETHODIMP CFGManagerCustom::AddFilter(IBaseFilter* pBF, LPCWSTR pName)
     if (GetCLSID(pBF) == CLSID_DMOWrapperFilter) {
         if (CComQIPtr<IPropertyBag> pPB = pBF) {
             CComVariant var(true);
-            pPB->Write(CComBSTR(L"_HIRESOUTPUT"), &var);
+            pPB->Write(_T("_HIRESOUTPUT"), &var);
         }
     }
 
@@ -2299,7 +2331,7 @@ CFGManagerPlayer::CFGManagerPlayer(LPCTSTR pName, LPUNKNOWN pUnk, HWND hWnd)
         GUID guidsVideo[] = {MEDIATYPE_Video, MEDIASUBTYPE_NULL};
 
         if (SUCCEEDED(m_pFM->EnumMatchingFilters(&pEM, 0, FALSE, MERIT_DO_NOT_USE + 1,
-                      TRUE, 1, guidsVideo, nullptr, nullptr, TRUE, FALSE, 0, nullptr, nullptr, nullptr))) {
+                                                 TRUE, 1, guidsVideo, nullptr, nullptr, TRUE, FALSE, 0, nullptr, nullptr, nullptr))) {
             for (CComPtr<IMoniker> pMoniker; S_OK == pEM->Next(1, &pMoniker, nullptr); pMoniker = nullptr) {
                 CFGFilterRegistry f(pMoniker);
                 // RDP DShow Redirection Filter's merit is so high that it flaws the graph building process so we ignore it.
@@ -2318,7 +2350,7 @@ CFGManagerPlayer::CFGManagerPlayer(LPCTSTR pName, LPUNKNOWN pUnk, HWND hWnd)
         GUID guidsAudio[] = {MEDIATYPE_Audio, MEDIASUBTYPE_NULL};
 
         if (SUCCEEDED(m_pFM->EnumMatchingFilters(&pEM, 0, FALSE, MERIT_DO_NOT_USE + 1,
-                      TRUE, 1, guidsAudio, nullptr, nullptr, TRUE, FALSE, 0, nullptr, nullptr, nullptr))) {
+                                                 TRUE, 1, guidsAudio, nullptr, nullptr, TRUE, FALSE, 0, nullptr, nullptr, nullptr))) {
             for (CComPtr<IMoniker> pMoniker; S_OK == pEM->Next(1, &pMoniker, nullptr); pMoniker = nullptr) {
                 CFGFilterRegistry f(pMoniker);
                 // Use the same RDP DShow Redirection Filter hack with audio, too

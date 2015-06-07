@@ -1,5 +1,5 @@
 /*
- * (C) 2012-2014 see Authors.txt
+ * (C) 2012-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -28,22 +28,14 @@
 #include "FileVersionInfo.h"
 #include "VersionInfo.h"
 #include "SysVersion.h"
-#include "WinAPIUtils.h"
+#include "PathUtils.h"
 #include <afxole.h>
 
-extern "C" char g_Gcc_Compiler[];
 
 /////////////////////////////////////////////////////////////////////////////
 // CAboutDlg dialog used for App About
 
 CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
-    , m_appname(_T(""))
-    , m_strBuildNumber(_T(""))
-    , m_MPCCompiler(_T(""))
-    , m_LAVFilters(_T(""))
-#ifndef MPCHC_LITE
-    , m_LAVFiltersVersion(_T(""))
-#endif
 {
     //{{AFX_DATA_INIT(CAboutDlg)
     //}}AFX_DATA_INIT
@@ -84,9 +76,9 @@ BOOL CAboutDlg::OnInitDialog()
 #endif
 
     // Build the path to Authors.txt
-    m_AuthorsPath = GetProgramPath() + _T("Authors.txt");
+    m_AuthorsPath = PathUtils::CombinePaths(PathUtils::GetProgramPath(), _T("Authors.txt"));
     // Check if the file exists
-    if (FileExists(m_AuthorsPath)) {
+    if (PathUtils::Exists(m_AuthorsPath)) {
         // If it does, we make the filename clickable
         m_credits.Replace(_T("Authors.txt"), _T("<a>Authors.txt</a>"));
     }
@@ -103,7 +95,9 @@ BOOL CAboutDlg::OnInitDialog()
 #endif
 #elif defined(_MSC_VER)
 #if (_MSC_VER == 1800)              // 2013
-#if (_MSC_FULL_VER == 180030723)
+#if (_MSC_FULL_VER == 180031101)
+    m_MPCCompiler = _T("MSVC 2013 Update 4");
+#elif (_MSC_FULL_VER == 180030723)
     m_MPCCompiler = _T("MSVC 2013 Update 3");
 #elif (_MSC_FULL_VER == 180030501)
     m_MPCCompiler = _T("MSVC 2013 Update 2");
@@ -221,7 +215,7 @@ void CAboutDlg::OnCopyToClipboard()
     info += _T("    LAV Splitter:       ") + CFGFilterLAV::GetVersion(CFGFilterLAV::SPLITTER) + _T("\r\n");
     info += _T("    LAV Video:          ") + CFGFilterLAV::GetVersion(CFGFilterLAV::VIDEO_DECODER) + _T("\r\n");
     info += _T("    LAV Audio:          ") + CFGFilterLAV::GetVersion(CFGFilterLAV::AUDIO_DECODER) + _T("\r\n");
-    info += _T("    FFmpeg compiler:    ") + CString(g_Gcc_Compiler) + _T("\r\n\r\n");
+    info += _T("    FFmpeg compiler:    ") + VersionInfo::GetGCCVersion() + _T("\r\n\r\n");
 #endif
     info += _T("Operating system:\r\n");
     info += _T("    Name:               ") + m_OSName + _T("\r\n");

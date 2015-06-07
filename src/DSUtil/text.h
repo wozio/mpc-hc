@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -72,8 +72,8 @@ T ExplodeEsc(T str, CAtlList<T>& sl, SEP sep, size_t limit = 0, SEP esc = _T('\\
             break;
         }
 
-        // Skip this seperator if it is escaped
-        if (str.GetAt(j - 1) == esc) {
+        // Skip this separator if it is escaped
+        if (j > 0 && str.GetAt(j - 1) == esc) {
             // Delete the escape character
             str.Delete(j - 1);
             continue;
@@ -178,4 +178,11 @@ int FindOneOf(const T& str, typename T::PCXSTR pszCharSet, int iStart) throw()
 
     T::PCXSTR psz = T::StrTraits::StringScanSet(str.GetString() + iStart, pszCharSet);
     return ((psz == NULL) ? -1 : int(psz - str.GetString()));
+}
+
+template<typename T>
+CString NumToCString(T num)
+{
+    static_assert(std::numeric_limits<T>::is_specialized, "NumToCString can be used only for numeric types.");
+    return std::to_string(num).c_str();
 }

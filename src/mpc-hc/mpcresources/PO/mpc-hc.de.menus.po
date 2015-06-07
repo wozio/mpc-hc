@@ -4,14 +4,14 @@
 # Translators:
 # JellyFrog, 2014
 # JellyFrog, 2014
-# Luan <luanmail@gmx.net>, 2014
+# Luan <luanmail@gmx.net>, 2014-2015
 # Luan <luanmail@gmx.net>, 2014
 # M T <michtrz@gmail.com>, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-08-19 21:10:25+0000\n"
-"PO-Revision-Date: 2014-09-04 17:40+0000\n"
+"POT-Creation-Date: 2015-05-22 20:53:41+0000\n"
+"PO-Revision-Date: 2015-05-30 10:40+0000\n"
 "Last-Translator: Luan <luanmail@gmx.net>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/mpc-hc/language/de/)\n"
 "MIME-Version: 1.0\n"
@@ -174,15 +174,15 @@ msgstr "&Zoom"
 
 msgctxt "ID_VIEW_ZOOM_50"
 msgid "&50%"
-msgstr "&50%"
+msgstr "&50 %"
 
 msgctxt "ID_VIEW_ZOOM_100"
 msgid "&100%"
-msgstr "&100%"
+msgstr "&100 %"
 
 msgctxt "ID_VIEW_ZOOM_200"
 msgid "&200%"
-msgstr "&200%"
+msgstr "&200 %"
 
 msgctxt "ID_VIEW_ZOOM_AUTOFIT"
 msgid "Auto &Fit"
@@ -200,25 +200,29 @@ msgctxt "ID_VIEW_TEARING_TEST"
 msgid "&Tearing Test"
 msgstr "&Tearing-Test"
 
-msgctxt "ID_VIEW_DISPLAYSTATS"
-msgid "&Display Stats"
+msgctxt "ID_VIEW_DISPLAY_RENDERER_STATS"
+msgid "&Display Statistics"
 msgstr "&Anzeigestatistik"
 
-msgctxt "ID_VIEW_REMAINING_TIME"
-msgid "&Remaining Time"
-msgstr "&Restzeitanzeige"
+msgctxt "ID_VIEW_OSD_DISPLAY_TIME"
+msgid "Display Current T&ime"
+msgstr "&Wiedergabezeit"
+
+msgctxt "ID_VIEW_OSD_SHOW_FILENAME"
+msgid "Show &File Name"
+msgstr "&Namensanzeige"
 
 msgctxt "POPUP"
 msgid "&Output Range"
-msgstr "&EVR-Farbraum"
+msgstr "A&usgabebereich"
 
 msgctxt "ID_VIEW_EVROUTPUTRANGE_0_255"
 msgid "&0 - 255"
-msgstr "0 - 255"
+msgstr "&0 - 255"
 
 msgctxt "ID_VIEW_EVROUTPUTRANGE_16_235"
 msgid "&16 - 235"
-msgstr "16 - 235"
+msgstr "&16 - 235"
 
 msgctxt "POPUP"
 msgid "&Presentation"
@@ -254,7 +258,7 @@ msgstr "&Windows-Desktopgestaltung (Aero) deaktivieren"
 
 msgctxt "ID_VIEW_ENABLEFRAMETIMECORRECTION"
 msgid "Enable Frame Time &Correction"
-msgstr "&Bildzeit-Korrektur"
+msgstr "&Bildzeitkorrektur"
 
 msgctxt "POPUP"
 msgid "&Color Management"
@@ -362,7 +366,7 @@ msgstr "&Auf geleerte GPU warten"
 
 msgctxt "POPUP"
 msgid "R&eset"
-msgstr "Ein&stellungen"
+msgstr "&Einstellungen"
 
 msgctxt "ID_VIEW_RESET_DEFAULT"
 msgid "Reset to &default renderer settings"
@@ -557,15 +561,15 @@ msgid "S&haders"
 msgstr "S&hader"
 
 msgctxt "ID_AUDIOS"
-msgid "&Audio"
+msgid "&Audio Track"
 msgstr "A&udiospur"
 
 msgctxt "ID_SUBTITLES"
-msgid "Su&btitles"
+msgid "Su&btitle Track"
 msgstr "Unter&titelspur"
 
 msgctxt "ID_VIDEO_STREAMS"
-msgid "&Video Stream"
+msgid "&Video Track"
 msgstr "Videos&pur"
 
 msgctxt "POPUP"
@@ -588,33 +592,41 @@ msgctxt "POPUP"
 msgid "Af&ter Playback"
 msgstr "Nach Wieder&gabe"
 
-msgctxt "ID_AFTERPLAYBACK_CLOSE"
+msgctxt "ID_AFTERPLAYBACK_DONOTHING"
+msgid "Do no&thing"
+msgstr "&Keine Aktion"
+
+msgctxt "ID_AFTERPLAYBACK_PLAYNEXT"
+msgid "Play &next file in the folder"
+msgstr "&Nächste Ordnerdatei öffnen"
+
+msgctxt "ID_AFTERPLAYBACK_MONITOROFF"
+msgid "Turn off the &monitor"
+msgstr "B&ildschirm ausschalten"
+
+msgctxt "ID_AFTERPLAYBACK_EXIT"
 msgid "&Exit"
 msgstr "&Programm beenden"
 
 msgctxt "ID_AFTERPLAYBACK_STANDBY"
 msgid "&Stand By"
-msgstr "&Energie sparen (falls verfügbar)"
+msgstr "&Energie sparen"
 
 msgctxt "ID_AFTERPLAYBACK_HIBERNATE"
 msgid "&Hibernate"
-msgstr "&Ruhezustand (falls verfügbar)"
+msgstr "&Ruhezustand"
 
 msgctxt "ID_AFTERPLAYBACK_SHUTDOWN"
 msgid "Shut&down"
-msgstr "&Computer herunterfahren"
+msgstr "Computer &herunterfahren"
 
 msgctxt "ID_AFTERPLAYBACK_LOGOFF"
 msgid "Log &Off"
-msgstr "Benutzer &abmelden"
+msgstr "&Benutzer abmelden"
 
 msgctxt "ID_AFTERPLAYBACK_LOCK"
 msgid "&Lock"
-msgstr "Benutzer &sperren"
-
-msgctxt "ID_AFTERPLAYBACK_MONITOROFF"
-msgid "Turn off the &monitor"
-msgstr "&Bildschirm ausschalten"
+msgstr "Computer &sperren"
 
 msgctxt "POPUP"
 msgid "&Navigate"
@@ -674,7 +686,7 @@ msgstr "&Auf Update prüfen"
 
 msgctxt "ID_HELP_SHOWCOMMANDLINESWITCHES"
 msgid "&Command Line Switches"
-msgstr "Hilfe für &Befehlszeile"
+msgstr "H&ilfe für Befehlszeile"
 
 msgctxt "ID_HELP_TOOLBARIMAGES"
 msgid "Download &Toolbar Images"

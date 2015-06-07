@@ -1,4 +1,4 @@
-; (C) 2009-2014 see Authors.txt
+; (C) 2009-2015 see Authors.txt
 ;
 ; This file is part of MPC-HC.
 ;
@@ -79,6 +79,8 @@
 #if defined(MPCHC_LITE)
   #define bindir        = bindir + " Lite"
 #endif
+
+#define crashreporter_dir = AddBackslash(bindir) + "CrashReporter"
 
 #ifnexist AddBackslash(bindir) + mpchc_exe
   #error Compile MPC-HC first
@@ -163,11 +165,13 @@ Name: be;    MessagesFile: Languages\Belarusian.isl
 Name: bn;    MessagesFile: Languages\Bengali.islu
 Name: ca;    MessagesFile: compiler:Languages\Catalan.isl
 Name: cs;    MessagesFile: compiler:Languages\Czech.isl
+Name: da;    MessagesFile: compiler:Languages\Danish.isl
 Name: de;    MessagesFile: compiler:Languages\German.isl
 Name: el;    MessagesFile: compiler:Languages\Greek.isl
 Name: en_GB; MessagesFile: Languages\EnglishBritish.isl
 Name: es;    MessagesFile: compiler:Languages\Spanish.isl
 Name: eu;    MessagesFile: Languages\Basque.isl
+Name: fi;    MessagesFile: compiler:Languages\Finnish.isl
 Name: fr;    MessagesFile: compiler:Languages\French.isl
 Name: gl;    MessagesFile: Languages\Galician.isl
 Name: he;    MessagesFile: compiler:Languages\Hebrew.isl
@@ -185,6 +189,7 @@ Name: ro;    MessagesFile: Languages\Romanian.isl
 Name: ru;    MessagesFile: compiler:Languages\Russian.isl
 Name: sk;    MessagesFile: Languages\Slovak.isl
 Name: sl;    MessagesFile: compiler:Languages\Slovenian.isl
+Name: sr;    MessagesFile: compiler:Languages\SerbianCyrillic.isl
 Name: sv;    MessagesFile: Languages\Swedish.isl
 Name: th_TH; MessagesFile: Languages\Thai.isl
 Name: tt;    MessagesFile: Languages\Tatar.isl
@@ -243,6 +248,11 @@ Source: ..\docs\Authors.txt;                    DestDir: {app}; Components: main
 Source: ..\docs\Changelog.txt;                  DestDir: {app}; Components: main;         Flags: ignoreversion
 Source: ..\docs\Readme.txt;                     DestDir: {app}; Components: main;         Flags: ignoreversion
 Source: ..\src\mpc-hc\res\shaders\external\*.hlsl; DestDir: {app}\Shaders; Components: main; Flags: ignoreversion
+#if DirExists(crashreporter_dir)
+Source: {#bindir}\CrashReporter\crashrpt.dll;   DestDir: {app}\CrashReporter; Components: main; Flags: ignoreversion
+Source: {#bindir}\CrashReporter\dbghelp.dll;    DestDir: {app}\CrashReporter; Components: main; Flags: ignoreversion
+Source: {#bindir}\CrashReporter\sendrpt.exe;    DestDir: {app}\CrashReporter; Components: main; Flags: ignoreversion
+#endif
 
 
 [Icons]
@@ -442,6 +452,12 @@ begin
   RegDeleteValue(HKLM, 'SOFTWARE\Gabest\Media Player Classic', 'ExePath')
   RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\Gabest\Media Player Classic');
   RegDeleteKeyIfEmpty(HKLM, 'SOFTWARE\Gabest');
+end;
+
+
+procedure InitializeWizard();
+begin
+  WizardForm.LicenseAcceptedRadio.Checked := True;
 end;
 
 

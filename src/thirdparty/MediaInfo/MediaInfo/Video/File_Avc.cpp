@@ -49,7 +49,7 @@ const char* Avc_profile_idc(int8u profile_idc)
         case 138 : return "Multiview Depth High";
         case 144 : return "High 4:4:4";
         case 244 : return "High 4:4:4 Predictive";
-        default  : return "Unknown";
+        default  : return "";
     }
 }
 
@@ -73,6 +73,9 @@ const char* Avc_profile_idc(int8u profile_idc)
 #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
     #include "MediaInfo/Text/File_DtvccTransport.h"
 #endif //defined(MEDIAINFO_DTVCCTRANSPORT_YES)
+#if MEDIAINFO_ADVANCED2
+    #include "base64.h"
+#endif //MEDIAINFO_ADVANCED2
 #if MEDIAINFO_EVENTS
     #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
     #include "MediaInfo/MediaInfo_Events.h"
@@ -96,7 +99,7 @@ const size_t Avc_Errors_MaxCount=32;
 
 //---------------------------------------------------------------------------
 extern const int8u Avc_PixelAspectRatio_Size=17;
-extern const float32 Avc_PixelAspectRatio[]=
+extern const float32 Avc_PixelAspectRatio[Avc_PixelAspectRatio_Size]=
 {
     (float32)1, //Reserved
     (float32)1,
@@ -128,6 +131,13 @@ extern const char* Avc_video_format[]=
     "",
     "Reserved",
     "Reserved",
+};
+
+//---------------------------------------------------------------------------
+extern const char* Avc_video_full_range[]=
+{
+    "Limited",
+    "Full",
 };
 
 //---------------------------------------------------------------------------
@@ -364,6 +374,13 @@ void File_Avc::Streams_Fill()
                 Streams_Fill_subset(subset_seq_parameter_set_Item);
             Fill(Stream_Video, 0, Video_MultiView_Count, (*subset_seq_parameter_set_Item)->num_views_minus1+1);
         }
+
+    #if MEDIAINFO_ADVANCED2
+        for (size_t Pos = 0; Pos<Dump_SPS.size(); Pos++)
+            Fill(Stream_Video, 0, "Dump_seq_parameter_set", Dump_SPS[Pos].c_str());
+        for (size_t Pos = 0; Pos<Dump_PPS.size(); Pos++)
+            Fill(Stream_Video, 0, "Dump_pic_parameter_set", Dump_PPS[Pos].c_str());
+    #endif //MEDIAINFO_ADVANCED2
 }
 
 //---------------------------------------------------------------------------
@@ -400,6 +417,7 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
         if ((*seq_parameter_set_Item)->vui_parameters->video_signal_type_present_flag)
         {
             Fill(Stream_Video, 0, Video_Standard, Avc_video_format[(*seq_parameter_set_Item)->vui_parameters->video_format]);
+            Fill(Stream_Video, 0, Video_colour_range, Avc_video_full_range[(*seq_parameter_set_Item)->vui_parameters->video_full_range_flag]);
             if ((*seq_parameter_set_Item)->vui_parameters->colour_description_present_flag)
             {
                 Fill(Stream_Video, 0, Video_colour_description_present, "Yes");
@@ -463,7 +481,18 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
     Fill(Stream_Video, 0, Video_Format, "AVC");
     Fill(Stream_Video, 0, Video_Codec, "AVC");
 
-    Ztring Profile=Ztring().From_Local(Avc_profile_idc((*seq_parameter_set_Item)->profile_idc))+__T("@L")+Ztring().From_Number(((float)(*seq_parameter_set_Item)->level_idc)/10, 1);
+    Ztring Profile=Ztring().From_Local(Avc_profile_idc((*seq_parameter_set_Item)->profile_idc));
+    switch ((*seq_parameter_set_Item)->profile_idc)
+    {
+        case  44 : // CAVLC 4:4:4 Intra
+        case 100 : // High
+        case 110 : // High 10
+        case 122 : // High 4:2:2"
+        case 244 : // High 4:4:4 Predictive
+                    if ((*seq_parameter_set_Item)->constraint_set3_flag)
+                        Profile+=__T(" Intra");
+    }
+    Profile+=__T("@L")+Ztring().From_Number(((float)(*seq_parameter_set_Item)->level_idc)/10, ((*seq_parameter_set_Item)->level_idc%10)?1:0);
     Fill(Stream_Video, 0, Video_Format_Profile, Profile);
     Fill(Stream_Video, 0, Video_Codec_Profile, Profile);
     Fill(Stream_Video, StreamPos_Last, Video_Width, Width);
@@ -517,6 +546,21 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
         string Result=ScanOrder_Detect(ScanOrders);
         if (!Result.empty())
             Fill(Stream_Video, 0, Video_Interlacement, Result, true, true);
+        else
+        {
+            switch ((*seq_parameter_set_Item)->pic_struct_FirstDetected)
+            {
+                case  1 :
+                case  3 :
+                            Fill(Stream_Video, 0, Video_ScanOrder, (string) "TFF");
+                            break;
+                case  2 :
+                case  4 :
+                            Fill(Stream_Video, 0, Video_ScanOrder, (string) "BFF");
+                            break;
+                default : ;
+            }
+        }
     }
     Fill(Stream_Video, 0, Video_Format_Settings_GOP, GOP_Detect(PictureTypes));
 
@@ -554,7 +598,10 @@ void File_Avc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator seq
         Fill(Stream_Video, 0, Video_Format_Settings_RefFrames, (*seq_parameter_set_Item)->max_num_ref_frames);
         Fill(Stream_Video, 0, Video_Codec_Settings_RefFrames, (*seq_parameter_set_Item)->max_num_ref_frames);
     }
-    Fill(Stream_Video, 0, Video_ColorSpace, "YUV");
+    if ((*seq_parameter_set_Item)->vui_parameters && (*seq_parameter_set_Item)->vui_parameters->matrix_coefficients == 0)
+        Fill(Stream_Video, 0, Video_ColorSpace, "RGB");
+    else
+        Fill(Stream_Video, 0, Video_ColorSpace, "YUV");
     Fill(Stream_Video, 0, Video_Colorimetry, Avc_Colorimetry_format_idc[(*seq_parameter_set_Item)->chroma_format_idc]);
     if ((*seq_parameter_set_Item)->bit_depth_luma_minus8==(*seq_parameter_set_Item)->bit_depth_chroma_minus8)
         Fill(Stream_Video, 0, Video_BitDepth, (*seq_parameter_set_Item)->bit_depth_luma_minus8+8);
@@ -583,6 +630,8 @@ void File_Avc::Streams_Finish()
     #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
         if (GA94_03_Parser && GA94_03_Parser->Status[IsAccepted])
         {
+            Clear(Stream_Text);
+
             Finish(GA94_03_Parser);
             Merge(*GA94_03_Parser);
 
@@ -601,10 +650,10 @@ void File_Avc::Streams_Finish()
         }
     #endif //defined(MEDIAINFO_DTVCCTRANSPORT_YES)
 
-    #if MEDIAINFO_IBI
+    #if MEDIAINFO_IBIUSAGE
         if (seq_parameter_sets.size()==1 && (*seq_parameter_sets.begin())->vui_parameters && (*seq_parameter_sets.begin())->vui_parameters->timing_info_present_flag && (*seq_parameter_sets.begin())->vui_parameters->fixed_frame_rate_flag)
             Ibi_Stream_Finish((*seq_parameter_sets.begin())->vui_parameters->time_scale, (*seq_parameter_sets.begin())->vui_parameters->num_units_in_tick);
-    #endif //MEDIAINFO_IBI
+    #endif //MEDIAINFO_IBIUSAGE
 }
 
 //***************************************************************************
@@ -694,12 +743,12 @@ bool File_Avc::Synched_Test()
     if (!Header_Parser_QuickSearch())
         return false;
 
-    #if MEDIAINFO_IBI
+    #if MEDIAINFO_IBIUSAGE
         bool zero_byte=Buffer[Buffer_Offset+2]==0x00;
         bool RandomAccess=(Buffer[Buffer_Offset+(zero_byte?4:3)]&0x1F)==0x07 || ((Buffer[Buffer_Offset+(zero_byte?4:3)]&0x1F)==0x09 && ((Buffer[Buffer_Offset+(zero_byte?5:4)]&0xE0)==0x00 || (Buffer[Buffer_Offset+(zero_byte?5:4)]&0xE0)==0xA0)); //seq_parameter_set or access_unit_delimiter with value=0 or 5 (3 bits)
         if (RandomAccess)
             Ibi_Add();
-    #endif //MEDIAINFO_IBI
+    #endif //MEDIAINFO_IBIUSAGE
 
     //We continue
     return true;
@@ -1296,6 +1345,24 @@ void File_Avc::Data_Parse()
             Element_Size--;
     }
 
+    //Dump of the SPS/PPS - Init
+    #if MEDIAINFO_ADVANCED2
+        size_t spspps_Size=0;
+        if (true) //TODO: add an option for activating this extra piece of information in the output
+        {
+            switch (Element_Code)
+            {
+                case 0x07 : //seq_parameter_set();
+                            spspps_Size = seq_parameter_sets.size();
+                            break;
+                case 0x08 : //pic_parameter_set();
+                            spspps_Size = pic_parameter_sets.size();
+                            break;
+                default: ;
+            }
+        }
+    #endif //MEDIAINFO_ADVANCED2
+
     //svc_extension
     bool svc_extension_flag=false;
     if (Element_Code==0x0E || Element_Code==0x14)
@@ -1444,6 +1511,31 @@ void File_Avc::Data_Parse()
             }
         }
     #endif //MEDIAINFO_DEMUX
+
+    //Dump of the SPS/PPS - Fill
+    #if MEDIAINFO_ADVANCED2
+        if (false) //TODO: add an option for activating this extra piece of information in the output
+        {
+            switch (Element_Code)
+            {
+                case 0x07 : //seq_parameter_set();
+                            if (spspps_Size != seq_parameter_sets.size() && !Status[IsFilled])
+                            {
+                                std::string Data_Raw((const char*)(Buffer+(size_t)(Buffer_Offset-1)), (size_t)(Element_Size+1)); //Including the last byte in the header
+                                Dump_SPS.push_back(Base64::encode(Data_Raw));
+                            }
+                            break;
+                case 0x08 : //pic_parameter_set();
+                            if (spspps_Size != pic_parameter_sets.size() && !Status[IsFilled])
+                            {
+                                std::string Data_Raw((const char*)(Buffer+(size_t)(Buffer_Offset-1)), (size_t)(Element_Size+1)); //Including the last byte in the header
+                                Dump_PPS.push_back(Base64::encode(Data_Raw));
+                            }
+                            break;
+                default: ;
+            }
+        }
+    #endif //MEDIAINFO_ADVANCED2
 
     //Trailing zeroes
     Element_Size=Element_Size_SaveBeforeZeroes;
@@ -1773,10 +1865,12 @@ void File_Avc::slice_header()
                             int32u tempPicOrderCnt;
                             if (Element_Code==5) //IdrPicFlag
                                 tempPicOrderCnt=0;
-                            else if (nal_ref_idc)
-                                tempPicOrderCnt=2*(FrameNumOffset+frame_num);
                             else
-                                tempPicOrderCnt=2*(FrameNumOffset+frame_num)-1;
+                            {
+                                tempPicOrderCnt=2*(FrameNumOffset+frame_num);
+                                if (!nal_ref_idc && tempPicOrderCnt) //Note: if nal_ref_idc is 0, tempPicOrderCnt is not expected to be 0 but it may be the case with invalid streams
+                                    tempPicOrderCnt--;
+                            }
 
                             pic_order_cnt=tempPicOrderCnt;
 
@@ -1959,8 +2053,10 @@ void File_Avc::slice_header()
                             if ((Pos%2)==0)
                                 PictureTypes+=' ';
                         }
-                    if (!GOP_Detect(PictureTypes).empty() && !GA94_03_IsPresent)
-                        Frame_Count_Valid=Frame_Count; //We have enough frames
+                        #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
+                            if (!GOP_Detect(PictureTypes).empty() && !GA94_03_IsPresent)
+                                Frame_Count_Valid=Frame_Count; //We have enough frames
+                        #endif //defined(MEDIAINFO_DTVCCTRANSPORT_YES)
                 }
             }
         }
@@ -2021,8 +2117,10 @@ void File_Avc::slice_header()
             Accept("AVC");
         if (!Status[IsFilled])
         {
-            if (!GA94_03_IsPresent && IFrame_Count>=8)
-                Frame_Count_Valid=Frame_Count; //We have enough frames
+            #if defined(MEDIAINFO_DTVCCTRANSPORT_YES)
+                if (!GA94_03_IsPresent && IFrame_Count>=8)
+                    Frame_Count_Valid=Frame_Count; //We have enough frames
+            #endif //defined(MEDIAINFO_DTVCCTRANSPORT_YES)
             if (Frame_Count>=Frame_Count_Valid)
             {
                 Fill("AVC");
@@ -2808,7 +2906,8 @@ void File_Avc::seq_parameter_set()
 
     //parsing
     int32u seq_parameter_set_id;
-    if (!seq_parameter_set_data(seq_parameter_sets, seq_parameter_set_id))
+    seq_parameter_set_struct* Data_Item_New=seq_parameter_set_data(seq_parameter_set_id);
+    if (!Data_Item_New)
         return;
     Mark_1(                                                     );
     size_t BS_bits=Data_BS_Remain()%8;
@@ -2852,6 +2951,9 @@ void File_Avc::seq_parameter_set()
         NextCode_Clear();
         NextCode_Add(0x08);
 
+        //Add
+        seq_parameter_set_data_Add(seq_parameter_sets, seq_parameter_set_id, Data_Item_New);
+
         //Autorisation of other streams
         Streams[0x08].Searching_Payload=true; //pic_parameter_set
         if (Streams[0x07].ShouldDuplicate)
@@ -2863,6 +2965,36 @@ void File_Avc::seq_parameter_set()
         if (Streams[0x07].ShouldDuplicate)
             Streams[0x0B].ShouldDuplicate=true; //end_of_stream
     FILLING_END();
+}
+
+void File_Avc::seq_parameter_set_data_Add(std::vector<seq_parameter_set_struct*> &Data, const int32u Data_id, seq_parameter_set_struct* Data_Item_New)
+{
+    //Creating Data
+    if (Data_id>=Data.size())
+        Data.resize(Data_id+1);
+    std::vector<seq_parameter_set_struct*>::iterator Data_Item=Data.begin()+Data_id;
+    delete *Data_Item; *Data_Item=Data_Item_New;
+
+    //Computing values (for speed)
+    size_t MaxNumber;
+    switch (Data_Item_New->pic_order_cnt_type)
+    {
+        case 0 :
+                    MaxNumber=Data_Item_New->MaxPicOrderCntLsb;
+                    break;
+        case 1 :
+        case 2 :
+                    MaxNumber=Data_Item_New->MaxFrameNum*2;
+                    break;
+        default:
+                    MaxNumber = 0;
+    }
+
+    if (MaxNumber>TemporalReferences_Reserved)
+    {
+        TemporalReferences.resize(4*MaxNumber);
+        TemporalReferences_Reserved=MaxNumber;
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -3100,10 +3232,10 @@ void File_Avc::subset_seq_parameter_set()
 
     //Parsing
     int32u subset_seq_parameter_set_id;
-    if (!seq_parameter_set_data(subset_seq_parameter_sets, subset_seq_parameter_set_id))
+    seq_parameter_set_struct* Data_Item_New=seq_parameter_set_data(subset_seq_parameter_set_id);
+    if (!Data_Item_New)
         return;
-    std::vector<seq_parameter_set_struct*>::iterator subset_seq_parameter_sets_Item=subset_seq_parameter_sets.begin()+subset_seq_parameter_set_id;
-    if ((*subset_seq_parameter_sets_Item)->profile_idc==83 || (*subset_seq_parameter_sets_Item)->profile_idc==86)
+    if (Data_Item_New->profile_idc==83 || Data_Item_New->profile_idc==86)
     {
         //bool svc_vui_parameters_present_flag;
         seq_parameter_set_svc_extension();
@@ -3113,11 +3245,11 @@ void File_Avc::subset_seq_parameter_set()
             svc_vui_parameters_extension();
         */
     }
-    else if ((*subset_seq_parameter_sets_Item)->profile_idc==118 || (*subset_seq_parameter_sets_Item)->profile_idc==128)
+    else if (Data_Item_New->profile_idc==118 || Data_Item_New->profile_idc==128)
     {
         //bool mvc_vui_parameters_present_flag, additional_extension2_flag;
         Mark_1();
-        seq_parameter_set_mvc_extension(subset_seq_parameter_set_id);
+        seq_parameter_set_mvc_extension(Data_Item_New);
         /* The rest is not yet implemented
         Get_SB (mvc_vui_parameters_present_flag,                "mvc_vui_parameters_present_flag");
         if (mvc_vui_parameters_present_flag)
@@ -3140,6 +3272,9 @@ void File_Avc::subset_seq_parameter_set()
         //NextCode
         NextCode_Clear();
         NextCode_Add(0x08);
+
+        //Add
+        seq_parameter_set_data_Add(subset_seq_parameter_sets, subset_seq_parameter_set_id, Data_Item_New);
 
         //Autorisation of other streams
         Streams[0x08].Searching_Payload=true; //pic_parameter_set
@@ -3179,7 +3314,7 @@ void File_Avc::slice_layer_extension(bool svc_extension_flag)
 //***************************************************************************
 
 //---------------------------------------------------------------------------
-bool File_Avc::seq_parameter_set_data(std::vector<seq_parameter_set_struct*> &Data, int32u &Data_id)
+File_Avc::seq_parameter_set_struct* File_Avc::seq_parameter_set_data(int32u &Data_id)
 {
     //Parsing
     seq_parameter_set_struct::vui_parameters_struct* vui_parameters_Item=NULL;
@@ -3244,7 +3379,7 @@ bool File_Avc::seq_parameter_set_data(std::vector<seq_parameter_set_struct*> &Da
         if (num_ref_frames_in_pic_order_cnt_cycle>=256)
         {
             Trusted_IsNot("num_ref_frames_in_pic_order_cnt_cycle too high");
-            return false;
+            return NULL;
         }
         for(int32u Pos=0; Pos<num_ref_frames_in_pic_order_cnt_cycle; Pos++)
             Skip_SE(                                            "offset_for_ref_frame");
@@ -3252,7 +3387,7 @@ bool File_Avc::seq_parameter_set_data(std::vector<seq_parameter_set_struct*> &Da
     else if (pic_order_cnt_type > 2)
     {
         Trusted_IsNot("pic_order_cnt_type not supported");
-        return false;
+        return NULL;
     }
     Get_UE (max_num_ref_frames,                                 "max_num_ref_frames");
     Skip_SB(                                                    "gaps_in_frame_num_value_allowed_flag");
@@ -3278,26 +3413,23 @@ bool File_Avc::seq_parameter_set_data(std::vector<seq_parameter_set_struct*> &Da
         {
             Trusted_IsNot("seq_parameter_set_id not valid");
             delete (seq_parameter_set_struct::vui_parameters_struct*)vui_parameters_Item;
-            return false; //Problem, not valid
+            return NULL; //Problem, not valid
         }
         if (pic_order_cnt_type==0 && log2_max_pic_order_cnt_lsb_minus4>12)
         {
             Trusted_IsNot("log2_max_pic_order_cnt_lsb_minus4 not valid");
             delete (seq_parameter_set_struct::vui_parameters_struct*)vui_parameters_Item;
-            return false; //Problem, not valid
+            return NULL; //Problem, not valid
         }
         if (log2_max_frame_num_minus4>12)
         {
             Trusted_IsNot("log2_max_frame_num_minus4 not valid");
             delete (seq_parameter_set_struct::vui_parameters_struct*)vui_parameters_Item;
-            return false; //Problem, not valid
+            return NULL; //Problem, not valid
         }
 
         //Creating Data
-        if (Data_id>=Data.size())
-            Data.resize(Data_id+1);
-        std::vector<seq_parameter_set_struct*>::iterator Data_Item=Data.begin()+Data_id;
-        delete *Data_Item; *Data_Item=new seq_parameter_set_struct(
+        return new seq_parameter_set_struct(
                                                                     vui_parameters_Item,
                                                                     pic_width_in_mbs_minus1,
                                                                     pic_height_in_map_units_minus1,
@@ -3320,32 +3452,10 @@ bool File_Avc::seq_parameter_set_data(std::vector<seq_parameter_set_struct*> &Da
                                                                     frame_mbs_only_flag,
                                                                     mb_adaptive_frame_field_flag
                                                                   );
-
-        //Computing values (for speed)
-        size_t MaxNumber;
-        switch (pic_order_cnt_type)
-        {
-            case 0 :
-                        MaxNumber=(*Data_Item)->MaxPicOrderCntLsb;
-                        break;
-            case 1 :
-            case 2 :
-                        MaxNumber=(*Data_Item)->MaxFrameNum*2;
-                        break;
-            default:
-                        MaxNumber = 0;
-        }
-
-        if (MaxNumber>TemporalReferences_Reserved)
-        {
-            TemporalReferences.resize(4*MaxNumber);
-            TemporalReferences_Reserved=MaxNumber;
-        }
     FILLING_ELSE();
         delete vui_parameters_Item; //vui_parameters_Item=NULL;
-        return false;
+        return NULL;
     FILLING_END();
-    return true;
 }
 
 //---------------------------------------------------------------------------
@@ -3374,7 +3484,7 @@ void File_Avc::vui_parameters(seq_parameter_set_struct::vui_parameters_struct* &
     seq_parameter_set_struct::vui_parameters_struct::bitstream_restriction_struct* bitstream_restriction=NULL;
     int32u  num_units_in_tick=(int32u)-1, time_scale=(int32u)-1;
     int16u  sar_width=(int16u)-1, sar_height=(int16u)-1;
-    int8u   aspect_ratio_idc=0, video_format=5, colour_primaries=2, transfer_characteristics=2, matrix_coefficients=2;
+    int8u   aspect_ratio_idc=0, video_format=5, video_full_range_flag = 0, colour_primaries=2, transfer_characteristics=2, matrix_coefficients=2;
     bool    aspect_ratio_info_present_flag, video_signal_type_present_flag, colour_description_present_flag=false, timing_info_present_flag, fixed_frame_rate_flag=false, nal_hrd_parameters_present_flag, vcl_hrd_parameters_present_flag, pic_struct_present_flag;
     TEST_SB_GET (aspect_ratio_info_present_flag,                "aspect_ratio_info_present_flag");
         Get_S1 (8, aspect_ratio_idc,                            "aspect_ratio_idc"); Param_Info1C((aspect_ratio_idc<Avc_PixelAspectRatio_Size), Avc_PixelAspectRatio[aspect_ratio_idc]);
@@ -3389,7 +3499,7 @@ void File_Avc::vui_parameters(seq_parameter_set_struct::vui_parameters_struct* &
     TEST_SB_END();
     TEST_SB_GET (video_signal_type_present_flag,                "video_signal_type_present_flag");
         Get_S1 (3, video_format,                                "video_format"); Param_Info1(Avc_video_format[video_format]);
-        Skip_SB(                                                "video_full_range_flag");
+        Get_S1 (1, video_full_range_flag,                       "video_full_range_flag"); Param_Info1(Avc_video_full_range[video_full_range_flag]);
         TEST_SB_GET (colour_description_present_flag,           "colour_description_present_flag");
             Get_S1 (8, colour_primaries,                        "colour_primaries"); Param_Info1(Mpegv_colour_primaries(colour_primaries));
             Get_S1 (8, transfer_characteristics,                "transfer_characteristics"); Param_Info1(Mpegv_transfer_characteristics(transfer_characteristics));
@@ -3440,6 +3550,7 @@ void File_Avc::vui_parameters(seq_parameter_set_struct::vui_parameters_struct* &
                                                                                     sar_height,
                                                                                     aspect_ratio_idc,
                                                                                     video_format,
+                                                                                    video_full_range_flag,
                                                                                     colour_primaries,
                                                                                     transfer_characteristics,
                                                                                     matrix_coefficients,
@@ -3567,7 +3678,7 @@ void File_Avc::svc_vui_parameters_extension()
 }
 
 //---------------------------------------------------------------------------
-void File_Avc::seq_parameter_set_mvc_extension(int32u subset_seq_parameter_sets_id)
+void File_Avc::seq_parameter_set_mvc_extension(seq_parameter_set_struct* Data_Item)
 {
     //Parsing
     Element_Begin1("seq_parameter_set_mvc_extension");
@@ -3577,7 +3688,7 @@ void File_Avc::seq_parameter_set_mvc_extension(int32u subset_seq_parameter_sets_
     Element_End0();
 
     FILLING_BEGIN();
-        subset_seq_parameter_sets[subset_seq_parameter_sets_id]->num_views_minus1 = (int16u)num_views_minus1;
+        Data_Item->num_views_minus1 = (int16u)num_views_minus1;
     FILLING_END();
 }
 

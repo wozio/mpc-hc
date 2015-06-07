@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -37,18 +37,18 @@ CPPageAudioSwitcher::CPPageAudioSwitcher(IFilterGraph* pFG)
 #else
     : CPPageBase(CPPageAudioSwitcher::IDD, CPPageAudioSwitcher::IDD)
 #endif
+    , m_pSpeakerToChannelMap()
+    , m_dwChannelMask(0)
+    , m_fEnableAudioSwitcher(FALSE)
     , m_fAudioNormalize(FALSE)
+    , m_nAudioMaxNormFactor(400)
     , m_fAudioNormalizeRecover(FALSE)
+    , m_AudioBoostPos(0)
     , m_fDownSampleTo441(FALSE)
     , m_fCustomChannelMapping(FALSE)
     , m_nChannels(0)
-    , m_fEnableAudioSwitcher(FALSE)
-    , m_dwChannelMask(0)
     , m_tAudioTimeShift(0)
     , m_fAudioTimeShift(FALSE)
-    , m_AudioBoostPos(0)
-    , m_nAudioMaxNormFactor(400)
-    , m_pSpeakerToChannelMap()
 {
     CComQIPtr<IAudioSwitcherFilter> pASF = FindFilter(__uuidof(CAudioSwitcherFilter), pFG);
 
@@ -396,7 +396,7 @@ void CPPageAudioSwitcher::OnCancel()
 {
     const CAppSettings& s = AfxGetAppSettings();
 
-    if (m_AudioBoostPos != s.nAudioBoost) {
+    if ((UINT)m_AudioBoostPos != s.nAudioBoost) {
         ((CMainFrame*)GetParentFrame())->SetVolumeBoost(s.nAudioBoost);
     }
 

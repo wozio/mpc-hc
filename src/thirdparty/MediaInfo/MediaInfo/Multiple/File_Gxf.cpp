@@ -82,7 +82,7 @@ const char* Gxf_Tag_Name(int8u Tag)
         case 0x50 : return "Frame rate";
         case 0x51 : return "Lines per frame";
         case 0x52 : return "Fields per frame";
-        default   : return "Unknown";
+        default   : return "";
     }
 }
 
@@ -112,7 +112,7 @@ const char* Gxf_MediaTypes(int8u Type)
         case 23 : return "MPEG-1 Video"; //625 lines
         case 24 : return "SMPTE 12M"; //HD
         case 25 : return "DV"; //DVCPRO HD
-        default : return "Unknown";
+        default : return "";
     }
 }
 
@@ -371,10 +371,9 @@ void File_Gxf::Streams_Finish()
             Fill(Stream_Other, StreamPos_Last, Other_ID, TimeCode->first);
             Fill(Stream_Other, StreamPos_Last, Other_Type, "Time code");
             Fill(Stream_Other, StreamPos_Last, Other_Format, "SMPTE TC");
-            //Fill(Stream_Other, StreamPos_Last, Other_MuxingMode, "Time code track");
             Fill(Stream_Other, StreamPos_Last, Other_TimeCode_FirstFrame, TimeCode_FirstFrame.c_str());
             if (TimeCode_FirstFrame_Striped)
-                Fill(Stream_Other, StreamPos_Last, Other_TimeCode_Settings, "Striped");
+                Fill(Stream_Other, StreamPos_Last, Other_TimeCode_Striped, "Yes");
             if (TimeCode->first<Streams.size())
                 Fill(Stream_Other, StreamPos_Last, Other_Title, Streams[TimeCode->first].MediaName);
         }

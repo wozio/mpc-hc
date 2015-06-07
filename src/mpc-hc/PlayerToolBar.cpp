@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,7 +27,7 @@
 #include "MPCPngImage.h"
 #include "PlayerToolBar.h"
 #include "MainFrm.h"
-#include "WinAPIUtils.h"
+#include "PathUtils.h"
 
 // CPlayerToolBar
 
@@ -47,27 +47,24 @@ CPlayerToolBar::~CPlayerToolBar()
 
 bool CPlayerToolBar::LoadExternalToolBar(CImage* image)
 {
-    bool success = true;
-    CString path = GetProgramPath();
+    // Paths and extensions to try (by order of preference)
+    std::vector<CString> paths({ PathUtils::GetProgramPath() });
+    CString appDataPath;
+    if (AfxGetMyApp()->GetAppDataPath(appDataPath)) {
+        paths.emplace_back(appDataPath);
+    }
+    const std::vector<CString> extensions({ _T("png"), _T("bmp") });
 
-    // Try to load an external PNG toolbar first
-    if (FAILED(image->Load(path + _T("toolbar.png")))) {
-        // If it fails, try to load an external BMP toolbar
-        if (FAILED(image->Load(path + _T("toolbar.bmp")))) {
-            if (AfxGetMyApp()->GetAppDataPath(path)) {
-                // Try to load logo from AppData path
-                if (FAILED(image->Load(path + _T("\\toolbar.png")))) {
-                    if (FAILED(image->Load(path + _T("\\toolbar.bmp")))) {
-                        success = false;
-                    }
-                }
-            } else {
-                success = false;
+    // Try loading the external toolbar
+    for (const auto& path : paths) {
+        for (const auto& ext : extensions) {
+            if (SUCCEEDED(image->Load(PathUtils::CombinePaths(path, _T("toolbar.") + ext)))) {
+                return true;
             }
         }
     }
 
-    return success;
+    return false;
 }
 
 BOOL CPlayerToolBar::Create(CWnd* pParentWnd)
@@ -394,7 +391,7 @@ BOOL CPlayerToolBar::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult)
     if (bi.iImage == 12) {
         strTipText.LoadString(ID_VOLUME_MUTE);
     } else if (bi.iImage == 13) {
-        strTipText.LoadString(ID_VOLUME_MUTE_ON);
+        strTipText.LoadString(ID_VOLUME_MUTE_OFF);
     } else if (bi.iImage == 14) {
         strTipText.LoadString(ID_VOLUME_MUTE_DISABLED);
     } else {

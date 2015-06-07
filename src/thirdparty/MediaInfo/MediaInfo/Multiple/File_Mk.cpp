@@ -135,7 +135,7 @@ const char* Mk_StereoMode(int64u StereoMode)
         case 0x0C : return "Anaglyph (green/magenta)";
         case 0x0D : return "Both Eyes laced in one block (left eye first)";
         case 0x0E : return "Both Eyes laced in one block (right eye first)";
-        default   : return "Unknown";
+        default   : return "";
     }
 }
 
@@ -148,7 +148,7 @@ const char* Mk_StereoMode_v2(int64u StereoMode)
         case 0x01 : return "Right Eye";
         case 0x02 : return "Left Eye";
         case 0x03 : return "Both Eye";
-        default   : return "Unknown";
+        default   : return "";
     }
 }
 
@@ -409,12 +409,6 @@ void File_Mk::Streams_Finish()
             }
             Fill(Stream_Menu, StreamPos_Last, Menu_Chapters_Pos_End, Count_Get(Stream_Menu, StreamPos_Last), 10, true);
         }
-    }
-
-    //Attachments
-    for (size_t Pos=0; Pos<AttachedFiles.size(); Pos++)
-    {
-        Segment_Attachements_AttachedFile_FileName();
     }
 
     //Purge what is not needed anymore
@@ -1104,8 +1098,6 @@ void File_Mk::Segment_Attachements()
 void File_Mk::Segment_Attachements_AttachedFile()
 {
     Element_Name("AttachedFile");
-
-    AttachedFiles.resize(AttachedFiles.size()+1);
 }
 
 //---------------------------------------------------------------------------
@@ -1115,11 +1107,6 @@ void File_Mk::Segment_Attachements_AttachedFile_FileData()
 
     //Parsing
     Skip_XX(Element_TotalSize_Get(),                            "Data");
-
-    FILLING_BEGIN();
-        if (AttachedFiles[AttachedFiles.size()-1].empty())
-            AttachedFiles[AttachedFiles.size()-1]=__T("Yes");
-    FILLING_END();
 }
 
 //---------------------------------------------------------------------------
@@ -1494,11 +1481,11 @@ void File_Mk::Segment_Cluster_BlockGroup_Block()
         Get_B2 (TimeCode,                                       "TimeCode");
 
         FILLING_BEGIN();
-            if (Stream[TrackNumber].Searching_TimeStamp_Start)
+            if (Segment_Cluster_TimeCode_Value+TimeCode<Stream[TrackNumber].TimeCode_Start) //Does not work well: Stream[TrackNumber].Searching_TimeStamp_Start)
             {
                 FILLING_BEGIN();
                     Stream[TrackNumber].TimeCode_Start=Segment_Cluster_TimeCode_Value+TimeCode;
-                    Stream[TrackNumber].Searching_TimeStamp_Start=false;
+                    //Stream[TrackNumber].Searching_TimeStamp_Start=false;
                 FILLING_END();
             }
             if (Stream[TrackNumber].Searching_TimeStamps)
@@ -3354,7 +3341,6 @@ void File_Mk::CodecID_Manage()
     {
         Stream[TrackNumber].Parser=new File_Mpeg4v;
         ((File_Mpeg4v*)Stream[TrackNumber].Parser)->FrameIsAlwaysComplete=true;
-        ((File_Mpeg4v*)Stream[TrackNumber].Parser)->Frame_Count_Valid=1;
     }
     #endif
     #if defined(MEDIAINFO_AVC_YES)
@@ -3423,7 +3409,6 @@ void File_Mk::CodecID_Manage()
     {
         Stream[TrackNumber].Parser=new File_Mpegv;
         ((File_Mpegv*)Stream[TrackNumber].Parser)->FrameIsAlwaysComplete=true;
-        ((File_Mpegv*)Stream[TrackNumber].Parser)->Frame_Count_Valid=1;
     }
     #endif
     #if defined(MEDIAINFO_PRORES_YES)

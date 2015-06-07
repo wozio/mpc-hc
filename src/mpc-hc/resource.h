@@ -181,9 +181,9 @@
 #define ID_VOLUME_UP                    907
 #define ID_VOLUME_DOWN                  908
 #define ID_VOLUME_MUTE                  909
-#define ID_VOLUME_MUTE_ON               910
+#define ID_VOLUME_MUTE_OFF              910
 #define ID_VOLUME_MUTE_DISABLED         911
-#define ID_AFTERPLAYBACK_CLOSE          912
+#define ID_AFTERPLAYBACK_EXIT           912
 #define ID_AFTERPLAYBACK_STANDBY        913
 #define ID_AFTERPLAYBACK_HIBERNATE      914
 #define ID_AFTERPLAYBACK_SHUTDOWN       915
@@ -218,6 +218,8 @@
 #define ID_BOSS                         944
 #define ID_DUMMYSEPARATOR               945
 #define ID_BUTTONSEP                    946
+#define ID_AFTERPLAYBACK_PLAYNEXT       947
+#define ID_AFTERPLAYBACK_DONOTHING      948
 #define ID_MENU_PLAYER_SHORT            949
 #define ID_MENU_PLAYER_LONG             950
 #define ID_MENU_FILTERS                 951
@@ -288,8 +290,8 @@
 #define ID_SHADERS_PRESETS_START        4201
 #define ID_SHADERS_PRESETS_END          4299
 #define ID_NAVIGATE_JUMPTO_SUBITEM_START 4300
-#define ID_NAVIGATE_JUMPTO_SUBITEM_END  4499
-#define ID_VIEW_ZOOM_AUTOFIT_LARGER     4500
+#define ID_NAVIGATE_JUMPTO_SUBITEM_END  4899
+#define ID_VIEW_ZOOM_AUTOFIT_LARGER     4900
 #define IDS_FILTER_SETTINGS_CAPTION     7000
 #define IDS_ARS_WASAPI_MODE             7100
 #define IDS_ARS_MUTE_FAST_FORWARD       7101
@@ -573,7 +575,8 @@
 #define IDS_SUBTITLES_STYLES_CAPTION    14201
 #define IDS_TEXT_SUB_RENDERING_TARGET   14202
 #define IDD_TUNER_SCAN                  20002
-#define IDS_AG_RESET_STATS              20004
+#define IDS_OSD_DISPLAY_RENDERER_STATS  20003
+#define IDS_OSD_RESET_RENDERER_STATS    20004
 #define IDD_NAVIGATION_DLG              20005
 #define IDD_PPAGESUBMISC                20006
 #define IDS_VIEW_BORDERLESS             20007
@@ -586,7 +589,8 @@
 #define IDD_PPAGEADVANCED               20014
 #define IDD_SAVEIMAGEDIALOGTEMPL        20015
 #define IDD_CMD_LINE_HELP               20016
-#define IDD_OPENLIBRARY_DLG             20014
+#define IDD_CRASH_REPORTER              20017
+#define IDD_OPENLIBRARY_DLG             20018
 #define IDC_FULLSCREEN_MONITOR_CHECK    22002
 #define IDC_SLI_CONTRAST                22003
 #define IDC_RESET                       22004
@@ -682,13 +686,15 @@
 #define ID_VIEW_TEARING_TEST            32769
 #define ID_FILE_OPENDISC                32774
 #define ID_SHADERS                      32775
-#define ID_VIEW_REMAINING_TIME          32778
+#define ID_VIEW_OSD_SHOW_FILENAME       32777
+#define ID_VIEW_OSD_DISPLAY_TIME        32778
 #define ID_D3DFULLSCREEN_TOGGLE         32779
 #define ID_GOTO_PREV_SUB                32780
 #define ID_GOTO_NEXT_SUB                32781
 #define ID_SHIFT_SUB_DOWN               32782
 #define ID_SHIFT_SUB_UP                 32783
-#define ID_VIEW_DISPLAYSTATS            32784
+#define ID_VIEW_DISPLAY_RENDERER_STATS  32784
+#define ID_VIEW_RESET_RENDERER_STATS    32785
 #define IDS_AG_CLOSE                    32830
 #define IDS_AG_NONE                     32832
 #define IDS_AG_COMMAND                  32833
@@ -798,14 +804,14 @@
 #define IDS_MPLAYERC_95                 32972
 #define IDS_MPLAYERC_96                 32973
 #define IDS_MPLAYERC_97                 32974
-#define IDS_MPLAYERC_98                 32975
+#define IDS_OSD_DISPLAY_CURRENT_TIME    32975
 #define IDS_MPLAYERC_99                 32976
 #define IDS_MPLAYERC_100                32977
 #define IDS_MPLAYERC_101                32978
 #define IDS_MPLAYERC_102                32979
 #define IDS_MPLAYERC_103                32980
-#define IDS_AG_DISPLAY_STATS            32981
 #define IDS_AG_SEEKSET                  32982
+#define IDS_OSD_SHOW_FILENAME           32983
 #define IDS_PPAGEWEBSERVER_0            32996
 #define IDS_MAINFRM_2                   33014
 #define IDS_AG_SUBTITLES_SAVED          33015
@@ -994,7 +1000,6 @@
 #define IDS_NAVIGATE_TUNERSCAN          33401
 #define IDS_SUBTITLES_ERROR             33402
 #define IDC_CHECK_WIN7                  33403
-#define ID_VIEW_RESETSTATS              33405
 #define ID_VIEW_SYNCHRONIZEVIDEO        33408
 #define ID_VIEW_SYNCHRONIZEDISPLAY      33409
 #define ID_VIEW_SYNCHRONIZENEAREST      33410
@@ -1070,6 +1075,7 @@
 #define IDS_MFMT_WMA                    39521
 #define IDS_MFMT_WV                     39522
 #define IDS_MFMT_OPUS                   39523
+#define IDS_MFMT_DTS                    39524
 #define IDS_MFMT_PLS                    39901
 #define IDS_MFMT_BDPLS                  39902
 #define IDS_MFMT_RAR                    39903
@@ -1215,13 +1221,15 @@
 #define IDS_SUBRESYNC_TIME_FORMAT       41293
 #define IDS_EXTERNAL_FILTERS_ERROR_MT   41294
 #define IDS_WEBSERVER_ERROR_TEST        41295
-#define IDS_AFTERPLAYBACK_CLOSE         41296
+#define IDS_AFTERPLAYBACK_EXIT          41296
 #define IDS_AFTERPLAYBACK_STANDBY       41297
 #define IDS_AFTERPLAYBACK_HIBERNATE     41298
 #define IDS_AFTERPLAYBACK_SHUTDOWN      41299
 #define IDS_AFTERPLAYBACK_LOGOFF        41300
 #define IDS_AFTERPLAYBACK_LOCK          41301
 #define IDS_AFTERPLAYBACK_MONITOROFF    41302
+#define IDS_AFTERPLAYBACK_PLAYNEXT      41303
+#define IDS_AFTERPLAYBACK_DONOTHING     41304
 #define IDS_OSD_BRIGHTNESS              41305
 #define IDS_OSD_CONTRAST                41306
 #define IDS_OSD_HUE                     41307
@@ -1254,6 +1262,7 @@
 #define IDS_REGAIN_VOLUME               41335
 #define IDS_OSD_REGAIN_VOLUME_ON        41336
 #define IDS_OSD_REGAIN_VOLUME_OFF       41337
+#define IDS_SIZE_UNIT_BYTES             41338
 #define IDS_SIZE_UNIT_K                 41339
 #define IDS_SIZE_UNIT_M                 41340
 #define IDS_SIZE_UNIT_G                 41341
@@ -1452,12 +1461,26 @@
 #define IDS_PPAGEADVANCED_COVER_SIZE_LIMIT 57418
 #define IDS_SUBTITLE_DELAY_STEP_TOOLTIP 57419
 #define IDS_HOTKEY_NOT_DEFINED          57420
+#define IDS_NAVIGATION_WATCH            57421
+#define IDS_NAVIGATION_MOVE_UP          57422
+#define IDS_NAVIGATION_MOVE_DOWN        57423
+#define IDS_NAVIGATION_SORT             57424
+#define IDS_NAVIGATION_REMOVE_ALL       57425
+#define IDS_REMOVE_CHANNELS_QUESTION    57426
+#define IDS_MEDIAINFO_NO_INFO_AVAILABLE 57427
+#define IDS_MEDIAINFO_ANALYSIS_IN_PROGRESS 57428
+#define IDS_ASPECT_RATIO_FMT            57429
+#define IDS_PPAGEADVANCED_LOGGER        57430
+#define IDS_TIMER_REMAINING_TIME        57431
+#define IDS_TIMER_HIGH_PRECISION        57432
+#define IDS_AFTERPLAYBACK_REWIND        57433
+#define IDS_AFTERPLAYBACK_CLOSE         57434
 
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        20017
+#define _APS_NEXT_RESOURCE_VALUE        20018
 #define _APS_NEXT_COMMAND_VALUE         33449
 #define _APS_NEXT_RESOURCE_VALUE        20015
 #define _APS_NEXT_COMMAND_VALUE         33453

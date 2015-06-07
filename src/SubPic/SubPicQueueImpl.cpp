@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -36,12 +36,12 @@ const double CSubPicQueueImpl::DEFAULT_FPS = 25.0;
 
 CSubPicQueueImpl::CSubPicQueueImpl(SubPicQueueSettings settings, ISubPicAllocator* pAllocator, HRESULT* phr)
     : CUnknown(NAME("CSubPicQueueImpl"), nullptr)
-    , m_settings(settings)
-    , m_pAllocator(pAllocator)
-    , m_rtNow(0)
     , m_fps(DEFAULT_FPS)
     , m_rtTimePerFrame(std::llround(10000000.0 / DEFAULT_FPS))
-    , m_rtTimePerSubFrame(std::llround(10000000.0 / (DEFAULT_FPS* settings.nAnimationRate / 100.0)))
+    , m_rtTimePerSubFrame(std::llround(10000000.0 / (DEFAULT_FPS * settings.nAnimationRate / 100.0)))
+    , m_rtNow(0)
+    , m_settings(settings)
+    , m_pAllocator(pAllocator)
 {
     if (phr) {
         *phr = S_OK;
@@ -180,6 +180,9 @@ CSubPicQueue::~CSubPicQueue()
     m_bExitThread = true;
     SetSubPicProvider(nullptr);
     CAMThread::Close();
+    if (m_pAllocator) {
+        m_pAllocator->FreeStatic();
+    }
 }
 
 // ISubPicQueue
@@ -688,6 +691,9 @@ CSubPicQueueNoThread::CSubPicQueueNoThread(SubPicQueueSettings settings, ISubPic
 
 CSubPicQueueNoThread::~CSubPicQueueNoThread()
 {
+    if (m_pAllocator) {
+        m_pAllocator->FreeStatic();
+    }
 }
 
 // ISubPicQueue

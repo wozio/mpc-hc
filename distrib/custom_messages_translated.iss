@@ -35,15 +35,19 @@ be.WinVersionTooLowError=[name] патрабуецца Windows XP Service Pack 3
 
 ; Bengali
 bn.WelcomeLabel2=এর মাধ্যমে আপনার কম্পিউটারে [name] ইনস্টল করা হবে। %n%nপ্রক্রিয়াটি চালিয়ে যাওয়ার পূর্বে অন্যান্য সকল অ্যাপ্লিকেশন বন্ধ করার পরামর্শ দেয়া যাচ্ছে।
-bn.WinVersionTooLowError=[name] চালানোর জন্য Windows XP Service Pack 3 অথবা ঊর্ধ্বতন সংস্করণ প্রয়োজন।
+bn.WinVersionTooLowError=[NAME] চালানোর জন্য Windows XP Service Pack 3 অথবা ঊর্ধ্বতন সংস্করণ প্রয়োজন।
 
 ; Catalan
 ca.WelcomeLabel2=Aquest auxiliar instal·larà el [name] al vostre ordinador%n%nEs recomana tancar totes les aplicacions abans de continuar.
-ca.WinVersionTooLowError=[name] requereix Windows XP Service Pack 3 o superior per funcionar.
+ca.WinVersionTooLowError=[name] cal Windows XP Service Pack 3 o superior per que funcioni.
 
 ; Czech
 cs.WelcomeLabel2=Produkt [name] bude nainstalován na Váš počítač.%n%nDříve než budete pokračovat, doporučuje se ukončit veškeré spuštěné aplikace.
 cs.WinVersionTooLowError=[name] vyžaduje Windows XP Service Pack 3 nebo novější.
+
+; Danish
+da.WelcomeLabel2=Dette vil installere [name] på din computer.%n%nDet anbefales, at du lukker alle andre programmer, inden du fortsætter.
+da.WinVersionTooLowError=[name] kræver Windows XP Service Pack 3 eller nyere for at køre.
 
 ; German (Neutral)
 de.WelcomeLabel2=Dieses Programm installiert [name] auf Ihrem Computer.%n%nEs wird empfohlen, alle laufenden Programme zu beenden, bevor Sie mit der Installation fortfahren.
@@ -59,18 +63,22 @@ en_GB.WinVersionTooLowError=[name] requires Windows XP Service Pack 3 or newer t
 
 ; Spanish
 es.WelcomeLabel2=Este programa instalará [name] en el equipo.%n%nSe recomienda que cierre el resto de las aplicaciones antes de continuar.
-es.WinVersionTooLowError=[name] requiere Windows XP Service Pack 3 o posterior para funcionar.
+es.WinVersionTooLowError=[name] necesita Windows XP Service Pack 3 o posterior para funcionar.
 
 ; Basque
 eu.WelcomeLabel2=Honek [name] zure ordenagailuan ezarriko du.%n%nGomendatzen da beste aplikazio guztiak istea jarraitu aurretik.
 eu.WinVersionTooLowError=[name] Windows XP Service Pack 3 edo berriagoa behar du lan egiteko.
+
+; Finnish
+fi.WelcomeLabel2=Tämä asentaa [name] tietokoneellesi.%n%n On suositeltavaa, että suljet kaikki muut ohjelmat ennenkuin jatkat.
+fi.WinVersionTooLowError=[name] vaatii toimiakseen Windows XP Service Pack 3 tai uudempaa 
 
 ; French (France)
 fr.WelcomeLabel2=Vous allez installer [name] sur votre ordinateur.%n%nIl est recommandé de fermer toutes les autres applications avant de continuer.
 fr.WinVersionTooLowError=[name] nécessite Windows XP Service Pack 3 ou plus récent pour fonctionner.
 
 ; Galician
-gl.WelcomeLabel2=Isto intalará [name] no teu ordenador.%n%nRecomendase que peches todas as aplicacións antes de seguir.
+gl.WelcomeLabel2=Isto instalará [name] no teu ordenador.%n%nRecoméndase que peches todas as aplicacións antes de seguir.
 gl.WinVersionTooLowError=[name] require Windows XP Service Pack 3 ou posterior.
 
 ; Hebrew (Israel)
@@ -82,7 +90,7 @@ hr.WelcomeLabel2=Ovo će instalirati [name] na vaše računalo.%n%nPreporučeno 
 hr.WinVersionTooLowError=Da bi se pokrenuo [name] potrebno je imati Windows XP Service Pack 3 ili novije.
 
 ; Hungarian
-hu.WelcomeLabel2=Ez telepíteni fogja a(z) [name]-t a számítógépére.%nAjánlott, hogy minden más alkalmazást zárjon be a folytatás előtt.
+hu.WelcomeLabel2=Ez telepíteni fogja a(z) [name]-t a számítógépére.%n%nAjánlott, hogy minden más alkalmazást zárjon be a folytatás előtt.
 hu.WinVersionTooLowError=Windows XP Service Pack 3 vagy újabb szükséges a(z) [name] futtatásához.
 
 ; Armenian (Armenia)
@@ -90,16 +98,16 @@ hy.WelcomeLabel2=[name]-ը կտեղադրվի ձեր համակարգչում։%
 hy.WinVersionTooLowError=[name]-ը պահանջում է Windows XP Service Pack 3 կամ ավելի բարձր։
 
 ; Italian
-it.WelcomeLabel2=Questo installerà [name] sul tuo computer.%nE' consigliato chiudere tutte le altre applicazioni prima di continuare.
+it.WelcomeLabel2=Questo installerà [name] sul tuo computer.%n%nE' consigliato chiudere tutte le altre applicazioni prima di continuare.
 it.WinVersionTooLowError=[name] richiede Windows XP Service Pack 3 o successivo per funzionare.
 
 ; Japanese
 ja.WelcomeLabel2=このプログラムはあなたのコンピュータ上に [name] をインストールします。%n%nセットアップを続行する前に他のすべてのアプリケーションを閉じることが推奨されます。
-ja.WinVersionTooLowError=[name] を実行する為には Windows XP Service Pack 3 以降が必要です。
+ja.WinVersionTooLowError=[name] を実行するためには Windows XP Service Pack 3 以降が必要です。
 
 ; Korean
-ko.WelcomeLabel2=이 설치프로그램은 [name] 를(을) 당신의 컴퓨터에 설치합니다.%n%n설치를 계속하기 전에 다른 모든 프로그램을 종료하는 것을 권장합니다.
-ko.WinVersionTooLowError=[name] 는(은) Windows XP Service Pack 3  또는 그 이상의 버전에서만 설치할 수 있습니다.
+ko.WelcomeLabel2=이것은 [name] 를(을) 당신의 컴퓨터에 설치합니다.%n%n설치를 계속하기 전에 다른 모든 프로그램을 종료하는 것을 권장합니다.
+ko.WinVersionTooLowError=[name] 는(은) Windows XP Service Pack 3 또는 그 이상의 버전에서만 설치할 수 있습니다.
 
 ; Malay (Malaysia)
 ms_MY.WelcomeLabel2=Ini akan memasang [name] ke dalam komputer anda.%n%nDisarankan anda tutup semua aplikasi lain sebelum diteruskan.
@@ -118,7 +126,7 @@ pt_BR.WelcomeLabel2=Isto instalará o [name] no seu computador.%n%nÉ recomendá
 pt_BR.WinVersionTooLowError=[name] requer o Windows XP Service Pack 3 ou superior para ser executado.
 
 ; Romanian
-ro.WelcomeLabel2=Se va instala [name] pe calculatorul dumneavoastră.%n%nEste recomandat să închideţi toate celelalte aplicaţii înainte de a continua.
+ro.WelcomeLabel2=Se va instala [name] pe calculatorul dumneavoastră.%n%nEste recomandat să închideţi toate celelalte aplicații înainte de a continua.
 ro.WinVersionTooLowError=[name] necesită Windows XP Service Pack 3 sau mai nou pentru a rula.
 
 ; Russian
@@ -132,6 +140,10 @@ sk.WinVersionTooLowError=[name] vyžaduje pre svoje fungovanie systém Windows X
 ; Slovenian
 sl.WelcomeLabel2=[name] bo nameščen na tem računalniku.%n%nPriporočamo, da zaprete vse ostale programa pred nadaljevanjem.
 sl.WinVersionTooLowError=[name] zahteva za delovanje Windows XP Service Pack 3 ali novejše
+
+; Serbian (Cyrillic)
+sr.WelcomeLabel2=Овим ћете инсталирати [name] на ваш рачунар.%n%nПрепоручује се да затворите све друге програме пре него што наставите.
+sr.WinVersionTooLowError=[name] захтева Windows XP Service Pack 3 или новији за покретање.
 
 ; Swedish
 sv.WelcomeLabel2=Detta kommer att installera [name] på din dator.%n%nDet rekommenderas att du stänger alla andra program innan du fortsätter.
@@ -154,7 +166,7 @@ uk.WelcomeLabel2=На ваш комп'ютер буде встановлено [
 uk.WinVersionTooLowError=[name] вимагає використання ОС Windows XP Service Pack 3 або пізнішої версії.
 
 ; Vietnamese
-vi.WelcomeLabel2=Chuẩn bị cài [name] vào máy tính của bạn.%n%nĐề nghị bạn đóng tất cả các ứng dụng khác trước khi tiếp tục.
+vi.WelcomeLabel2=Chuẩn bị cài đặt [name] vào máy tính của bạn.%n%nĐề nghị bạn đóng tất cả các ứng dụng khác trước khi tiếp tục.
 vi.WinVersionTooLowError=Để cài đặt, [name] yêu cầu Windows XP Service Pack 3 hoặc mới hơn.
 
 ; Chinese (P.R.C.)
@@ -212,7 +224,7 @@ bn.langid=00001093
 bn.comp_mpciconlib=আইকন লাইব্রেরি
 bn.comp_mpcresources=অনুবাদসমূহ
 bn.msg_DeleteSettings=আপনি কি MPC-HCএর সেটিংসমূহও মুছে ফেলতে চান?%n%nআপনার যদি পুনরায় MPC-HC ইনস্টল করার পরিকল্পনা থাকে, তাহলে এসব মুছে ফেলতে হবে না।
-bn.msg_SetupIsRunningWarning=MPC-HCএর সেটআপ ইতিমধ্যে চলমান রয়েছে!
+bn.msg_SetupIsRunningWarning=MPC-HCএর সেটআপ প্রক্রিয়া ইতিমধ্যে চলমান রয়েছে!
 #if defined(sse_required)
 bn.msg_simd_sse=MPC-HCএর এই নির্মাণটির জন্য SSE এক্সটেনশন সমর্থন করে এমন একটি CPUর প্রয়োজন।%n%nআপনার CPUর সেই কর্মক্ষমতা নেই।
 #elif defined(sse2_required)
@@ -223,8 +235,8 @@ bn.tsk_AllUsers=সকল ব্যবহারকারীর জন্য
 bn.tsk_CurrentUser=শুধুমাত্র বর্তমান ব্যবহারকারীর জন্য
 bn.tsk_Other=অন্যান্য কাজসমূহ:
 bn.tsk_ResetSettings=সেটিংসমূহ পুনর্বিন্যাস
-bn.types_DefaultInstallation=নির্ধারিত ইনস্টল প্রক্রিয়া
-bn.types_CustomInstallation=নির্ধারণযোগ্য ইনস্টল প্রক্রিয়া
+bn.types_DefaultInstallation=ডিফল্ট ইনস্টল প্রক্রিয়া
+bn.types_CustomInstallation=ব্যক্তি-নির্ধারিত ইনস্টল প্রক্রিয়া
 bn.ViewChangelog=পরিবর্তনতালিকা দেখুন
 
 ; Catalan
@@ -234,15 +246,15 @@ ca.comp_mpcresources=Traduccions
 ca.msg_DeleteSettings=Voleu suprimir les preferències del MPC-HC?%n%nSi planegeu instal·lar-ho un altre cop no cal eliminar-les.
 ca.msg_SetupIsRunningWarning=La instal·lació del MPC-HC ja s’està executant.
 #if defined(sse_required)
-ca.msg_simd_sse=Aquesta versió de MPC-HC requereix una CPU amb suport d'extensions SSE.%n%nLa teva CPU no cumpleix aquestes característiques.
+ca.msg_simd_sse=Aquesta versió de MPC-HC necessita una CPU amb suport d'extensions SSE.%n%nLa teva CPU no cumpleix aquestes característiques.
 #elif defined(sse2_required)
 ca.msg_simd_sse2=Aquesta versió de MPC-HC requereix una CPU amb suport d'extensions SSE2.%n%nLa teva CPU no cumpleix aquestes característiques.
 #endif
-ca.run_DownloadToolbarImages=Visita la nostra pàgina de Wiki per descarregar imatges per la barra d'eines
-ca.tsk_AllUsers=Per tots els usuaris
+ca.run_DownloadToolbarImages=Visita la nostra pàgina del Wiki per descarregar imatges per a la barra d'eines
+ca.tsk_AllUsers=Per a tots els usuaris
 ca.tsk_CurrentUser=Només per l'usuari actual
 ca.tsk_Other=Altres tasques:
-ca.tsk_ResetSettings=Reiniciar preferències
+ca.tsk_ResetSettings=Reiniciar les preferències
 ca.types_DefaultInstallation=Instal·lació per defecte
 ca.types_CustomInstallation=Instal·lació personalitzada
 ca.ViewChangelog=Veure registre de canvis
@@ -266,6 +278,26 @@ cs.tsk_ResetSettings=Obnovit výchozí nastavení
 cs.types_DefaultInstallation=Standardní instalace
 cs.types_CustomInstallation=Volitelná instalace
 cs.ViewChangelog=Zobrazit seznam změn
+
+; Danish
+da.langid=00001030
+da.comp_mpciconlib=Ikon-bibliotek
+da.comp_mpcresources=Oversættelser
+da.msg_DeleteSettings=Vil du også slette MPC-HC indstillinger?%n%nHvis du har tænkt dig at installere MPC-HC igen, så behøves du ikke slette dem.
+da.msg_SetupIsRunningWarning=MPC-HC installation kører allerede!
+#if defined(sse_required)
+da.msg_simd_sse=Denne version af MPC-HC kræver en CPU der understøtter SSE-udvidelsen.%n%nDin CPU understøtter det ikke.
+#elif defined(sse2_required)
+da.msg_simd_sse2=Denne version af MPC-HC kræver en CPU der understøtter SSE2-udvidelsen.%n%nDin CPU understøtter det ikke.
+#endif
+da.run_DownloadToolbarImages=Besøg vores wiki-side for at hente værktøjslinjebilleder
+da.tsk_AllUsers=For alle brugere
+da.tsk_CurrentUser=Kun for denne bruger
+da.tsk_Other=Andre opgaver:
+da.tsk_ResetSettings=Nulstil indstillinger
+da.types_DefaultInstallation=Standardinstallation
+da.types_CustomInstallation=Brugerdefineret installation
+da.ViewChangelog=Vis ændringslog
 
 ; German (Neutral)
 de.langid=00001031
@@ -367,6 +399,26 @@ eu.types_DefaultInstallation=Berezko ezarpena
 eu.types_CustomInstallation=Norbere ezarpena
 eu.ViewChangelog=Ikusi Aldaketa-oharra
 
+; Finnish
+fi.langid=00001035
+fi.comp_mpciconlib=Ikonikirjasto
+fi.comp_mpcresources=Käännökset
+fi.msg_DeleteSettings=Haluatko poistaa myöskin MPC-HC:n asetukset?%n%nJos aiot asentaa MPC-HC:n uudelleen, niitä ei tarvitse poistaa.
+fi.msg_SetupIsRunningWarning=MPC-HC:n asennus on jo käynnissä!
+#if defined(sse_required)
+fi.msg_simd_sse=MPC-HC:n tämä versio edellyttää CPU:lta SSE-laajennusten tukea.%n%nProsessorissasi ei ole niitä ominaisuuksia.
+#elif defined(sse2_required)
+fi.msg_simd_sse2=MPC-HC:n tämä versio edellyttää CPU:lta SSE2-laajennusten tukea.%n%nProsessorissasi ei ole niitä ominaisuuksia.
+#endif
+fi.run_DownloadToolbarImages=Vieraile Wiki-sivustollamme imuroidaksesi työkalupalkin kuvat
+fi.tsk_AllUsers=Kaikille käyttäjille
+fi.tsk_CurrentUser=Vain nykyiselle käyttäjälle
+fi.tsk_Other=Muut tehtävät:
+fi.tsk_ResetSettings=Nollaa asetukset
+fi.types_DefaultInstallation=Oletusasennus
+fi.types_CustomInstallation=Yksilöllinen asennus
+fi.ViewChangelog=Näytä muutosloki
+
 ; French (France)
 fr.langid=00001036
 fr.comp_mpciconlib=Bibliothèque d'icônes
@@ -391,12 +443,12 @@ fr.ViewChangelog=Voir la liste des changements
 gl.langid=00001110
 gl.comp_mpciconlib=Biblioteca de iconas
 gl.comp_mpcresources=Traducións
-gl.msg_DeleteSettings= Tamén queres eliminar os axustes de MPC-HC?%n%nSe te plantexas instalar MPC-HC outra vez entón non o tes que eliminar.
-gl.msg_SetupIsRunningWarning=O instalador de MPC-HC xa está correndo!
+gl.msg_DeleteSettings=Ques eliminar tamén os axustes de MPC-HC?%n%nSe pensas instalar MPC-HC de novo entón non o tes que eliminalos.
+gl.msg_SetupIsRunningWarning=O instalador de MPC-HC xa está a ser executado!
 #if defined(sse_required)
-gl.msg_simd_sse=Esta versión de MPC-HC require unha CPU con soporte para a extensión SSE .%n%nO seu CPU non ten estas capacidades.
+gl.msg_simd_sse=Esta versión de MPC-HC require unha CPU con soporte para a extensión SSE .%n%nA súa CPU non ten estas capacidades.
 #elif defined(sse2_required)
-gl.msg_simd_sse2=Esta versión de MPC-HC require unha CPU con soporte para a extensión SSE2 .%n%nO seu CPU non ten estas capacidades.
+gl.msg_simd_sse2=Esta versión de MPC-HC require unha CPU con soporte para a extensión SSE2 .%n%nA súa CPU non ten estas capacidades.
 #endif
 gl.run_DownloadToolbarImages=Visite a nosa Wiki para descargar imaxes da barra de ferramentas
 gl.tsk_AllUsers=Para todos os usuarios
@@ -443,7 +495,7 @@ hr.tsk_AllUsers=Za sve korisnike
 hr.tsk_CurrentUser=Samo za trenutnog korisnika
 hr.tsk_Other=Ostali zadaci:
 hr.tsk_ResetSettings=Vrati na početne postavke programa
-hr.types_DefaultInstallation=Standarnda instalacija
+hr.types_DefaultInstallation=Standardna instalacija
 hr.types_CustomInstallation=Prilagođena instalacija
 hr.ViewChangelog=Pogledaj popis promjena
 
@@ -464,7 +516,7 @@ hu.tsk_CurrentUser=Csak a jelenlegi felhasználónak
 hu.tsk_Other=Egyéb feladatok:
 hu.tsk_ResetSettings=Beállítások alaphelyzetbe állítása
 hu.types_DefaultInstallation=Szokásos telepítés
-hu.types_CustomInstallation=Egyedi telepítés
+hu.types_CustomInstallation=Egyéni telepítés
 hu.ViewChangelog=Verziótörténet megtekintése
 
 ; Armenian (Armenia)
@@ -531,20 +583,20 @@ ja.ViewChangelog=変更履歴を表示する
 ko.langid=00001042
 ko.comp_mpciconlib=아이콘 라이브러리
 ko.comp_mpcresources=번역
-ko.msg_DeleteSettings=MPC-HC 의 설정도 삭제하시겠습니까?%n%nMPC-HC 를 다시 설치할 계획이라면 설정들을 삭제할 필요가 없습니다.
-ko.msg_SetupIsRunningWarning=MPC-HC 설치프로그램이 이미 실행중입니다!
+ko.msg_DeleteSettings=MPC-HC 의 설정도 삭제 하시겠습니까?%n%nMPC-HC 를 다시 설치할 계획이라면 설정들을 삭제할 필요가 없습니다.
+ko.msg_SetupIsRunningWarning=MPC-HC 설치 프로그램이 이미 실행 중입니다!
 #if defined(sse_required)
 ko.msg_simd_sse=이 버전의 MPC-HC 는 SSE 기술을 지원하는 CPU가 필요합니다.%n%n이 컴퓨터의 CPU는 이 기술을 지원하지않습니다.
 #elif defined(sse2_required)
 ko.msg_simd_sse2=이 버전의 MPC-HC 는 SSE2 기술을 지원하는 CPU가 필요합니다.%n%n이 컴퓨터의 CPU는 이 기술을 지원하지않습니다.
 #endif
-ko.run_DownloadToolbarImages=Visit our Wiki page to download toolbar images
+ko.run_DownloadToolbarImages=툴바 이미지들을 다운로드하기 위해 위키 페이지로 방문.
 ko.tsk_AllUsers=모든 사용자
 ko.tsk_CurrentUser=현재 사용자만
 ko.tsk_Other=다른 작업:
 ko.tsk_ResetSettings=설정 초기화
 ko.types_DefaultInstallation=기본 설치
-ko.types_CustomInstallation=사용자정의 설치
+ko.types_CustomInstallation=사용자 정의 설치
 ko.ViewChangelog=버전 변경사항 보기
 
 ; Malay (Malaysia)
@@ -578,7 +630,7 @@ nl.msg_simd_sse=Deze versie van MPC-HC heeft een processor nodig die SSE onderst
 #elif defined(sse2_required)
 nl.msg_simd_sse2=Deze versie van MPC-HC heeft een processor nodig die SSE2 ondersteunt.%n%nUw processor ondersteund dit niet.
 #endif
-nl.run_DownloadToolbarImages=Visit our Wiki page to download toolbar images
+nl.run_DownloadToolbarImages=Bezoek onze Wiki pagina om de werkbalk afbeeldingen te downloaden
 nl.tsk_AllUsers=Voor alle gebruikers
 nl.tsk_CurrentUser=Allen voor de huidige gebruiker
 nl.tsk_Other=Andere taken:
@@ -707,12 +759,32 @@ sl.types_DefaultInstallation=Privzeta namestitev
 sl.types_CustomInstallation=Namestitev po meri
 sl.ViewChangelog=Poglej dnevnik sprememb
 
+; Serbian (Cyrillic)
+sr.langid=00003098
+sr.comp_mpciconlib=Библиотека са иконама
+sr.comp_mpcresources=Преводи
+sr.msg_DeleteSettings=Желите ли да обришете и поставке MPC-HC-а?%n%nНе морате их брисати ако планирате поново да инсталирате MPC-HC.
+sr.msg_SetupIsRunningWarning=Инсталација MPC-HC-а је већ покренута!
+#if defined(sse_required)
+sr.msg_simd_sse=Ова верзија MPC-HC-а захтева процесор са подршком за SSE проширења.%n%nВаш процесор нема те могућности.
+#elif defined(sse2_required)
+sr.msg_simd_sse2=Ова верзија MPC-HC-а захтева процесор са подршком за SSE2 проширења.%n%nВаш процесор нема те могућности.
+#endif
+sr.run_DownloadToolbarImages=Посети вики страницу ради преузимања слика траке са алаткама
+sr.tsk_AllUsers=За све кориснике
+sr.tsk_CurrentUser=Само за тренутног корисника
+sr.tsk_Other=Остали задаци:
+sr.tsk_ResetSettings=Врати подразумеване поставке
+sr.types_DefaultInstallation=Уобичајена инсталација
+sr.types_CustomInstallation=Прилагођена инсталација
+sr.ViewChangelog=Погледај евиденцију промена
+
 ; Swedish
 sv.langid=00001053
 sv.comp_mpciconlib=Ikonbibliotek
 sv.comp_mpcresources=Översättningar
 sv.msg_DeleteSettings=Vill du också ta bort inställningarna för MPC-HC?%n%nOm du planerar att installera MPC-HC igen så behöver du inte ta bort dem.
-sv.msg_SetupIsRunningWarning=Konfigurering av MPC-HC pågår redan!
+sv.msg_SetupIsRunningWarning=Installation av MPC-HC pågår redan!
 #if defined(sse_required)
 sv.msg_simd_sse=Denna version av MPC-HC kräver en processor med stöd för SSE.%n%nDin processor saknar detta stöd.
 #elif defined(sse2_required)

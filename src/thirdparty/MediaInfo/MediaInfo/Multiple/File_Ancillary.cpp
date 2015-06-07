@@ -34,6 +34,12 @@
 #if defined(MEDIAINFO_ARIBSTDB24B37_YES)
     #include "MediaInfo/Text/File_AribStdB24B37.h"
 #endif
+#if defined(MEDIAINFO_SDP_YES)
+    #include "MediaInfo/Text/File_Sdp.h"
+#endif
+#if defined(MEDIAINFO_MXF_YES)
+    #include "MediaInfo/Multiple/File_Mxf.h"
+#endif
 #include "MediaInfo/MediaInfo_Config_MediaInfo.h"
 #include <cstring>
 //---------------------------------------------------------------------------
@@ -49,6 +55,7 @@ namespace MediaInfoLib
 
 const char* Ancillary_DataID(int8u DataID, int8u SecondaryDataID)
 {
+    // TODO: check http://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.1364-2-201003-I!!PDF-E.pdf
     switch (DataID)
     {
         case 0x00 : return "Undefined";
@@ -84,7 +91,7 @@ const char* Ancillary_DataID(int8u DataID, int8u SecondaryDataID)
         case 0x43 :
                     switch (SecondaryDataID)
                     {
-                        case 0x02 : return "WST";                               //OP-47 WST, also RDD 8
+                        case 0x02 : return "SDP";                               //OP-47 SDP, also RDD 8
                         case 0x03 : return "Multipacket";                       //OP-47 Multipacket, also RDD 8
                         case 0x05 : return "Acquisition Metadata";              //RDD 18
                         default   : return "(Internationally registered)";
@@ -124,6 +131,13 @@ const char* Ancillary_DataID(int8u DataID, int8u SecondaryDataID)
                     switch (SecondaryDataID)
                     {
                         case 0x01 : return "WSS";                               //RDD 8
+                        default   : return "(Reserved)";
+                    }
+                    break;
+        case 0x51 :
+                    switch (SecondaryDataID)
+                    {
+                        case 0x01 : return "Film Transfer and Video Production Information"; //RP 215
                         default   : return "(Reserved)";
                     }
                     break;
@@ -224,6 +238,12 @@ File_Ancillary::File_Ancillary()
     #if defined(MEDIAINFO_ARIBSTDB24B37_YES)
         AribStdB34B37_Parser=NULL;
     #endif //defined(MEDIAINFO_ARIBSTDB24B37_YES)
+    #if defined(MEDIAINFO_SDP_YES)
+        Sdp_Parser=NULL;
+    #endif //defined(MEDIAINFO_SDP_YES)
+    #if defined(MEDIAINFO_MXF_YES)
+        Rdd18_Parser=NULL;
+    #endif //defined(MEDIAINFO_MXF_YES)
 }
 
 //---------------------------------------------------------------------------
@@ -241,6 +261,12 @@ File_Ancillary::~File_Ancillary()
     #if defined(MEDIAINFO_ARIBSTDB24B37_YES)
         delete AribStdB34B37_Parser; //AribStdB34B37_Parser=NULL;
     #endif //defined(MEDIAINFO_ARIBSTDB24B37_YES)
+    #if defined(MEDIAINFO_SDP_YES)
+        delete Sdp_Parser; //Sdp_Parser=NULL;
+    #endif //defined(MEDIAINFO_SDP_YES)
+    #if defined(MEDIAINFO_MXF_YES)
+        delete Rdd18_Parser; //Rdd18_Parser=NULL;
+    #endif //defined(MEDIAINFO_MXF_YES)
 }
 
 //---------------------------------------------------------------------------
@@ -278,6 +304,32 @@ void File_Ancillary::Streams_Finish()
             }
         }
     #endif //defined(MEDIAINFO_ARIBSTDB24B37_YES)
+
+    #if defined(MEDIAINFO_SDP_YES)
+        if (Sdp_Parser && !Sdp_Parser->Status[IsFinished] && Sdp_Parser->Status[IsAccepted])
+        {
+            Finish(Sdp_Parser);
+            for (size_t StreamPos=0; StreamPos<Sdp_Parser->Count_Get(Stream_Text); StreamPos++)
+            {
+                Merge(*Sdp_Parser, Stream_Text, StreamPos, StreamPos);
+                Ztring MuxingMode=Sdp_Parser->Retrieve(Stream_General, 0, General_Format);
+                Fill(Stream_Text, StreamPos, "MuxingMode", __T("Ancillary data / OP-47 / ")+MuxingMode, true);
+            }
+        }
+    #endif //defined(MEDIAINFO_SDP_YES)
+
+    #if defined(MEDIAINFO_MXF_YES)
+        if (Rdd18_Parser && !Rdd18_Parser->Status[IsFinished] && Rdd18_Parser->Status[IsAccepted])
+        {
+            Finish(Rdd18_Parser);
+            for (size_t StreamPos=0; StreamPos<Rdd18_Parser->Count_Get(Stream_Other); StreamPos++)
+            {
+                Merge(*Rdd18_Parser, Stream_Other, StreamPos, StreamPos);
+                Fill(Stream_Other, StreamPos_Last, Other_Format, "Acquisition Metadata", Unlimited, true, true);
+                Fill(Stream_Other, StreamPos_Last, Other_MuxingMode, "Ancillary data / RDD 18");
+            }
+        }
+    #endif //defined(MEDIAINFO_MXF_YES)
 }
 
 //***************************************************************************
@@ -388,8 +440,17 @@ void File_Ancillary::Read_Buffer_Unsynched()
         if (AribStdB34B37_Parser)
             AribStdB34B37_Parser->Open_Buffer_Unsynch();
     #endif //defined(MEDIAINFO_ARIBSTDB24B37_YES)
+    #if defined(MEDIAINFO_SDP_YES)
+        if (Sdp_Parser)
+            Sdp_Parser->Open_Buffer_Unsynch();
+    #endif //defined(MEDIAINFO_SDP_YES)
+    #if defined(MEDIAINFO_MXF_YES)
+        if (Rdd18_Parser)
+            Rdd18_Parser->Open_Buffer_Unsynch();
+    #endif //defined(MEDIAINFO_MXF_YES)
     AspectRatio=0;
 }
+
 //***************************************************************************
 // Buffer - Per element
 //***************************************************************************
@@ -571,13 +632,28 @@ void File_Ancillary::Data_Parse()
             case 0x43 :
                         switch (SecondaryDataID)
                         {
-                            case 0x02 : //OP-47 WST, also RDD 8
+                            case 0x02 : //OP-47 SDP, also RDD 8
+                                        /*
                                         if (Count_Get(Stream_Text)==0)
                                         {
                                             Stream_Prepare(Stream_Text);
-                                            Fill(Stream_Text, StreamPos_Last, Text_Format, "WST");
+                                            Fill(Stream_Text, StreamPos_Last, Text_Format, "Teletext Subtitle");
                                             Fill(Stream_Text, StreamPos_Last, Text_MuxingMode, "Ancillary data / OP-47 / SDP");
                                         }
+                                        */
+                                        #if defined(MEDIAINFO_SDP_YES)
+                                        if (Sdp_Parser==NULL)
+                                        {
+                                            Sdp_Parser=new File_Sdp;
+                                            Open_Buffer_Init(Sdp_Parser);
+                                        }
+                                        if (!Sdp_Parser->Status[IsFinished])
+                                        {
+                                            if (Sdp_Parser->PTS_DTS_Needed)
+                                                Sdp_Parser->FrameInfo=FrameInfo;
+                                            Open_Buffer_Continue(Sdp_Parser, Payload, (size_t)DataCount);
+                                        }
+                                        #endif //defined(MEDIAINFO_SDP_YES)
                                         break;
                             case 0x03 : //OP-47 Multipacket, also RDD 8
                                         if (Count_Get(Stream_Other)==0)
@@ -587,12 +663,25 @@ void File_Ancillary::Data_Parse()
                                         }
                                         break;
                             case 0x05 : //RDD 18
+                                        #if defined(MEDIAINFO_MXF_YES)
+                                        if (Rdd18_Parser==NULL)
+                                        {
+                                            Rdd18_Parser=new File_Mxf;
+                                            Open_Buffer_Init(Rdd18_Parser);
+                                        }
+                                        if (!Rdd18_Parser->Status[IsFinished])
+                                            Open_Buffer_Continue(Rdd18_Parser, Payload+1, (size_t)DataCount-1);
+                                        #endif //defined(MEDIAINFO_MXF_YES)
+
+                                        /*
                                         if (Count_Get(Stream_Other)==0)
                                         {
                                             Stream_Prepare(Stream_Other);
                                             Fill(Stream_Other, StreamPos_Last, Other_Format, "Acquisition Metadata");
                                             Fill(Stream_Other, StreamPos_Last, Other_MuxingMode, "Ancillary data / RDD 18");
+                                            Merge(*Parser, Stream_Other, 0, StreamPos_Last);
                                         }
+                                        */
                                         break;
                             default   :
                                         if (Count_Get(Stream_Other)==0)

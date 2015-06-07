@@ -200,6 +200,9 @@
 #if defined(MEDIAINFO_AU_YES)
     #include "MediaInfo/Audio/File_Au.h"
 #endif
+#if defined(MEDIAINFO_CAF_YES)
+    #include "MediaInfo/Audio/File_Caf.h"
+#endif
 #if defined(MEDIAINFO_DTS_YES)
     #include "MediaInfo/Audio/File_Dts.h"
 #endif
@@ -272,8 +275,14 @@
 #if defined(MEDIAINFO_SCC_YES)
     #include "MediaInfo/Text/File_Scc.h"
 #endif
+#if defined(MEDIAINFO_SDP_YES)
+    #include "MediaInfo/Text/File_Sdp.h"
+#endif
 #if defined(MEDIAINFO_SUBRIP_YES)
     #include "MediaInfo/Text/File_SubRip.h"
+#endif
+#if defined(MEDIAINFO_TELETEXT_YES)
+    #include "MediaInfo/Text/File_Teletext.h"
 #endif
 #if defined(MEDIAINFO_TTML_YES)
     #include "MediaInfo/Text/File_Ttml.h"
@@ -289,6 +298,9 @@
 #endif
 #if defined(MEDIAINFO_BMP_YES)
     #include "MediaInfo/Image/File_Bmp.h"
+#endif
+#if defined(MEDIAINFO_BPG_YES)
+    #include "MediaInfo/Image/File_Bpg.h"
 #endif
 #if defined(MEDIAINFO_DDS_YES)
     #include "MediaInfo/Image/File_Dds.h"
@@ -558,6 +570,9 @@ bool MediaInfo_Internal::SelectFromExtension (const String &Parser)
     #if defined(MEDIAINFO_AU_YES)
         else if (Parser==__T("Au"))          Info=new File_Au();
     #endif
+    #if defined(MEDIAINFO_CAF_YES)
+        else if (Parser==__T("Caf"))          Info=new File_Caf();
+    #endif
     #if defined(MEDIAINFO_DTS_YES)
         else if (Parser==__T("Dts"))         Info=new File_Dts();
     #endif
@@ -627,9 +642,15 @@ bool MediaInfo_Internal::SelectFromExtension (const String &Parser)
     #if defined(MEDIAINFO_SCC_YES)
         else if (Parser==__T("SCC"))         Info=new File_Scc();
     #endif
+    #if defined(MEDIAINFO_SDP_YES)
+        else if (Parser==__T("SDP"))         Info=new File_Sdp();
+    #endif
     #if defined(MEDIAINFO_SUBRIP_YES)
         else if (Parser==__T("SubRip"))      Info=new File_SubRip();
         else if (Parser==__T("WebVTT"))      Info=new File_SubRip();
+    #endif
+    #if defined(MEDIAINFO_TELETEXT_YES)
+        else if (Parser==__T("Teletext"))    Info=new File_Teletext();
     #endif
     #if defined(MEDIAINFO_TTML_YES)
         else if (Parser==__T("TTML"))        Info=new File_Ttml();
@@ -644,6 +665,9 @@ bool MediaInfo_Internal::SelectFromExtension (const String &Parser)
     #endif
     #if defined(MEDIAINFO_BMP_YES)
         else if (Parser==__T("Bmp"))         Info=new File_Bmp();
+    #endif
+    #if defined(MEDIAINFO_BPG_YES)
+        else if (Parser==__T("Bpg"))         Info=new File_Bpg();
     #endif
     #if defined(MEDIAINFO_DDS_YES)
         else if (Parser==__T("Dds"))         Info=new File_Dds();
@@ -906,6 +930,9 @@ int MediaInfo_Internal::ListFormats(const String &File_Name)
     #if defined(MEDIAINFO_AU_YES)
         delete Info; Info=new File_Au();                 if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
     #endif
+    #if defined(MEDIAINFO_CAF_YES)
+        delete Info; Info=new File_Caf();                if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
+    #endif
     #if defined(MEDIAINFO_DTS_YES)
         delete Info; Info=new File_Dts();                if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
     #endif
@@ -972,8 +999,14 @@ int MediaInfo_Internal::ListFormats(const String &File_Name)
     #if defined(MEDIAINFO_SCC_YES)
         delete Info; Info=new File_Scc();                if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
     #endif
+    #if defined(MEDIAINFO_SDP_YES)
+        delete Info; Info=new File_Sdp();                if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
+    #endif
     #if defined(MEDIAINFO_SUBRIP_YES)
         delete Info; Info=new File_SubRip();             if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
+    #endif
+    #if defined(MEDIAINFO_TELETEXT_YES)
+        delete Info; Info=new File_Teletext();           if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
     #endif
     #if defined(MEDIAINFO_TTML_YES)
         delete Info; Info=new File_Ttml();               if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
@@ -988,6 +1021,9 @@ int MediaInfo_Internal::ListFormats(const String &File_Name)
     #endif
     #if defined(MEDIAINFO_BMP_YES)
         delete Info; Info=new File_Bmp();                if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
+    #endif
+    #if defined(MEDIAINFO_BPG_YES)
+        delete Info; Info=new File_Bpg();                if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;
     #endif
     #if defined(MEDIAINFO_DDS_YES)
         delete Info; Info=new File_Dds();                if (((Reader_File*)Reader)->Format_Test_PerParser(this, File_Name)>0) return 1;

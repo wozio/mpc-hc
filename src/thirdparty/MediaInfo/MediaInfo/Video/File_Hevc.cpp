@@ -4,6 +4,12 @@
  *  be found in the License.html file in the root of the source tree.
  */
 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//
+// Contributor: Lionel Duchateau, kurtnoise@free.fr
+//
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 //---------------------------------------------------------------------------
 // Pre-compilation
 #include "MediaInfo/PreComp.h"
@@ -58,6 +64,16 @@ const int8u Hevc_SubHeightC[]=
 };
 
 //---------------------------------------------------------------------------
+const char* Hevc_tier_flag(bool tier_flag)
+{
+    switch (tier_flag)
+    {
+        case   true  : return "High";
+        default      : return "Main";
+    }
+}
+
+//---------------------------------------------------------------------------
 const char* Hevc_profile_idc(int32u profile_idc)
 {
     switch (profile_idc)
@@ -66,7 +82,7 @@ const char* Hevc_profile_idc(int32u profile_idc)
         case   1 : return "Main";
         case   2 : return "Main 10";
         case   3 : return "Main Still";
-        default  : return "Unknown";
+        default  : return "";
     }
 }
 
@@ -119,6 +135,7 @@ extern const char* Mpegv_matrix_coefficients(int8u matrix_coefficients);
 extern const int8u Avc_PixelAspectRatio_Size;
 extern const float32 Avc_PixelAspectRatio[];
 extern const char* Avc_video_format[];
+extern const char* Avc_video_full_range[];
 
 //***************************************************************************
 // Constructor/Destructor
@@ -207,15 +224,15 @@ void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator se
         {
             if ((*seq_parameter_set_Item)->profile_idc)
                 Profile+=__T('@');
-            Profile+=__T('L')+Ztring().From_Number(((float)(*seq_parameter_set_Item)->level_idc)/30, 1);
+            Profile+=__T('L')+Ztring().From_Number(((float)(*seq_parameter_set_Item)->level_idc)/30, ((*seq_parameter_set_Item)->level_idc%10)?1:0);
+            Profile+=__T('@');
+            Profile+=Ztring().From_Local(Hevc_tier_flag((*seq_parameter_set_Item)->tier_flag));
         }
     }
     Fill(Stream_Video, 0, Video_Format_Profile, Profile);
     Fill(Stream_Video, 0, Video_Codec_Profile, Profile);
     Fill(Stream_Video, StreamPos_Last, Video_Width, Width);
     Fill(Stream_Video, StreamPos_Last, Video_Height, Height);
-    //Fill(Stream_Video, 0, Video_PixelAspectRatio, PixelAspectRatio, 3, true);
-    //Fill(Stream_Video, 0, Video_DisplayAspectRatio, Width*PixelAspectRatio/Height, 3, true); //More precise
 
     Fill(Stream_Video, 0, Video_ColorSpace, "YUV");
     Fill(Stream_Video, 0, Video_Colorimetry, Hevc_chroma_format_idc((*seq_parameter_set_Item)->chroma_format_idc));
@@ -224,11 +241,37 @@ void File_Hevc::Streams_Fill(std::vector<seq_parameter_set_struct*>::iterator se
 
     if ((*seq_parameter_set_Item)->vui_parameters)
     {
-            if ((*seq_parameter_set_Item)->vui_parameters->timing_info_present_flag)
+        if ((*seq_parameter_set_Item)->vui_parameters->timing_info_present_flag)
+        {
+                if ((*seq_parameter_set_Item)->vui_parameters->time_scale && (*seq_parameter_set_Item)->vui_parameters->num_units_in_tick)
+                        Fill(Stream_Video, StreamPos_Last, Video_FrameRate, (float64)(*seq_parameter_set_Item)->vui_parameters->time_scale / (*seq_parameter_set_Item)->vui_parameters->num_units_in_tick);
+        }
+
+        if ((*seq_parameter_set_Item)->vui_parameters->aspect_ratio_info_present_flag)
+        {
+                float64 PixelAspectRatio = 1;
+                if ((*seq_parameter_set_Item)->vui_parameters->aspect_ratio_idc<Avc_PixelAspectRatio_Size)
+                        PixelAspectRatio = Avc_PixelAspectRatio[(*seq_parameter_set_Item)->vui_parameters->aspect_ratio_idc];
+                else if ((*seq_parameter_set_Item)->vui_parameters->aspect_ratio_idc == 0xFF && (*seq_parameter_set_Item)->vui_parameters->sar_height)
+                        PixelAspectRatio = ((float64) (*seq_parameter_set_Item)->vui_parameters->sar_width) / (*seq_parameter_set_Item)->vui_parameters->sar_height;
+
+                Fill(Stream_Video, 0, Video_PixelAspectRatio, PixelAspectRatio, 3, true);
+                Fill(Stream_Video, 0, Video_DisplayAspectRatio, Width*PixelAspectRatio/Height, 3, true); //More precise
+        }
+
+        //Colour description
+        if ((*seq_parameter_set_Item)->vui_parameters->video_signal_type_present_flag)
+        {
+            Fill(Stream_Video, 0, Video_Standard, Avc_video_format[(*seq_parameter_set_Item)->vui_parameters->video_format]);
+            Fill(Stream_Video, 0, Video_colour_range, Avc_video_full_range[(*seq_parameter_set_Item)->vui_parameters->video_full_range_flag]);
+            if ((*seq_parameter_set_Item)->vui_parameters->colour_description_present_flag)
             {
-                    if ((*seq_parameter_set_Item)->vui_parameters->time_scale && (*seq_parameter_set_Item)->vui_parameters->num_units_in_tick)
-                            Fill(Stream_Video, StreamPos_Last, Video_FrameRate, (float64)(*seq_parameter_set_Item)->vui_parameters->time_scale / (*seq_parameter_set_Item)->vui_parameters->num_units_in_tick);
+                Fill(Stream_Video, 0, Video_colour_description_present, "Yes");
+                Fill(Stream_Video, 0, Video_colour_primaries, Mpegv_colour_primaries((*seq_parameter_set_Item)->vui_parameters->colour_primaries));
+                Fill(Stream_Video, 0, Video_transfer_characteristics, Mpegv_transfer_characteristics((*seq_parameter_set_Item)->vui_parameters->transfer_characteristics));
+                Fill(Stream_Video, 0, Video_matrix_coefficients, Mpegv_matrix_coefficients((*seq_parameter_set_Item)->vui_parameters->matrix_coefficients));
             }
+        }
     }
 }
 
@@ -1265,6 +1308,7 @@ void File_Hevc::seq_parameter_set()
                                                                     0,
                                                                     0,
                                                                     0,
+                                                                    0,
                                                                     false,
                                                                     false,
                                                                     false
@@ -1387,6 +1431,7 @@ void File_Hevc::seq_parameter_set()
         delete *Data_Item; *Data_Item=new seq_parameter_set_struct(
                                                                     vui_parameters_Item,
                                                                     profile_space,
+                                                                    tier_flag,
                                                                     profile_idc,
                                                                     level_idc,
                                                                     pic_width_in_luma_samples,
@@ -1876,7 +1921,7 @@ void File_Hevc::sei_message_user_data_unregistered_x265(int32u payloadSize)
             Element_Begin1("options");
             size_t Options_Pos_Before=Data_Pos_Before;
             Encoded_Library_Settings.clear();
-            do
+            while (Options_Pos_Before!=Data.size())
             {
                 size_t Options_Pos=Data.find(__T(" "), Options_Pos_Before);
                 if (Options_Pos==std::string::npos)
@@ -1884,7 +1929,7 @@ void File_Hevc::sei_message_user_data_unregistered_x265(int32u payloadSize)
                 Ztring option;
                 Get_Local (Options_Pos-Options_Pos_Before, option, "option");
                 Options_Pos_Before=Options_Pos;
-                do
+                while (Options_Pos_Before!=Data.size())
                 {
                     Ztring Separator;
                     Peek_Local(1, Separator);
@@ -1896,7 +1941,6 @@ void File_Hevc::sei_message_user_data_unregistered_x265(int32u payloadSize)
                     else
                         break;
                 }
-                while (Options_Pos_Before!=Data.size());
 
                 //Filling
                 if (option!=__T("options:") && !(!option.empty() && option[0]>=__T('0') && option[0]<=__T('9')) && option.find(__T("fps="))!=0 && option.find(__T("bitdepth="))!=0) //Ignoring redundant information e.g. width, height, frame rate, bit depth
@@ -1906,7 +1950,6 @@ void File_Hevc::sei_message_user_data_unregistered_x265(int32u payloadSize)
                     Encoded_Library_Settings+=option;
                 }
             }
-            while (Options_Pos_Before!=Data.size());
             Element_End0();
         }
         else
@@ -2058,7 +2101,7 @@ void File_Hevc::profile_tier_level(int8u maxNumSubLayersMinus1)
     //Parsing
     std::vector<bool>sub_layer_profile_present_flags, sub_layer_level_present_flags;
     Get_S1 (2,  profile_space,                                  "general_profile_space");
-    Skip_SB(                                                    "general_tier_flag");
+    Get_SB (    tier_flag,                                      "general_tier_flag");
     Get_S1 (5,  profile_idc,                                    "general_profile_idc");
     Element_Begin1("general_profile_compatibility_flags");
         for (int8u profile_pos=0; profile_pos<32; profile_pos++)
@@ -2188,7 +2231,7 @@ void File_Hevc::vui_parameters(std::vector<video_parameter_set_struct*>::iterato
     seq_parameter_set_struct::vui_parameters_struct::xxl *NAL = NULL, *VCL = NULL;
     int32u  num_units_in_tick = (int32u)-1, time_scale = (int32u)-1;
     int16u  sar_width=(int16u)-1, sar_height=(int16u)-1;
-    int8u   aspect_ratio_idc=0, video_format=5, colour_primaries=2, transfer_characteristics=2, matrix_coefficients=2;
+    int8u   aspect_ratio_idc=0, video_format=5, video_full_range_flag=0, colour_primaries=2, transfer_characteristics=2, matrix_coefficients=2;
     bool    aspect_ratio_info_present_flag, video_signal_type_present_flag, frame_field_info_present_flag, colour_description_present_flag=false, timing_info_present_flag;
     TEST_SB_GET (aspect_ratio_info_present_flag,                "aspect_ratio_info_present_flag");
         Get_S1 (8, aspect_ratio_idc,                            "aspect_ratio_idc"); Param_Info1C((aspect_ratio_idc<Avc_PixelAspectRatio_Size), Avc_PixelAspectRatio[aspect_ratio_idc]);
@@ -2203,7 +2246,7 @@ void File_Hevc::vui_parameters(std::vector<video_parameter_set_struct*>::iterato
     TEST_SB_END();
     TEST_SB_GET (video_signal_type_present_flag,                "video_signal_type_present_flag");
         Get_S1 (3, video_format,                                "video_format"); Param_Info1(Avc_video_format[video_format]);
-        Skip_SB(                                                "video_full_range_flag");
+        Get_S1 (1, video_full_range_flag,                       "video_full_range_flag"); Param_Info1(Avc_video_full_range[video_full_range_flag]);
         TEST_SB_GET (colour_description_present_flag,           "colour_description_present_flag");
             Get_S1 (8, colour_primaries,                        "colour_primaries"); Param_Info1(Mpegv_colour_primaries(colour_primaries));
             Get_S1 (8, transfer_characteristics,                "transfer_characteristics"); Param_Info1(Mpegv_transfer_characteristics(transfer_characteristics));
@@ -2255,6 +2298,7 @@ void File_Hevc::vui_parameters(std::vector<video_parameter_set_struct*>::iterato
                                                                                     sar_height,
                                                                                     aspect_ratio_idc,
                                                                                     video_format,
+                                                                                    video_full_range_flag,
                                                                                     colour_primaries,
                                                                                     transfer_characteristics,
                                                                                     matrix_coefficients,
@@ -2438,11 +2482,11 @@ void File_Hevc::VPS_SPS_PPS()
     int8u  chromaFormat, bitDepthLumaMinus8, bitDepthChromaMinus8;
     int8u  general_profile_space, general_profile_idc, general_level_idc;
     int8u  numOfArrays, constantFrameRate, numTemporalLayers;
-    bool   temporalIdNested;
+    bool   general_tier_flag, temporalIdNested;
     Get_B1 (configurationVersion,                               "configurationVersion");
     BS_Begin();
         Get_S1 (2, general_profile_space,                       "general_profile_space");
-        Skip_SB(                                                "general_tier_flag");
+        Get_SB (   general_tier_flag,                           "general_tier_flag");
         Get_S1 (5, general_profile_idc,                         "general_profile_idc");
     BS_End();
     Get_B4 (general_profile_compatibility_flags,                "general_profile_compatibility_flags");

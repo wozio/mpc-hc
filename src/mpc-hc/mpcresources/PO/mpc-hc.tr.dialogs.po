@@ -3,13 +3,14 @@
 # This file is distributed under the same license as the MPC-HC package.
 # Translators:
 # Burak <burakgarci@gmail.com>, 2013
-# Sinan H., 2014
+# Mesut Aktaş <mesuthan_42@hotmail.com>, 2015
+# Sinan H., 2014-2015
 # Sinan H., 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: MPC-HC\n"
-"POT-Creation-Date: 2014-09-19 20:08:04+0000\n"
-"PO-Revision-Date: 2014-09-20 19:20+0000\n"
+"POT-Creation-Date: 2015-03-16 18:09:30+0000\n"
+"PO-Revision-Date: 2015-04-18 17:43+0000\n"
 "Last-Translator: Sinan H.\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/mpc-hc/language/tr/)\n"
 "MIME-Version: 1.0\n"
@@ -111,7 +112,7 @@ msgid "Enable custom channel mapping"
 msgstr "Özel kanal adreslemesini kullan"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_STATIC1"
-msgid "Speaker configuration for "
+msgid "Speaker configuration for"
 msgstr "Hoparlör sayısını ve çıkışını :"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_STATIC2"
@@ -119,7 +120,7 @@ msgid "input channels:"
 msgstr "kanallı olarak ayarla"
 
 msgctxt "IDD_PPAGEAUDIOSWITCHER_IDC_STATIC3"
-msgid "Hold shift for immediate changes when clicking something "
+msgid "Hold shift for immediate changes when clicking something"
 msgstr "Ayarların hemen geçerli olabilmesi için tıklarken Shift tuşuna basınız"
 
 msgctxt "IDD_GOTO_DLG_CAPTION"
@@ -191,8 +192,8 @@ msgid "About"
 msgstr "Hakkında"
 
 msgctxt "IDD_ABOUTBOX_IDC_AUTHORS_LINK"
-msgid "Copyright © 2002-2014 see Authors.txt"
-msgstr "Telif Hakkı © 2002-2014, Authors.txt dosyasına bakınız"
+msgid "Copyright © 2002-2015 see Authors.txt"
+msgstr "Telif Hakkı © 2002-2015, Authors.txt dosyasına bakınız"
 
 msgctxt "IDD_ABOUTBOX_IDC_STATIC"
 msgid "This program is freeware and released under the GNU General Public License."
@@ -300,7 +301,7 @@ msgstr "Ayarları .ini dosyasında sakla"
 
 msgctxt "IDD_PPAGEPLAYER_IDC_CHECK10"
 msgid "Disable \"Open Disc\" menu"
-msgstr "CD-ROM Açma özelliğini kapat"
+msgstr "\"CD-ROM aç\" menüsünü kapat"
 
 msgctxt "IDD_PPAGEPLAYER_IDC_CHECK9"
 msgid "Process priority above normal"
@@ -571,7 +572,7 @@ msgid "Warning"
 msgstr "Uyarı"
 
 msgctxt "IDD_PPAGESUBTITLES_IDC_STATIC"
-msgid "If you override and enable full-screen antialiasing somewhere at your videocard's settings, subtitles aren't going to look any better but it will surely eat your cpu."
+msgid "If you override and enable full-screen antialiasing somewhere at your videocard's settings, subtitles aren't going to look any better but it will surely eat your CPU."
 msgstr "Ekran kartınızın ayarlarından Tam ekran keskinlik yumuşatması seçeneğini açarsanız, alt yazılar düzgün görülmeyecek ve daha fazla işlemci kullanımına neden olacaktır."
 
 msgctxt "IDD_PPAGEFORMATS_IDC_STATIC2"
@@ -592,7 +593,7 @@ msgstr "İlişkilendirme"
 
 msgctxt "IDD_PPAGEFORMATS_IDC_CHECK8"
 msgid "Use the format-specific icons"
-msgstr "Her dosya biçimi için ayrı simge kullan"
+msgstr "Her dosya biçimi için ayrı bir simge kullan"
 
 msgctxt "IDD_PPAGEFORMATS_IDC_BUTTON1"
 msgid "Run as &administrator"
@@ -683,11 +684,11 @@ msgid "Use Windows 7 Taskbar features"
 msgstr "Windows 7 görev çubuğu özelliklerini kullan"
 
 msgctxt "IDD_PPAGETWEAKS_IDC_CHECK7"
-msgid "Open next/previous file in folder on \"Skip back/forward\" when there is only one item in playlist"
+msgid "Open previous/next file in folder on \"Skip back/forward\" when there is only one item in playlist"
 msgstr "Oynatma listesinde tek nesne varken \"Geri/ileri git\" tuşuyla önceki/sonraki dosyayı aç"
 
 msgctxt "IDD_PPAGETWEAKS_IDC_CHECK8"
-msgid "Use time tooltip:"
+msgid "Show time tooltip:"
 msgstr "Süre gösterim yerleşimi:"
 
 msgctxt "IDD_PPAGETWEAKS_IDC_STATIC"
@@ -1152,7 +1153,7 @@ msgstr "Tam Ekran Direct3D (kopuklukları sil)"
 
 msgctxt "IDD_PPAGEOUTPUT_IDC_DSVMR9ALTERNATIVEVSYNC"
 msgid "Alternative VSync"
-msgstr "Değişken Eşzam."
+msgstr "Değişken Eşzamanlama"
 
 msgctxt "IDD_PPAGEOUTPUT_IDC_DSVMR9LOADMIXER"
 msgid "VMR-9 Mixer Mode"
@@ -1192,7 +1193,7 @@ msgstr "* VSFilter gibi harici süzgeçler alt yazıları tüm çeviricilerde g�
 
 msgctxt "IDD_PPAGEWEBSERVER_IDC_CHECK1"
 msgid "Listen on port:"
-msgstr "B. Noktası dinle:"
+msgstr "Bağlantı noktasını dinle:"
 
 msgctxt "IDD_PPAGEWEBSERVER_IDC_STATIC1"
 msgid "Launch in web browser..."
@@ -1279,8 +1280,8 @@ msgid "Enable automatic update check"
 msgstr "Otomatik güncelleştirmeleri aç"
 
 msgctxt "IDD_PPAGEMISC_IDC_STATIC5"
-msgid "Delay between each check:"
-msgstr "Güncelleştirme kontrolü :"
+msgid "Check every:"
+msgstr "Kontrol süresi:"
 
 msgctxt "IDD_PPAGEMISC_IDC_STATIC6"
 msgid "day(s)"
@@ -1428,7 +1429,7 @@ msgstr "sütun"
 
 msgctxt "IDD_PPAGESYNC_IDC_SYNCNEAREST"
 msgid "Present at nearest VSync"
-msgstr "En yakın eşzamanlılık örneği"
+msgstr "En yakın eşzamanlılık örneğini kullan"
 
 msgctxt "IDD_PPAGESYNC_IDC_STATIC5"
 msgid "Target sync offset:"
@@ -1665,4 +1666,28 @@ msgstr "Komut satırı yardımı"
 msgctxt "IDD_CMD_LINE_HELP_IDOK"
 msgid "OK"
 msgstr "Tamam"
+
+msgctxt "IDD_CRASH_REPORTER_CAPTION"
+msgid "Crash reporter"
+msgstr ""
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC1"
+msgid "We are sorry, it seems MPC-HC just crashed. :(\n\nTo help us diagnose and fix the problem, a bug report will be sent. You can provide additional information if you want."
+msgstr ""
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC2"
+msgid "Email:"
+msgstr ""
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC3"
+msgid "Your email address is optional and will only be used if the developers need to contact you for more information."
+msgstr ""
+
+msgctxt "IDD_CRASH_REPORTER_IDC_STATIC4"
+msgid "Problem description (use English only):"
+msgstr ""
+
+msgctxt "IDD_CRASH_REPORTER_IDOK"
+msgid "OK"
+msgstr ""
 

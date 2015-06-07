@@ -70,8 +70,6 @@
     <Import Project="..\common.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\include;..\thirdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -102,6 +100,7 @@
     <ClCompile Include="CCDecoder.cpp" />
     <ClCompile Include="CompositionObject.cpp" />
     <ClCompile Include="DVBSub.cpp" />
+    <ClCompile Include="ColorConvTable.cpp" />
     <ClCompile Include="SubtitleHelpers.cpp" />
     <ClCompile Include="PGSSub.cpp" />
     <ClCompile Include="Rasterizer.cpp" />
@@ -123,6 +122,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\include\Utf8.h" />
     <ClInclude Include="Ellipse.h" />
+    <ClInclude Include="ColorConvTable.h" />
     <ClInclude Include="RenderingCache.h" />
     <ClInclude Include="CCDecoder.h" />
     <ClInclude Include="CompositionObject.h" />

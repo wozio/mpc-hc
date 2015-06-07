@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -113,8 +113,8 @@ APP_COMMAND g_CommandList[] = {
 IMPLEMENT_DYNAMIC(CPPageAccelTbl, CPPageBase)
 CPPageAccelTbl::CPPageAccelTbl()
     : CPPageBase(CPPageAccelTbl::IDD, CPPageAccelTbl::IDD)
-    , m_list(0)
     , m_counter(0)
+    , m_list(0)
     , m_fWinLirc(FALSE)
     , m_WinLircLink(_T("http://winlirc.sourceforge.net/"))
     , m_fUIce(FALSE)
@@ -1168,7 +1168,8 @@ void CPPageAccelTbl::OnEndListLabelEdit(NMHDR* pNMHDR, LRESULT* pResult)
                 wc.fVirt |= FSHIFT;
             }
             wc.fVirt |= FVIRTKEY;
-            wc.key = cod;
+            ASSERT(cod < WORD_MAX);
+            wc.key = (WORD)cod;
 
             CString str;
             HotkeyToString(cod, mod, str);

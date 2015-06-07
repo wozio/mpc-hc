@@ -1,5 +1,5 @@
 /*
- * (C) 2009-2013 see Authors.txt
+ * (C) 2009-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,17 +30,17 @@ class CDVBStream
 {
 public:
     CDVBStream()
-        : m_Name(L"")
+        : m_pmt(0)
         , m_bFindExisting(false)
-        , m_pmt(0)
+        , m_Name(L"")
         , m_nMsc(MEDIA_TRANSPORT_PACKET)
         , m_ulMappedPID(0) {
     }
 
     CDVBStream(LPWSTR strName, const AM_MEDIA_TYPE* pmt, bool bFindExisting = false, MEDIA_SAMPLE_CONTENT nMsc = MEDIA_ELEMENTARY_STREAM)
-        : m_Name(strName)
+        : m_pmt(pmt)
         , m_bFindExisting(bFindExisting)
-        , m_pmt(pmt)
+        , m_Name(strName)
         , m_nMsc(nMsc)
         , m_ulMappedPID(0) {
     }
@@ -173,39 +173,3 @@ private:
 
     HRESULT SearchIBDATopology(const CComPtr<IBaseFilter>& pTuner, REFIID iid, CComPtr<IUnknown>& pUnk);
 };
-
-#define LOG_FILE _T("bda.log")
-
-#ifdef _DEBUG
-#include <sys/types.h>
-#include <sys/timeb.h>
-
-static void LOG(LPCTSTR fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    TCHAR buff[3000];
-    FILE* f;
-    _timeb timebuffer;
-    TCHAR time1[8];
-    TCHAR wbuf[26];
-
-    _ftime_s(&timebuffer);
-    _tctime_s(wbuf, _countof(wbuf), &timebuffer.time);
-
-    for (size_t i = 0; i < _countof(time1); i++) {
-        time1[i] = wbuf[i + 11];
-    }
-
-    _vstprintf_s(buff, _countof(buff), fmt, args);
-    if (_tfopen_s(&f, LOG_FILE, _T("at")) == 0) {
-        fseek(f, 0, 2);
-        _ftprintf_s(f, _T("%.8s.%03hu - %s\n"), time1, timebuffer.millitm, buff);
-        fclose(f);
-    }
-
-    va_end(args);
-}
-#else
-inline void LOG(LPCTSTR fmt, ...) {}
-#endif

@@ -1,5 +1,5 @@
 /*
- * (C) 2013-2014 see Authors.txt
+ * (C) 2013-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -25,8 +25,7 @@
 #include <memory>
 #include <set>
 
-enum class MpcEvent
-{
+enum class MpcEvent {
     SWITCHING_TO_FULLSCREEN,
     SWITCHED_TO_FULLSCREEN,
     SWITCHING_FROM_FULLSCREEN,
@@ -45,6 +44,7 @@ enum class MpcEvent
     SYSTEM_MENU_POPUP_INITIALIZED,
     SYSTEM_MENU_POPUP_UNINITIALIZED,
     CHANGING_UI_LANGUAGE,
+    STREAM_POS_UPDATE_REQUEST
 };
 
 class EventClient;

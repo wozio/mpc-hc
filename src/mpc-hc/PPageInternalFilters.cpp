@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -29,8 +29,8 @@
 IMPLEMENT_DYNAMIC(CPPageInternalFiltersListBox, CCheckListBox)
 CPPageInternalFiltersListBox::CPPageInternalFiltersListBox(int n, const CArray<filter_t>& filters)
     : CCheckListBox()
-    , m_n(n)
     , m_filters(filters)
+    , m_n(n)
 {
     for (int i = 0; i < FILTER_TYPE_NB; i++) {
         m_nbFiltersPerType[i] = m_nbChecked[i] = 0;
@@ -116,21 +116,25 @@ void CPPageInternalFiltersListBox::UpdateCheckState()
 
 void CPPageInternalFiltersListBox::OnContextMenu(CWnd* pWnd, CPoint point)
 {
+    BOOL bOutside;
+
     if (point.x == -1 && point.y == -1) {
         // The context menu was triggered using the keyboard,
         // get the coordinates of the currently selected item.
         int iSel = GetCurSel();
         CRect r;
-        if (iSel != LB_ERR && GetItemRect(iSel, &r) != LB_ERR) {
-            point = r.TopLeft();
+        if (GetItemRect(iSel, &r) != LB_ERR) {
+            point.SetPoint(r.left, r.bottom);
+        } else {
+            point.SetPoint(0, 0);
         }
+        bOutside = iSel == LB_ERR;
     } else {
         ScreenToClient(&point);
+        ItemFromPoint(point, bOutside);
     }
 
     // Check that we really inside the list
-    BOOL bOutside = TRUE;
-    ItemFromPoint(point, bOutside);
     if (bOutside) {
         // Trigger the default behavior
         ClientToScreen(&point);
@@ -339,9 +343,14 @@ void CPPageInternalFilters::InitFiltersList()
 #if INTERNAL_SOURCEFILTER_DSM
     m_filters.Add(filter_t(_T("DirectShow Media"), SOURCE_FILTER, SRC_DSM, 0));
 #endif
-#if INTERNAL_SOURCEFILTER_DTSAC3
+#if INTERNAL_SOURCEFILTER_AC3
     if (bLAVSplitterIsAvailable) {
-        m_filters.Add(filter_t(_T("DTS/AC3"), SOURCE_FILTER, SRC_DTSAC3, IDS_INTERNAL_LAVF));
+        m_filters.Add(filter_t(_T("AC3"), SOURCE_FILTER, SRC_AC3, IDS_INTERNAL_LAVF));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_DTS
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("DTS/DTS-HD"), SOURCE_FILTER, SRC_DTS, IDS_INTERNAL_LAVF));
     }
 #endif
 #if INTERNAL_SOURCEFILTER_VTS
@@ -390,6 +399,11 @@ void CPPageInternalFilters::InitFiltersList()
 #if INTERNAL_SOURCEFILTER_ASF
     if (bLAVSplitterIsAvailable) {
         m_filters.Add(filter_t(_T("WMV/ASF/DVR-MS"), SOURCE_FILTER, SRC_ASF, IDS_INTERNAL_LAVF_WMV));
+    }
+#endif
+#if INTERNAL_SOURCEFILTER_WTV
+    if (bLAVSplitterIsAvailable) {
+        m_filters.Add(filter_t(_T("WTV"), SOURCE_FILTER, SRC_WTV, IDS_INTERNAL_LAVF_WMV));
     }
 #endif
 #if INTERNAL_SOURCEFILTER_OGG
