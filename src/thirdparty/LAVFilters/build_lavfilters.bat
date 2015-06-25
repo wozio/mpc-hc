@@ -68,7 +68,7 @@ IF %ARGBC%   GTR 1 (GOTO UnsupportedSwitch) ELSE IF %ARGBC% == 0   (SET "RELEASE
 IF %ARGCOMP% GTR 1 (GOTO UnsupportedSwitch) ELSE IF %ARGCOMP% == 0 (SET "COMPILER=VS2013")
 
 IF NOT DEFINED VS120COMNTOOLS GOTO MissingVar
-SET "TOOLSET=%VS120COMNTOOLS%..\..\VC\vcvarsall.bat"
+SET "TOOLSET=%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
 SET "BIN_DIR=%ROOT_DIR%\bin"
 
 IF /I "%ARCH%" == "Both" (

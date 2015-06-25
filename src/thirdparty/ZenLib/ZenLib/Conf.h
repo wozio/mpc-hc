@@ -342,8 +342,8 @@ typedef unsigned int            intu;
 
 //Windows - MSVC
 #if defined (_MSC_VER)
-    #define snprintf _snprintf
-    #define snwprintf _snwprintf
+    //#define snprintf _snprintf
+    //#define snwprintf _snwprintf
 #endif
 
 } //namespace
