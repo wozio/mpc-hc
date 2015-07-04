@@ -91,8 +91,8 @@ IF /I "%ZIP%" == "True"         IF "%NO_ZIP%" == "True"  GOTO UnsupportedSwitch
 IF /I "%MPCHC_LITE%" == "True"  IF "%NO_LITE%" == "True" GOTO UnsupportedSwitch
 IF /I "%CLEAN%" == "LAVFilters" IF "%NO_LAV%" == "True"  GOTO UnsupportedSwitch
 
-IF NOT DEFINED VS120COMNTOOLS GOTO MissingVar
-SET "TOOLSET=%VS120COMNTOOLS%..\..\VC\vcvarsall.bat"
+IF NOT DEFINED VS140COMNTOOLS GOTO MissingVar
+SET "TOOLSET=%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
 SET "BIN_DIR=bin"
 
 IF EXIST "%FILE_DIR%signinfo.txt" (
