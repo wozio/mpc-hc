@@ -1057,9 +1057,9 @@ bool CFGFilterLAVAudio::Settings::SetSettings(CComQIPtr<ILAVAudioSettings> pLAVF
     pLAVFSettings->SetFormatConfiguration(Codec_WMALL, TRUE);
 
     // Custom interface available only in patched build, will be removed after it's upstreamed
-    if (CComQIPtr<ILAVAudioSettingsMPCHCCustom> pLAVFSettingsMPCHCCustom = pLAVFSettings) {
-        pLAVFSettingsMPCHCCustom->SetPropertyPageCallback(PropertyPageCallback);
-    }
+    //if (CComQIPtr<ILAVAudioSettingsMPCHCCustom> pLAVFSettingsMPCHCCustom = pLAVFSettings) {
+      //  pLAVFSettingsMPCHCCustom->SetPropertyPageCallback(PropertyPageCallback);
+    //}
 
     return true;
 }
