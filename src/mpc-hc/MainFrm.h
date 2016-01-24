@@ -71,6 +71,7 @@
 #include "sizecbar/scbarg.h"
 #include "DSMPropertyBag.h"
 #include "SkypeMoodMsgHandler.h"
+#include "DpiHelper.h"
 
 #include <memory>
 #include <future>
@@ -161,13 +162,18 @@ struct SubtitleInput {
         : pSubStream(pSubStream), pSourceFilter(pSourceFilter) {};
 };
 
-interface ISubClock;
-interface IMadVRSubclassReplacement;
+interface IMadVRCommand;
 interface IMadVRSettings;
+interface IMadVRSubclassReplacement;
+interface IMadVRInfo;
+interface ISubClock;
 
 class CMainFrame : public CFrameWnd, public CDropClient
 {
 public:
+
+    DpiHelper m_dpi;
+
     enum class Timer32HzSubscriber {
         TOOLBARS_HIDER,
         CURSOR_HIDER,
@@ -191,6 +197,8 @@ public:
 private:
     EventClient m_eventc;
     void EventCallback(MpcEvent ev);
+
+    CMainFrameMouseHook m_mouseHook;
 
     enum {
         TIMER_STREAMPOSPOLLER = 1,
@@ -242,8 +250,10 @@ private:
     CComPtr<ISubPicAllocatorPresenter> m_pCAP;
     CComPtr<ISubPicAllocatorPresenter2> m_pCAP2;
 
-    CComPtr<IMadVRSubclassReplacement> m_pMVRSR;
     CComPtr<IMadVRSettings> m_pMVRS;
+    CComPtr<IMadVRSubclassReplacement> m_pMVRSR;
+    CComPtr<IMadVRCommand> m_pMVRC;
+    CComPtr<IMadVRInfo> m_pMVRI;
 
     CComQIPtr<IDvdControl2> m_pDVDC;
     CComQIPtr<IDvdInfo2> m_pDVDI;
@@ -289,6 +299,7 @@ private:
     void SetDefaultWindowRect(int iMonitor = 0);
     void SetDefaultFullscreenState();
     void RestoreDefaultWindowRect();
+    CRect GetInvisibleBorderSize() const;
     CSize GetZoomWindowSize(double dScale);
     CRect GetZoomWindowRect(const CSize& size);
     void ZoomVideoWindow(double dScale = ZOOM_DEFAULT_LEVEL);
@@ -310,9 +321,10 @@ private:
     void SetupShadersSubMenu();
     void SetupRecentFilesSubMenu();
 
-    IBaseFilter* FindSourceSelectableFilter();
     void SetupNavStreamSelectSubMenu(CMenu& subMenu, UINT id, DWORD dwSelGroup);
     void OnNavStreamSelectSubMenu(UINT id, DWORD dwSelGroup);
+    void OnStreamSelect(bool forward, DWORD dwSelGroup);
+    static CString GetStreamOSDString(CString name, LCID lcid, DWORD dwSelGroup);
 
     CMenu m_mainPopupMenu, m_popupMenu;
     CMenu m_openCDsMenu;
@@ -395,6 +407,7 @@ private:
     MLS m_eMediaLoadState;
 
     REFTIME GetAvgTimePerFrame() const;
+    void OnVideoSizeChanged(const bool bWasAudioOnly = false);
 
     CDropTarget m_dropTarget;
     void OnDropFiles(CAtlList<CString>& slFiles, DROPEFFECT dropEffect) override;
@@ -613,6 +626,13 @@ public:
             bAbortInfo        = true;
         }
 
+        void Join() {
+            if (infoData.valid()) {
+                bAbortInfo = true;
+                infoData.wait();
+            }
+        }
+
         ~DVBState() {
             bAbortInfo = true;
         }
@@ -680,6 +700,8 @@ public:
     afx_msg void OnDisplayChange();
     afx_msg void OnWindowPosChanging(WINDOWPOS* lpwndpos);
 
+    LRESULT OnDpiChanged(WPARAM wParam, LPARAM lParam);
+
     afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
     afx_msg void OnActivateApp(BOOL bActive, DWORD dwThreadID);
     afx_msg LRESULT OnAppCommand(WPARAM wParam, LPARAM lParam);
@@ -723,8 +745,6 @@ public:
     afx_msg void OnStreamAudio(UINT nID);
     afx_msg void OnStreamSub(UINT nID);
     afx_msg void OnStreamSubOnOff();
-    afx_msg void OnOgmAudio(UINT nID);
-    afx_msg void OnOgmSub(UINT nID);
     afx_msg void OnDvdAngle(UINT nID);
     afx_msg void OnDvdAudio(UINT nID);
     afx_msg void OnDvdSub(UINT nID);
@@ -1075,7 +1095,7 @@ protected:
 
     bool m_bAllowWindowZoom;
     double m_dLastVideoScaleFactor;
-    int m_nLastVideoWidth;
+    CSize m_lastVideoSize;
 
     bool m_bExtOnTop; // 'true' if the "on top" flag was set by an external tool
 
@@ -1104,6 +1124,4 @@ public:
     bool OpenBD(CString Path);
 
     bool GetDecoderType(CString& type) const;
-
-    DPI m_dpi;
 };

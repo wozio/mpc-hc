@@ -117,6 +117,7 @@
     <ClCompile Include="TextPassThruFilter.cpp" />
     <ClCompile Include="TunerScanDlg.cpp" />
     <ClCompile Include="UpdateChecker.cpp" />
+<<<<<<< HEAD
     <ClCompile Include="UpdateCheckerDlg.cpp" />
     <ClCompile Include="VersionInfo.cpp" />
     <ClCompile Include="vkCodes.cpp" />
@@ -126,6 +127,53 @@
     <ClCompile Include="WebServer.cpp" />
     <ClCompile Include="WebServerSocket.cpp" />
     <ClCompile Include="WinHotkeyCtrl.cpp" />
+=======
+    <ClCompile Include="ChildView.cpp">
+      <Filter>Main View</Filter>
+    </ClCompile>
+    <ClCompile Include="CoverArt.cpp">
+      <Filter>Main View</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseTouch.cpp">
+      <Filter>Main View</Filter>
+    </ClCompile>
+    <ClCompile Include="FullscreenWnd.cpp">
+      <Filter>Main View</Filter>
+    </ClCompile>
+    <ClCompile Include="VMROSD.cpp">
+      <Filter>Main View</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerCaptureBar.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerCaptureDialog.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerNavigationBar.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerNavigationDialog.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerSubresyncBar.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerPlaylistBar.cpp">
+      <Filter>Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="DropTarget.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="CrashReporter.cpp">
+      <Filter>Crash Reporter</Filter>
+    </ClCompile>
+    <ClCompile Include="PPageAudioRenderer.cpp">
+      <Filter>Property Dialogs\Player Options\Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="DpiHelper.cpp">
+      <Filter>Helpers</Filter>
+    </ClCompile>
+>>>>>>> d911f14d5619d800819d6f4658e72236720b79af
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutDlg.h" />
@@ -254,6 +302,7 @@
     <ClInclude Include="TunerScanDlg.h" />
     <ClInclude Include="..\..\include\version.h" />
     <ClInclude Include="UpdateChecker.h" />
+<<<<<<< HEAD
     <ClInclude Include="UpdateCheckerDlg.h" />
     <ClInclude Include="VersionInfo.h" />
     <ClInclude Include="vkCodes.h" />
@@ -263,6 +312,270 @@
     <ClInclude Include="WebServer.h" />
     <ClInclude Include="WebServerSocket.h" />
     <ClInclude Include="WinHotkeyCtrl.h" />
+=======
+    <ClInclude Include="CoverArt.h">
+      <Filter>Main View</Filter>
+    </ClInclude>
+    <ClInclude Include="ChildView.h">
+      <Filter>Main View</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseTouch.h">
+      <Filter>Main View</Filter>
+    </ClInclude>
+    <ClInclude Include="FullscreenWnd.h">
+      <Filter>Main View</Filter>
+    </ClInclude>
+    <ClInclude Include="VMROSD.h">
+      <Filter>Main View</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\version.h">
+      <Filter>Build Info</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerCaptureBar.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerCaptureDialog.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerNavigationBar.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerNavigationDialog.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerSubresyncBar.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerPlaylistBar.h">
+      <Filter>Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="DropTarget.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="CrashReporter.h">
+      <Filter>Crash Reporter</Filter>
+    </ClInclude>
+    <ClInclude Include="PPageAudioRenderer.h">
+      <Filter>Property Dialogs\Player Options\Pages</Filter>
+    </ClInclude>
+    <ClInclude Include="DpiHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\ani.avi">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\icon.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Icon_114.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Icon_116.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Icon_41.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\logo.0.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\logo.1.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\logo.2.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\logo.1_x64.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\logo.2_x64.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\mono.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\multi.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\noaudio.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\onoff.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\single.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\stereo.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\streamtypes.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\tb_pause_16.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\tb_play_16.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\tb_stop_16.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\toolbarw7.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\shaders\empty.psh">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="res\shaders\final.psh">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="res\shaders\resizer.psh">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="res\logo.3.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\logo.3_x64.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\toolbar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\web\404.html">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\browser.html">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\controls.html">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\default.css">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\index.html">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\info.html">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\javascript.js">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\player.html">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\variables.html">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\favicon.ico">
+      <Filter>Resource Files\web</Filter>
+    </None>
+    <None Include="res\web\img\1pix.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\bottomside.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlback.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttondecrate.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttonincrate.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttonpause.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttonplay.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttonskipback.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttonskipforward.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttonstep.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlbuttonstop.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlvolumebar.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlvolumegrip.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlvolumeoff.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\controlvolumeon.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\headerback.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\headerclose.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\headericon.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\leftbottomside.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\leftside.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\rightbottomside.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\rightside.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\seekbargrip.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\seekbarleft.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\seekbarmid.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\seekbarright.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\sliderback.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\slidergrip.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\vbg.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\web\img\vbs.png">
+      <Filter>Resource Files\web\img</Filter>
+    </None>
+    <None Include="res\tickcross.png">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mpc-hc.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+>>>>>>> d911f14d5619d800819d6f4658e72236720b79af
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="mpc-hc.rc" />
