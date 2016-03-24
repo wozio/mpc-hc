@@ -47,6 +47,7 @@
 #include "../MathLibFix/MathLibFix.h"
 #include "CmdLineHelpDlg.h"
 #include "CrashReporter.h"
+#include "addons.h"
 
 
 #define HOOKS_BUGS_URL _T("https://trac.mpc-hc.org/ticket/3739")
@@ -1824,6 +1825,8 @@ BOOL CMPlayerCApp::InitInstance()
     if (m_s->fAssociatedWithIcons) {
         m_s->fileAssoc.CheckIconsAssoc();
     }
+
+    addons::addons::init();
 
     return TRUE;
 }

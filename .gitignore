@@ -35,3 +35,4 @@
 /src/thirdparty/DoctorDump/obj
 /src/thirdparty/LAVFilters/obj
 ipch
+/src/Addons/demo/addon.demo/Debug

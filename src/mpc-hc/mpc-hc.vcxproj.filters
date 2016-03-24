@@ -89,6 +89,9 @@
     <Filter Include="Subtitles">
       <UniqueIdentifier>{20afe682-61a3-4123-9012-4c918a03f482}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Addons">
+      <UniqueIdentifier>{99aa9f19-0d61-4809-b144-c17e251eb6c9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppSettings.cpp">
@@ -460,6 +463,9 @@
     </ClCompile>
     <ClCompile Include="..\thirdparty\XmlRpc4Win\TimXmlRpc.cpp">
       <Filter>Subtitles</Filter>
+    </ClCompile>
+    <ClCompile Include="addons.cpp">
+      <Filter>Addons</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -860,6 +866,12 @@
     </ClInclude>
     <ClInclude Include="..\thirdparty\XmlRpc4Win\timxmlrpc.h">
       <Filter>Subtitles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Addons\include\mpc-hc-addon\addon.h">
+      <Filter>Addons</Filter>
+    </ClInclude>
+    <ClInclude Include="addons.h">
+      <Filter>Addons</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
