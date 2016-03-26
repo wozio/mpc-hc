@@ -1,41 +1,33 @@
 #include "stdafx.h"
 #include "addons.h"
-#include "../Addons/include/mpc-hc-addon/addon.h"
 
 namespace addons
 {
-  void addons::init()
+  addons& addons::instance()
   {
-    static addons instance;
+    static addons i;
+    return i;
   }
 
   addons::addons()
   {
-    HINSTANCE hdll = LoadLibrary(TEXT("addons/addon.demo.dll"));
-    if (hdll == NULL)
+    hdll_ = LoadLibrary(TEXT("addons/addon.demo.dll"));
+    if (hdll_ == NULL)
     {
-      OutputDebugString(TEXT("AAAAAA\n"));
+      return;
     }
-    create_addon_t create_addon = (create_addon_t)GetProcAddress(hdll, "create_addon");
+    create_addon_t create_addon = (create_addon_t)GetProcAddress(hdll_, "create_addon");
     if (create_addon == NULL)
     {
-      OutputDebugString(TEXT("BBBBBB\n"));
+      FreeLibrary(hdll_);
+      return;
     }
-
-    std::unique_ptr<addon> a(create_addon());
-
-    if (a->test() == 123)
-    {
-      OutputDebugString(TEXT("HAHAHAHAHAH\n"));
-    }
-
-    a.reset();
-
-    FreeLibrary(hdll);
+    addon_.reset(create_addon());
   }
 
   addons::~addons()
   {
-
+    addon_.reset();
+    FreeLibrary(hdll_);
   }
 }

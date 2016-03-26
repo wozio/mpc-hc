@@ -1826,7 +1826,7 @@ BOOL CMPlayerCApp::InitInstance()
         m_s->fileAssoc.CheckIconsAssoc();
     }
 
-    addons::addons::init();
+    ADDONS; // just to initialize
 
     return TRUE;
 }
