@@ -169,6 +169,7 @@
     <ClCompile Include="FGFilterLAV.cpp" />
     <ClCompile Include="FGManager.cpp" />
     <ClCompile Include="FGManagerBDA.cpp" />
+    <ClCompile Include="FGManagerLibrary.cpp" />
     <ClCompile Include="FileAssoc.cpp" />
     <ClCompile Include="DropTarget.cpp" />
     <ClCompile Include="FreeviewEPGDecode.cpp" />
@@ -307,6 +308,7 @@
     <ClInclude Include="FGFilterLAV.h" />
     <ClInclude Include="FGManager.h" />
     <ClInclude Include="FGManagerBDA.h" />
+    <ClInclude Include="FGManagerLibrary.h" />
     <ClInclude Include="FileAssoc.h" />
     <ClInclude Include="DropTarget.h" />
     <ClInclude Include="FilterEnum.h" />

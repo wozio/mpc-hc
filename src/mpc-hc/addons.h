@@ -15,6 +15,8 @@ namespace addons
     HINSTANCE hdll_;
     std::unique_ptr<addon> addon_;
   };
+
+  void add_menu_item();
 }
 
 #define ADDONS addons::addons::instance()

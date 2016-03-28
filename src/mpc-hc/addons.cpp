@@ -30,4 +30,9 @@ namespace addons
     addon_.reset();
     FreeLibrary(hdll_);
   }
+
+  void add_menu_item()
+  {
+
+  }
 }

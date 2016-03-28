@@ -467,6 +467,9 @@
     <ClCompile Include="addons.cpp">
       <Filter>Addons</Filter>
     </ClCompile>
+    <ClCompile Include="FGManagerLibrary.cpp">
+      <Filter>Graph</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AppSettings.h">
@@ -872,6 +875,9 @@
     </ClInclude>
     <ClInclude Include="addons.h">
       <Filter>Addons</Filter>
+    </ClInclude>
+    <ClInclude Include="FGManagerLibrary.h">
+      <Filter>Graph</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

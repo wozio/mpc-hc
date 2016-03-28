@@ -57,6 +57,8 @@
 #include "CrashReporter.h"
 #include "Translations.h"
 
+#include "addons.h"
+
 #include "../DeCSS/VobFile.h"
 
 #include "BaseClasses/mtype.h"
@@ -76,6 +78,7 @@
 #include "text.h"
 #include "FGManager.h"
 #include "FGManagerBDA.h"
+#include "FGManagerLibrary.h"
 
 #include "TextPassThruFilter.h"
 #include "../filters/Filters.h"
@@ -239,6 +242,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
     ON_UPDATE_COMMAND_UI(ID_FILE_OPENMEDIA, OnUpdateFileOpen)
     ON_COMMAND(ID_FILE_OPENMEDIA, OnFileOpenmedia)
     ON_UPDATE_COMMAND_UI(ID_FILE_OPENMEDIA, OnUpdateFileOpen)
+    ON_COMMAND(ID_FILE_LIBRARY, OnFileOpenLibrary)
     ON_WM_COPYDATA()
     ON_COMMAND(ID_FILE_OPENDVDBD, OnFileOpendvd)
     ON_UPDATE_COMMAND_UI(ID_FILE_OPENDVDBD, OnUpdateFileOpen)
@@ -953,7 +957,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
     UpdateSkypeHandler();
 
-    
+    addons::add_menu_item();
 
     return 0;
 }
@@ -1819,6 +1823,10 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
                         g_bExternalSubtitleTime = true;
                         m_pMS->GetCurrentPosition(&rtNow);
                         break;
+                    case PM_LIBRARY:
+                      g_bExternalSubtitleTime = true;
+                      m_pMS->GetCurrentPosition(&rtNow);
+                      break;
                     default:
                         ASSERT(FALSE);
                         break;
@@ -1887,6 +1895,9 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent)
                             m_wndStatusBar.SetStatusTimer(str);
                         }
                         break;
+                    case PM_LIBRARY:
+                      m_wndStatusBar.SetStatusTimer(ResStr(IDS_CAPTURE_LIVE));
+                      break;
                     default:
                         ASSERT(FALSE);
                         break;
@@ -3825,6 +3836,24 @@ void CMainFrame::OnFileOpenmedia()
 void CMainFrame::OnUpdateFileOpen(CCmdUI* pCmdUI)
 {
     pCmdUI->Enable(GetLoadState() != MLS::LOADING);
+}
+
+void CMainFrame::OnFileOpenLibrary()
+{
+  /*COpenLibraryDlg dlg;
+  dlg.DoModal();*/
+
+  const CAppSettings& s = AfxGetAppSettings();
+
+  SendMessage(WM_COMMAND, ID_FILE_CLOSEMEDIA);
+  SetForegroundWindow();
+
+  ShowWindow(SW_SHOW);
+
+  m_wndPlaylistBar.Empty();
+
+  CAutoPtr<OpenLibraryData> p(new OpenLibraryData());
+  OpenMedia(p);
 }
 
 BOOL CMainFrame::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCDS)
@@ -6856,6 +6885,10 @@ void CMainFrame::OnPlayPlay()
             } else {
                 ASSERT(FALSE);
             }
+        }
+        else if (GetPlaybackMode() == PM_LIBRARY)
+        {
+          //pMC->Run();
         } else {
             ASSERT(FALSE);
         }
@@ -7112,6 +7145,9 @@ void CMainFrame::OnUpdatePlayPauseStop(CCmdUI* pCmdUI)
             if (fs == State_Stopped && pCmdUI->m_nID == ID_PLAY_PAUSE) {
                 fEnable = false;
             }
+        }
+        else if (GetPlaybackMode() == PM_LIBRARY) {
+          fEnable = true;
         }
     } else if (pCmdUI->m_nID == ID_PLAY_PLAY && !IsPlaylistEmpty()) {
         fEnable = true;
@@ -10373,6 +10409,8 @@ void CMainFrame::OpenCreateGraphObject(OpenMediaData* pOMD)
         } else {
             m_pGB = DEBUG_NEW CFGManagerCapture(_T("CFGManagerCapture"), nullptr, m_pVideoWnd->m_hWnd);
         }
+    } else if (OpenLibraryData* p = dynamic_cast<OpenLibraryData*>(pOMD)) {
+      m_pGB = DEBUG_NEW CFGManagerLibrary(_T("CFGManagerLibrary"), NULL, m_pVideoWnd->m_hWnd);
     }
 
     if (!m_pGB) {
@@ -10825,6 +10863,16 @@ HRESULT CMainFrame::OpenBDAGraph()
         m_pDVBState = std::make_unique<DVBState>();
     }
     return hr;
+}
+
+HRESULT CMainFrame::OpenLibraryGraph()
+{
+  HRESULT hr = m_pGB->RenderFile(L"", L"");
+  if (SUCCEEDED(hr)) {
+    AddTextPassThruFilter();
+    SetPlaybackMode(PM_LIBRARY);
+  }
+  return hr;
 }
 
 // Called from GraphThread
@@ -11422,6 +11470,9 @@ void CMainFrame::OpenSetupWindowTitle(bool reset /*= false*/)
                     }
                 }
             }
+            else if (GetPlaybackMode() == PM_LIBRARY) {
+              title = _T("Library Live TV");
+            }
         } else { // Show full path
             if (GetPlaybackMode() == PM_FILE) {
                 title = m_wndPlaylistBar.GetCurFileName();
@@ -11726,7 +11777,8 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
     OpenFileData* pFileData = dynamic_cast<OpenFileData*>(pOMD.m_p);
     OpenDVDData* pDVDData = dynamic_cast<OpenDVDData*>(pOMD.m_p);
     OpenDeviceData* pDeviceData = dynamic_cast<OpenDeviceData*>(pOMD.m_p);
-    ASSERT(pFileData || pDVDData || pDeviceData);
+    OpenLibraryData* pLibraryData = dynamic_cast<OpenLibraryData*>(pOMD.m_p);
+    ASSERT(pFileData || pDVDData || pDeviceData || pLibraryData);
 
     // Clear DXVA state ...
     ClearDXVAState();
@@ -11763,15 +11815,25 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
             OpenFile(pFileData);
         } else if (pDVDData) {
             OpenDVD(pDVDData);
-        } else if (pDeviceData) {
-            if (s.iDefaultCaptureDevice == 1) {
-                HRESULT hr = OpenBDAGraph();
-                if (FAILED(hr)) {
-                    throw (UINT)IDS_CAPTURE_ERROR_DEVICE;
-                }
-            } else {
-                OpenCapture(pDeviceData);
+        }
+        else if (pDeviceData) {
+          if (s.iDefaultCaptureDevice == 1) {
+            HRESULT hr = OpenBDAGraph();
+            if (FAILED(hr)) {
+              throw (UINT)IDS_CAPTURE_ERROR_DEVICE;
             }
+          }
+          else {
+            OpenCapture(pDeviceData);
+          }
+        }
+        else if (pLibraryData)
+        {
+          HRESULT hr = OpenLibraryGraph();
+          if (FAILED(hr))
+          {
+            throw(UINT)IDS_CAPTURE_ERROR_DEVICE;
+          }
         } else {
             throw (UINT)IDS_INVALID_PARAMS_ERROR;
         }
@@ -11907,7 +11969,7 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
     m_closingmsg = err;
 
     auto getMessageArgs = [&]() {
-        WPARAM wp = pFileData ? PM_FILE : pDVDData ? PM_DVD : pDeviceData ? (s.iDefaultCaptureDevice == 1 ? PM_DIGITAL_CAPTURE : PM_ANALOG_CAPTURE) : PM_NONE;
+        WPARAM wp = pFileData ? PM_FILE : pDVDData ? PM_DVD : pDeviceData ? (s.iDefaultCaptureDevice == 1 ? PM_DIGITAL_CAPTURE : PM_ANALOG_CAPTURE) : pLibraryData ? PM_LIBRARY : PM_NONE;
         ASSERT(wp != PM_NONE);
         LPARAM lp = (LPARAM)pOMD.Detach();
         ASSERT(lp);
@@ -14528,6 +14590,7 @@ void CMainFrame::OpenMedia(CAutoPtr<OpenMediaData> pOMD)
     auto pFileData = dynamic_cast<const OpenFileData*>(pOMD.m_p);
     auto pDVDData = dynamic_cast<const OpenDVDData*>(pOMD.m_p);
     auto pDeviceData = dynamic_cast<const OpenDeviceData*>(pOMD.m_p);
+    auto pLibraryData = dynamic_cast<const OpenLibraryData*>(pOMD.m_p);
 
     // if the tuner graph is already loaded, we just change its channel
     if (pDeviceData) {

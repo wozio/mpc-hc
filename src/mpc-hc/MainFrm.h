@@ -94,7 +94,8 @@ enum {
     PM_FILE,
     PM_DVD,
     PM_ANALOG_CAPTURE,
-    PM_DIGITAL_CAPTURE
+    PM_DIGITAL_CAPTURE,
+    PM_LIBRARY
 };
 
 interface __declspec(uuid("6E8D4A21-310C-11d0-B79A-00AA003767A7")) // IID_IAMLine21Decoder
@@ -134,6 +135,14 @@ public:
     }
     CStringW DisplayName[2];
     int vinput, vchannel, ainput;
+};
+
+class OpenLibraryData : public OpenMediaData
+{
+public:
+  OpenLibraryData()
+  {
+  }
 };
 
 class TunerScanData
@@ -480,6 +489,7 @@ protected:
     void OpenDVD(OpenDVDData* pODD);
     void OpenCapture(OpenDeviceData* pODD);
     HRESULT OpenBDAGraph();
+    HRESULT OpenLibraryGraph();
     void OpenCustomizeGraph();
     void OpenSetupVideo();
     void OpenSetupAudio();
@@ -789,6 +799,7 @@ public:
     afx_msg void OnFileCloseAndRestore();
     afx_msg void OnFileCloseMedia(); // no menu item
     afx_msg void OnUpdateFileClose(CCmdUI* pCmdUI);
+    afx_msg void OnFileOpenLibrary();
 
     void SetCaptionState(MpcCaptionState eState);
     afx_msg void OnViewCaptionmenu();
