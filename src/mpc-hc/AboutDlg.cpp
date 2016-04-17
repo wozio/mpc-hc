@@ -1,5 +1,5 @@
 /*
- * (C) 2012-2015 see Authors.txt
+ * (C) 2012-2016 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -95,26 +95,14 @@ BOOL CAboutDlg::OnInitDialog()
 #endif
 #elif defined(_MSC_VER)
 #if (_MSC_VER == 1900)                // 2015
-#if (_MSC_FULL_VER == 190023506)
+#if (_MSC_FULL_VER == 190023918)
+    m_MPCCompiler = _T("MSVC 2015 Update 2");
+#elif (_MSC_FULL_VER == 190023506)
     m_MPCCompiler = _T("MSVC 2015 Update 1");
 #else
     m_MPCCompiler = _T("MSVC 2015");
 #endif
-#elif (_MSC_VER == 1800)              // 2013
-#if (_MSC_FULL_VER == 180040629)
-    m_MPCCompiler = _T("MSVC 2013 Update 5");
-#elif (_MSC_FULL_VER == 180031101)
-    m_MPCCompiler = _T("MSVC 2013 Update 4");
-#elif (_MSC_FULL_VER == 180030723)
-    m_MPCCompiler = _T("MSVC 2013 Update 3");
-#elif (_MSC_FULL_VER == 180030501)
-    m_MPCCompiler = _T("MSVC 2013 Update 2");
-#elif (_MSC_FULL_VER < 180021005)
-    m_MPCCompiler = _T("MSVC 2013 Preview/Beta/RC");
-#else
-    m_MPCCompiler = _T("MSVC 2013");
-#endif
-#elif (_MSC_VER <= 1700)
+#elif (_MSC_VER <= 1800)
 #error Compiler is not supported!
 #endif
 #else

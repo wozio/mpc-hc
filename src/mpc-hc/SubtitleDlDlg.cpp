@@ -24,6 +24,7 @@
 #include "SubtitlesProvider.h"
 #include "mplayerc.h"
 #include "MainFrm.h"
+#include "ISOLang.h"
 
 // User Defined Window Messages
 enum {
@@ -40,7 +41,6 @@ enum {
 CSubtitleDlDlg::CSubtitleDlDlg(CMainFrame* pParentWnd)
     : CResizableDialog(IDD, pParentWnd)
     , m_ps(nullptr, 0, 0)
-    , m_bReplaceSubs(false)
     , m_bIsRefreshed(false)
     , m_pMainFrame(pParentWnd)
 {
@@ -216,13 +216,17 @@ BOOL CSubtitleDlDlg::PreTranslateMessage(MSG* pMsg)
 
 void CSubtitleDlDlg::OnOK()
 {
-    SetStatusText(ResStr(IDS_SUBDL_DLG_DOWNLOADING));
-
-    m_bReplaceSubs = IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED;
-
-    if (m_bReplaceSubs) {
+    if (IsDlgButtonChecked(IDC_CHECK1) == BST_CHECKED) {
+        m_pMainFrame->SetSubtitle(SubtitleInput(nullptr));
         CAutoLock cAutoLock(&m_pMainFrame->m_csSubLock);
-        m_pMainFrame->m_pSubStreams.RemoveAll();
+        auto& subStreams = m_pMainFrame->m_pSubStreams;
+        POSITION pos = subStreams.GetHeadPosition();
+        while (pos) {
+            POSITION currentPos = pos;
+            if (!subStreams.GetNext(pos).pSourceFilter) {
+                subStreams.RemoveAt(currentPos);
+            }
+        }
     }
 
     bool bActivate = true;
@@ -542,7 +546,7 @@ afx_msg LRESULT CSubtitleDlDlg::OnCompleted(WPARAM wParam, LPARAM lParam)
         for (const auto& subInfo : _subtitlesList) {
             int iItem = m_list.InsertItem(0, UTF8To16(subInfo.Provider()->Name().c_str()), subInfo.Provider()->GetIconIndex());
             m_list.SetItemText(iItem, COL_FILENAME, UTF8To16(subInfo.fileName.c_str()));
-            m_list.SetItemText(iItem, COL_LANGUAGE, ISO639XToLanguage(subInfo.languageCode.c_str()));
+            m_list.SetItemText(iItem, COL_LANGUAGE, ISOLang::ISO639XToLanguage(subInfo.languageCode.c_str()));
             CString disc;
             disc.Format(_T("%d/%d"), subInfo.discNumber, subInfo.discCount);
             m_list.SetItemText(iItem, COL_DISC, disc);

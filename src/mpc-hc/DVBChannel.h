@@ -1,5 +1,5 @@
 /*
- * (C) 2009-2015 see Authors.txt
+ * (C) 2009-2016 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -94,7 +94,7 @@ struct DVBStreamInfo {
     PES_STREAM_TYPE nPesType = INVALID;
     CString         sLanguage;
 
-    LCID GetLCID() { return ISO6392ToLcid(CStringA(sLanguage)); };
+    LCID GetLCID() const;
 };
 
 class CDVBChannel
@@ -178,7 +178,9 @@ public:
     }
 
     // Returns true for channels with the same place, doesn't necessarily need to be equal (i.e if internal streams were updated)
-    bool operator==(CDVBChannel const& channel) const { return GetPMT() == channel.GetPMT() && GetFrequency() == channel.GetFrequency(); }
+    bool operator==(CDVBChannel const& channel) const {
+        return GetPMT() == channel.GetPMT() && GetFrequency() == channel.GetFrequency();
+    }
 
 private:
     CString m_strName;

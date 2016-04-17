@@ -1944,7 +1944,9 @@ void CBaseAP::InitStats()
 
     if (m_pD3DXCreateFont && (!m_pFont || currentHeight != newHeight)) {
         m_pFont = nullptr;
-        if (newHeight <= 0) { ASSERT(FALSE); }
+        if (newHeight <= 0) {
+            ASSERT(FALSE);
+        }
         m_pD3DXCreateFont(m_pD3DDev, newHeight, 0, newHeight < BOLD_THRESHOLD ? FW_NORMAL : FW_BOLD,
                           0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
                           SysVersion::IsXPOrLater() ? CLEARTYPE_NATURAL_QUALITY : ANTIALIASED_QUALITY,
@@ -2452,13 +2454,13 @@ CSyncAP::CSyncAP(HWND hWnd, bool bFullscreen, HRESULT& hr, CString& _Error)
     , m_nResetToken(0)
     , m_nStepCount(0)
     , m_SampleFreeCallback(this, &CSyncAP::OnSampleFree)
-    , fnDXVA2CreateDirect3DDeviceManager9("dxva2.dll", "DXVA2CreateDirect3DDeviceManager9")
-    , fnMFCreateDXSurfaceBuffer("evr.dll", "MFCreateDXSurfaceBuffer")
-    , fnMFCreateVideoSampleFromSurface("evr.dll", "MFCreateVideoSampleFromSurface")
-    , fnMFCreateMediaType("mfplat.dll", "MFCreateMediaType")
-    , fnAvSetMmThreadCharacteristicsW("avrt.dll", "AvSetMmThreadCharacteristicsW")
-    , fnAvSetMmThreadPriority("avrt.dll", "AvSetMmThreadPriority")
-    , fnAvRevertMmThreadCharacteristics("avrt.dll", "AvRevertMmThreadCharacteristics")
+    , fnDXVA2CreateDirect3DDeviceManager9(_T("dxva2.dll"), "DXVA2CreateDirect3DDeviceManager9")
+    , fnMFCreateDXSurfaceBuffer(_T("evr.dll"), "MFCreateDXSurfaceBuffer")
+    , fnMFCreateVideoSampleFromSurface(_T("evr.dll"), "MFCreateVideoSampleFromSurface")
+    , fnMFCreateMediaType(_T("mfplat.dll"), "MFCreateMediaType")
+    , fnAvSetMmThreadCharacteristicsW(_T("avrt.dll"), "AvSetMmThreadCharacteristicsW")
+    , fnAvSetMmThreadPriority(_T("avrt.dll"), "AvSetMmThreadPriority")
+    , fnAvRevertMmThreadCharacteristics(_T("avrt.dll"), "AvRevertMmThreadCharacteristics")
 {
     const CRenderersSettings& r = GetRenderersSettings();
 

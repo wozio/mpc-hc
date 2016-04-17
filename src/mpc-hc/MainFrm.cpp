@@ -76,6 +76,7 @@
 
 #include "DSUtil.h"
 #include "text.h"
+#include "ISOLang.h"
 #include "FGManager.h"
 #include "FGManagerBDA.h"
 #include "FGManagerLibrary.h"
@@ -831,7 +832,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
     }
 
     const WinapiFunc<decltype(ChangeWindowMessageFilterEx)>
-    fnChangeWindowMessageFilterEx = { "user32.dll", "ChangeWindowMessageFilterEx" };
+    fnChangeWindowMessageFilterEx = { _T("user32.dll"), "ChangeWindowMessageFilterEx" };
 
     // allow taskbar messages through UIPI
     if (fnChangeWindowMessageFilterEx) {
@@ -4710,10 +4711,10 @@ void CMainFrame::SaveThumbnails(LPCTSTR fn)
         CStringW str;
         str.Format(L"{\\an7\\1c&Hffffff&\\4a&Hb0&\\bord1\\shad4\\be1}{\\p1}m %d %d l %d %d %d %d %d %d{\\p}",
                    r.left, r.top, r.right, r.top, r.right, r.bottom, r.left, r.bottom);
-        rts.Add(str, true, 0, 1, _T("thumbs")); // Thumbnail background
+        rts.Add(str, true, MS2RT(0), MS2RT(1), _T("thumbs")); // Thumbnail background
         str.Format(L"{\\an3\\1c&Hffffff&\\3c&H000000&\\alpha&H80&\\fs16\\b1\\bord2\\shad0\\pos(%d,%d)}%02u:%02u:%02u",
                    r.right - 5, r.bottom - 3, hmsf.bHours, hmsf.bMinutes, hmsf.bSeconds);
-        rts.Add(str, true, 1, 2, _T("thumbs")); // Thumbnail time
+        rts.Add(str, true, MS2RT(1), MS2RT(2), _T("thumbs")); // Thumbnail time
 
         rts.Render(spd, 0, 25, bbox); // Draw the thumbnail background
 
@@ -9279,7 +9280,7 @@ CRect CMainFrame::GetInvisibleBorderSize() const
 
     if (SysVersion::Is10OrLater()) {
         static const WinapiFunc<decltype(DwmGetWindowAttribute)>
-        fnDwmGetWindowAttribute = { "Dwmapi.dll", "DwmGetWindowAttribute" };
+        fnDwmGetWindowAttribute = { _T("Dwmapi.dll"), "DwmGetWindowAttribute" };
 
         if (fnDwmGetWindowAttribute) {
             if (SUCCEEDED(fnDwmGetWindowAttribute(GetSafeHwnd(), DWMWA_EXTENDED_FRAME_BOUNDS, &invisibleBorders, sizeof(RECT)))) {
@@ -10638,7 +10639,7 @@ void CMainFrame::SetupChapters()
 
         CHAR iso6391[3];
         ::GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, iso6391, 3);
-        CStringA iso6392 = ISO6391To6392(iso6391);
+        CStringA iso6392 = ISOLang::ISO6391To6392(iso6391);
         if (iso6392.GetLength() < 3) {
             iso6392 = "eng";
         }
@@ -11530,7 +11531,7 @@ int CMainFrame::SetupAudioStreams()
             lang.MakeLower();
             langs.Add(lang);
             // Try to match the full language if possible
-            lang = ISO639XToLanguage(CStringA(lang)).MakeLower();
+            lang = ISOLang::ISO639XToLanguage(CStringA(lang)).MakeLower();
             if (!lang.IsEmpty()) {
                 langs.Add(lang);
             }
@@ -11636,17 +11637,19 @@ int CMainFrame::SetupSubtitleStreams()
 
     if (!m_pSubStreams.IsEmpty()) {
         bool externalPriority = false;
-        CAtlArray<CString> langs;
+        std::list<ISOLangT<CString>> langs;
         int tPos = 0;
         CString lang = s.strSubtitlesLanguageOrder.Tokenize(_T(",; "), tPos);
         while (tPos != -1) {
             lang.MakeLower();
-            langs.Add(lang);
-            // Try to match the full language if possible
-            lang = ISO639XToLanguage(CStringA(lang)).MakeLower();
-            if (!lang.IsEmpty()) {
-                langs.Add(lang);
+            ISOLangT<CString> l = ISOLang::ISO639XToISOLang(CStringA(lang));
+            if (l.name.IsEmpty()) {
+                l.name = lang;
+            } else {
+                l.name.MakeLower();
             }
+            langs.emplace_back(l);
+
             lang = s.strSubtitlesLanguageOrder.Tokenize(_T(",; "), tPos);
         }
 
@@ -11690,13 +11693,15 @@ int CMainFrame::SetupSubtitleStreams()
                 count = pSubStream->GetStreamCount();
             }
 
+
             for (int j = 0; j < count; j++) {
-                WCHAR* pName;
                 HRESULT hr;
+                WCHAR* pName;
+                LCID lcid = 0;
                 int rating = 0;
                 if (pSSF) {
                     DWORD dwFlags, dwGroup = 2;
-                    hr = pSSF->Info(j, nullptr, &dwFlags, nullptr, &dwGroup, &pName, nullptr, nullptr);
+                    hr = pSSF->Info(j, nullptr, &dwFlags, &lcid, &dwGroup, &pName, nullptr, nullptr);
                     if (dwGroup != 2) { // If the track isn't a subtitle track, we skip it
                         CoTaskMemFree(pName);
                         continue;
@@ -11712,30 +11717,40 @@ int CMainFrame::SetupSubtitleStreams()
                         continue;
                     }
                 } else {
-                    hr = pSubStream->GetStreamInfo(j, &pName, nullptr);
+                    hr = pSubStream->GetStreamInfo(j, &pName, &lcid);
                 }
                 CString name(pName);
                 CoTaskMemFree(pName);
                 name.Trim();
                 name.MakeLower();
 
-                for (size_t k = 0; k < langs.GetCount(); k++) {
-                    int num = _tstoi(langs[k]) - 1;
+                size_t k = 0;
+                for (const auto& l : langs) {
+                    int num = _tstoi(l.name) - 1;
                     if (num >= 0) { // this is track number
                         if (i != num) {
                             continue;  // not matched
                         }
                     } else { // this is lang string
-                        int len = langs[k].GetLength();
-                        if (name.Left(len) != langs[k] && name.Find(_T("[") + langs[k]) < 0) {
-                            continue; // not matched
+                        // check the LCID first but keep looking if it doesn't match
+                        if (lcid == 0 || lcid == LCID(-1) || lcid != l.lcid) {
+                            auto findCode = [](const CString & name, const CString & code) {
+                                int nPos = code.IsEmpty() ? -1 : name.Find(code);
+                                return ((nPos == 0 && name.GetLength() == code.GetLength())
+                                        || (nPos > 0 && (name[nPos - 1] == _T('[') || name[nPos - 1] == _T('\t'))));
+                            };
+                            // match anything that starts with the language name or that seems to use a code that matches
+                            if (name.Find(l.name) != 0 && !findCode(name, l.name) && !findCode(name, l.iso6392) && !findCode(name, l.iso6391)) {
+                                continue; // not matched
+                            }
                         }
                     }
-                    rating += 16 * int(langs.GetCount() - k);
+                    rating += 16 * int(langs.size() - k);
+                    k++;
                     break;
                 }
                 if (externalPriority) { // External tracks are given a higher priority than language matches
-                    rating += 16 * int(langs.GetCount() + 1);
+                    rating += 16 * int(langs.size() + 1);
                 }
                 if (s.bPreferDefaultForcedSubtitles) {
                     if (name.Find(_T("[default,forced]")) != -1) { // for LAV Splitter
@@ -11922,6 +11937,18 @@ bool CMainFrame::OpenMediaPrivate(CAutoPtr<OpenMediaData> pOMD)
 
             if (rtPos) {
                 m_pMS->SetPositions(&rtPos, AM_SEEKING_AbsolutePositioning, nullptr, AM_SEEKING_NoPositioning);
+            }
+
+            if (m_pCAP2 && m_pFSF) {
+                CComQIPtr<IBaseFilter> pBF = m_pFSF;
+                if (GetCLSID(pBF) == GUID_LAVSplitter || GetCLSID(pBF) == GUID_LAVSplitterSource) {
+                    if (CComQIPtr<IPropertyBag> pPB = pBF) {
+                        CComVariant var;
+                        if (SUCCEEDED(pPB->Read(_T("rotation"), &var, nullptr)) && var.vt == VT_BSTR) {
+                            m_pCAP2->SetDefaultVideoAngle(Vector(0, 0, Vector::DegToRad(_tcstol(var.bstrVal, nullptr, 10) % 360)));
+                        }
+                    }
+                }
             }
         }
 
@@ -13285,6 +13312,7 @@ void CMainFrame::OnStreamSelect(bool bForward, DWORD dwSelGroup)
 
 CString CMainFrame::GetStreamOSDString(CString name, LCID lcid, DWORD dwSelGroup)
 {
+    name.Replace(_T("\t"), _T(" - "));
     CString sLcid;
     if (lcid && lcid != LCID(-1)) {
         int len = GetLocaleInfo(lcid, LOCALE_SENGLANGUAGE, sLcid.GetBuffer(64), 64);
@@ -13296,11 +13324,15 @@ CString CMainFrame::GetStreamOSDString(CString name, LCID lcid, DWORD dwSelGroup
     CString strMessage;
     if (dwSelGroup == 1) {
         int n = 0;
-        if (name.Find(_T("A:")) == 0) { n = 2; }
+        if (name.Find(_T("A:")) == 0) {
+            n = 2;
+        }
         strMessage.Format(IDS_AUDIO_STREAM, name.Mid(n).Trim());
     } else if (dwSelGroup == 2) {
         int n = 0;
-        if (name.Find(_T("S:")) == 0) { n = 2; }
+        if (name.Find(_T("S:")) == 0) {
+            n = 2;
+        }
         strMessage.Format(IDS_SUBTITLE_STREAM, name.Mid(n).Trim());
     }
     return strMessage;
@@ -16285,7 +16317,7 @@ void CMainFrame::OnSessionChange(UINT nSessionState, UINT nId)
 void CMainFrame::WTSRegisterSessionNotification()
 {
     const WinapiFunc<BOOL WINAPI(HWND, DWORD)>
-    fnWtsRegisterSessionNotification = { "wtsapi32.dll", "WTSRegisterSessionNotification" };
+    fnWtsRegisterSessionNotification = { _T("wtsapi32.dll"), "WTSRegisterSessionNotification" };
 
     if (fnWtsRegisterSessionNotification) {
         fnWtsRegisterSessionNotification(m_hWnd, NOTIFY_FOR_THIS_SESSION);
@@ -16295,7 +16327,7 @@ void CMainFrame::WTSRegisterSessionNotification()
 void CMainFrame::WTSUnRegisterSessionNotification()
 {
     const WinapiFunc<BOOL WINAPI(HWND)>
-    fnWtsUnRegisterSessionNotification = { "wtsapi32.dll", "WTSUnRegisterSessionNotification" };
+    fnWtsUnRegisterSessionNotification = { _T("wtsapi32.dll"), "WTSUnRegisterSessionNotification" };
 
     if (fnWtsUnRegisterSessionNotification) {
         fnWtsUnRegisterSessionNotification(m_hWnd);
@@ -16854,7 +16886,12 @@ void CMainFrame::OnVideoSizeChanged(const bool bWasAudioOnly /*= false*/)
     MoveVideoWindow();
 }
 
-typedef struct { SubtitlesInfo* pSubtitlesInfo; BOOL bActivate; std::string fileName; std::string fileContents; } SubtitlesData;
+typedef struct {
+    SubtitlesInfo* pSubtitlesInfo;
+    BOOL bActivate;
+    std::string fileName;
+    std::string fileContents;
+} SubtitlesData;
 
 LRESULT CMainFrame::OnLoadSubtitles(WPARAM wParam, LPARAM lParam)
 {
@@ -16864,7 +16901,7 @@ LRESULT CMainFrame::OnLoadSubtitles(WPARAM wParam, LPARAM lParam)
     if (pRTS && pRTS->Open(CString(data.pSubtitlesInfo->Provider()->Name().c_str()),
                            (BYTE*)(LPCSTR)data.fileContents.c_str(), (int)data.fileContents.length(), DEFAULT_CHARSET,
                            UTF8To16(data.fileName.c_str()), Subtitle::HearingImpairedType(data.pSubtitlesInfo->hearingImpaired),
-                           ISO6391ToLcid(data.pSubtitlesInfo->languageCode.c_str())) && pRTS->GetStreamCount() > 0) {
+                           ISOLang::ISO6391ToLcid(data.pSubtitlesInfo->languageCode.c_str())) && pRTS->GetStreamCount() > 0) {
         m_wndSubtitlesDownloadDialog.DoDownloaded(*data.pSubtitlesInfo);
 
         SubtitleInput subElement = pRTS.Detach();

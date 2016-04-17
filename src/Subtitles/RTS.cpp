@@ -3219,10 +3219,7 @@ STDMETHODIMP CRenderedTextSubtitle::GetStreamInfo(int iStream, WCHAR** ppName, L
     }
 
     if (pLCID) {
-        *pLCID = ISO6391ToLcid(CW2A(m_name));
-        if (*pLCID == 0) {
-            *pLCID = ISO6392ToLcid(CW2A(m_name));
-        }
+        *pLCID = m_lcid;
     }
 
     CString strLanguage;
